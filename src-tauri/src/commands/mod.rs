@@ -5,6 +5,7 @@ pub mod clients;
 pub mod dashboard;
 pub mod documents;
 pub mod events;
+pub mod finances;
 pub mod search;
 pub mod settings;
 pub mod tasks;

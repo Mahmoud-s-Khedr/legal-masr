@@ -25,13 +25,13 @@ Tauri's updater can later use a signed static JSON manifest and GitHub Releases 
 
 The update request must not include:
 
-* Installation UUID
-* Lawyer profile
-* Case count
-* Document count
-* Usage history
-* Device hostname
-* User account name
+- Installation UUID
+- Lawyer profile
+- Case count
+- Document count
+- Usage history
+- Device hostname
+- User account name
 
 A normal static manifest request may reveal standard network metadata such as IP address to the hosting provider. This should be disclosed in the privacy notice.
 
@@ -43,11 +43,11 @@ A normal static manifest request may reveal standard network metadata such as IP
 
 Initial target:
 
-* Windows 10 and Windows 11
-* x86-64
-* Per-user NSIS `.exe` installer
-* No administrator privileges where possible
-* Unsigned public beta installer; no self-signed certificate
+- Windows 10 and Windows 11
+- x86-64
+- Per-user NSIS `.exe` installer
+- No administrator privileges where possible
+- Unsigned public beta installer; no self-signed certificate
 
 Tauri builds Windows installers through its CLI on Windows, using the MSVC target and WebView2.
 
@@ -55,9 +55,9 @@ Tauri builds Windows installers through its CLI on Windows, using the MSVC targe
 
 Initial targets:
 
-* Apple Silicon
-* Intel
-* Separate DMG files initially
+- Apple Silicon
+- Intel
+- Separate DMG files initially
 
 Separate builds reduce the risk introduced by combining SQLCipher, vendored cryptography and universal binaries. A universal build may be added after both architectures are stable.
 
@@ -67,13 +67,13 @@ Current browser-distributed beta builds use Tauri ad-hoc signing (`signingIdenti
 
 Use GitHub Actions with:
 
-* Windows runner
-* Intel macOS target build
-* Apple Silicon macOS target build
-* Validation workflow on pull requests
-* Tag/manual draft-release workflow
-* Unsigned Windows x86-64 NSIS installer
-* Ad-hoc signed, unnotarized Intel and Apple Silicon DMGs
+- Windows runner
+- Intel macOS target build
+- Apple Silicon macOS target build
+- Validation workflow on pull requests
+- Tag/manual draft-release workflow
+- Unsigned Windows x86-64 NSIS installer
+- Ad-hoc signed, unnotarized Intel and Apple Silicon DMGs
 
 The official `tauri-action` builds native Tauri binaries for Windows and macOS and can attach them to GitHub Releases.
 

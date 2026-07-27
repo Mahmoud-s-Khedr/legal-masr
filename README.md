@@ -18,11 +18,16 @@ pnpm tauri dev
 Validation:
 
 ```bash
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
 pnpm build
-pnpm lint && pnpm typecheck && pnpm test && pnpm build
 (cd src-tauri && cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test --all-features)
 pnpm tauri build --debug --bundles deb
 ```
+
+Format frontend and project files with `pnpm format`; Rust code is formatted with `cd src-tauri && cargo fmt`.
 
 ## Data and security
 

@@ -3,5 +3,10 @@
   "identifier": "main-capability",
   "description": "Core application window with only required native integrations.",
   "windows": ["main"],
-  "permissions": ["core:window:default", "dialog:allow-open", "dialog:allow-save", "window-state:default"]
+  "permissions": [
+    "core:window:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "window-state:default"
+  ]
 }

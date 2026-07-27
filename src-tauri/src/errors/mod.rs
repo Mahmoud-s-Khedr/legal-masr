@@ -41,6 +41,10 @@ pub enum Error {
     DocumentSourceMissing,
     #[error("document not found")]
     DocumentNotFound,
+    #[error("financial transaction not found")]
+    TransactionNotFound,
+    #[error("operation could not be completed")]
+    Operation,
     #[error("{0}")]
     Io(#[from] std::io::Error),
     #[error("{0}")]
@@ -71,6 +75,8 @@ impl Error {
             Self::TaskNotFound => "TASK_NOT_FOUND",
             Self::DocumentSourceMissing => "DOCUMENT_SOURCE_MISSING",
             Self::DocumentNotFound => "DOCUMENT_NOT_FOUND",
+            Self::TransactionNotFound => "TRANSACTION_NOT_FOUND",
+            Self::Operation => "OPERATION_FAILED",
             Self::Io(_) | Self::Sql(_) | Self::Json(_) | Self::Zip(_) => "OPERATION_FAILED",
         }
     }
@@ -94,6 +100,8 @@ impl Error {
             Self::TaskNotFound => "لم يتم العثور على المهمة.",
             Self::DocumentSourceMissing => "تعذر العثور على الملف المصدر.",
             Self::DocumentNotFound => "لم يتم العثور على المستند.",
+            Self::TransactionNotFound => "لم يتم العثور على العملية المالية.",
+            Self::Operation => "تعذر إتمام العملية بأمان.",
             Self::Io(_) | Self::Sql(_) | Self::Json(_) | Self::Zip(_) => {
                 "تعذر إتمام العملية بأمان."
             }

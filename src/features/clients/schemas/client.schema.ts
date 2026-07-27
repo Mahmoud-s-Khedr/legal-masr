@@ -1,7 +1,7 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const clientFormSchema = z.object({
-  clientType: z.enum(["INDIVIDUAL", "ORGANIZATION"]),
+  clientType: z.enum(['INDIVIDUAL', 'ORGANIZATION']),
   displayName: z.string().trim().min(1),
   nationalId: z.string().trim().optional(),
   registrationNumber: z.string().trim().optional(),

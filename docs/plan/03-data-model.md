@@ -10,12 +10,12 @@ Use UUIDs as public/internal entity identifiers.
 
 Use:
 
-* UTC timestamps for moments
-* `YYYY-MM-DD` text for date-only legal dates
-* Integer minor units for money
-* Foreign-key constraints
-* Explicit archive timestamps
-* Transactions for multi-record operations
+- UTC timestamps for moments
+- `YYYY-MM-DD` text for date-only legal dates
+- Integer minor units for money
+- Foreign-key constraints
+- Explicit archive timestamps
+- Transactions for multi-record operations
 
 ## 9.1 Core tables
 
@@ -329,14 +329,14 @@ Do not store sensitive record content inside activity descriptions.
 
 ## Rules
 
-* Every schema change requires a numbered migration.
-* Applied migrations are immutable.
-* Never edit a migration already used by a beta tester.
-* Migrations run inside a transaction where SQLite permits.
-* Create a verified backup before an application update that changes schema.
-* Record migration version in the database.
-* Test migration from every publicly released schema version.
-* Do not implement automatic downgrade migrations.
+- Every schema change requires a numbered migration.
+- Applied migrations are immutable.
+- Never edit a migration already used by a beta tester.
+- Migrations run inside a transaction where SQLite permits.
+- Create a verified backup before an application update that changes schema.
+- Record migration version in the database.
+- Test migration from every publicly released schema version.
+- Do not implement automatic downgrade migrations.
 
 ## Startup migration process
 

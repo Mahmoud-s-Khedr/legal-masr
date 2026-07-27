@@ -5,6 +5,8 @@ use chacha20poly1305::{
     XChaCha20Poly1305, XNonce,
 };
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
 use std::{
     fs,
     io::{Cursor, Read, Write},
@@ -19,20 +21,67 @@ struct BackupEnvelope {
     ciphertext: String,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BackupManifest {
+    format_version: u8,
+    application_version: String,
+    schema_version: i64,
+    created_at: String,
+    database_encrypted: bool,
+    managed_document_count: usize,
+}
+
+fn checksum(bytes: &[u8]) -> String {
+    hex::encode(Sha256::digest(bytes))
+}
+
 pub fn create(db_path: &Path, master: &[u8; 32], destination: &str) -> Result<String, Error> {
     let destination = PathBuf::from(destination);
     fs::create_dir_all(&destination)?;
     let mut archive = ZipWriter::new(Cursor::new(Vec::new()));
-    archive.start_file("manifest.json", SimpleFileOptions::default())?;
-    archive.write_all(
-        format!(
-            r#"{{"formatVersion":1,"createdAt":"{}","databaseEncrypted":true}}"#,
-            db::now()
-        )
-        .as_bytes(),
-    )?;
+    let database = fs::read(db_path)?;
+    let opened = db::open_db(db_path, master)?;
+    let manifest = BackupManifest {
+        format_version: 1,
+        application_version: env!("CARGO_PKG_VERSION").into(),
+        schema_version: db::schema_version(&opened),
+        created_at: db::now(),
+        database_encrypted: true,
+        managed_document_count: 0,
+    };
+    let mut checksums = BTreeMap::new();
+    checksums.insert("database.sqlite".to_owned(), checksum(&database));
     archive.start_file("database.sqlite", SimpleFileOptions::default())?;
-    archive.write_all(&fs::read(db_path)?)?;
+    archive.write_all(&database)?;
+    let documents = db_path
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join("documents");
+    let mut document_count = 0usize;
+    if documents.is_dir() {
+        for entry in fs::read_dir(&documents)? {
+            let entry = entry?;
+            if !entry.file_type()?.is_file() {
+                continue;
+            }
+            let bytes = fs::read(entry.path())?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let archive_name = format!("documents/{name}");
+            checksums.insert(archive_name.clone(), checksum(&bytes));
+            archive.start_file(archive_name, SimpleFileOptions::default())?;
+            archive.write_all(&bytes)?;
+            document_count += 1;
+        }
+    }
+    let manifest = BackupManifest {
+        managed_document_count: document_count,
+        ..manifest
+    };
+    archive.start_file("manifest.json", SimpleFileOptions::default())?;
+    archive.write_all(&serde_json::to_vec(&manifest)?)?;
+    archive.start_file("checksums.json", SimpleFileOptions::default())?;
+    archive.write_all(&serde_json::to_vec(&checksums)?)?;
     let plaintext = archive.finish()?.into_inner();
     let key = security::backup_key(master);
     let nonce = security::random_32();
@@ -81,13 +130,33 @@ pub fn validate(path: &str, master: &[u8; 32]) -> Result<(), Error> {
         .by_name("manifest.json")
         .map_err(|_| Error::BackupInvalid)?
         .read_to_string(&mut manifest)?;
-    if !manifest.contains("formatVersion") {
+    let manifest: BackupManifest =
+        serde_json::from_str(&manifest).map_err(|_| Error::BackupInvalid)?;
+    if manifest.format_version != 1 || !manifest.database_encrypted {
         return Err(Error::BackupInvalid);
+    }
+    let mut checksums_json = String::new();
+    archive
+        .by_name("checksums.json")
+        .map_err(|_| Error::BackupInvalid)?
+        .read_to_string(&mut checksums_json)?;
+    let checksums: BTreeMap<String, String> =
+        serde_json::from_str(&checksums_json).map_err(|_| Error::BackupInvalid)?;
+    for (name, expected) in checksums {
+        let mut bytes = Vec::new();
+        archive
+            .by_name(&name)
+            .map_err(|_| Error::BackupInvalid)?
+            .read_to_end(&mut bytes)?;
+        if checksum(&bytes) != expected {
+            return Err(Error::BackupInvalid);
+        }
     }
     Ok(())
 }
 
 pub fn restore(active_db: &Path, master: &[u8; 32], path: &str) -> Result<(), Error> {
+    validate(path, master)?;
     let bytes = decrypt(path, master)?;
     let mut archive = ZipArchive::new(Cursor::new(bytes))?;
     let mut db_bytes = Vec::new();
@@ -95,6 +164,31 @@ pub fn restore(active_db: &Path, master: &[u8; 32], path: &str) -> Result<(), Er
         .by_name("database.sqlite")
         .map_err(|_| Error::BackupInvalid)?
         .read_to_end(&mut db_bytes)?;
+    let documents_root = active_db
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join("documents");
+    let documents_staging = documents_root.with_extension("restore.tmp");
+    if documents_staging.exists() {
+        fs::remove_dir_all(&documents_staging)?;
+    }
+    fs::create_dir_all(&documents_staging)?;
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let Some(name) = entry.enclosed_name() else {
+            return Err(Error::BackupInvalid);
+        };
+        let relative = name.strip_prefix("documents/");
+        let Ok(relative) = relative else {
+            continue;
+        };
+        if relative.as_os_str().is_empty() || relative.components().count() != 1 {
+            return Err(Error::BackupInvalid);
+        }
+        let target = documents_staging.join(relative);
+        let mut output = fs::File::create(target)?;
+        std::io::copy(&mut entry, &mut output)?;
+    }
     let staging = active_db.with_extension("restore.tmp");
     fs::write(&staging, db_bytes)?;
     let restored = db::open_db(&staging, master).map_err(|_| Error::BackupInvalid)?;
@@ -111,6 +205,28 @@ pub fn restore(active_db: &Path, master: &[u8; 32], path: &str) -> Result<(), Er
     drop(restored);
     let emergency = active_db.with_extension("pre-restore.bak");
     fs::copy(active_db, &emergency)?;
-    fs::rename(&staging, active_db)?;
+    let documents_emergency = documents_root.with_extension("pre-restore");
+    if documents_emergency.exists() {
+        fs::remove_dir_all(&documents_emergency)?;
+    }
+    if documents_root.exists() {
+        fs::rename(&documents_root, &documents_emergency)?;
+    }
+    if let Err(error) = fs::rename(&documents_staging, &documents_root) {
+        if documents_emergency.exists() {
+            let _ = fs::rename(&documents_emergency, &documents_root);
+        }
+        return Err(error.into());
+    }
+    if let Err(error) = fs::rename(&staging, active_db) {
+        let _ = fs::remove_dir_all(&documents_root);
+        if documents_emergency.exists() {
+            let _ = fs::rename(&documents_emergency, &documents_root);
+        }
+        return Err(error.into());
+    }
+    if documents_emergency.exists() {
+        let _ = fs::remove_dir_all(documents_emergency);
+    }
     Ok(())
 }

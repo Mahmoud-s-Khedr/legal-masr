@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const setupSchema = z.object({
   fullName: z.string().trim().min(1),

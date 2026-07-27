@@ -18,32 +18,32 @@ Do not ask only, "Which features do you want?"
 
 Ask them to demonstrate:
 
-* How they identify tomorrow's hearings.
-* How they record a hearing outcome.
-* How they locate an old case.
-* How they organize client files.
-* How they track money.
-* What information they write on paper.
-* Which information they refuse to place online.
-* What happens when a hearing is rescheduled.
-* How they back up their current files.
+- How they identify tomorrow's hearings.
+- How they record a hearing outcome.
+- How they locate an old case.
+- How they organize client files.
+- How they track money.
+- What information they write on paper.
+- Which information they refuse to place online.
+- What happens when a hearing is rescheduled.
+- How they back up their current files.
 
 ### Deliverables
 
-* Interview notes
-* Workflow map
-* Terminology glossary
-* Final case fields
-* Final event types
-* Top five daily tasks
-* Revised wireframes
-* Confirmed product vocabulary
+- Interview notes
+- Workflow map
+- Terminology glossary
+- Final case fields
+- Final event types
+- Top five daily tasks
+- Revised wireframes
+- Confirmed product vocabulary
 
 ### Exit criteria
 
-* At least five lawyers independently confirm the core workflow.
-* No critical daily workflow is absent from the plan.
-* Vocabulary is understandable without explanation.
+- At least five lawyers independently confirm the core workflow.
+- No critical daily workflow is absent from the plan.
+- Vocabulary is understandable without explanation.
 
 ---
 
@@ -53,17 +53,17 @@ Ask them to demonstrate:
 
 ### Scope
 
-* [x] Tauri 2 bootstrap
-* [x] React/Vite bootstrap
-* [x] SQLCipher build (local compile proof)
-* [x] Rust database boundary
-* [x] Password envelope
-* [x] Recovery envelope
-* [x] Migration system
-* [~] Windows x86-64 native build workflow implemented; GitHub runner and device validation pending
-* [~] macOS Intel native build workflow with ad-hoc signature verification implemented; runner and device validation pending
-* [~] macOS Apple Silicon native build workflow with ad-hoc signature verification implemented; runner and device validation pending
-* [~] Backup proof of concept — encrypted creation and validation implemented; restore remains
+- [x] Tauri 2 bootstrap
+- [x] React/Vite bootstrap
+- [x] SQLCipher build (local compile proof)
+- [x] Rust database boundary
+- [x] Password envelope
+- [x] Recovery envelope
+- [x] Migration system
+- [~] Windows x86-64 native build workflow implemented; GitHub runner and device validation pending
+- [~] macOS Intel native build workflow with ad-hoc signature verification implemented; runner and device validation pending
+- [~] macOS Apple Silicon native build workflow with ad-hoc signature verification implemented; runner and device validation pending
+- [~] Backup proof of concept — encrypted creation and validation implemented; restore remains
 
 ### Deliverable
 
@@ -105,41 +105,41 @@ No feature module begins until this phase passes. The security/database spike
 
 ### Scope
 
-* [x] Repository structure — Rust split into `commands/services/repositories/dto/db/security/backup/errors/state`; frontend split into `app/components/features/bridge/i18n/lib/styles`.
-* [x] Tauri permissions — unchanged minimal capability set (`core:window:default`, `dialog:allow-open`, `dialog:allow-save`, `window-state:default`); no unrestricted filesystem or shell access added.
-* [x] Error contract — `{ code, message, details }` preserved and extended (`details` now carries typed payloads such as duplicate-client candidates).
-* [x] Logging — `tracing` + `tracing-appender` daily-rotating file log under `<app data dir>/logs/`; only version/OS/error codes/durations logged, never names, phones, case numbers, paths or secrets.
-* [x] React providers — `TanStack Query` (`QueryClientProvider`) and `i18next` wired in `app/providers.tsx`.
-* [x] Routing — `react-router-dom` route table in `app/router.tsx`.
-* [x] RTL foundation — `document.dir`/`lang` now driven reactively by the active i18next language.
-* [x] Design tokens — existing CSS custom properties (`--ink`, `--jade`, `--sand`, `--gold`, `--muted`, `--line`) kept; no visual redesign performed.
-* [x] Main layout — `components/layout/Shell.tsx`.
-* [x] Localization — `i18next`/`react-i18next` with `ar`/`en` resource files; all previously hardcoded Arabic strings extracted into translation keys.
-* [x] Settings storage — unchanged SQLite-backed `app_settings`.
-* [x] Onboarding — revised (deviation from `04-functional-modules.md` §8.1):
-  rebuilt on `react-hook-form` + `zod`, and simplified to name + password
-  only, with no mandatory backup step. A language toggle
-  (`components/layout/LanguageSwitcher.tsx`) is available on every screen,
-  including before setup, instead of a one-time language choice during
-  onboarding. Manual backup creation, validation and restore moved to
-  Settings → Backups (`src/features/backups/`), reusing the already-tested
-  `backup_create`/`backup_validate`/`backup_restore` commands — this is a
-  deliberate product decision that backups must never be a barrier to
-  entry, and it also fixes a real bug where an install that got stuck on
-  the old mandatory backup screen stayed stuck on every subsequent unlock.
-* [x] Lock screen — unchanged flow, rebuilt on `react-hook-form` + `zod`.
-* [x] Window state — unchanged plugin.
-* [x] Single instance — unchanged plugin.
+- [x] Repository structure — Rust split into `commands/services/repositories/dto/db/security/backup/errors/state`; frontend split into `app/components/features/bridge/i18n/lib/styles`.
+- [x] Tauri permissions — unchanged minimal capability set (`core:window:default`, `dialog:allow-open`, `dialog:allow-save`, `window-state:default`); no unrestricted filesystem or shell access added.
+- [x] Error contract — `{ code, message, details }` preserved and extended (`details` now carries typed payloads such as duplicate-client candidates).
+- [x] Logging — `tracing` + `tracing-appender` daily-rotating file log under `<app data dir>/logs/`; only version/OS/error codes/durations logged, never names, phones, case numbers, paths or secrets.
+- [x] React providers — `TanStack Query` (`QueryClientProvider`) and `i18next` wired in `app/providers.tsx`.
+- [x] Routing — `react-router-dom` route table in `app/router.tsx`.
+- [x] RTL foundation — `document.dir`/`lang` now driven reactively by the active i18next language.
+- [x] Design tokens — existing CSS custom properties (`--ink`, `--jade`, `--sand`, `--gold`, `--muted`, `--line`) kept; no visual redesign performed.
+- [x] Main layout — `components/layout/Shell.tsx`.
+- [x] Localization — `i18next`/`react-i18next` with `ar`/`en` resource files; all previously hardcoded Arabic strings extracted into translation keys.
+- [x] Settings storage — unchanged SQLite-backed `app_settings`.
+- [x] Onboarding — revised (deviation from `04-functional-modules.md` §8.1):
+      rebuilt on `react-hook-form` + `zod`, and simplified to name + password
+      only, with no mandatory backup step. A language toggle
+      (`components/layout/LanguageSwitcher.tsx`) is available on every screen,
+      including before setup, instead of a one-time language choice during
+      onboarding. Manual backup creation, validation and restore moved to
+      Settings → Backups (`src/features/backups/`), reusing the already-tested
+      `backup_create`/`backup_validate`/`backup_restore` commands — this is a
+      deliberate product decision that backups must never be a barrier to
+      entry, and it also fixes a real bug where an install that got stuck on
+      the old mandatory backup screen stayed stuck on every subsequent unlock.
+- [x] Lock screen — unchanged flow, rebuilt on `react-hook-form` + `zod`.
+- [x] Window state — unchanged plugin.
+- [x] Single instance — unchanged plugin.
 
 ### Acceptance criteria
 
-* [x] Application opens in Arabic RTL.
-* [x] Onboarding completes (name + password only; reaching the dashboard
-  never depends on backup creation).
-* [x] Application locks and unlocks.
-* [x] No direct SQL exists in frontend code (`grep -rn "SELECT\|INSERT\|UPDATE\|DELETE" src/` returns no matches).
-* [x] No unrestricted frontend filesystem access exists (capabilities file unchanged from Phase 1).
-* [x] CI validates Rust and TypeScript (`pnpm lint/typecheck/test/build`, `cargo fmt/clippy/test` all pass).
+- [x] Application opens in Arabic RTL.
+- [x] Onboarding completes (name + password only; reaching the dashboard
+      never depends on backup creation).
+- [x] Application locks and unlocks.
+- [x] No direct SQL exists in frontend code (`grep -rn "SELECT\|INSERT\|UPDATE\|DELETE" src/` returns no matches).
+- [x] No unrestricted frontend filesystem access exists (capabilities file unchanged from Phase 1).
+- [x] CI validates Rust and TypeScript (`pnpm lint/typecheck/test/build`, `cargo fmt/clippy/test` all pass).
 
 ---
 
@@ -149,16 +149,16 @@ No feature module begins until this phase passes. The security/database spike
 
 ### Scope
 
-* [x] Client schema and migrations — `clients`, `client_contacts` in `0003_clients_and_cases.sql`.
-* [x] Client CRUD — `client_create/update/get/list/archive/restore/export`.
-* [x] Client search — basic `search_index` + `search_global`/`search_rebuild_index`.
-* [x] Duplicate warnings — phone/name match surfaced as `CLIENT_PROBABLE_DUPLICATE` with candidate list; UI requires explicit confirmation to proceed.
-* [x] Case schema and migrations — `cases`, `case_parties` in the same migration.
-* [x] Case CRUD — `case_create/update/get/list/archive/restore/export`.
-* [x] Parties — `case_parties` (`OPPONENT`/`WITNESS`/`EXPERT`/`OTHER`) with add/update/remove commands.
-* [x] Archiving — clients and cases both support archive/restore, excluded from default list filters, still directly retrievable and searchable.
-* [x] Client and case detail screens — `ClientDetailPage`, `CaseDetailPage`.
-* [x] Basic search index — denormalized `search_index` table, upserted in the same transaction as each write.
+- [x] Client schema and migrations — `clients`, `client_contacts` in `0003_clients_and_cases.sql`.
+- [x] Client CRUD — `client_create/update/get/list/archive/restore/export`.
+- [x] Client search — basic `search_index` + `search_global`/`search_rebuild_index`.
+- [x] Duplicate warnings — phone/name match surfaced as `CLIENT_PROBABLE_DUPLICATE` with candidate list; UI requires explicit confirmation to proceed.
+- [x] Case schema and migrations — `cases`, `case_parties` in the same migration.
+- [x] Case CRUD — `case_create/update/get/list/archive/restore/export`.
+- [x] Parties — `case_parties` (`OPPONENT`/`WITNESS`/`EXPERT`/`OTHER`) with add/update/remove commands.
+- [x] Archiving — clients and cases both support archive/restore, excluded from default list filters, still directly retrievable and searchable.
+- [x] Client and case detail screens — `ClientDetailPage`, `CaseDetailPage`.
+- [x] Basic search index — denormalized `search_index` table, upserted in the same transaction as each write.
 
 **Deviation from the original data model, by explicit product decision:** a
 case may have more than one client. `cases` does **not** carry a singular
@@ -191,15 +191,15 @@ screens.
 
 ### Scope
 
-* [x] Case events — immutable schema, typed Rust commands, and calendar route.
-* [x] Hearing workflow — completion records outcome/decision/next action and can create a copied next hearing or linked task in one transaction.
-* [x] Event outcomes and next-hearing creation.
-* [x] Personal tasks — create, update, complete, reopen, list, and date/status/priority filtering through the typed bridge.
-* [x] Calendar — date-only agenda display with day/week/month/agenda view selection.
-* [x] Dashboard — local daily events/tasks plus deterministic overdue-task and missing-hearing-outcome attention counts.
-* [x] Overdue and missing-outcome logic, covered by repository-level validation.
-* [ ] Native notifications.
-* [ ] Optional autostart and tray behavior.
+- [x] Case events — immutable schema, typed Rust commands, and calendar route.
+- [x] Hearing workflow — completion records outcome/decision/next action and can create a copied next hearing or linked task in one transaction.
+- [x] Event outcomes and next-hearing creation.
+- [x] Personal tasks — create, update, complete, reopen, list, and date/status/priority filtering through the typed bridge.
+- [x] Calendar — date-only agenda display with day/week/month/agenda view selection.
+- [x] Dashboard — local daily events/tasks plus deterministic overdue-task and missing-hearing-outcome attention counts.
+- [x] Overdue and missing-outcome logic, covered by repository-level validation.
+- [ ] Native notifications.
+- [ ] Optional autostart and tray behavior.
 
 ### Exit criteria
 
@@ -215,15 +215,15 @@ This is the first version suitable for a closely supervised lawyer alpha.
 
 ### Scope
 
-* [x] Managed document copies — generated internal filenames in the local app-data document directory, checksum calculation, and SQLCipher metadata.
-* [x] External file references — metadata only; application removal never deletes the source file.
-* [x] File categories — constrained schema and typed metadata support.
-* [ ] Native open and reveal.
-* [x] Missing-file detection.
-* [ ] Case-folder export.
-* [x] Global search — grouped client, case, event, task, and document results with deep links.
-* [x] Arabic normalization — diacritics, Alef variants, Arabic/Western digits, and whitespace normalization.
-* [x] Search-index rebuild — now rebuilds clients, cases, events, tasks, and documents.
+- [x] Managed document copies — generated internal filenames in the local app-data document directory, checksum calculation, and SQLCipher metadata.
+- [x] External file references — metadata only; application removal never deletes the source file.
+- [x] File categories — constrained schema and typed metadata support.
+- [ ] Native open and reveal.
+- [x] Missing-file detection.
+- [ ] Case-folder export.
+- [x] Global search — grouped client, case, event, task, and document results with deep links.
+- [x] Arabic normalization — diacritics, Alef variants, Arabic/Western digits, and whitespace normalization.
+- [x] Search-index rebuild — now rebuilds clients, cases, events, tasks, and documents.
 
 ### Exit criteria
 
@@ -233,44 +233,45 @@ A lawyer can locate both records and document metadata from one search field.
 
 ## Phase 6 — Financial tracking
 
+**Status:** In progress
+
 ### Scope
 
-* Fee agreement
-* Transactions
-* Payments
-* Expenses
-* Reversals
-* Client summary
-* Case summary
-* Printable statement
+- [x] EGP-only fee-agreement schema and upsert command.
+- [x] Transaction schema and typed commands for payments, expenses, refunds, other income, and other expenses.
+- [x] Positive integer-minor-unit and EGP validation.
+- [x] Linked compensating reversals; a transaction cannot be reversed twice.
+- [x] Case/client summary commands.
+- [x] Finance register with entry form, list, reversal action, and browser print action.
+- [ ] Finance summaries embedded in client and case detail views.
+- [ ] Complete date-filtered client statement with Arabic labels and print layout.
 
 ### Exit criteria
 
 The lawyer can answer:
 
-* What was agreed?
-* How much was received?
-* What remains?
-* Which expenses were paid?
+- What was agreed?
+- How much was received?
+- What remains?
+- Which expenses were paid?
 
 ---
 
 ## Phase 7 — Backup, restore and privacy tools
 
+**Status:** In progress
+
 ### Scope
 
-* Encrypted backup archive
-* Automatic backup
-* Retention
-* Validation
-* Restore preview
-* Atomic restore
-* Complete export
-* Client export
-* Case export
-* Permanent-deletion workflows
-* Privacy screen
-* Support bundle
+- [x] Encrypted archive containing the SQLCipher database, managed documents, manifest, and per-file SHA-256 checksums.
+- [x] Archive validation rejects malformed manifests, missing checksum entries, and checksum mismatches.
+- [x] Restore validates before mutation and restores managed documents alongside the database, with rollback for document replacement failures.
+- [ ] Portable cross-device restore using the original application password.
+- [ ] Automatic backups, retention, settings, and `backup_history`.
+- [ ] Restore preview and whole-vault atomic swap.
+- [ ] Complete, client, and case exports in the documented CSV/manifest format.
+- [ ] Permanent-deletion workflows and full application-data deletion.
+- [ ] Privacy screen and manually generated redacted support bundle.
 
 ### Exit criteria
 
@@ -282,36 +283,36 @@ No public beta is released until restore has been tested repeatedly on all targe
 
 ### Scope
 
-* Bug fixing
-* Performance
-* Accessibility
-* Arabic copy review
-* Installer testing
-* Data migration testing
-* Security review
-* Privacy legal review
-* Failure-state review
-* Backup disaster exercises
+- Bug fixing
+- Performance
+- Accessibility
+- Arabic copy review
+- Installer testing
+- Data migration testing
+- Security review
+- Privacy legal review
+- Failure-state review
+- Backup disaster exercises
 
 ### Beta group
 
-* 10–20 lawyers
-* Mix of Windows versions
-* At least two Mac users
-* Different legal practice areas
-* New and experienced lawyers
+- 10–20 lawyers
+- Mix of Windows versions
+- At least two Mac users
+- Different legal practice areas
+- New and experienced lawyers
 
 ### Beta feedback categories
 
-* Daily usefulness
-* Confusing terminology
-* Missing workflow steps
-* Data-entry time
-* Search quality
-* Reminder reliability
-* Backup understanding
-* Stability
-* Reasons for stopping use
+- Daily usefulness
+- Confusing terminology
+- Missing workflow steps
+- Data-entry time
+- Search quality
+- Reminder reliability
+- Backup understanding
+- Stability
+- Reasons for stopping use
 
 ---
 
@@ -319,19 +320,19 @@ No public beta is released until restore has been tested repeatedly on all targe
 
 ### Requirements
 
-* Signed Windows installer
-* Signed and notarized macOS builds
-* Public privacy notice
-* Terms of use
-* Backup guide
-* Recovery guide
-* Installation guide
-* Update manifest
-* Release notes
-* Support process
-* Export format documentation
-* Public website
-* Download checksums
+- Signed Windows installer
+- Signed and notarized macOS builds
+- Public privacy notice
+- Terms of use
+- Backup guide
+- Recovery guide
+- Installation guide
+- Update manifest
+- Release notes
+- Support process
+- Export format documentation
+- Public website
+- Download checksums
 
 ---
 
@@ -374,42 +375,42 @@ Branches should be short-lived. The list represents dependency order, not a requ
 
 Only after version 1.0 usage proves demand:
 
-* Printable hearing agenda
-* Better document previews
-* Import from CSV
-* Improved case statements
-* Configurable case statuses
-* Additional Arabic report templates
-* Optional encrypted document vault
-* Better migration tools
+- Printable hearing agenda
+- Better document previews
+- Import from CSV
+- Improved case statements
+- Configurable case statuses
+- Additional Arabic report templates
+- Optional encrypted document vault
+- Better migration tools
 
 ## Version 1.2
 
 Potential additions:
 
-* Local document templates
-* Microsoft Word template filling
-* Calendar export
-* More advanced finance summaries
-* Optional encrypted external backup integration
+- Local document templates
+- Microsoft Word template filling
+- Calendar export
+- More advanced finance summaries
+- Optional encrypted external backup integration
 
 ## LegalMaster Firms
 
 A separate product or deployment model:
 
-* Centralized backend
-* Multiple users
-* Role-based access control
-* Secretary restrictions
-* Accountant restrictions
-* Shared cases and calendars
-* Audit logs
-* Department access
-* Approval workflows
-* Managed backups
-* Egyptian hosting where required
-* Custom integrations
-* LegalMaster Solo import
+- Centralized backend
+- Multiple users
+- Role-based access control
+- Secretary restrictions
+- Accountant restrictions
+- Shared cases and calendars
+- Audit logs
+- Department access
+- Approval workflows
+- Managed backups
+- Egyptian hosting where required
+- Custom integrations
+- LegalMaster Solo import
 
 Do not gradually insert these features into LegalMaster Solo until it becomes another oversized system.
 

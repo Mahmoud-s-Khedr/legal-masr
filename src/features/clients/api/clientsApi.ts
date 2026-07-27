@@ -1,14 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { bridge } from "../../../bridge/commands";
-import type { ClientCreateInput, ClientListInput, ClientUpdateInput } from "../../../bridge/types";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { bridge } from '../../../bridge/commands';
+import type { ClientCreateInput, ClientListInput, ClientUpdateInput } from '../../../bridge/types';
 
-const CLIENTS_KEY = ["clients"];
-const clientKey = (id: string) => ["client", id];
+const CLIENTS_KEY = ['clients'];
+const clientKey = (id: string) => ['client', id];
 
 export const useClientList = (input: ClientListInput) =>
   useQuery({ queryKey: [...CLIENTS_KEY, input], queryFn: () => bridge.clientList(input) });
 
-export const useClient = (id: string) => useQuery({ queryKey: clientKey(id), queryFn: () => bridge.clientGet(id) });
+export const useClient = (id: string) =>
+  useQuery({ queryKey: clientKey(id), queryFn: () => bridge.clientGet(id) });
 
 export function useCreateClient() {
   const queryClient = useQueryClient();
@@ -46,4 +47,7 @@ export function useRestoreClient() {
 }
 
 export const useExportClient = () =>
-  useMutation({ mutationFn: ({ id, destination }: { id: string; destination: string }) => bridge.clientExport(id, destination) });
+  useMutation({
+    mutationFn: ({ id, destination }: { id: string; destination: string }) =>
+      bridge.clientExport(id, destination),
+  });

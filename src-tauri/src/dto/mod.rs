@@ -41,6 +41,85 @@ pub struct SettingsDto {
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct FeeAgreementDto {
+    pub id: String,
+    pub case_id: String,
+    pub amount_minor: i64,
+    pub currency: String,
+    pub agreement_date: Option<String>,
+    pub notes: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FeeAgreementInput {
+    pub case_id: String,
+    pub amount_minor: i64,
+    pub agreement_date: Option<String>,
+    pub notes: Option<String>,
+}
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FinancialTransactionDto {
+    pub id: String,
+    pub client_id: String,
+    pub case_id: Option<String>,
+    pub transaction_type: String,
+    pub amount_minor: i64,
+    pub currency: String,
+    pub transaction_date: String,
+    pub payment_method: Option<String>,
+    pub description: Option<String>,
+    pub receipt_document_id: Option<String>,
+    pub reversed_transaction_id: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FinancialTransactionInput {
+    pub id: Option<String>,
+    pub client_id: String,
+    pub case_id: Option<String>,
+    pub transaction_type: String,
+    pub amount_minor: i64,
+    pub transaction_date: String,
+    pub payment_method: Option<String>,
+    pub description: Option<String>,
+    pub receipt_document_id: Option<String>,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FinancialTransactionListInput {
+    pub client_id: Option<String>,
+    pub case_id: Option<String>,
+    pub from_date: Option<String>,
+    pub to_date: Option<String>,
+}
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CaseFinanceSummary {
+    pub case_id: String,
+    pub agreed_fee_minor: i64,
+    pub received_minor: i64,
+    pub outstanding_minor: i64,
+    pub expenses_minor: i64,
+    pub net_cash_minor: i64,
+    pub currency: String,
+}
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClientFinanceSummary {
+    pub client_id: String,
+    pub received_minor: i64,
+    pub expenses_minor: i64,
+    pub net_cash_minor: i64,
+    pub currency: String,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ClientDto {
     pub id: String,
     pub client_type: String,

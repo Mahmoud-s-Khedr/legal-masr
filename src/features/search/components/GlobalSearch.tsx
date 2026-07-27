@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { useGlobalSearch } from "../api/searchApi";
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { useGlobalSearch } from '../api/searchApi';
 
 export function GlobalSearch() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [input, setInput] = useState("");
-  const [debounced, setDebounced] = useState("");
+  const [input, setInput] = useState('');
+  const [debounced, setDebounced] = useState('');
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -16,20 +16,35 @@ export function GlobalSearch() {
   }, [input]);
 
   const { data: hits } = useGlobalSearch(debounced);
-  const entityTypes = ["client", "case", "event", "task", "document"] as const;
-  const grouped = Object.fromEntries(entityTypes.map((type) => [type, (hits ?? []).filter((hit) => hit.entityType === type)])) as Record<(typeof entityTypes)[number], typeof hits extends undefined ? never[] : NonNullable<typeof hits>>;
+  const entityTypes = ['client', 'case', 'event', 'task', 'document'] as const;
+  const grouped = Object.fromEntries(
+    entityTypes.map((type) => [type, (hits ?? []).filter((hit) => hit.entityType === type)]),
+  ) as Record<
+    (typeof entityTypes)[number],
+    typeof hits extends undefined ? never[] : NonNullable<typeof hits>
+  >;
 
   const goTo = (entityType: string, entityId: string) => {
     setOpen(false);
-    setInput("");
-    navigate(entityType === "client" ? `/clients/${entityId}` : entityType === "case" ? `/cases/${entityId}` : entityType === "event" ? `/calendar?event=${entityId}` : entityType === "task" ? `/tasks?task=${entityId}` : `/documents?document=${entityId}`);
+    setInput('');
+    navigate(
+      entityType === 'client'
+        ? `/clients/${entityId}`
+        : entityType === 'case'
+          ? `/cases/${entityId}`
+          : entityType === 'event'
+            ? `/calendar?event=${entityId}`
+            : entityType === 'task'
+              ? `/tasks?task=${entityId}`
+              : `/documents?document=${entityId}`,
+    );
   };
 
   return (
     <div className="global-search">
       <input
-        aria-label={t("app.searchLabel")}
-        placeholder={t("search.placeholder")}
+        aria-label={t('app.searchLabel')}
+        placeholder={t('search.placeholder')}
         value={input}
         onChange={(e) => {
           setInput(e.target.value);
@@ -41,7 +56,7 @@ export function GlobalSearch() {
       {open && debounced && (
         <div className="global-search-results">
           {!hits?.length ? (
-            <p>{t("search.noResults")}</p>
+            <p>{t('search.noResults')}</p>
           ) : (
             <>
               {entityTypes.map((entityType) =>

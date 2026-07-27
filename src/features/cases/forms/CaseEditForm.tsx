@@ -1,9 +1,9 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import type { CaseDto } from "../../../bridge/types";
-import { CaseCoreFields } from "./CaseCoreFields";
-import { caseCoreSchema, CaseCoreFormValues } from "../schemas/case.schema";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import type { CaseDto } from '../../../bridge/types';
+import { CaseCoreFields } from './CaseCoreFields';
+import { caseCoreSchema, CaseCoreFormValues } from '../schemas/case.schema';
 
 export function CaseEditForm({
   caseDto,
@@ -35,7 +35,7 @@ export function CaseEditForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <CaseCoreFields register={register} />
-      <button disabled={busy || formState.isSubmitting}>{t("cases.save")}</button>
+      <button disabled={busy || formState.isSubmitting}>{t('cases.save')}</button>
     </form>
   );
 }

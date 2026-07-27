@@ -5,6 +5,7 @@ pub mod client_service;
 pub mod dashboard_service;
 pub mod document_service;
 pub mod event_service;
+pub mod finance_service;
 pub mod search_service;
 pub mod settings_service;
 pub mod task_service;

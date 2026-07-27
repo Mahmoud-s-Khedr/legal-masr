@@ -62,16 +62,17 @@ Derive a backup-encryption key from the database master key using a separate cry
 
 Settings:
 
-* Enabled or disabled
-* Destination folder
-* Frequency:
+- Enabled or disabled
+- Destination folder
+- Frequency:
 
-  * Daily
-  * Every application exit
-  * Manual only
-* Retention count
-* Last successful backup
-* Last failure
+  - Daily
+  - Every application exit
+  - Manual only
+
+- Retention count
+- Last successful backup
+- Last failure
 
 ### Restore process
 
@@ -93,13 +94,13 @@ Restore must never overwrite the active installation immediately.
 
 ### Acceptance criteria
 
-* Backups contain all managed data.
-* External document references are recorded but not copied.
-* Corrupted archives are rejected.
-* Wrong passwords are rejected.
-* Restore failure leaves current data untouched.
-* Pre-update backup uses the same verified workflow.
-* Backup failure remains visible until resolved.
+- Backups contain all managed data.
+- External document references are recorded but not copied.
+- Corrupted archives are rejected.
+- Wrong passwords are rejected.
+- Restore failure leaves current data untouched.
+- Pre-update backup uses the same verified workflow.
+- Backup failure remains visible until resolved.
 
 ---
 

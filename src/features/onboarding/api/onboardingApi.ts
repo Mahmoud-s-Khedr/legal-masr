@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { bridge } from "../../../bridge/commands";
-import type { InitializeInput } from "../../../bridge/types";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { bridge } from '../../../bridge/commands';
+import type { InitializeInput } from '../../../bridge/types';
 
-export const APP_STATUS_QUERY_KEY = ["app-status"];
+export const APP_STATUS_QUERY_KEY = ['app-status'];
 
 export const useAppStatus = () =>
   useQuery({ queryKey: APP_STATUS_QUERY_KEY, queryFn: bridge.status });

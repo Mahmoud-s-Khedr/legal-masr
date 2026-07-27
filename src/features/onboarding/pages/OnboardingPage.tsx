@@ -1,8 +1,8 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { errorMessage } from "../../../bridge/errors";
-import { useInitializeVault, useRecoverAccess, useUnlockVault } from "../api/onboardingApi";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { errorMessage } from '../../../bridge/errors';
+import { useInitializeVault, useRecoverAccess, useUnlockVault } from '../api/onboardingApi';
 import {
   RecoveryFormValues,
   recoverySchema,
@@ -10,9 +10,9 @@ import {
   setupSchema,
   UnlockFormValues,
   unlockSchema,
-} from "../schemas/onboarding.schema";
+} from '../schemas/onboarding.schema';
 
-export type OnboardingSubGate = "setup" | "unlock" | "recovery" | "recovery-key";
+export type OnboardingSubGate = 'setup' | 'unlock' | 'recovery' | 'recovery-key';
 
 export function OnboardingPage({
   subGate,
@@ -42,41 +42,59 @@ export function OnboardingPage({
   return (
     <main className="gate">
       <aside className="gate-brand">
-        <img src="/logo.png" alt={t("app.brandLogoAlt")} />
-        <p>{t("app.brandTagline")}</p>
+        <img src="/logo.png" alt={t('app.brandLogoAlt')} />
+        <p>{t('app.brandTagline')}</p>
       </aside>
       <section className="gate-card">
-        <p className="kicker">{t(`gate.kicker.${subGate === "recovery-key" ? "recoveryKey" : subGate}`)}</p>
-        <h1>{t(`gate.title.${subGate === "recovery-key" ? "recoveryKey" : subGate}`)}</h1>
-        {subGate === "recovery-key" ? (
+        <p className="kicker">
+          {t(`gate.kicker.${subGate === 'recovery-key' ? 'recoveryKey' : subGate}`)}
+        </p>
+        <h1>{t(`gate.title.${subGate === 'recovery-key' ? 'recoveryKey' : subGate}`)}</h1>
+        {subGate === 'recovery-key' ? (
           <>
-            <p>{t("gate.recoveryKeyWarning")}</p>
+            <p>{t('gate.recoveryKeyWarning')}</p>
             <code>{recoveryKey}</code>
-            <button onClick={onRecoveryKeySaved}>{t("gate.recoveryKeySavedButton")}</button>
+            <button onClick={onRecoveryKeySaved}>{t('gate.recoveryKeySavedButton')}</button>
           </>
-        ) : subGate === "setup" ? (
+        ) : subGate === 'setup' ? (
           <SetupForm
             busy={busy}
             onSubmit={async (values) => {
-              const result = await initializeVault.mutateAsync({ ...values, language: i18n.language === "en" ? "en" : "ar" });
+              const result = await initializeVault.mutateAsync({
+                ...values,
+                language: i18n.language === 'en' ? 'en' : 'ar',
+              });
               onSetupSucceeded(result.recoveryKey);
             }}
           />
-        ) : subGate === "unlock" ? (
-          <UnlockForm busy={busy} onSubmit={async (values) => { await unlockVault.mutateAsync(values.password); onUnlocked(); }} />
+        ) : subGate === 'unlock' ? (
+          <UnlockForm
+            busy={busy}
+            onSubmit={async (values) => {
+              await unlockVault.mutateAsync(values.password);
+              onUnlocked();
+            }}
+          />
         ) : (
           <RecoveryForm
             busy={busy}
             onSubmit={async (values) => {
-              await recoverAccess.mutateAsync({ recoveryKey: values.recoveryKey, newPassword: values.password });
+              await recoverAccess.mutateAsync({
+                recoveryKey: values.recoveryKey,
+                newPassword: values.password,
+              });
               onRecovered();
             }}
           />
         )}
-        {error && <p className="error" role="alert">{errorMessage(error, t("app.defaultError"))}</p>}
-        {subGate === "unlock" && (
+        {error && (
+          <p className="error" role="alert">
+            {errorMessage(error, t('app.defaultError'))}
+          </p>
+        )}
+        {subGate === 'unlock' && (
           <button className="text-button" onClick={onSwitchToRecovery}>
-            {t("gate.haveRecoveryKey")}
+            {t('gate.haveRecoveryKey')}
           </button>
         )}
       </section>
@@ -84,61 +102,85 @@ export function OnboardingPage({
   );
 }
 
-function SetupForm({ busy, onSubmit }: { busy: boolean; onSubmit: (values: SetupFormValues) => Promise<void> }) {
+function SetupForm({
+  busy,
+  onSubmit,
+}: {
+  busy: boolean;
+  onSubmit: (values: SetupFormValues) => Promise<void>;
+}) {
   const { t } = useTranslation();
   const { register, handleSubmit, formState } = useForm<SetupFormValues>({
     resolver: zodResolver(setupSchema),
-    defaultValues: { fullName: "", password: "" },
+    defaultValues: { fullName: '', password: '' },
   });
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <label>
-        {t("gate.fields.fullName")}
-        <input {...register("fullName")} required autoFocus />
+        {t('gate.fields.fullName')}
+        <input {...register('fullName')} required autoFocus />
       </label>
       <label>
-        {t("gate.fields.password")}
-        <input type="password" {...register("password")} minLength={12} required />
+        {t('gate.fields.password')}
+        <input type="password" {...register('password')} minLength={12} required />
       </label>
-      <button disabled={busy || formState.isSubmitting}>{busy ? t("gate.submit.busy") : t("gate.submit.setup")}</button>
+      <button disabled={busy || formState.isSubmitting}>
+        {busy ? t('gate.submit.busy') : t('gate.submit.setup')}
+      </button>
     </form>
   );
 }
 
-function UnlockForm({ busy, onSubmit }: { busy: boolean; onSubmit: (values: UnlockFormValues) => Promise<void> }) {
+function UnlockForm({
+  busy,
+  onSubmit,
+}: {
+  busy: boolean;
+  onSubmit: (values: UnlockFormValues) => Promise<void>;
+}) {
   const { t } = useTranslation();
   const { register, handleSubmit, formState } = useForm<UnlockFormValues>({
     resolver: zodResolver(unlockSchema),
-    defaultValues: { password: "" },
+    defaultValues: { password: '' },
   });
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <label>
-        {t("gate.fields.password")}
-        <input type="password" {...register("password")} minLength={12} required autoFocus />
+        {t('gate.fields.password')}
+        <input type="password" {...register('password')} minLength={12} required autoFocus />
       </label>
-      <button disabled={busy || formState.isSubmitting}>{busy ? t("gate.submit.busy") : t("gate.submit.unlock")}</button>
+      <button disabled={busy || formState.isSubmitting}>
+        {busy ? t('gate.submit.busy') : t('gate.submit.unlock')}
+      </button>
     </form>
   );
 }
 
-function RecoveryForm({ busy, onSubmit }: { busy: boolean; onSubmit: (values: RecoveryFormValues) => Promise<void> }) {
+function RecoveryForm({
+  busy,
+  onSubmit,
+}: {
+  busy: boolean;
+  onSubmit: (values: RecoveryFormValues) => Promise<void>;
+}) {
   const { t } = useTranslation();
   const { register, handleSubmit, formState } = useForm<RecoveryFormValues>({
     resolver: zodResolver(recoverySchema),
-    defaultValues: { recoveryKey: "", password: "" },
+    defaultValues: { recoveryKey: '', password: '' },
   });
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <label>
-        {t("gate.fields.recoveryKey")}
-        <input dir="ltr" {...register("recoveryKey")} required autoFocus />
+        {t('gate.fields.recoveryKey')}
+        <input dir="ltr" {...register('recoveryKey')} required autoFocus />
       </label>
       <label>
-        {t("gate.fields.newPassword")}
-        <input type="password" {...register("password")} minLength={12} required />
+        {t('gate.fields.newPassword')}
+        <input type="password" {...register('password')} minLength={12} required />
       </label>
-      <button disabled={busy || formState.isSubmitting}>{busy ? t("gate.submit.busy") : t("gate.submit.recovery")}</button>
+      <button disabled={busy || formState.isSubmitting}>
+        {busy ? t('gate.submit.busy') : t('gate.submit.recovery')}
+      </button>
     </form>
   );
 }

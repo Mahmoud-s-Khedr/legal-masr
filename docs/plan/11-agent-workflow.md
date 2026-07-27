@@ -117,11 +117,11 @@ Repository integration tests and service tests.
 
 Each agent task should normally require:
 
-* One focused behavior
-* One migration at most
-* A small group of related files
-* Clear tests
-* Reviewable diff
+- One focused behavior
+- One migration at most
+- A small group of related files
+- Clear tests
+- Reviewable diff
 
 Avoid tasks such as:
 
@@ -141,17 +141,17 @@ Agents may work in parallel only when their modules do not share an unstable con
 
 Safe parallel work examples:
 
-* Client UI after client command contract is frozen
-* Arabic translation and case repository tests
-* Windows release workflow and frontend accessibility
-* Documentation and isolated UI components
+- Client UI after client command contract is frozen
+- Arabic translation and case repository tests
+- Windows release workflow and frontend accessibility
+- Documentation and isolated UI components
 
 Unsafe parallel work examples:
 
-* Multiple agents modifying the same migration sequence
-* Database and frontend agents independently inventing DTOs
-* Backup and security agents independently designing encryption
-* Multiple agents changing application state initialization
+- Multiple agents modifying the same migration sequence
+- Database and frontend agents independently inventing DTOs
+- Backup and security agents independently designing encryption
+- Multiple agents changing application state initialization
 
 One agent or developer must own integration decisions.
 
@@ -161,15 +161,15 @@ One agent or developer must own integration decisions.
 
 Every pull request must include:
 
-* Problem being solved
-* Scope
-* Screenshots for UI changes
-* Database migration summary
-* Security implications
-* Tests added
-* Validation commands run
-* Known limitations
-* Documentation changed
+- Problem being solved
+- Scope
+- Screenshots for UI changes
+- Database migration summary
+- Security implications
+- Tests added
+- Validation commands run
+- Known limitations
+- Documentation changed
 
 ## Required checks
 
@@ -231,10 +231,10 @@ A feature is complete only when:
 
 After Phase 1:
 
-* Is SQLCipher stable on every target?
-* Can backup and restore work reliably?
-* Is the binary size acceptable?
-* Is the security flow understandable?
+- Is SQLCipher stable on every target?
+- Can backup and restore work reliably?
+- Is the binary size acceptable?
+- Is the security flow understandable?
 
 If not, stop and revise architecture before building features.
 
@@ -242,11 +242,11 @@ If not, stop and revise architecture before building features.
 
 After Phase 4:
 
-* Do lawyers use the dashboard daily?
-* Do they record hearing outcomes?
-* Can they find the next hearing faster than using paper?
-* Which data fields are consistently ignored?
-* Which missing field blocks real work?
+- Do lawyers use the dashboard daily?
+- Do they record hearing outcomes?
+- Can they find the next hearing faster than using paper?
+- Which data fields are consistently ignored?
+- Which missing field blocks real work?
 
 Remove unused complexity rather than adding more screens.
 
@@ -254,20 +254,20 @@ Remove unused complexity rather than adding more screens.
 
 After Phase 7:
 
-* Do users understand where data is stored?
-* Can they restore a backup themselves?
-* Do they trust local-only operation?
-* Are they confused about external versus managed documents?
-* Can they move to a new computer?
+- Do users understand where data is stored?
+- Can they restore a backup themselves?
+- Do they trust local-only operation?
+- Are they confused about external versus managed documents?
+- Can they move to a new computer?
 
 ## Checkpoint D — Public readiness
 
 Before version 1.0:
 
-* Privacy review passed.
-* Restore tested on all platforms.
-* Installers signed.
-* Update process tested.
-* No critical or high-severity security issue remains.
-* Beta users have used the application for real legal work.
-* Product terminology has been reviewed by practicing lawyers.
+- Privacy review passed.
+- Restore tested on all platforms.
+- Installers signed.
+- Update process tested.
+- No critical or high-severity security issue remains.
+- Beta users have used the application for real legal work.
+- Product terminology has been reviewed by practicing lawyers.

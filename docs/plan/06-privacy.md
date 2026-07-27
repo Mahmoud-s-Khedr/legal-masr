@@ -10,9 +10,9 @@ Egypt's Personal Data Protection Law No. 151 of 2020 governs electronic processi
 
 Before public release:
 
-* An Egyptian privacy lawyer must review the privacy notice.
-* Marketing must not claim "fully compliant with Egyptian law" without written legal review.
-* The software must clearly explain which information remains on the device and which limited requests contact the internet.
+- An Egyptian privacy lawyer must review the privacy notice.
+- Marketing must not claim "fully compliant with Egyptian law" without written legal review.
+- The software must clearly explain which information remains on the device and which limited requests contact the internet.
 
 ---
 
@@ -20,20 +20,20 @@ Before public release:
 
 ### Required tools
 
-* Export one client and all linked data.
-* Export one case.
-* Export complete installation.
-* Archive client.
-* Archive case.
-* Permanently delete a client through a guided workflow.
-* Permanently delete a case through a guided workflow.
-* Remove document metadata.
-* Remove managed document files.
-* Display application data location.
-* Display backup locations.
-* Display network policy.
-* Display current application version.
-* Display privacy notice.
+- Export one client and all linked data.
+- Export one case.
+- Export complete installation.
+- Archive client.
+- Archive case.
+- Permanently delete a client through a guided workflow.
+- Permanently delete a case through a guided workflow.
+- Remove document metadata.
+- Remove managed document files.
+- Display application data location.
+- Display backup locations.
+- Display network policy.
+- Display current application version.
+- Display privacy notice.
 
 ### Complete export
 

@@ -157,7 +157,12 @@
     "showArchived": "Show archived",
     "archivedBadge": "Archived",
     "tableCaption": "Case register",
-    "columns": { "number": "Case number", "year": "Year", "client": "Primary client", "status": "Status" },
+    "columns": {
+      "number": "Case number",
+      "year": "Year",
+      "client": "Primary client",
+      "status": "Status"
+    },
     "fields": {
       "caseNumber": "Case number",
       "judicialYear": "Judicial year",
@@ -207,12 +212,23 @@
       "notes": "Notes",
       "remove": "Remove",
       "empty": "No other parties recorded.",
-      "roles": { "OPPONENT": "Opponent", "WITNESS": "Witness", "EXPERT": "Expert", "OTHER": "Other" }
+      "roles": {
+        "OPPONENT": "Opponent",
+        "WITNESS": "Witness",
+        "EXPERT": "Expert",
+        "OTHER": "Other"
+      }
     }
   },
   "search": {
     "placeholder": "Search by name or case number…",
     "noResults": "No results.",
-    "groups": { "client": "Clients", "case": "Cases", "event": "Events", "task": "Tasks", "document": "Documents" }
+    "groups": {
+      "client": "Clients",
+      "case": "Cases",
+      "event": "Events",
+      "task": "Tasks",
+      "document": "Documents"
+    }
   }
 }

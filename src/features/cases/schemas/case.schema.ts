@@ -1,17 +1,17 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const CASE_STATUSES = [
-  "DRAFT",
-  "ACTIVE",
-  "SUSPENDED",
-  "JUDGMENT_ISSUED",
-  "APPEALED",
-  "ENFORCEMENT",
-  "CLOSED",
-  "ARCHIVED",
+  'DRAFT',
+  'ACTIVE',
+  'SUSPENDED',
+  'JUDGMENT_ISSUED',
+  'APPEALED',
+  'ENFORCEMENT',
+  'CLOSED',
+  'ARCHIVED',
 ] as const;
 
-export const casePartyRoleSchema = z.enum(["OPPONENT", "WITNESS", "EXPERT", "OTHER"]);
+export const casePartyRoleSchema = z.enum(['OPPONENT', 'WITNESS', 'EXPERT', 'OTHER']);
 
 export const caseCoreSchema = z.object({
   caseNumber: z.string().trim().min(1),

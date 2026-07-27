@@ -70,6 +70,13 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
     assert_eq!(recovered, master);
 
     let backup_dir = tempfile::tempdir().unwrap();
+    let source_documents = dir.path().join("documents");
+    fs::create_dir_all(&source_documents).unwrap();
+    fs::write(
+        source_documents.join("managed.txt"),
+        b"managed document bytes",
+    )
+    .unwrap();
     let backup_path =
         backup::create(&db_path, &master, backup_dir.path().to_str().unwrap()).unwrap();
     backup::validate(&backup_path, &master).unwrap();
@@ -77,6 +84,9 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
     let active_dir = tempfile::tempdir().unwrap();
     let active_db_path = active_dir.path().join("legalmaster.sqlite");
     fs::copy(&db_path, &active_db_path).unwrap();
+    let active_documents = active_dir.path().join("documents");
+    fs::create_dir_all(&active_documents).unwrap();
+    fs::write(active_documents.join("managed.txt"), b"changed bytes").unwrap();
     {
         let conn = db::open_db(&active_db_path, &master).unwrap();
         conn.execute("DELETE FROM spike_records WHERE value = ?1", [SAMPLE_VALUE])
@@ -94,6 +104,10 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
         )
         .unwrap();
     assert_eq!(restored_value, SAMPLE_VALUE);
+    assert_eq!(
+        fs::read(active_documents.join("managed.txt")).unwrap(),
+        b"managed document bytes"
+    );
 
     let raw_db_bytes = fs::read(&active_db_path).unwrap();
     assert!(!contains_plaintext(&raw_db_bytes, SAMPLE_VALUE));

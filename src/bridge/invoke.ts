@@ -1,1 +1,1 @@
-export { invoke } from "@tauri-apps/api/core";
+export { invoke } from '@tauri-apps/api/core';

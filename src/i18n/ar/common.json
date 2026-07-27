@@ -157,7 +157,12 @@
     "showArchived": "إظهار المؤرشفة",
     "archivedBadge": "مؤرشفة",
     "tableCaption": "سجل القضايا",
-    "columns": { "number": "رقم القضية", "year": "السنة", "client": "الموكل الأساسي", "status": "الحالة" },
+    "columns": {
+      "number": "رقم القضية",
+      "year": "السنة",
+      "client": "الموكل الأساسي",
+      "status": "الحالة"
+    },
     "fields": {
       "caseNumber": "رقم القضية",
       "judicialYear": "السنة القضائية",
@@ -213,6 +218,12 @@
   "search": {
     "placeholder": "ابحث بالاسم أو رقم القضية…",
     "noResults": "لا توجد نتائج.",
-    "groups": { "client": "الموكلون", "case": "القضايا", "event": "الأحداث", "task": "المهام", "document": "المستندات" }
+    "groups": {
+      "client": "الموكلون",
+      "case": "القضايا",
+      "event": "الأحداث",
+      "task": "المهام",
+      "document": "المستندات"
+    }
   }
 }

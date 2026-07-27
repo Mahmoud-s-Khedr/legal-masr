@@ -77,49 +77,48 @@ React
 
 ### Desktop shell
 
-* Tauri 2
-* Rust stable
-* Tauri capabilities and permissions
-* Native updater
-* Native notifications
-* Native file dialogs
-* Native opener
-* Single-instance plugin
-* Optional autostart plugin
-* Window-state plugin
-
+- Tauri 2
+- Rust stable
+- Tauri capabilities and permissions
+- Native updater
+- Native notifications
+- Native file dialogs
+- Native opener
+- Single-instance plugin
+- Optional autostart plugin
+- Window-state plugin
 
 ### Frontend
 
-* React
-* TypeScript
-* Vite
-* React Router
-* TanStack Query
-* React Hook Form
-* Zod
-* Tailwind CSS
-* Radix UI or shadcn/ui
-* TanStack Table
-* date-fns
-* i18next or an equivalent localization layer
+- React
+- TypeScript
+- Vite
+- React Router
+- TanStack Query
+- React Hook Form
+- Zod
+- Tailwind CSS
+- Radix UI or shadcn/ui
+- TanStack Table
+- date-fns
+- i18next or an equivalent localization layer
 
 ### Rust
 
-* `rusqlite`
-* SQLCipher feature
-* `serde`
-* `serde_json`
-* `uuid`
-* `chrono` or `time`
-* `thiserror`
-* `tracing`
-* `argon2`
-* `chacha20poly1305`
-* `rand`
-* `sha2`
-* `zip` or equivalent archive library
-* Tauri official plugins where appropriate
+- `rusqlite`
+- SQLCipher feature
+- `serde`
+- `serde_json`
+- `uuid`
+- `chrono` or `time`
+- `thiserror`
+- `tracing`
+- `argon2`
+- `chacha20poly1305`
+- `rand`
+- `sha2`
+- `zip` or equivalent archive library
+- Tauri official plugins where appropriate
 
 Dependencies must be pinned through lockfiles.
 
@@ -243,10 +242,10 @@ Database/filesystem/operating system
 
 Commands are responsible for:
 
-* Input deserialization
-* Authentication/unlock check
-* Calling one application service
-* Returning a stable DTO or stable error
+- Input deserialization
+- Authentication/unlock check
+- Calling one application service
+- Returning a stable DTO or stable error
 
 Commands must not contain SQL.
 
@@ -254,21 +253,21 @@ Commands must not contain SQL.
 
 Services are responsible for:
 
-* Business rules
-* Transactions
-* Cross-repository operations
-* File/database consistency
-* Search-index updates
-* Activity records
+- Business rules
+- Transactions
+- Cross-repository operations
+- File/database consistency
+- Search-index updates
+- Activity records
 
 ### Repositories
 
 Repositories are responsible for:
 
-* SQL
-* Row mapping
-* Query composition
-* Database persistence
+- SQL
+- Row mapping
+- Query composition
+- Database persistence
 
 Repositories must not know about React or Tauri windows.
 
@@ -397,12 +396,12 @@ feature/
 
 ## 13.2 State management
 
-* TanStack Query for Tauri command results and cache invalidation.
-* React Hook Form for forms.
-* Zod for frontend validation.
-* Local component state for transient UI.
-* A small store only for global UI state such as sidebar and theme.
-* No Redux unless future complexity demonstrates a specific need.
+- TanStack Query for Tauri command results and cache invalidation.
+- React Hook Form for forms.
+- Zod for frontend validation.
+- Local component state for transient UI.
+- A small store only for global UI state such as sidebar and theme.
+- No Redux unless future complexity demonstrates a specific need.
 
 The database remains the source of truth.
 
@@ -410,26 +409,26 @@ The database remains the source of truth.
 
 Every form must:
 
-* Validate before submission.
-* Preserve entered values when a save fails.
-* Disable duplicate submission.
-* Show field-specific errors.
-* Warn before abandoning unsaved changes.
-* Support Arabic text naturally.
-* Use proper labels and keyboard focus.
-* Avoid enormous all-in-one forms.
+- Validate before submission.
+- Preserve entered values when a save fails.
+- Disable duplicate submission.
+- Show field-specific errors.
+- Warn before abandoning unsaved changes.
+- Support Arabic text naturally.
+- Use proper labels and keyboard focus.
+- Avoid enormous all-in-one forms.
 
 ## 13.4 Accessibility
 
 Minimum requirements:
 
-* Complete keyboard navigation.
-* Visible focus state.
-* Semantic labels.
-* Sufficient contrast.
-* Screen-reader-friendly dialogs.
-* No color-only status communication.
-* Correct RTL layout without reversing numeric data incorrectly.
+- Complete keyboard navigation.
+- Visible focus state.
+- Semantic labels.
+- Sufficient contrast.
+- Screen-reader-friendly dialogs.
+- No color-only status communication.
+- Correct RTL layout without reversing numeric data incorrectly.
 
 ---
 
@@ -439,27 +438,27 @@ These are engineering targets, not marketing guarantees.
 
 ## Application
 
-* Installer target below 100 MB.
-* No bundled Node.js, PostgreSQL or Python runtime.
-* Main window visible within approximately three seconds on supported test hardware.
-* No background CPU consumption while idle beyond reminder scheduling.
-* Common list and detail operations should feel immediate.
-* Search should remain usable with at least:
+- Installer target below 100 MB.
+- No bundled Node.js, PostgreSQL or Python runtime.
+- Main window visible within approximately three seconds on supported test hardware.
+- No background CPU consumption while idle beyond reminder scheduling.
+- Common list and detail operations should feel immediate.
+- Search should remain usable with at least:
 
-  * 10,000 clients
-  * 20,000 cases
-  * 100,000 events
-  * 100,000 document metadata records
+  - 10,000 clients
+  - 20,000 cases
+  - 100,000 events
+  - 100,000 document metadata records
 
 ## Reliability
 
-* Database foreign keys enabled.
-* Writes performed through transactions.
-* Files copied atomically.
-* Backups validated after creation.
-* Restore never destroys the current installation before validation.
-* Application update creates a pre-migration backup.
-* Unexpected process termination must not corrupt valid committed records.
+- Database foreign keys enabled.
+- Writes performed through transactions.
+- Files copied atomically.
+- Backups validated after creation.
+- Restore never destroys the current installation before validation.
+- Application update creates a pre-migration backup.
+- Unexpected process termination must not corrupt valid committed records.
 
 ---
 

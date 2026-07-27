@@ -76,7 +76,13 @@ pub fn run() {
             commands::documents::document_list,
             commands::documents::document_update,
             commands::documents::document_check_missing,
-            commands::documents::document_remove
+            commands::documents::document_remove,
+            commands::finances::finance_fee_agreement_save,
+            commands::finances::finance_transaction_save,
+            commands::finances::finance_transaction_reverse,
+            commands::finances::finance_transaction_list,
+            commands::finances::finance_case_summary,
+            commands::finances::finance_client_summary
         ])
         .run(tauri::generate_context!())
         .expect("error while running LegalMaster Solo");
