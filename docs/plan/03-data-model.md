@@ -26,6 +26,7 @@ app_settings
 clients
 client_contacts
 cases
+case_clients
 case_parties
 case_events
 tasks
@@ -121,9 +122,12 @@ updated_at            TEXT NOT NULL
 
 ### `cases`
 
+**Implemented with a deviation from the schema below:** a case may have more
+than one client, so `cases` does **not** carry a `client_id` foreign key.
+See `case_clients` immediately after this table.
+
 ```text
 id                    TEXT PRIMARY KEY
-client_id             TEXT NOT NULL REFERENCES clients(id)
 case_number           TEXT NOT NULL
 judicial_year         INTEGER
 court_name            TEXT
@@ -140,7 +144,31 @@ created_at             TEXT NOT NULL
 updated_at             TEXT NOT NULL
 ```
 
+### `case_clients`
+
+Join table recording every client on a case, with exactly one marked
+primary (enforced by a partial unique index on `case_id` where
+`is_primary = 1`).
+
+```text
+case_id               TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE
+client_id             TEXT NOT NULL REFERENCES clients(id) ON DELETE RESTRICT
+is_primary            INTEGER NOT NULL DEFAULT 0
+created_at            TEXT NOT NULL
+PRIMARY KEY (case_id, client_id)
+```
+
+`client_id` uses `ON DELETE RESTRICT`: a client linked to a case cannot be
+deleted out from under it. `case_id` cascades: deleting a case removes its
+own join rows.
+
 ### `case_parties`
+
+**Implemented with a deviation from the schema below:** the `role` enum no
+longer includes `CLIENT`/`CO_CLIENT`. `case_clients` is the single source of
+truth for which clients are on a case; `case_parties` is exclusively for
+opponents, witnesses, experts and other non-client participants
+(`OPPONENT` / `WITNESS` / `EXPERT` / `OTHER`).
 
 ```text
 id                    TEXT PRIMARY KEY

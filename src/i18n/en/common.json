@@ -1,0 +1,218 @@
+{
+  "nav": {
+    "home": "Home",
+    "clients": "Clients",
+    "cases": "Cases",
+    "calendar": "Calendar",
+    "tasks": "Tasks",
+    "documents": "Documents",
+    "finances": "Finances",
+    "backups": "Backups",
+    "settings": "Settings"
+  },
+  "app": {
+    "brandName": "Legal Masr",
+    "brandLogoAlt": "Legal Masr logo",
+    "brandTagline": "Your local legal vault",
+    "loading": "Preparing your local vault…",
+    "defaultError": "Could not complete the operation safely.",
+    "lockButton": "Lock application",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu",
+    "workspaceKicker": "Workspace",
+    "workspaceHeading": "Your morning, organized",
+    "localOnly": "Stored locally",
+    "searchLabel": "Global search",
+    "searchPlaceholder": "Search your records soon…"
+  },
+  "gate": {
+    "kicker": {
+      "setup": "Secure setup",
+      "recovery": "Recover access",
+      "recoveryKey": "Important step",
+      "unlock": "Welcome back"
+    },
+    "title": {
+      "setup": "Create your vault",
+      "recovery": "Use your recovery key",
+      "recoveryKey": "Save this key",
+      "unlock": "Unlock your vault"
+    },
+    "recoveryKeyWarning": "This key is shown once only. Support cannot recover it for you.",
+    "recoveryKeySavedButton": "I saved it somewhere safe",
+    "fields": {
+      "fullName": "Lawyer's full name",
+      "language": "Interface language",
+      "languageAr": "العربية",
+      "languageEn": "English",
+      "managedDocumentsDirectory": "Managed documents folder",
+      "backupDirectory": "Backup folder",
+      "directoryPlaceholder": "Choose a local path",
+      "recoveryKey": "Recovery key",
+      "newPassword": "New password",
+      "password": "Password"
+    },
+    "submit": {
+      "busy": "Working…",
+      "setup": "Create vault",
+      "recovery": "Recover access",
+      "unlock": "Unlock vault"
+    },
+    "haveRecoveryKey": "I have a recovery key"
+  },
+  "backups": {
+    "title": "Backups",
+    "folderLabel": "Backup folder",
+    "noFolder": "No folder set yet.",
+    "changeFolder": "Change folder",
+    "createNow": "Create backup now",
+    "creating": "Creating backup…",
+    "createSuccess": "Backup created successfully.",
+    "validate": "Validate a backup file",
+    "validating": "Validating…",
+    "validateSuccess": "The file is valid and can be restored.",
+    "validateFailed": "The file is invalid or corrupted.",
+    "restore": "Restore from backup",
+    "restoreWarning": "Restoring replaces the current data with the selected file's contents. An emergency copy of the current data is kept automatically.",
+    "restoreConfirm": "Confirm restore",
+    "restoreCancel": "Cancel",
+    "restoring": "Restoring…",
+    "restoreSuccess": "Restore completed successfully. Reopen the app to load the restored data.",
+    "filePickerName": "Legal Masr backup"
+  },
+  "dashboard": {
+    "heroTag": "Privacy first",
+    "heroTitle": "Everything you need for a clear legal day.",
+    "heroDescription": "Your local legal record is ready for work. Add a client or open a case, knowing every step stays on this device.",
+    "heading": "Work register",
+    "description": "A quick view of your active local records.",
+    "clientsKicker": "Clients",
+    "clientsTitle": "Recent clients",
+    "casesKicker": "Cases",
+    "casesTitle": "Current cases",
+    "viewAll": "View all",
+    "addClient": "Add client",
+    "addCase": "Open a case"
+  },
+  "placeholder": {
+    "tag": "Coming soon",
+    "description": "This module is being built in the upcoming phases."
+  },
+  "settings": {
+    "kicker": "Settings",
+    "heading": "Security and interface",
+    "language": "Interface language",
+    "theme": "Appearance",
+    "lockTimeout": "Lock timeout in minutes",
+    "save": "Save settings",
+    "saved": "Saved locally.",
+    "loading": "Loading settings…",
+    "tabs": { "general": "General", "security": "Security", "backups": "Backups" },
+    "themes": { "system": "Use device setting", "light": "Light", "dark": "Dark" }
+  },
+  "clients": {
+    "title": "Clients",
+    "newButton": "New client",
+    "editorKicker": "Client record",
+    "editorDescription": "Capture the essentials now; you can add the rest later.",
+    "searchPlaceholder": "Search by name or phone",
+    "empty": "No clients yet.",
+    "loading": "Loading…",
+    "showArchived": "Show archived",
+    "archivedBadge": "Archived",
+    "active": "Active",
+    "tableCaption": "Client register",
+    "columns": { "name": "Name", "type": "Type", "phone": "Phone", "status": "Status" },
+    "fields": {
+      "clientType": "Client type",
+      "individual": "Individual",
+      "organization": "Organization",
+      "displayName": "Name",
+      "nationalId": "National ID",
+      "registrationNumber": "Registration number",
+      "primaryPhone": "Phone number",
+      "email": "Email",
+      "address": "Address",
+      "notes": "Notes"
+    },
+    "save": "Save",
+    "cancel": "Cancel",
+    "archive": "Archive",
+    "restore": "Restore",
+    "duplicateWarning": "A probable duplicate client with this name or phone already exists.",
+    "confirmCreate": "Create anyway",
+    "detail": {
+      "casesTitle": "Cases",
+      "noCases": "No cases linked to this client.",
+      "notFound": "Client not found."
+    }
+  },
+  "cases": {
+    "title": "Cases",
+    "newButton": "New case",
+    "editorKicker": "Case file",
+    "editorDescription": "Start with the essentials and select a primary client before saving.",
+    "empty": "No cases yet.",
+    "loading": "Loading…",
+    "showArchived": "Show archived",
+    "archivedBadge": "Archived",
+    "tableCaption": "Case register",
+    "columns": { "number": "Case number", "year": "Year", "client": "Primary client", "status": "Status" },
+    "fields": {
+      "caseNumber": "Case number",
+      "judicialYear": "Judicial year",
+      "courtName": "Court",
+      "circuitName": "Circuit",
+      "caseType": "Case type",
+      "clientLegalCapacity": "Client's legal capacity",
+      "status": "Status",
+      "filedOn": "Filed on",
+      "closedOn": "Closed on",
+      "summary": "Summary",
+      "notes": "Notes",
+      "clients": "Clients",
+      "primaryClient": "Primary client"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "ACTIVE": "Active",
+      "SUSPENDED": "Suspended",
+      "JUDGMENT_ISSUED": "Judgment issued",
+      "APPEALED": "Appealed",
+      "ENFORCEMENT": "Enforcement",
+      "CLOSED": "Closed",
+      "ARCHIVED": "Archived"
+    },
+    "save": "Save",
+    "cancel": "Cancel",
+    "archive": "Archive",
+    "restore": "Restore",
+    "detail": { "notFound": "Case not found." },
+    "clientsPanel": {
+      "title": "Clients on this case",
+      "attach": "Add client",
+      "detach": "Remove",
+      "setPrimary": "Set as primary",
+      "primaryBadge": "Primary",
+      "mustHaveOneWarning": "The only client on a case cannot be removed.",
+      "reassignPrimaryWarning": "Assign another client as primary before removing this one."
+    },
+    "parties": {
+      "title": "Other parties",
+      "add": "Add party",
+      "role": "Role",
+      "name": "Name",
+      "phone": "Phone",
+      "address": "Address",
+      "notes": "Notes",
+      "remove": "Remove",
+      "empty": "No other parties recorded.",
+      "roles": { "OPPONENT": "Opponent", "WITNESS": "Witness", "EXPERT": "Expert", "OTHER": "Other" }
+    }
+  },
+  "search": {
+    "placeholder": "Search by name or case number…",
+    "noResults": "No results.",
+    "groups": { "client": "Clients", "case": "Cases" }
+  }
+}

@@ -1,0 +1,218 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "clients": "الموكلون",
+    "cases": "القضايا",
+    "calendar": "الجدول",
+    "tasks": "المهام",
+    "documents": "المستندات",
+    "finances": "المالية",
+    "backups": "النسخ الاحتياطي",
+    "settings": "الإعدادات"
+  },
+  "app": {
+    "brandName": "ليجال مصر",
+    "brandLogoAlt": "شعار ليجال مصر",
+    "loading": "جارٍ تحضير الخزنة المحلية…",
+    "defaultError": "تعذر إتمام العملية بأمان.",
+    "lockButton": "قفل التطبيق",
+    "openMenu": "فتح قائمة التنقل",
+    "closeMenu": "إغلاق قائمة التنقل",
+    "workspaceKicker": "مساحة العمل",
+    "workspaceHeading": "صباحك منظّم",
+    "brandTagline": "خزنتك القانونية المحلية",
+    "localOnly": "محفوظ محليًا",
+    "searchLabel": "البحث العام",
+    "searchPlaceholder": "ابحث في سجلك قريبًا…"
+  },
+  "gate": {
+    "kicker": {
+      "setup": "إعداد آمن",
+      "recovery": "استعادة الوصول",
+      "recoveryKey": "خطوة مهمة",
+      "unlock": "مرحبًا بعودتك"
+    },
+    "title": {
+      "setup": "أنشئ خزنتك",
+      "recovery": "استخدم مفتاح الاسترداد",
+      "recoveryKey": "احتفظ بهذا المفتاح",
+      "unlock": "افتح خزنتك"
+    },
+    "recoveryKeyWarning": "يظهر هذا المفتاح مرة واحدة فقط. لا يمكن استعادته من الدعم.",
+    "recoveryKeySavedButton": "حفظته في مكان آمن",
+    "fields": {
+      "fullName": "اسم المحامي",
+      "language": "لغة الواجهة",
+      "languageAr": "العربية",
+      "languageEn": "English",
+      "managedDocumentsDirectory": "مجلد المستندات المُدار",
+      "backupDirectory": "مجلد النسخ الاحتياطي",
+      "directoryPlaceholder": "اختر مسارًا محليًا",
+      "recoveryKey": "مفتاح الاسترداد",
+      "newPassword": "كلمة مرور جديدة",
+      "password": "كلمة المرور"
+    },
+    "submit": {
+      "busy": "جارٍ المعالجة…",
+      "setup": "إنشاء الخزنة",
+      "recovery": "استعادة الوصول",
+      "unlock": "فتح الخزنة"
+    },
+    "haveRecoveryKey": "لدي مفتاح الاسترداد"
+  },
+  "backups": {
+    "title": "النسخ الاحتياطي",
+    "folderLabel": "مجلد النسخ الاحتياطي",
+    "noFolder": "لم يتم تحديد مجلد بعد.",
+    "changeFolder": "تغيير المجلد",
+    "createNow": "إنشاء نسخة احتياطية الآن",
+    "creating": "جارٍ إنشاء النسخة…",
+    "createSuccess": "تم إنشاء النسخة الاحتياطية بنجاح.",
+    "validate": "التحقق من ملف نسخة احتياطية",
+    "validating": "جارٍ التحقق…",
+    "validateSuccess": "الملف صالح ويمكن استعادته.",
+    "validateFailed": "الملف غير صالح أو تالف.",
+    "restore": "استعادة من نسخة احتياطية",
+    "restoreWarning": "ستستبدل الاستعادة البيانات الحالية بمحتوى الملف المحدد. يُحتفظ بنسخة طوارئ من البيانات الحالية تلقائيًا.",
+    "restoreConfirm": "تأكيد الاستعادة",
+    "restoreCancel": "إلغاء",
+    "restoring": "جارٍ الاستعادة…",
+    "restoreSuccess": "تمت الاستعادة بنجاح. أعد فتح التطبيق لتحميل البيانات المستعادة.",
+    "filePickerName": "ملف النسخة الاحتياطية"
+  },
+  "dashboard": {
+    "heroTag": "خصوصيتك أولًا",
+    "heroTitle": "كل ما تحتاجه ليومٍ قانوني واضح.",
+    "heroDescription": "سجلك القانوني المحلي جاهز لبدء العمل. أضف موكّلًا أو قضية، واحفظ كل خطوة على جهازك.",
+    "heading": "سجل العمل",
+    "description": "عرض سريع لملفاتك الحالية، محفوظ محليًا على جهازك.",
+    "clientsKicker": "الموكلون",
+    "clientsTitle": "أحدث الموكلين",
+    "casesKicker": "القضايا",
+    "casesTitle": "القضايا الحالية",
+    "viewAll": "عرض الكل",
+    "addClient": "إضافة موكل",
+    "addCase": "فتح قضية"
+  },
+  "placeholder": {
+    "tag": "قريبًا",
+    "description": "هذه الوحدة قيد الإعداد ضمن المراحل التالية."
+  },
+  "settings": {
+    "kicker": "الإعدادات",
+    "heading": "الحماية والواجهة",
+    "language": "لغة الواجهة",
+    "theme": "المظهر",
+    "lockTimeout": "مهلة القفل بالدقائق",
+    "save": "حفظ الإعدادات",
+    "saved": "تم الحفظ محليًا.",
+    "loading": "جارٍ تحميل الإعدادات…",
+    "tabs": { "general": "عام", "security": "الأمان", "backups": "النسخ الاحتياطي" },
+    "themes": { "system": "حسب إعداد الجهاز", "light": "فاتح", "dark": "داكن" }
+  },
+  "clients": {
+    "title": "الموكلون",
+    "newButton": "موكل جديد",
+    "editorKicker": "سجل الموكل",
+    "editorDescription": "دوّن المعلومات الأساسية فقط؛ يمكنك استكمال التفاصيل لاحقًا.",
+    "searchPlaceholder": "ابحث بالاسم أو الهاتف",
+    "empty": "لا يوجد موكلون بعد.",
+    "loading": "جارٍ التحميل…",
+    "showArchived": "إظهار المؤرشفين",
+    "archivedBadge": "مؤرشف",
+    "active": "نشط",
+    "tableCaption": "سجل الموكلين",
+    "columns": { "name": "الاسم", "type": "النوع", "phone": "الهاتف", "status": "الحالة" },
+    "fields": {
+      "clientType": "نوع الموكل",
+      "individual": "فرد",
+      "organization": "منظمة",
+      "displayName": "الاسم",
+      "nationalId": "الرقم القومي",
+      "registrationNumber": "رقم التسجيل",
+      "primaryPhone": "رقم الهاتف",
+      "email": "البريد الإلكتروني",
+      "address": "العنوان",
+      "notes": "ملاحظات"
+    },
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "archive": "أرشفة",
+    "restore": "استعادة",
+    "duplicateWarning": "يوجد موكل مشابه محتمل بهذا الاسم أو رقم الهاتف.",
+    "confirmCreate": "إنشاء رغم ذلك",
+    "detail": {
+      "casesTitle": "القضايا",
+      "noCases": "لا توجد قضايا مرتبطة بهذا الموكل.",
+      "notFound": "لم يتم العثور على الموكل."
+    }
+  },
+  "cases": {
+    "title": "القضايا",
+    "newButton": "قضية جديدة",
+    "editorKicker": "ملف القضية",
+    "editorDescription": "ابدأ بالبيانات الجوهرية وحدّد الموكل الأساسي قبل الحفظ.",
+    "empty": "لا توجد قضايا بعد.",
+    "loading": "جارٍ التحميل…",
+    "showArchived": "إظهار المؤرشفة",
+    "archivedBadge": "مؤرشفة",
+    "tableCaption": "سجل القضايا",
+    "columns": { "number": "رقم القضية", "year": "السنة", "client": "الموكل الأساسي", "status": "الحالة" },
+    "fields": {
+      "caseNumber": "رقم القضية",
+      "judicialYear": "السنة القضائية",
+      "courtName": "المحكمة",
+      "circuitName": "الدائرة",
+      "caseType": "نوع القضية",
+      "clientLegalCapacity": "الصفة القانونية للموكل",
+      "status": "الحالة",
+      "filedOn": "تاريخ القيد",
+      "closedOn": "تاريخ الإغلاق",
+      "summary": "ملخص",
+      "notes": "ملاحظات",
+      "clients": "الموكلون",
+      "primaryClient": "الموكل الأساسي"
+    },
+    "status": {
+      "DRAFT": "مسودة",
+      "ACTIVE": "نشطة",
+      "SUSPENDED": "معلّقة",
+      "JUDGMENT_ISSUED": "صدر الحكم",
+      "APPEALED": "مستأنفة",
+      "ENFORCEMENT": "تنفيذ",
+      "CLOSED": "مغلقة",
+      "ARCHIVED": "مؤرشفة"
+    },
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "archive": "أرشفة",
+    "restore": "استعادة",
+    "detail": { "notFound": "لم يتم العثور على القضية." },
+    "clientsPanel": {
+      "title": "الموكلون في القضية",
+      "attach": "إضافة موكل",
+      "detach": "إزالة",
+      "setPrimary": "تعيين كأساسي",
+      "primaryBadge": "أساسي",
+      "mustHaveOneWarning": "لا يمكن إزالة الموكل الوحيد في القضية.",
+      "reassignPrimaryWarning": "عيّن موكلًا أساسيًا آخر قبل إزالة هذا الموكل."
+    },
+    "parties": {
+      "title": "الأطراف الأخرى",
+      "add": "إضافة طرف",
+      "role": "الصفة",
+      "name": "الاسم",
+      "phone": "الهاتف",
+      "address": "العنوان",
+      "notes": "ملاحظات",
+      "remove": "حذف",
+      "empty": "لا توجد أطراف أخرى مسجّلة.",
+      "roles": { "OPPONENT": "خصم", "WITNESS": "شاهد", "EXPERT": "خبير", "OTHER": "أخرى" }
+    }
+  },
+  "search": {
+    "placeholder": "ابحث بالاسم أو رقم القضية…",
+    "noResults": "لا توجد نتائج.",
+    "groups": { "client": "الموكلون", "case": "القضايا" }
+  }
+}

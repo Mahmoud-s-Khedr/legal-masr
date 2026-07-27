@@ -11,19 +11,27 @@ Backup and restore (§8.12) moved to [07-backup-format.md](07-backup-format.md).
 
 ## 8.1 First-run onboarding
 
+**Implemented with a deviation from the steps below:** onboarding only asks
+for the lawyer's name and a password, with a language toggle available at
+any time (not just during setup). Backup configuration and creation are not
+part of onboarding at all — they are never a barrier to entry — and live
+permanently in Settings → Backups instead (see §8.14). The managed-document
+directory, reminder configuration, and other profile fields are deferred to
+later settings/profile screens rather than required upfront.
+
 ### Required steps
 
-1. Welcome and product explanation.
-2. Confirm that the application is for one lawyer.
-3. Select interface language.
-4. Enter lawyer profile.
-5. Configure application security.
-6. Choose a managed-document directory.
-7. Choose a backup directory.
-8. Configure reminder behavior.
-9. Explain local data and privacy.
-10. Create the first encrypted database.
-11. Create and verify the first backup.
+1. Enter the lawyer's name and choose a password.
+2. Create the first encrypted database.
+3. Show the recovery key once.
+
+### Deferred to Settings (not part of onboarding)
+
+* Interface language (available as a toggle at any time, not onboarding-only)
+* Managed-document directory
+* Backup directory, creation, validation and restore
+* Reminder behavior
+* Full lawyer profile (bar number, phone, email, address, logo, etc.)
 
 ### Lawyer profile fields
 
@@ -42,7 +50,7 @@ Backup and restore (§8.12) moved to [07-backup-format.md](07-backup-format.md).
 * The application cannot reach the dashboard before database initialization succeeds.
 * A failed initialization must not leave a partially created database.
 * The user receives a clear recovery warning.
-* The initial backup is verified before onboarding is considered complete.
+* Reaching the dashboard never requires creating or verifying a backup first.
 * No profile data is transmitted externally.
 
 ---
@@ -155,10 +163,15 @@ The client detail page contains:
 
 ## 8.5 Cases
 
+**Implemented with a deviation:** a case may have more than one client. The
+case's client list is a set of one or more client IDs with exactly one marked
+primary (`case_clients` join table — see
+[03-data-model.md](03-data-model.md)), not a single `Client ID` field.
+
 ### Case fields
 
 * Internal UUID
-* Client ID
+* Client IDs (one or more, one marked primary)
 * Case number
 * Judicial year
 * Court
@@ -211,12 +224,11 @@ Each party contains:
 * Address, optional
 * Notes
 
-Initial roles:
+Initial roles (implemented without `CLIENT`/`CO_CLIENT` — clients on a case
+are tracked via `case_clients`, not as a party role):
 
 ```text
-CLIENT
 OPPONENT
-CO_CLIENT
 WITNESS
 EXPERT
 OTHER
@@ -225,7 +237,7 @@ OTHER
 ### Acceptance criteria
 
 * Create, edit, view and archive a case.
-* A case belongs to a primary client.
+* A case has at least one client, with exactly one marked primary.
 * A case can contain multiple other parties.
 * A case number and judicial year can be searched separately or together.
 * A case timeline is presented chronologically.

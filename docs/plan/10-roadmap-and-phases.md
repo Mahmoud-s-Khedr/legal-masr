@@ -71,70 +71,117 @@ A small application that can:
 
 1. [x] Initialize an encrypted database.
 2. [x] Insert a sample record.
-3. [ ] Close and reopen as an automated end-to-end test.
+3. [x] Close and reopen as an automated end-to-end test.
 4. [x] Reopen with password.
 5. [x] Reject wrong password.
 6. [x] Change password.
 7. [x] Recover using recovery key.
 8. [x] Create and validate an encrypted backup.
-9. [ ] Restore.
+9. [x] Restore.
 10. [ ] Build on all target platforms.
+
+`src-tauri/tests/spike_e2e.rs` proves items 1–9 as a single automated
+end-to-end test against a real on-disk SQLCipher file (not `:memory:`),
+including a byte-level check that no plaintext sample value appears in the
+database file or the backup archive.
+
+Item 10 (native builds on Windows, macOS Intel and macOS Apple Silicon) still
+requires a real GitHub Actions run on those runners — the CI/CD matrix exists
+in `.github/workflows/release.yml`, but a Linux development machine cannot
+validate it locally. Tracked as a follow-up: trigger the release workflow and
+confirm all three artifacts build and pass their verification steps.
 
 ### Exit criteria
 
-No feature module begins until this phase passes. It has not passed yet.
+No feature module begins until this phase passes. The security/database spike
+(items 1–9) is proven by automated test; only cross-platform build validation
+(item 10) remains before this phase fully passes.
 
 ---
 
 ## Phase 2 — Application foundation
 
+**Status:** Complete
+
 ### Scope
 
-* Repository structure
-* Tauri permissions
-* Error contract
-* Logging
-* React providers
-* Routing
-* RTL foundation
-* Design tokens
-* Main layout
-* Localization
-* Settings storage
-* Onboarding
-* Lock screen
-* Window state
-* Single instance
+* [x] Repository structure — Rust split into `commands/services/repositories/dto/db/security/backup/errors/state`; frontend split into `app/components/features/bridge/i18n/lib/styles`.
+* [x] Tauri permissions — unchanged minimal capability set (`core:window:default`, `dialog:allow-open`, `dialog:allow-save`, `window-state:default`); no unrestricted filesystem or shell access added.
+* [x] Error contract — `{ code, message, details }` preserved and extended (`details` now carries typed payloads such as duplicate-client candidates).
+* [x] Logging — `tracing` + `tracing-appender` daily-rotating file log under `<app data dir>/logs/`; only version/OS/error codes/durations logged, never names, phones, case numbers, paths or secrets.
+* [x] React providers — `TanStack Query` (`QueryClientProvider`) and `i18next` wired in `app/providers.tsx`.
+* [x] Routing — `react-router-dom` route table in `app/router.tsx`.
+* [x] RTL foundation — `document.dir`/`lang` now driven reactively by the active i18next language.
+* [x] Design tokens — existing CSS custom properties (`--ink`, `--jade`, `--sand`, `--gold`, `--muted`, `--line`) kept; no visual redesign performed.
+* [x] Main layout — `components/layout/Shell.tsx`.
+* [x] Localization — `i18next`/`react-i18next` with `ar`/`en` resource files; all previously hardcoded Arabic strings extracted into translation keys.
+* [x] Settings storage — unchanged SQLite-backed `app_settings`.
+* [x] Onboarding — revised (deviation from `04-functional-modules.md` §8.1):
+  rebuilt on `react-hook-form` + `zod`, and simplified to name + password
+  only, with no mandatory backup step. A language toggle
+  (`components/layout/LanguageSwitcher.tsx`) is available on every screen,
+  including before setup, instead of a one-time language choice during
+  onboarding. Manual backup creation, validation and restore moved to
+  Settings → Backups (`src/features/backups/`), reusing the already-tested
+  `backup_create`/`backup_validate`/`backup_restore` commands — this is a
+  deliberate product decision that backups must never be a barrier to
+  entry, and it also fixes a real bug where an install that got stuck on
+  the old mandatory backup screen stayed stuck on every subsequent unlock.
+* [x] Lock screen — unchanged flow, rebuilt on `react-hook-form` + `zod`.
+* [x] Window state — unchanged plugin.
+* [x] Single instance — unchanged plugin.
 
 ### Acceptance criteria
 
-* Application opens in Arabic RTL.
-* Onboarding completes.
-* Application locks and unlocks.
-* No direct SQL exists in frontend code.
-* No unrestricted frontend filesystem access exists.
-* CI validates Rust and TypeScript.
+* [x] Application opens in Arabic RTL.
+* [x] Onboarding completes (name + password only; reaching the dashboard
+  never depends on backup creation).
+* [x] Application locks and unlocks.
+* [x] No direct SQL exists in frontend code (`grep -rn "SELECT\|INSERT\|UPDATE\|DELETE" src/` returns no matches).
+* [x] No unrestricted frontend filesystem access exists (capabilities file unchanged from Phase 1).
+* [x] CI validates Rust and TypeScript (`pnpm lint/typecheck/test/build`, `cargo fmt/clippy/test` all pass).
 
 ---
 
 ## Phase 3 — Clients and cases
 
+**Status:** Complete
+
 ### Scope
 
-* Client schema and migrations
-* Client CRUD
-* Client search
-* Duplicate warnings
-* Case schema and migrations
-* Case CRUD
-* Parties
-* Archiving
-* Client and case detail screens
-* Basic search index
+* [x] Client schema and migrations — `clients`, `client_contacts` in `0003_clients_and_cases.sql`.
+* [x] Client CRUD — `client_create/update/get/list/archive/restore/export`.
+* [x] Client search — basic `search_index` + `search_global`/`search_rebuild_index`.
+* [x] Duplicate warnings — phone/name match surfaced as `CLIENT_PROBABLE_DUPLICATE` with candidate list; UI requires explicit confirmation to proceed.
+* [x] Case schema and migrations — `cases`, `case_parties` in the same migration.
+* [x] Case CRUD — `case_create/update/get/list/archive/restore/export`.
+* [x] Parties — `case_parties` (`OPPONENT`/`WITNESS`/`EXPERT`/`OTHER`) with add/update/remove commands.
+* [x] Archiving — clients and cases both support archive/restore, excluded from default list filters, still directly retrievable and searchable.
+* [x] Client and case detail screens — `ClientDetailPage`, `CaseDetailPage`.
+* [x] Basic search index — denormalized `search_index` table, upserted in the same transaction as each write.
+
+**Deviation from the original data model, by explicit product decision:** a
+case may have more than one client. `cases` does **not** carry a singular
+`client_id` foreign key. Instead a `case_clients(case_id, client_id,
+is_primary)` join table (see [03-data-model.md](03-data-model.md)) records
+every client on a case, with a partial unique index enforcing exactly one
+primary client per case. `case_parties.role` no longer includes
+`CLIENT`/`CO_CLIENT` — `case_clients` is now the single source of truth for
+who is a client on a case, and `case_parties` is exclusively for opponents,
+witnesses, experts and other non-client participants. Case-client
+relationship changes are their own commands (`case_attach_client`,
+`case_detach_client`, `case_set_primary_client`), with service-layer guards
+against removing a case's only client or its primary client without
+reassignment first.
 
 ### Exit criteria
 
-A lawyer can maintain clients and cases without using another module.
+A lawyer can maintain clients and cases without using another module. Backed
+by `src-tauri/tests/clients_and_cases_repository.rs` (14 repository-level
+tests covering CRUD, duplicate detection, foreign-key and partial-unique-index
+enforcement, archiving, and search-index synchronization) plus the
+`ClientListPage`/`ClientDetailPage`/`CaseListPage`/`CaseDetailPage` frontend
+screens.
 
 ---
 
