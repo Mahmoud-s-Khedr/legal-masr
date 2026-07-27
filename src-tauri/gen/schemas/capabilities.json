@@ -1,0 +1,1 @@
+{"main-capability":{"identifier":"main-capability","description":"Core application window with only required native integrations.","local":true,"windows":["main"],"permissions":["core:default","dialog:allow-open","dialog:allow-save"]}}
