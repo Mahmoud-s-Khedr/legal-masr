@@ -16,15 +16,13 @@ export function GlobalSearch() {
   }, [input]);
 
   const { data: hits } = useGlobalSearch(debounced);
-  const grouped = {
-    client: (hits ?? []).filter((hit) => hit.entityType === "client"),
-    case: (hits ?? []).filter((hit) => hit.entityType === "case"),
-  };
+  const entityTypes = ["client", "case", "event", "task", "document"] as const;
+  const grouped = Object.fromEntries(entityTypes.map((type) => [type, (hits ?? []).filter((hit) => hit.entityType === type)])) as Record<(typeof entityTypes)[number], typeof hits extends undefined ? never[] : NonNullable<typeof hits>>;
 
   const goTo = (entityType: string, entityId: string) => {
     setOpen(false);
     setInput("");
-    navigate(entityType === "client" ? `/clients/${entityId}` : `/cases/${entityId}`);
+    navigate(entityType === "client" ? `/clients/${entityId}` : entityType === "case" ? `/cases/${entityId}` : entityType === "event" ? `/calendar?event=${entityId}` : entityType === "task" ? `/tasks?task=${entityId}` : `/documents?document=${entityId}`);
   };
 
   return (
@@ -46,7 +44,7 @@ export function GlobalSearch() {
             <p>{t("search.noResults")}</p>
           ) : (
             <>
-              {(["client", "case"] as const).map((entityType) =>
+              {entityTypes.map((entityType) =>
                 grouped[entityType].length ? (
                   <div key={entityType}>
                     <p className="kicker">{t(`search.groups.${entityType}`)}</p>

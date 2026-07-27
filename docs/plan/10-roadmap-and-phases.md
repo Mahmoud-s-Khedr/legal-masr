@@ -187,19 +187,19 @@ screens.
 
 ## Phase 4 — Events, calendar, tasks and dashboard
 
+**Status:** In progress
+
 ### Scope
 
-* Case events
-* Hearing workflow
-* Event outcomes
-* Next-hearing creation
-* Tasks
-* Calendar
-* Dashboard
-* Overdue logic
-* Missing-outcome warnings
-* Native notifications
-* Optional autostart and tray behavior
+* [x] Case events — immutable schema, typed Rust commands, and calendar route.
+* [x] Hearing workflow — completion records outcome/decision/next action and can create a copied next hearing or linked task in one transaction.
+* [x] Event outcomes and next-hearing creation.
+* [x] Personal tasks — create, update, complete, reopen, list, and date/status/priority filtering through the typed bridge.
+* [x] Calendar — date-only agenda display with day/week/month/agenda view selection.
+* [x] Dashboard — local daily events/tasks plus deterministic overdue-task and missing-hearing-outcome attention counts.
+* [x] Overdue and missing-outcome logic, covered by repository-level validation.
+* [ ] Native notifications.
+* [ ] Optional autostart and tray behavior.
 
 ### Exit criteria
 
@@ -211,17 +211,19 @@ This is the first version suitable for a closely supervised lawyer alpha.
 
 ## Phase 5 — Documents and global search
 
+**Status:** In progress
+
 ### Scope
 
-* Managed document copies
-* External file references
-* File categories
-* Native open and reveal
-* Missing-file detection
-* Case-folder export
-* Global search
-* Arabic normalization
-* Search-index rebuild
+* [x] Managed document copies — generated internal filenames in the local app-data document directory, checksum calculation, and SQLCipher metadata.
+* [x] External file references — metadata only; application removal never deletes the source file.
+* [x] File categories — constrained schema and typed metadata support.
+* [ ] Native open and reveal.
+* [x] Missing-file detection.
+* [ ] Case-folder export.
+* [x] Global search — grouped client, case, event, task, and document results with deep links.
+* [x] Arabic normalization — diacritics, Alef variants, Arabic/Western digits, and whitespace normalization.
+* [x] Search-index rebuild — now rebuilds clients, cases, events, tasks, and documents.
 
 ### Exit criteria
 

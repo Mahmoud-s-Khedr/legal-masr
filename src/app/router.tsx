@@ -1,6 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Placeholder } from "../components/layout/Placeholder";
+import { CalendarPage } from "../features/events/pages/CalendarPage";
+import { TasksPage } from "../features/tasks/pages/TasksPage";
+import { DocumentsPage } from "../features/documents/pages/DocumentsPage";
 import { CaseDetailPage } from "../features/cases/pages/CaseDetailPage";
 import { CaseListPage } from "../features/cases/pages/CaseListPage";
 import { ClientDetailPage } from "../features/clients/pages/ClientDetailPage";
@@ -21,7 +24,7 @@ export const NAV_ITEMS = [
   { to: "/settings", key: "nav.settings" },
 ] as const;
 
-const PLACEHOLDER_NAV_KEYS = new Set(["/calendar", "/tasks", "/documents", "/finances"]);
+const PLACEHOLDER_NAV_KEYS = new Set(["/finances"]);
 
 export function AppRoutes() {
   const { t } = useTranslation();
@@ -34,6 +37,9 @@ export function AppRoutes() {
       <Route path="/cases" element={<CaseListPage />} />
       <Route path="/cases/new" element={<NewCasePage />} />
       <Route path="/cases/:id" element={<CaseDetailPage />} />
+      <Route path="/calendar" element={<CalendarPage />} />
+      <Route path="/tasks" element={<TasksPage />} />
+      <Route path="/documents" element={<DocumentsPage />} />
       {NAV_ITEMS.filter(({ to }) => PLACEHOLDER_NAV_KEYS.has(to)).map(({ to, key }) => (
         <Route key={to} path={to} element={<Placeholder label={t(key)} />} />
       ))}

@@ -19,6 +19,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
         3,
         include_str!("../../migrations/0003_clients_and_cases.sql"),
     ),
+    (
+        4,
+        include_str!("../../migrations/0004_events_tasks_documents.sql"),
+    ),
 ];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
@@ -113,7 +117,7 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(version, 3);
+        assert_eq!(version, 4);
         assert_eq!(settings_exists, "app_settings");
         assert_eq!(clients_exists, "clients");
     }

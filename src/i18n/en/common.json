@@ -213,6 +213,6 @@
   "search": {
     "placeholder": "Search by name or case number…",
     "noResults": "No results.",
-    "groups": { "client": "Clients", "case": "Cases" }
+    "groups": { "client": "Clients", "case": "Cases", "event": "Events", "task": "Tasks", "document": "Documents" }
   }
 }

@@ -53,6 +53,80 @@ pub fn rebuild_index<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result
         )?;
     }
 
+    let mut event_stmt =
+        tx.prepare("SELECT id,title,event_date,COALESCE(outcome,'') FROM case_events")?;
+    let events = event_stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    for (id, title, date, outcome) in &events {
+        search_repository::upsert(
+            &tx,
+            "event",
+            id,
+            title,
+            Some(date),
+            &normalize::normalize_text(&format!("{title} {date} {outcome}")),
+            &now,
+        )?;
+    }
+    let mut task_stmt =
+        tx.prepare("SELECT id,title,COALESCE(description,''),due_date FROM tasks")?;
+    let tasks = task_stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, Option<String>>(3)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    for (id, title, description, due_date) in &tasks {
+        search_repository::upsert(
+            &tx,
+            "task",
+            id,
+            title,
+            due_date.as_deref(),
+            &normalize::normalize_text(&format!("{title} {description}")),
+            &now,
+        )?;
+    }
+    let mut document_stmt =
+        tx.prepare("SELECT id,original_filename,category,COALESCE(description,'') FROM documents")?;
+    let documents = document_stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    for (id, filename, category, description) in &documents {
+        search_repository::upsert(
+            &tx,
+            "document",
+            id,
+            filename,
+            Some(category),
+            &normalize::normalize_text(&format!("{filename} {category} {description}")),
+            &now,
+        )?;
+    }
+
+    drop(document_stmt);
+    drop(task_stmt);
+    drop(event_stmt);
+
     tx.commit()?;
-    Ok(clients.len() + cases.len())
+    Ok(clients.len() + cases.len() + events.len() + tasks.len() + documents.len())
 }

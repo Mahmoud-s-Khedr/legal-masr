@@ -172,3 +172,13 @@ export type CasePartyUpdateInput = {
 };
 
 export type SearchHit = { entityType: string; entityId: string; title: string; subtitle: string | null };
+export type EventDto = { id:string; caseId:string|null; clientId:string|null; eventType:string; title:string; eventDate:string; startTime:string|null; endTime:string|null; isAllDay:boolean; location:string|null; circuitName:string|null; preparationNotes:string|null; requiredDocuments:string|null; outcome:string|null; decisionText:string|null; nextAction:string|null; status:string; completedAt:string|null; createdAt:string; updatedAt:string };
+export type EventInput = { id?:string; caseId?:string; clientId?:string; eventType:string; title:string; eventDate:string; startTime?:string; endTime?:string; isAllDay:boolean; location?:string; circuitName?:string; preparationNotes?:string; requiredDocuments?:string };
+export type EventListInput = { fromDate?:string; toDate?:string; caseId?:string; clientId?:string; status?:string };
+export type TaskDto = { id:string; clientId:string|null; caseId:string|null; sourceEventId:string|null; title:string; description:string|null; dueDate:string|null; dueTime:string|null; priority:"LOW"|"NORMAL"|"HIGH"|"URGENT"; status:"OPEN"|"COMPLETED"|"CANCELLED"; completedAt:string|null; createdAt:string; updatedAt:string };
+export type TaskInput = { id?:string; clientId?:string; caseId?:string; sourceEventId?:string; title:string; description?:string; dueDate?:string; dueTime?:string; priority:TaskDto["priority"] };
+export type TaskListInput = { dueFrom?:string; dueTo?:string; caseId?:string; clientId?:string; priority?:TaskDto["priority"]; status?:TaskDto["status"] };
+export type DashboardSummary = { todayEvents:EventDto[]; todayTasks:TaskDto[]; overdueTasks:TaskDto[]; missingOutcomeEvents:EventDto[]; upcomingEvents:EventDto[] };
+export type DocumentDto = { id:string; clientId:string|null; caseId:string|null; storageMode:"MANAGED_COPY"|"EXTERNAL_REFERENCE"; originalFilename:string; category:string; description:string|null; documentDate:string|null; mimeType:string|null; fileSizeBytes:number|null; missingAt:string|null; createdAt:string };
+export type DocumentReferenceInput = { clientId?:string; caseId?:string; path:string; category:string; description?:string; documentDate?:string };
+export type DocumentUpdateInput = { id:string; category:string; description?:string; documentDate?:string };

@@ -16,6 +16,7 @@ import type {
   ClientUpdateInput,
   InitializeInput,
   SearchHit,
+  EventDto, EventInput, EventListInput, TaskDto, TaskInput, TaskListInput, DashboardSummary, DocumentDto, DocumentReferenceInput, DocumentUpdateInput,
   Settings,
 } from "./types";
 
@@ -60,4 +61,22 @@ export const bridge = {
 
   searchGlobal: (query: string) => invoke<SearchHit[]>("search_global", { query }),
   searchRebuildIndex: () => invoke<{ indexedCount: number }>("search_rebuild_index"),
+  dashboardSummary: (today: string) => invoke<DashboardSummary>("dashboard_get_summary", { today }),
+  eventCreate: (input: EventInput) => invoke<EventDto>("event_create", { input }),
+  eventUpdate: (input: EventInput) => invoke<EventDto>("event_update", { input }),
+  eventList: (input: EventListInput) => invoke<EventDto[]>("event_list", { input }),
+  eventComplete: (input: { id:string; outcome?:string; decisionText?:string; nextAction?:string; nextHearingDate?:string; createTaskTitle?:string }) => invoke<EventDto>("event_complete", { input }),
+  eventDelete: (id:string) => invoke<void>("event_delete", { id }),
+  taskCreate: (input:TaskInput) => invoke<TaskDto>("task_create", { input }),
+  taskUpdate: (input:TaskInput) => invoke<TaskDto>("task_update", { input }),
+  taskList: (input:TaskListInput) => invoke<TaskDto[]>("task_list", { input }),
+  taskComplete: (id:string) => invoke<TaskDto>("task_complete", { id }),
+  taskReopen: (id:string) => invoke<TaskDto>("task_reopen", { id }),
+  taskDelete: (id:string) => invoke<void>("task_delete", { id }),
+  documentList: (input:{caseId?:string;clientId?:string;includeArchived?:boolean}={}) => invoke<DocumentDto[]>("document_list", { input }),
+  documentImportManaged: (input:DocumentReferenceInput) => invoke<DocumentDto>("document_import_managed", { input }),
+  documentAddReference: (input:DocumentReferenceInput) => invoke<DocumentDto>("document_add_reference", { input }),
+  documentUpdate: (input: DocumentUpdateInput) => invoke<DocumentDto>("document_update", { input }),
+  documentCheckMissing: (id:string) => invoke<boolean>("document_check_missing", { id }),
+  documentRemove: (id:string) => invoke<void>("document_remove", { id }),
 };

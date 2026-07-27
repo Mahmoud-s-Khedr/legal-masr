@@ -33,6 +33,14 @@ pub enum Error {
     CaseMustHaveClient,
     #[error("case primary client must be reassigned before this client can be detached")]
     CasePrimaryClientReassignmentRequired,
+    #[error("event not found")]
+    EventNotFound,
+    #[error("task not found")]
+    TaskNotFound,
+    #[error("document source missing")]
+    DocumentSourceMissing,
+    #[error("document not found")]
+    DocumentNotFound,
     #[error("{0}")]
     Io(#[from] std::io::Error),
     #[error("{0}")]
@@ -59,6 +67,10 @@ impl Error {
             Self::CasePrimaryClientReassignmentRequired => {
                 "CASE_PRIMARY_CLIENT_REASSIGNMENT_REQUIRED"
             }
+            Self::EventNotFound => "EVENT_NOT_FOUND",
+            Self::TaskNotFound => "TASK_NOT_FOUND",
+            Self::DocumentSourceMissing => "DOCUMENT_SOURCE_MISSING",
+            Self::DocumentNotFound => "DOCUMENT_NOT_FOUND",
             Self::Io(_) | Self::Sql(_) | Self::Json(_) | Self::Zip(_) => "OPERATION_FAILED",
         }
     }
@@ -78,6 +90,10 @@ impl Error {
             Self::CasePrimaryClientReassignmentRequired => {
                 "يجب تعيين موكل أساسي آخر قبل إزالة هذا الموكل."
             }
+            Self::EventNotFound => "لم يتم العثور على الحدث.",
+            Self::TaskNotFound => "لم يتم العثور على المهمة.",
+            Self::DocumentSourceMissing => "تعذر العثور على الملف المصدر.",
+            Self::DocumentNotFound => "لم يتم العثور على المستند.",
             Self::Io(_) | Self::Sql(_) | Self::Json(_) | Self::Zip(_) => {
                 "تعذر إتمام العملية بأمان."
             }

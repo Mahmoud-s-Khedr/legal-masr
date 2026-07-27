@@ -213,6 +213,6 @@
   "search": {
     "placeholder": "ابحث بالاسم أو رقم القضية…",
     "noResults": "لا توجد نتائج.",
-    "groups": { "client": "الموكلون", "case": "القضايا" }
+    "groups": { "client": "الموكلون", "case": "القضايا", "event": "الأحداث", "task": "المهام", "document": "المستندات" }
   }
 }
