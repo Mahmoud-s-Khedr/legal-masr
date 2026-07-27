@@ -1,0 +1,46 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f398a1d6caa5f0c0fb413a5c30e1ffb6d0f0 # v5.0.0
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4.1.0
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22.21.1
+      - name: Install Linux Tauri dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2.8.1
+        with:
+          workspaces: src-tauri -> target
+          key: ubuntu-x86_64-${{ hashFiles('src-tauri/Cargo.lock') }}
+      - name: Frontend checks
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+          pnpm build
+      - name: Rust checks
+        working-directory: src-tauri
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --all-features

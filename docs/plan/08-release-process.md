@@ -6,7 +6,7 @@ Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
 
 # 14. Update and release system
 
-Tauri's updater can use a signed static JSON manifest and GitHub Releases or another static host. Update manifests include platform-specific URLs and signatures.
+Tauri's updater can later use a signed static JSON manifest and GitHub Releases or another static host. Update manifests include platform-specific URLs and signatures. The updater plugin is not currently included or configured, so this application does not generate updater artifacts, signatures, keys, or a `latest.json` manifest.
 
 ## Update flow
 
@@ -47,7 +47,7 @@ Initial target:
 * x86-64
 * Per-user NSIS `.exe` installer
 * No administrator privileges where possible
-* Signed installer for public release
+* Unsigned public beta installer; no self-signed certificate
 
 Tauri builds Windows installers through its CLI on Windows, using the MSVC target and WebView2.
 
@@ -61,7 +61,7 @@ Initial targets:
 
 Separate builds reduce the risk introduced by combining SQLCipher, vendored cryptography and universal binaries. A universal build may be added after both architectures are stable.
 
-Public browser distribution should use signing and notarization. Tauri's documentation states that macOS signing requires an Apple Developer account; its current documentation lists the paid membership as $99 per year.
+Current browser-distributed beta builds use Tauri ad-hoc signing (`signingIdentity: "-"`) and are not notarized. Users may need to approve the app through Privacy & Security. Future public Developer ID distribution can add paid signing and notarization independently.
 
 ## CI/CD
 
@@ -71,8 +71,9 @@ Use GitHub Actions with:
 * Intel macOS target build
 * Apple Silicon macOS target build
 * Validation workflow on pull requests
-* Manual release workflow
-* Signed release artifacts
+* Tag/manual draft-release workflow
+* Unsigned Windows x86-64 NSIS installer
+* Ad-hoc signed, unnotarized Intel and Apple Silicon DMGs
 
 The official `tauri-action` builds native Tauri binaries for Windows and macOS and can attach them to GitHub Releases.
 
@@ -82,7 +83,5 @@ The official `tauri-action` builds native Tauri binaries for Windows and macOS a
 LegalMaster-Solo_<version>_windows_x64-setup.exe
 LegalMaster-Solo_<version>_macos_x64.dmg
 LegalMaster-Solo_<version>_macos_arm64.dmg
-latest.json
-checksums.txt
-release-notes.md
+SHA256SUMS.txt
 ```

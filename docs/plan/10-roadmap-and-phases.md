@@ -60,9 +60,9 @@ Ask them to demonstrate:
 * [x] Password envelope
 * [x] Recovery envelope
 * [x] Migration system
-* [ ] Windows build
-* [ ] macOS Intel build
-* [ ] macOS Apple Silicon build
+* [~] Windows x86-64 native build workflow implemented; GitHub runner and device validation pending
+* [~] macOS Intel native build workflow with ad-hoc signature verification implemented; runner and device validation pending
+* [~] macOS Apple Silicon native build workflow with ad-hoc signature verification implemented; runner and device validation pending
 * [~] Backup proof of concept — encrypted creation and validation implemented; restore remains
 
 ### Deliverable

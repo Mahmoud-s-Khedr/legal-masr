@@ -30,6 +30,6 @@ The security, database and backup foundations (see phase 1 in [10-roadmap-and-ph
 
 ## Implementation status — 2026-07-27
 
-Phase 1 is in progress. The Tauri/React scaffold, Arabic RTL lock and first-run screens, Rust-only SQLCipher boundary, password and recovery-key envelopes, initial migration, encrypted backup creation/validation, and focused cryptographic tests are implemented.
+Phase 1 is in progress. The Tauri/React scaffold, Arabic RTL lock and first-run screens, Rust-only SQLCipher boundary, password and recovery-key envelopes, initial migration, encrypted backup creation/validation, focused cryptographic tests, lockfile-enforced validation workflow, and cross-platform draft-release workflow are implemented. Linux x86-64 packaging has been validated locally; the release workflow produces unsigned Windows NSIS and ad-hoc-signed, unnotarized Intel/Apple Silicon macOS artifacts with SHA-256 checksums.
 
-Restore, native Windows/macOS packaging validation, and Phase 0 lawyer-workflow research remain incomplete. No product feature phase has started.
+Native Windows/macOS runner execution and physical-device packaging validation remain incomplete, as do Phase 0 lawyer-workflow research and the remaining Phase 1 exit criteria. No product feature phase has started.
