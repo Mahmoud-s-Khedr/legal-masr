@@ -16,11 +16,18 @@ use std::{
 };
 use tauri::{AppHandle, Manager, State};
 use thiserror::Error;
+use zeroize::Zeroize;
 use zip::{write::SimpleFileOptions, ZipArchive, ZipWriter};
 
 const SECURITY_FILE: &str = "security.json";
 const DB_FILE: &str = "legalmaster.sqlite";
-const MIGRATION: &str = include_str!("../migrations/0001_foundation.sql");
+const MIGRATIONS: &[(i64, &str)] = &[
+    (1, include_str!("../migrations/0001_foundation.sql")),
+    (
+        2,
+        include_str!("../migrations/0002_application_foundation.sql"),
+    ),
+];
 
 #[derive(Default)]
 struct AppState {
@@ -44,6 +51,8 @@ enum Error {
     InvalidRecovery,
     #[error("backup is invalid")]
     BackupInvalid,
+    #[error("validation failed")]
+    Validation,
     #[error("{0}")]
     Io(#[from] std::io::Error),
     #[error("{0}")]
@@ -64,6 +73,7 @@ impl Serialize for Error {
             Self::Initialized => ("ALREADY_INITIALIZED", "تم إعداد التطبيق بالفعل."),
             Self::InvalidRecovery => ("RECOVERY_KEY_INVALID", "مفتاح الاسترداد غير صحيح."),
             Self::BackupInvalid => ("BACKUP_CORRUPTED", "ملف النسخة الاحتياطية غير صالح."),
+            Self::Validation => ("VALIDATION_FAILED", "تحقق من البيانات المدخلة."),
             _ => ("OPERATION_FAILED", "تعذر إتمام العملية بأمان."),
         };
         ApiError {
@@ -79,10 +89,31 @@ impl Serialize for Error {
 struct Status {
     initialized: bool,
     unlocked: bool,
+    onboarding_completed: bool,
 }
 #[derive(Serialize)]
 struct InitializeResult {
     recovery_key: String,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InitializeInput {
+    password: String,
+    full_name: String,
+    language: String,
+    managed_documents_directory: String,
+    backup_directory: String,
+    lock_timeout_minutes: u32,
+}
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SettingsDto {
+    language: String,
+    theme: String,
+    lock_timeout_minutes: u32,
+    managed_documents_directory: Option<String>,
+    backup_directory: Option<String>,
+    onboarding_completed: bool,
 }
 #[derive(Serialize, Deserialize)]
 struct Envelope {
@@ -181,8 +212,33 @@ fn open_db(path: &Path, master: &[u8; 32]) -> Result<Connection, Error> {
     Ok(db)
 }
 fn migrate(db: &Connection) -> Result<(), Error> {
-    db.execute_batch(MIGRATION)?;
-    db.execute("INSERT OR IGNORE INTO app_metadata (id, installation_uuid, schema_version, created_at, updated_at) VALUES (1, lower(hex(randomblob(16))), 1, ?1, ?1)", [now()])?;
+    for (version, migration) in MIGRATIONS {
+        let current: Option<i64> = db
+            .query_row(
+                "SELECT schema_version FROM app_metadata WHERE id = 1",
+                [],
+                |r| r.get(0),
+            )
+            .ok();
+        if current.unwrap_or(0) >= *version {
+            continue;
+        }
+        let tx = db.unchecked_transaction()?;
+        tx.execute_batch(migration)?;
+        if *version == 1 {
+            tx.execute("INSERT OR IGNORE INTO app_metadata (id, installation_uuid, schema_version, created_at, updated_at) VALUES (1, lower(hex(randomblob(16))), 1, ?1, ?1)", [now()])?;
+        } else {
+            tx.execute(
+                "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
+                rusqlite::params![version, now()],
+            )?;
+            tx.execute(
+                "UPDATE app_metadata SET schema_version = ?1, updated_at = ?2 WHERE id = 1",
+                rusqlite::params![version, now()],
+            )?;
+        }
+        tx.commit()?;
+    }
     Ok(())
 }
 fn unlocked(state: &AppState) -> Result<[u8; 32], Error> {
@@ -197,32 +253,54 @@ fn unlocked(state: &AppState) -> Result<[u8; 32], Error> {
 
 #[tauri::command]
 fn app_get_status(app: AppHandle, state: State<AppState>) -> Result<Status, Error> {
-    let (security, _) = paths(&app)?;
+    let (security, db_path) = paths(&app)?;
+    let master = state
+        .master_key
+        .lock()
+        .map_err(|_| Error::Locked)?
+        .as_ref()
+        .copied();
+    let onboarding_completed = master
+        .and_then(|key| {
+            open_db(&db_path, &key)
+                .ok()?
+                .query_row(
+                    "SELECT onboarding_completed FROM app_settings WHERE id = 1",
+                    [],
+                    |r| r.get::<_, i64>(0),
+                )
+                .ok()
+        })
+        .unwrap_or(0)
+        != 0;
     Ok(Status {
         initialized: security.exists(),
-        unlocked: state
-            .master_key
-            .lock()
-            .map_err(|_| Error::Locked)?
-            .is_some(),
+        unlocked: master.is_some(),
+        onboarding_completed,
     })
 }
 #[tauri::command]
 fn app_initialize(
     app: AppHandle,
     state: State<AppState>,
-    password: String,
+    input: InitializeInput,
 ) -> Result<InitializeResult, Error> {
-    if password.chars().count() < 12 {
-        return Err(Error::InvalidPassword);
+    if input.password.chars().count() < 12
+        || input.full_name.trim().is_empty()
+        || !matches!(input.language.as_str(), "ar" | "en")
+        || input.lock_timeout_minutes == 0
+    {
+        return Err(Error::Validation);
     }
     let (security_path, db_path) = paths(&app)?;
     if security_path.exists() {
         return Err(Error::Initialized);
     }
+    fs::create_dir_all(&input.managed_documents_directory)?;
+    fs::create_dir_all(&input.backup_directory)?;
     let master = random_32();
     let salt = random_32();
-    let password_key = derive_password(&password, &salt, 19_456, 2, 1)?;
+    let password_key = derive_password(&input.password, &salt, 19_456, 2, 1)?;
     let recovery_bytes = random_32();
     let recovery_key = hex::encode(recovery_bytes);
     let security = SecurityFile {
@@ -239,6 +317,8 @@ fn app_initialize(
         let db = open_db(&temp_db, &master)?;
         migrate(&db)?;
         db.execute("INSERT INTO spike_records (id, value, created_at) VALUES (lower(hex(randomblob(16))), 'initialization-probe', ?1)", [now()])?;
+        db.execute("INSERT INTO lawyer_profile (id, full_name, default_currency, created_at, updated_at) VALUES (1, ?1, 'EGP', ?2, ?2)", [&input.full_name, &now()])?;
+        db.execute("INSERT INTO app_settings (id, language, lock_timeout_minutes, managed_documents_directory, backup_directory, created_at, updated_at) VALUES (1, ?1, ?2, ?3, ?4, ?5, ?5)", rusqlite::params![input.language, input.lock_timeout_minutes, input.managed_documents_directory, input.backup_directory, now()])?;
     }
     fs::rename(temp_db, &db_path)?;
     fs::write(&security_path, serde_json::to_vec_pretty(&security)?)?;
@@ -266,7 +346,9 @@ fn app_unlock(app: AppHandle, state: State<AppState>, password: String) -> Resul
 }
 #[tauri::command]
 fn app_lock(state: State<AppState>) -> Result<(), Error> {
-    *state.master_key.lock().map_err(|_| Error::Locked)? = None;
+    if let Some(mut key) = state.master_key.lock().map_err(|_| Error::Locked)?.take() {
+        key.zeroize();
+    }
     Ok(())
 }
 #[tauri::command]
@@ -277,7 +359,7 @@ fn app_change_password(
     new_password: String,
 ) -> Result<(), Error> {
     if new_password.chars().count() < 12 {
-        return Err(Error::InvalidPassword);
+        return Err(Error::Validation);
     }
     let (security_path, _) = paths(&app)?;
     let mut security = read_security(&security_path)?;
@@ -314,7 +396,7 @@ fn app_recover_access(
     new_password: String,
 ) -> Result<(), Error> {
     if new_password.chars().count() < 12 {
-        return Err(Error::InvalidPassword);
+        return Err(Error::Validation);
     }
     let (security_path, db_path) = paths(&app)?;
     let mut security = read_security(&security_path)?;
@@ -365,17 +447,14 @@ fn backup_create(
     archive.write_all(&fs::read(db_path)?)?;
     let plaintext = archive.finish()?.into_inner();
     let key = backup_key(&master);
-    let wrapped = wrap(&key, &Sha256::digest(&plaintext).into())?;
-    let nonce = STANDARD
-        .decode(wrapped.nonce)
-        .map_err(|_| Error::BackupInvalid)?;
+    let nonce = random_32();
     let cipher = XChaCha20Poly1305::new_from_slice(&key).map_err(|_| Error::BackupInvalid)?;
     let ciphertext = cipher
-        .encrypt(XNonce::from_slice(&nonce), plaintext.as_ref())
+        .encrypt(XNonce::from_slice(&nonce[..24]), plaintext.as_ref())
         .map_err(|_| Error::BackupInvalid)?;
     let payload = serde_json::to_vec(&BackupEnvelope {
         version: 1,
-        nonce: STANDARD.encode(nonce),
+        nonce: STANDARD.encode(&nonce[..24]),
         ciphertext: STANDARD.encode(ciphertext),
     })?;
     let output = destination.join(format!(
@@ -419,6 +498,80 @@ fn backup_validate(state: State<AppState>, path: String) -> Result<(), Error> {
     Ok(())
 }
 
+#[tauri::command]
+fn backup_restore(app: AppHandle, state: State<AppState>, path: String) -> Result<(), Error> {
+    let master = unlocked(&state)?;
+    let bytes = read_backup(&path, &master)?;
+    let mut archive = ZipArchive::new(Cursor::new(bytes))?;
+    let mut db_bytes = Vec::new();
+    archive
+        .by_name("database.sqlite")
+        .map_err(|_| Error::BackupInvalid)?
+        .read_to_end(&mut db_bytes)?;
+    let (_, active_db) = paths(&app)?;
+    let staging = active_db.with_extension("restore.tmp");
+    fs::write(&staging, db_bytes)?;
+    let restored = open_db(&staging, &master).map_err(|_| Error::BackupInvalid)?;
+    restored
+        .query_row("PRAGMA integrity_check", [], |r| r.get::<_, String>(0))
+        .map_err(|_| Error::BackupInvalid)
+        .and_then(|value| {
+            if value == "ok" {
+                Ok(())
+            } else {
+                Err(Error::BackupInvalid)
+            }
+        })?;
+    drop(restored);
+    let emergency = active_db.with_extension("pre-restore.bak");
+    fs::copy(&active_db, &emergency)?;
+    fs::rename(&staging, &active_db)?;
+    Ok(())
+}
+
+#[tauri::command]
+fn onboarding_complete(app: AppHandle, state: State<AppState>) -> Result<(), Error> {
+    let master = unlocked(&state)?;
+    let (_, db_path) = paths(&app)?;
+    let db = open_db(&db_path, &master)?;
+    db.execute(
+        "UPDATE app_settings SET onboarding_completed = 1, updated_at = ?1 WHERE id = 1",
+        [now()],
+    )?;
+    Ok(())
+}
+
+#[tauri::command]
+fn settings_get(app: AppHandle, state: State<AppState>) -> Result<SettingsDto, Error> {
+    let master = unlocked(&state)?;
+    let (_, db_path) = paths(&app)?;
+    let db = open_db(&db_path, &master)?;
+    db.query_row("SELECT language, theme, lock_timeout_minutes, managed_documents_directory, backup_directory, onboarding_completed FROM app_settings WHERE id = 1", [], |row| Ok(SettingsDto {
+        language: row.get(0)?, theme: row.get(1)?, lock_timeout_minutes: row.get(2)?, managed_documents_directory: row.get(3)?, backup_directory: row.get(4)?, onboarding_completed: row.get::<_, i64>(5)? != 0,
+    })).map_err(Error::from)
+}
+
+#[tauri::command]
+fn settings_update(
+    app: AppHandle,
+    state: State<AppState>,
+    language: String,
+    theme: String,
+    lock_timeout_minutes: u32,
+) -> Result<SettingsDto, Error> {
+    if !matches!(language.as_str(), "ar" | "en")
+        || !matches!(theme.as_str(), "system" | "light" | "dark")
+        || lock_timeout_minutes == 0
+    {
+        return Err(Error::Validation);
+    }
+    let master = unlocked(&state)?;
+    let (_, db_path) = paths(&app)?;
+    let db = open_db(&db_path, &master)?;
+    db.execute("UPDATE app_settings SET language = ?1, theme = ?2, lock_timeout_minutes = ?3, updated_at = ?4 WHERE id = 1", rusqlite::params![language, theme, lock_timeout_minutes, now()])?;
+    settings_get(app, state)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .manage(AppState::default())
@@ -433,7 +586,11 @@ pub fn run() {
             app_change_password,
             app_recover_access,
             backup_create,
-            backup_validate
+            backup_validate,
+            backup_restore,
+            onboarding_complete,
+            settings_get,
+            settings_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running LegalMaster Solo");
@@ -470,5 +627,27 @@ mod tests {
     fn backup_key_is_separate_from_the_database_master_key() {
         let master = random_32();
         assert_ne!(backup_key(&master), master);
+    }
+
+    #[test]
+    fn migrations_create_foundation_tables_and_schema_version() {
+        let db = Connection::open_in_memory().unwrap();
+        migrate(&db).unwrap();
+        let version: i64 = db
+            .query_row(
+                "SELECT schema_version FROM app_metadata WHERE id = 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let settings_exists: String = db
+            .query_row(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'app_settings'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(version, 2);
+        assert_eq!(settings_exists, "app_settings");
     }
 }
