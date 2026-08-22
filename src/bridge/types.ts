@@ -3,9 +3,21 @@ export type AppError = { code: string; message: string; details: unknown };
 export type Settings = {
   language: 'ar' | 'en';
   theme: 'system' | 'light' | 'dark';
+  dateFormat: 'dd/MM/yyyy' | 'yyyy-MM-dd';
+  weekStartsOn: number;
+  defaultReminderMinutes: number;
+  autostartEnabled: boolean;
   lockTimeoutMinutes: number;
   managedDocumentsDirectory: string | null;
   backupDirectory: string | null;
+};
+export type LawyerProfile = {
+  fullName: string;
+  barNumber: string | null;
+  phone: string | null;
+  email: string | null;
+  officeAddress: string | null;
+  defaultCurrency: 'EGP';
 };
 export type InitializeInput = {
   password: string;

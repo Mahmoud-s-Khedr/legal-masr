@@ -12,6 +12,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use tauri::{AppHandle, Runtime};
+use tauri_plugin_opener::OpenerExt;
 use uuid::Uuid;
 const CATEGORIES: &[&str] = &[
     "PLEADING",
@@ -222,6 +223,46 @@ pub fn check_missing<R: Runtime>(a: &AppHandle<R>, s: &AppState, id: &str) -> Re
     let missing = !path.is_file();
     document_repository::set_missing(&c, id, missing, &db::now())?;
     Ok(missing)
+}
+fn resolved_path<R: Runtime>(
+    app: &AppHandle<R>,
+    connection: &rusqlite::Connection,
+    id: &str,
+) -> Result<PathBuf, Error> {
+    let (mode, relative, external, _) = document_repository::paths(connection, id)?;
+    Ok(if mode == "MANAGED_COPY" {
+        db::app_dir(app)?
+            .join("documents")
+            .join(relative.unwrap_or_default())
+    } else {
+        PathBuf::from(external.unwrap_or_default())
+    })
+}
+pub fn open<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
+    let master = state.unlocked()?;
+    let (_, database_path) = db::paths(app)?;
+    let connection = db::open_db(&database_path, &master)?;
+    let path = resolved_path(app, &connection, id)?;
+    if !path.is_file() {
+        document_repository::set_missing(&connection, id, true, &db::now())?;
+        return Err(Error::DocumentSourceMissing);
+    }
+    app.opener()
+        .open_path(path.to_string_lossy().into_owned(), None::<&str>)
+        .map_err(|_| Error::Operation)
+}
+pub fn reveal<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
+    let master = state.unlocked()?;
+    let (_, database_path) = db::paths(app)?;
+    let connection = db::open_db(&database_path, &master)?;
+    let path = resolved_path(app, &connection, id)?;
+    if !path.is_file() {
+        document_repository::set_missing(&connection, id, true, &db::now())?;
+        return Err(Error::DocumentSourceMissing);
+    }
+    app.opener()
+        .reveal_item_in_dir(path)
+        .map_err(|_| Error::Operation)
 }
 pub fn remove<R: Runtime>(a: &AppHandle<R>, s: &AppState, id: &str) -> Result<(), Error> {
     let m = s.unlocked()?;

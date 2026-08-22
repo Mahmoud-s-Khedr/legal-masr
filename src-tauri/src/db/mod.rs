@@ -27,6 +27,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
         5,
         include_str!("../../migrations/0005_financial_tracking.sql"),
     ),
+    (
+        6,
+        include_str!("../../migrations/0006_reminder_delivery.sql"),
+    ),
 ];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
@@ -121,7 +125,7 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(version, 5);
+        assert_eq!(version, 6);
         assert_eq!(settings_exists, "app_settings");
         assert_eq!(clients_exists, "clients");
     }

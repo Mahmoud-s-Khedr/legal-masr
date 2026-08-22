@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
 import type { DocumentReferenceInput, DocumentUpdateInput } from '../../../bridge/types';
-export const useDocuments = () =>
-  useQuery({ queryKey: ['documents'], queryFn: () => bridge.documentList() });
+export const useDocuments = (
+  input: { caseId?: string; clientId?: string; includeArchived?: boolean } = {},
+) => useQuery({ queryKey: ['documents', input], queryFn: () => bridge.documentList(input) });
 export const useAddDocument = () => {
   const q = useQueryClient();
   return useMutation({
@@ -32,3 +33,5 @@ export const useCheckDocumentMissing = () => {
     onSuccess: () => q.invalidateQueries({ queryKey: ['documents'] }),
   });
 };
+export const useOpenDocument = () => useMutation({ mutationFn: bridge.documentOpen });
+export const useRevealDocument = () => useMutation({ mutationFn: bridge.documentReveal });

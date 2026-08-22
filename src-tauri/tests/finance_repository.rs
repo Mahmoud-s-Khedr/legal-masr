@@ -39,7 +39,7 @@ fn case_summary_uses_integer_minor_units_and_refunds_reduce_received() {
     finance_repository::insert_transaction(&c, "payment", &payment(4_000), None, "now").unwrap();
     let mut refund = payment(500);
     refund.transaction_type = "REFUND".into();
-    finance_repository::insert_transaction(&c, "refund", &refund, Some("payment"), "now").unwrap();
+    finance_repository::insert_transaction(&c, "refund", &refund, None, "now").unwrap();
     let summary = finance_repository::case_summary(&c, "case").unwrap();
     assert_eq!(
         (
@@ -49,6 +49,27 @@ fn case_summary_uses_integer_minor_units_and_refunds_reduce_received() {
         ),
         (10_000, 3_500, 6_500)
     );
+}
+
+#[test]
+fn reversed_expense_is_excluded_from_summaries_and_original_cannot_be_edited() {
+    let c = seeded();
+    let mut expense = payment(2_500);
+    expense.transaction_type = "CASE_EXPENSE".into();
+    finance_repository::insert_transaction(&c, "expense", &expense, None, "now").unwrap();
+    let mut reversal = payment(2_500);
+    reversal.transaction_type = "OTHER_INCOME".into();
+    finance_repository::insert_transaction(&c, "reversal", &reversal, Some("expense"), "now")
+        .unwrap();
+
+    let summary = finance_repository::case_summary(&c, "case").unwrap();
+    assert_eq!(summary.expenses_minor, 0);
+    assert_eq!(summary.net_cash_minor, 0);
+
+    let mut edited = expense;
+    edited.id = Some("expense".into());
+    edited.amount_minor = 3_000;
+    assert!(finance_repository::update_transaction(&c, &edited, "later").is_err());
 }
 
 #[test]

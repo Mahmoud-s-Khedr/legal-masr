@@ -1,11 +1,14 @@
 import { FormEvent, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useSearchParams } from 'react-router-dom';
+import { Icon } from '../../../components/layout/Icon';
 import {
   useAddDocument,
   useCheckDocumentMissing,
   useDocuments,
+  useOpenDocument,
   useRemoveDocument,
+  useRevealDocument,
   useUpdateDocument,
 } from '../api/documentsApi';
 
@@ -20,6 +23,17 @@ const CATEGORIES = [
   'CORRESPONDENCE',
   'OTHER',
 ];
+const CATEGORY_LABELS: Record<string, string> = {
+  PLEADING: 'مذكرة أو صحيفة دعوى',
+  COURT_DECISION: 'حكم أو قرار',
+  EVIDENCE: 'دليل أو حافظة',
+  CONTRACT: 'عقد',
+  POWER_OF_ATTORNEY: 'توكيل',
+  IDENTIFICATION: 'إثبات شخصية',
+  RECEIPT: 'إيصال',
+  CORRESPONDENCE: 'مراسلات',
+  OTHER: 'أخرى',
+};
 
 export function DocumentsPage() {
   const [path, setPath] = useState('');
@@ -27,12 +41,17 @@ export function DocumentsPage() {
   const [category, setCategory] = useState('OTHER');
   const [description, setDescription] = useState('');
   const [documentDate, setDocumentDate] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
-  const { data = [], isLoading } = useDocuments();
+  const caseId = searchParams.get('case') ?? undefined;
+  const clientId = searchParams.get('client') ?? undefined;
+  const { data = [], isLoading } = useDocuments({ caseId, clientId });
   const add = useAddDocument();
   const remove = useRemoveDocument();
   const update = useUpdateDocument();
   const checkMissing = useCheckDocumentMissing();
+  const openDocument = useOpenDocument();
+  const revealDocument = useRevealDocument();
   const selectedDocumentId = searchParams.get('document');
   const choose = async () => {
     const selected = await open({ multiple: false, directory: false });
@@ -40,10 +59,29 @@ export function DocumentsPage() {
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (path)
+    if (editingId) {
+      update.mutate(
+        {
+          id: editingId,
+          category,
+          description: description || undefined,
+          documentDate: documentDate || undefined,
+        },
+        {
+          onSuccess: () => {
+            setEditingId(null);
+            setCategory('OTHER');
+            setDescription('');
+            setDocumentDate('');
+          },
+        },
+      );
+    } else if (path)
       add.mutate(
         {
           input: {
+            caseId,
+            clientId,
             path,
             category,
             description: description || undefined,
@@ -71,12 +109,31 @@ export function DocumentsPage() {
       </header>
       <form className="document-intake" onSubmit={submit}>
         <div className="document-pick">
-          <span className="document-glyph">⌁</span>
+          <span className="document-glyph">
+            <Icon name="documents" size={20} />
+          </span>
           <div>
-            <strong>{path ? path.split(/[\\/]/).pop() : 'اختر المستند المراد إضافته'}</strong>
-            <span>{path ? 'تم اختيار ملف محلي' : 'PDF، ملفات Office، صور، أو أي مرفق قانوني'}</span>
+            <strong>
+              {editingId
+                ? 'تعديل بيانات المستند'
+                : path
+                  ? path.split(/[\\/]/).pop()
+                  : 'اختر المستند المراد إضافته'}
+            </strong>
+            <span>
+              {editingId
+                ? 'لن يتغير الملف نفسه'
+                : path
+                  ? 'تم اختيار ملف محلي'
+                  : 'PDF، ملفات Office، صور، أو أي مرفق قانوني'}
+            </span>
           </div>
-          <button type="button" className="secondary-button" onClick={choose}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={choose}
+            disabled={Boolean(editingId)}
+          >
             اختيار ملف
           </button>
         </div>
@@ -85,7 +142,7 @@ export function DocumentsPage() {
           <select value={category} onChange={(event) => setCategory(event.target.value)}>
             {CATEGORIES.map((item) => (
               <option value={item} key={item}>
-                {item}
+                {CATEGORY_LABELS[item]}
               </option>
             ))}
           </select>
@@ -102,20 +159,49 @@ export function DocumentsPage() {
             onChange={(event) => setDocumentDate(event.target.value)}
           />
         </label>
-        <label className="storage-mode">
-          <input
-            type="checkbox"
-            checked={managed}
-            onChange={(event) => setManaged(event.target.checked)}
-          />
-          <span>
-            <strong>حفظ نسخة مُدارة</strong>
-            <small>تُنسخ إلى مجلد Legal Masr المحلي وتدخل في النسخ الاحتياطية.</small>
-          </span>
-        </label>
-        <button disabled={!path || add.isPending}>
-          {add.isPending ? 'جارٍ الإضافة…' : 'إضافة مستند'}
-        </button>
+        {!editingId && (
+          <label className="storage-mode">
+            <input
+              type="checkbox"
+              checked={managed}
+              onChange={(event) => setManaged(event.target.checked)}
+            />
+            <span>
+              <strong>حفظ نسخة مُدارة</strong>
+              <small>تُنسخ إلى مجلد Legal Masr المحلي وتدخل في النسخ الاحتياطية.</small>
+            </span>
+          </label>
+        )}
+        <div className="form-actions">
+          <button disabled={editingId ? update.isPending : !path || add.isPending}>
+            {editingId
+              ? update.isPending
+                ? 'جارٍ الحفظ…'
+                : 'حفظ البيانات'
+              : add.isPending
+                ? 'جارٍ الإضافة…'
+                : 'إضافة مستند'}
+          </button>
+          {editingId && (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                setEditingId(null);
+                setCategory('OTHER');
+                setDescription('');
+                setDocumentDate('');
+              }}
+            >
+              إلغاء
+            </button>
+          )}
+        </div>
+        {(add.isError || update.isError) && (
+          <p className="error" role="alert">
+            تعذر حفظ المستند. راجع الملف والبيانات وحاول مرة أخرى.
+          </p>
+        )}
       </form>
       <section className="work-register documents-register">
         <div className="register-heading">
@@ -142,29 +228,50 @@ export function DocumentsPage() {
                 <div className="record-copy">
                   <strong>{document.originalFilename}</strong>
                   <span>
-                    {document.category} ·{' '}
+                    {CATEGORY_LABELS[document.category] ?? document.category} ·{' '}
                     {document.storageMode === 'MANAGED_COPY' ? 'نسخة مُدارة' : 'مرجع خارجي'}
                     {document.missingAt ? ' · الملف غير متاح' : ''}
                   </span>
-                  <button className="text-button" onClick={() => checkMissing.mutate(document.id)}>
-                    تحقق من الملف
-                  </button>
-                  <button
-                    className="text-button"
-                    onClick={() =>
-                      update.mutate({
-                        id: document.id,
-                        category,
-                        description: description || undefined,
-                        documentDate: documentDate || undefined,
-                      })
-                    }
-                  >
-                    حفظ البيانات
-                  </button>
+                  <div className="document-actions">
+                    <button
+                      className="text-button"
+                      type="button"
+                      onClick={() => openDocument.mutate(document.id)}
+                    >
+                      فتح
+                    </button>
+                    <button
+                      className="text-button"
+                      type="button"
+                      onClick={() => revealDocument.mutate(document.id)}
+                    >
+                      إظهار في المجلد
+                    </button>
+                    <button
+                      className="text-button"
+                      type="button"
+                      onClick={() => checkMissing.mutate(document.id)}
+                    >
+                      تحقق
+                    </button>
+                    <button
+                      className="text-button"
+                      type="button"
+                      onClick={() => {
+                        setEditingId(document.id);
+                        setCategory(document.category);
+                        setDescription(document.description ?? '');
+                        setDocumentDate(document.documentDate ?? '');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      تعديل البيانات
+                    </button>
+                  </div>
                 </div>
                 <button
                   className="text-button danger-button"
+                  type="button"
                   onClick={() => {
                     if (
                       confirm(
@@ -181,6 +288,11 @@ export function DocumentsPage() {
               </li>
             ))}
           </ul>
+        )}
+        {(openDocument.isError || revealDocument.isError || checkMissing.isError) && (
+          <p className="error" role="alert">
+            الملف غير متاح في مساره الحالي.
+          </p>
         )}
       </section>
     </section>

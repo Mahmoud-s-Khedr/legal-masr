@@ -1,6 +1,8 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { EventDto } from '../../../bridge/types';
+import { useCaseList } from '../../cases/api/casesApi';
+import { useClientList } from '../../clients/api/clientsApi';
 import { useCompleteEvent, useEventList, useSaveEvent } from '../api/eventsApi';
 
 const VIEWS = ['MONTH', 'WEEK', 'DAY', 'AGENDA'] as const;
@@ -73,7 +75,19 @@ export function CalendarPage() {
   const [month, setMonth] = useState(() => new Date());
   const [view, setView] = useState<(typeof VIEWS)[number]>('MONTH');
   const [searchParams] = useSearchParams();
+  const [caseId, setCaseId] = useState(searchParams.get('case') ?? '');
+  const [clientId, setClientId] = useState(searchParams.get('client') ?? '');
+  const [eventType, setEventType] = useState('HEARING');
+  const [startTime, setStartTime] = useState('');
+  const [location, setLocation] = useState('');
+  const [preparationNotes, setPreparationNotes] = useState('');
   const [outcome, setOutcome] = useState('');
+  const [decisionText, setDecisionText] = useState('');
+  const [nextAction, setNextAction] = useState('');
+  const [nextHearingDate, setNextHearingDate] = useState('');
+  const [createTaskTitle, setCreateTaskTitle] = useState('');
+  const clients = useClientList({});
+  const cases = useCaseList({});
   const { data = [], isLoading } = useEventList({});
   const save = useSaveEvent();
   const complete = useCompleteEvent();
@@ -88,6 +102,24 @@ export function CalendarPage() {
     [data],
   );
   const selectedEvents = grouped[activeDate] ?? [];
+  const agendaEntries = useMemo(() => {
+    const entries = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
+    if (view === 'AGENDA') return entries;
+    if (view === 'DAY') return entries.filter(([date]) => date === activeDate);
+    if (view === 'WEEK') {
+      const selected = new Date(`${activeDate}T12:00:00`);
+      const start = new Date(
+        selected.getFullYear(),
+        selected.getMonth(),
+        selected.getDate() - selected.getDay(),
+      );
+      const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+      const from = formatDate(start);
+      const to = formatDate(end);
+      return entries.filter(([date]) => date >= from && date <= to);
+    }
+    return entries;
+  }, [activeDate, grouped, view]);
   const label = new Intl.DateTimeFormat('ar-EG', { month: 'long', year: 'numeric' }).format(month);
   const moveMonth = (delta: number) =>
     setMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
@@ -95,8 +127,25 @@ export function CalendarPage() {
     event.preventDefault();
     if (title.trim())
       save.mutate(
-        { title, eventDate: selectedDate, eventType: 'HEARING', isAllDay: true },
-        { onSuccess: () => setTitle('') },
+        {
+          title,
+          eventDate: selectedDate,
+          eventType,
+          isAllDay: !startTime,
+          startTime: startTime || undefined,
+          location: location || undefined,
+          preparationNotes: preparationNotes || undefined,
+          caseId: caseId || undefined,
+          clientId: clientId || undefined,
+        },
+        {
+          onSuccess: () => {
+            setTitle('');
+            setStartTime('');
+            setLocation('');
+            setPreparationNotes('');
+          },
+        },
       );
   };
 
@@ -171,7 +220,7 @@ export function CalendarPage() {
             />
           ) : (
             <div className="calendar-agenda-list">
-              {Object.entries(grouped).map(([date, events]) => (
+              {agendaEntries.map(([date, events]) => (
                 <section key={date}>
                   <h3>{date}</h3>
                   {events.map((item) => (
@@ -185,7 +234,9 @@ export function CalendarPage() {
                   ))}
                 </section>
               ))}
-              {!data.length && <p className="table-message">لا توجد أحداث مجدولة بعد.</p>}
+              {!agendaEntries.length && (
+                <p className="table-message">لا توجد أحداث في نطاق العرض الحالي.</p>
+              )}
             </div>
           )}
         </section>
@@ -196,12 +247,35 @@ export function CalendarPage() {
             selectedEvents.map((item) => (
               <div className="agenda-item" key={item.id}>
                 <strong>{item.title}</strong>
-                <span>{item.location ?? 'جلسة قانونية'}</span>
+                <span>
+                  {item.location ?? 'جلسة قانونية'}
+                  {item.caseId
+                    ? ` · قضية ${cases.data?.find((entry) => entry.id === item.caseId)?.caseNumber ?? ''}`
+                    : ''}
+                </span>
                 {item.status === 'SCHEDULED' && (
                   <form
                     onSubmit={(event) => {
                       event.preventDefault();
-                      complete.mutate({ id: item.id, outcome: outcome || undefined });
+                      complete.mutate(
+                        {
+                          id: item.id,
+                          outcome: outcome || undefined,
+                          decisionText: decisionText || undefined,
+                          nextAction: nextAction || undefined,
+                          nextHearingDate: nextHearingDate || undefined,
+                          createTaskTitle: createTaskTitle || undefined,
+                        },
+                        {
+                          onSuccess: () => {
+                            setOutcome('');
+                            setDecisionText('');
+                            setNextAction('');
+                            setNextHearingDate('');
+                            setCreateTaskTitle('');
+                          },
+                        },
+                      );
                     }}
                   >
                     <label>
@@ -212,7 +286,39 @@ export function CalendarPage() {
                         placeholder="سجل النتيجة"
                       />
                     </label>
-                    <button disabled={complete.isPending}>تسجيل النتيجة</button>
+                    <label>
+                      نص القرار
+                      <input
+                        value={decisionText}
+                        onChange={(event) => setDecisionText(event.target.value)}
+                        placeholder="ما قررته المحكمة"
+                      />
+                    </label>
+                    <label>
+                      الإجراء التالي
+                      <input
+                        value={nextAction}
+                        onChange={(event) => setNextAction(event.target.value)}
+                        placeholder="ما المطلوب تنفيذه"
+                      />
+                    </label>
+                    <label>
+                      موعد الجلسة التالية (اختياري)
+                      <input
+                        type="date"
+                        value={nextHearingDate}
+                        onChange={(event) => setNextHearingDate(event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      إنشاء مهمة مرتبطة (اختياري)
+                      <input
+                        value={createTaskTitle}
+                        onChange={(event) => setCreateTaskTitle(event.target.value)}
+                        placeholder="مثال: تجهيز حافظة المستندات"
+                      />
+                    </label>
+                    <button disabled={complete.isPending}>تسجيل النتيجة والمتابعة</button>
                   </form>
                 )}
               </div>
@@ -222,7 +328,7 @@ export function CalendarPage() {
           )}
         </aside>
       </div>
-      <form className="quick-entry" onSubmit={submit}>
+      <form className="quick-entry event-entry" onSubmit={submit}>
         <div>
           <label htmlFor="event-title">جلسة أو موعد جديد</label>
           <input
@@ -242,8 +348,72 @@ export function CalendarPage() {
             onChange={(event) => setSelectedDate(event.target.value)}
           />
         </div>
+        <label>
+          النوع
+          <select value={eventType} onChange={(event) => setEventType(event.target.value)}>
+            <option value="HEARING">جلسة</option>
+            <option value="EXPERT_SESSION">جلسة خبير</option>
+            <option value="PROSECUTION_APPOINTMENT">نيابة</option>
+            <option value="INVESTIGATION">تحقيق</option>
+            <option value="ENFORCEMENT_PROCEDURE">إجراء تنفيذ</option>
+            <option value="CLIENT_APPOINTMENT">موعد موكل</option>
+            <option value="DEADLINE">ميعاد قانوني</option>
+            <option value="OTHER">أخرى</option>
+          </select>
+        </label>
+        <label>
+          الوقت (اختياري)
+          <input
+            type="time"
+            value={startTime}
+            onChange={(event) => setStartTime(event.target.value)}
+          />
+        </label>
+        <label>
+          القضية (اختياري)
+          <select value={caseId} onChange={(event) => setCaseId(event.target.value)}>
+            <option value="">موعد عام</option>
+            {cases.data?.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.caseNumber}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          الموكل (اختياري)
+          <select value={clientId} onChange={(event) => setClientId(event.target.value)}>
+            <option value="">بدون موكل مباشر</option>
+            {clients.data?.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.displayName}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          المكان
+          <input
+            value={location}
+            onChange={(event) => setLocation(event.target.value)}
+            placeholder="المحكمة أو المكتب"
+          />
+        </label>
+        <label className="event-preparation">
+          المطلوب تحضيره
+          <input
+            value={preparationNotes}
+            onChange={(event) => setPreparationNotes(event.target.value)}
+            placeholder="مذكرة، مستندات، تواصل…"
+          />
+        </label>
         <button>إضافة إلى الجدول</button>
       </form>
+      {(save.isError || complete.isError) && (
+        <p className="error" role="alert">
+          تعذر حفظ الموعد أو نتيجته. بقيت البيانات في النموذج للمحاولة مرة أخرى.
+        </p>
+      )}
     </section>
   );
 }

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isPermissionGranted } from '@tauri-apps/plugin-notification';
+import { bridge } from '../bridge/commands';
 import { LanguageSwitcher } from '../components/layout/LanguageSwitcher';
 import { Shell } from '../components/layout/Shell';
 import { OnboardingPage, OnboardingSubGate } from '../features/onboarding/pages/OnboardingPage';
@@ -15,6 +17,34 @@ function ThemeSync() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+  return null;
+}
+
+function ReminderSync() {
+  useEffect(() => {
+    const refresh = async () => {
+      try {
+        if (!(await isPermissionGranted())) return;
+        const now = new Date();
+        const pad = (value: number) => String(value).padStart(2, '0');
+        const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        const nowTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        await bridge.refreshReminders(today, nowTime);
+      } catch {
+        // Notification availability is best-effort and must never block the local workspace.
+      }
+    };
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 60_000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, []);
   return null;
 }
 
@@ -39,6 +69,7 @@ function AppContent() {
     return (
       <>
         <ThemeSync />
+        <ReminderSync />
         <Shell
           onLock={async () => {
             await lockVault.mutateAsync();

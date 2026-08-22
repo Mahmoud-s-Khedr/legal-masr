@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>إعدادات النظام - النسخ الاحتياطي</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#dbe5e2",
+                        "on-tertiary-fixed": "#331103",
+                        "on-surface-variant": "#404947",
+                        "on-secondary": "#ffffff",
+                        "text-disabled": "#8D9794",
+                        "surface-bright": "#f8faf8",
+                        "outline": "#707977",
+                        "tertiary-fixed-dim": "#f9b89d",
+                        "error": "#C62828",
+                        "on-secondary-container": "#5b6562",
+                        "secondary-fixed-dim": "#bfc9c6",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#3f1a09",
+                        "surface-container-low": "#f3f4f2",
+                        "primary-fixed": "#b5ede4",
+                        "surface-container-highest": "#e1e3e1",
+                        "primary-container": "#00423c",
+                        "surface-variant": "#e1e3e1",
+                        "on-primary": "#ffffff",
+                        "text-primary": "#101E1D",
+                        "on-primary-fixed": "#00201d",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#78aea6",
+                        "outline-variant": "#bfc8c6",
+                        "surface-container-high": "#e7e8e7",
+                        "border-default": "#D6DAD7",
+                        "completed": "#336B3D",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#edeeec",
+                        "information": "#1565C0",
+                        "background": "#f8faf8",
+                        "on-secondary-fixed": "#141d1c",
+                        "on-background": "#191c1b",
+                        "secondary-container": "#d8e2df",
+                        "overdue": "#A61B1B",
+                        "primary-fixed-dim": "#9ad1c8",
+                        "focus-ring": "#006D63",
+                        "on-tertiary-fixed-variant": "#683b27",
+                        "on-secondary-fixed-variant": "#3f4947",
+                        "secondary": "#57605e",
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#d2967d",
+                        "inverse-primary": "#9ad1c8",
+                        "tertiary-container": "#592f1c",
+                        "success": "#2E7D32",
+                        "inverse-on-surface": "#f0f1ef",
+                        "border-strong": "#B7C0BD",
+                        "on-surface": "#191c1b",
+                        "text-secondary": "#5B6966",
+                        "surface": "#f8faf8",
+                        "surface-tint": "#316760",
+                        "primary": "#002a26",
+                        "inverse-surface": "#2e3130",
+                        "canvas": "#F8F5ED",
+                        "tertiary-fixed": "#ffdbcd",
+                        "on-primary-fixed-variant": "#154f49",
+                        "surface-selected": "#D5E9E4",
+                        "surface-dim": "#d9dad9",
+                        "surface-subtle": "#F7F8F6",
+                        "error-container": "#ffdad6",
+                        "warning": "#B85C00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "top-bar-height": "72px",
+                        "margin": "24px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "sidebar-width": "260px"
+                    },
+                    "fontFamily": {
+                        "caption": ["IBM Plex Sans Arabic"],
+                        "body": ["IBM Plex Sans Arabic"],
+                        "headline": ["IBM Plex Sans Arabic"],
+                        "display": ["IBM Plex Sans Arabic"],
+                        "label": ["IBM Plex Sans Arabic"],
+                        "title": ["IBM Plex Sans Arabic"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                        "body": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "label": ["14px", { "lineHeight": "1.4", "fontWeight": "500" }],
+                        "title": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'IBM Plex Sans Arabic', sans-serif; }
+    </style>
+</head>
+<body class="bg-canvas text-on-surface min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="bg-surface-container dark:bg-surface-container-low font-label text-label docked w-sidebar-width h-screen right-0 border-l border-default dark:border-outline-variant flat no shadows fixed right-0 top-0 flex flex-col h-full z-40 hidden md:flex">
+<div class="p-margin border-b border-default dark:border-outline-variant flex items-center gap-gutter">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center overflow-hidden shrink-0">
+<img alt="شعار المكتب القانوني" class="w-full h-full object-cover" data-alt="A professional and understated law firm logo mark, featuring stylized Arabic calligraphy and classic legal scales in deep teal and warm beige. The design is modern, clean, and suited for a digital application interface. Light mode aesthetic, sharp vectors, and corporate mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2sr4Tu1I6O6NBQoGW6StfKzqbh-G632K7v61Co1_LKuDDlT-Se-84dKUfck8b2nySlu7w2tX8U_-22pj4Ds1AlD-olKqnvRwYsqm25dLwzHhwKSJUg_GNbuBMvU26pvsAjb4t7GWGEla4XJL8DILLL5Il8JKGRBy-uz5vQAESV6VyJWmLp5t-Xz1PBUtbo-xdmpkkpuZsD20LbcPlDTkDIBWKpVvs905n2t4Ni-w7zTxF9WHxS2I"/>
+</div>
+<div>
+<h1 class="font-title text-title font-bold text-primary dark:text-primary-fixed">مكتب المحامي</h1>
+<p class="font-caption text-caption text-on-surface-variant">القاهرة، مصر</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto py-gutter">
+<ul class="space-y-1 px-unit">
+<li>
+<a class="flex items-center gap-gutter px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-subtle transition-all duration-200 ease-in-out hover:bg-surface-container-highest dark:hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>لوحة التحكم</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-gutter px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-subtle transition-all duration-200 ease-in-out hover:bg-surface-container-highest dark:hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span>القضايا</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-gutter px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-subtle transition-all duration-200 ease-in-out hover:bg-surface-container-highest dark:hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span>الموكلون</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-gutter px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-subtle transition-all duration-200 ease-in-out hover:bg-surface-container-highest dark:hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span>التقويم</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-gutter px-4 py-3 rounded-lg bg-surface-selected dark:bg-surface-container-high text-primary dark:text-primary-fixed border-r-4 border-primary dark:border-primary-fixed transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span>الإعدادات</span>
+</a>
+</li>
+</ul>
+</div>
+<div class="p-gutter border-t border-default dark:border-outline-variant">
+<button class="w-full mb-gutter py-2 px-4 rounded-lg border border-primary text-primary font-label text-label hover:bg-surface-subtle transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">workspace_premium</span>
+                ترقية الخطة
+            </button>
+<a class="flex items-center gap-gutter px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-subtle transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>تسجيل الخروج</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col min-h-screen md:mr-[260px]">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim font-headline text-headline docked full-width top-0 h-top-bar-height border-b border-default dark:border-outline-variant flat no shadows flex flex-row-reverse items-center justify-between px-margin w-full sticky top-0 z-50">
+<div class="flex items-center gap-margin">
+<div class="font-display text-display text-primary dark:text-primary-fixed font-bold tracking-tight">نظام المحاماة الذكي</div>
+</div>
+<nav class="hidden lg:flex items-center gap-margin h-full">
+<a class="h-full flex items-center text-on-surface-variant dark:text-on-secondary-container hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80 px-2 font-label text-label" href="#">الملف الشخصي والأمان</a>
+<a class="h-full flex items-center text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed pb-1 hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80 px-2 font-label text-label" href="#">النسخ الاحتياطي</a>
+<a class="h-full flex items-center text-on-surface-variant dark:text-on-secondary-container hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80 px-2 font-label text-label" href="#">الخصوصية والاستخدام</a>
+<a class="h-full flex items-center text-on-surface-variant dark:text-on-secondary-container hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80 px-2 font-label text-label" href="#">حول التطبيق</a>
+</nav>
+<div class="flex items-center gap-gutter">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-px h-8 bg-border-default mx-2"></div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg font-label text-label hover:bg-primary-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    إضافة قضية جديدة
+                </button>
+<div class="w-10 h-10 rounded-full bg-secondary-container overflow-hidden ml-2 border border-border-default">
+<img alt="صورة الملف الشخصي للمحامي" class="w-full h-full object-cover" data-alt="A professional headshot of a middle-eastern lawyer in a dark suit, positioned against a light beige background. The lighting is soft and flattering, suitable for a corporate application profile picture. High quality, realistic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3fofl6vQnmOP_0dmoYFHLOMUodbh1fi7E_g3hKadu9pR7mqLJYHObQr6gizRfDeT9hs6vnm-DpnIo0tvh5_7MQ65r-XfD_e1GUfxRj1UiqXZYgBe1R2ApRq6HYnYAiiASLNoQLz1RrP7tV2A82kf0x5qahnUzOxeJisG8yMXXAdQDBX_Oj4usVkioEI2OCrtzveJ4OjkLyD3QxMr7tXxP8goZxz06FAuzhKJUEmsQocT-sQ_YLoc"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 p-margin flex flex-col gap-margin max-w-4xl mx-auto w-full">
+<div class="mb-2">
+<h2 class="font-display text-display text-text-primary">النسخ الاحتياطي والاستعادة</h2>
+<p class="font-body text-body text-text-secondary mt-2">إدارة النسخ الاحتياطية المحلية لضمان سلامة بيانات المكتب وملفات القضايا.</p>
+</div>
+<!-- Backup Card -->
+<section class="bg-surface rounded-xl border border-border-default p-margin shadow-sm flex flex-col gap-margin">
+<div class="flex items-start justify-between">
+<div>
+<h3 class="font-title text-title text-text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">cloud_download</span>
+                            إنشاء نسخة احتياطية
+                        </h3>
+<p class="font-body text-body text-text-secondary mt-1 max-w-xl">قم بإنشاء نسخة احتياطية كاملة لقاعدة البيانات والملفات المرفقة وحفظها محلياً على جهازك لضمان عدم فقدان أي معلومات هامة.</p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-3 rounded-lg font-label text-label hover:bg-primary-container transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+<span class="material-symbols-outlined">save</span>
+                        إنشاء نسخة احتياطية
+                    </button>
+</div>
+<div class="bg-surface-subtle rounded-lg p-gutter border border-border-default mt-4 flex items-center gap-margin">
+<div class="w-12 h-12 rounded-full bg-surface-selected text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+</div>
+<div class="flex-1">
+<h4 class="font-label text-label text-text-primary">آخر نسخة احتياطية</h4>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+<div class="flex flex-col">
+<span class="font-caption text-caption text-text-disabled">اسم الملف</span>
+<span class="font-body text-body text-text-primary font-medium" dir="ltr">legal-masr-backup-2026-08-09.zip</span>
+</div>
+<div class="flex flex-col">
+<span class="font-caption text-caption text-text-disabled">التاريخ والوقت</span>
+<span class="font-body text-body text-text-primary font-medium">9 أغسطس 2026 — 22:14</span>
+</div>
+<div class="flex flex-col">
+<span class="font-caption text-caption text-text-disabled">الحجم</span>
+<span class="font-body text-body text-text-primary font-medium">248 MB</span>
+</div>
+</div>
+</div>
+<div class="flex gap-2 shrink-0">
+<button class="w-10 h-10 rounded-lg border border-border-default flex items-center justify-center text-text-secondary hover:bg-surface-container-low transition-colors" title="تنزيل الملف">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Restore Card -->
+<section class="bg-surface rounded-xl border border-border-default p-margin shadow-sm flex flex-col gap-margin border-l-4 border-l-warning">
+<div>
+<h3 class="font-title text-title text-text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-warning">restore</span>
+                        استعادة البيانات
+                    </h3>
+<p class="font-body text-body text-text-secondary mt-1 max-w-xl">استعادة النظام من ملف نسخة احتياطية سابقة. <strong class="text-text-primary">تنبيه:</strong> هذه العملية ستستبدل جميع البيانات الحالية بالبيانات الموجودة في ملف النسخة الاحتياطية.</p>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<button class="bg-surface text-warning border border-warning px-6 py-3 rounded-lg font-label text-label hover:bg-warning hover:text-white transition-colors flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined">upload_file</span>
+                        استعادة النسخة الاحتياطية
+                    </button>
+</div>
+</section>
+</main>
+</div>
+</body></html>

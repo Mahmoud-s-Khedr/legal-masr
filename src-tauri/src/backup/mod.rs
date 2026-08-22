@@ -11,6 +11,7 @@ use std::{
     fs,
     io::{Cursor, Read, Write},
     path::{Path, PathBuf},
+    time::Duration,
 };
 use zip::{write::SimpleFileOptions, ZipArchive, ZipWriter};
 
@@ -36,11 +37,26 @@ fn checksum(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
 }
 
+fn consistent_database_snapshot(db_path: &Path, master: &[u8; 32]) -> Result<Vec<u8>, Error> {
+    let snapshot_path = db_path.with_extension(format!("backup-{}.tmp", uuid::Uuid::new_v4()));
+    let result = (|| {
+        let source = db::open_db(db_path, master)?;
+        let mut destination = db::open_db(&snapshot_path, master)?;
+        let backup = rusqlite::backup::Backup::new(&source, &mut destination)?;
+        backup.run_to_completion(64, Duration::from_millis(2), None)?;
+        drop(backup);
+        drop(destination);
+        fs::read(&snapshot_path).map_err(Error::from)
+    })();
+    let _ = fs::remove_file(&snapshot_path);
+    result
+}
+
 pub fn create(db_path: &Path, master: &[u8; 32], destination: &str) -> Result<String, Error> {
     let destination = PathBuf::from(destination);
     fs::create_dir_all(&destination)?;
     let mut archive = ZipWriter::new(Cursor::new(Vec::new()));
-    let database = fs::read(db_path)?;
+    let database = consistent_database_snapshot(db_path, master)?;
     let opened = db::open_db(db_path, master)?;
     let manifest = BackupManifest {
         format_version: 1,
@@ -96,11 +112,18 @@ pub fn create(db_path: &Path, master: &[u8; 32], destination: &str) -> Result<St
     })?;
     let output = destination.join(format!(
         "legalmaster-backup-{}.lmsbackup",
-        time::OffsetDateTime::now_utc().unix_timestamp()
+        time::OffsetDateTime::now_utc().unix_timestamp_nanos()
     ));
     let temp = output.with_extension("tmp");
-    fs::write(&temp, payload)?;
+    let mut file = fs::File::create(&temp)?;
+    file.write_all(&payload)?;
+    file.sync_all()?;
+    drop(file);
     fs::rename(temp, &output)?;
+    if let Err(error) = validate(&output.to_string_lossy(), master) {
+        let _ = fs::remove_file(&output);
+        return Err(error);
+    }
     Ok(output.to_string_lossy().into_owned())
 }
 

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+
+<html class="light" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>الموكلون - نظام إدارة القضايا</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "surface-container": "#edeeec",
+                            "border-default": "#D6DAD7",
+                            "on-primary-fixed-variant": "#154f49",
+                            "text-secondary": "#5B6966",
+                            "outline-variant": "#bfc8c6",
+                            "primary-fixed-dim": "#9ad1c8",
+                            "secondary": "#57605e",
+                            "surface-dim": "#d9dad9",
+                            "inverse-surface": "#2e3130",
+                            "on-background": "#191c1b",
+                            "tertiary-fixed-dim": "#f9b89d",
+                            "surface-selected": "#D5E9E4",
+                            "secondary-container": "#d8e2df",
+                            "surface-subtle": "#F7F8F6",
+                            "surface-container-lowest": "#ffffff",
+                            "tertiary": "#3f1a09",
+                            "on-tertiary": "#ffffff",
+                            "background": "#f8faf8",
+                            "surface-container-highest": "#e1e3e1",
+                            "on-error": "#ffffff",
+                            "on-secondary": "#ffffff",
+                            "on-secondary-fixed-variant": "#3f4947",
+                            "tertiary-fixed": "#ffdbcd",
+                            "secondary-fixed-dim": "#bfc9c6",
+                            "error-container": "#ffdad6",
+                            "surface-tint": "#316760",
+                            "surface-variant": "#e1e3e1",
+                            "success": "#2E7D32",
+                            "on-tertiary-container": "#d2967d",
+                            "on-surface-variant": "#404947",
+                            "on-surface": "#191c1b",
+                            "information": "#1565C0",
+                            "secondary-fixed": "#dbe5e2",
+                            "warning": "#B85C00",
+                            "overdue": "#A61B1B",
+                            "canvas": "#F8F5ED",
+                            "completed": "#336B3D",
+                            "on-secondary-container": "#5b6562",
+                            "primary-container": "#00423c",
+                            "surface-container-high": "#e7e8e7",
+                            "surface": "#f8faf8",
+                            "on-error-container": "#93000a",
+                            "text-disabled": "#8D9794",
+                            "error": "#C62828",
+                            "text-primary": "#101E1D",
+                            "border-strong": "#B7C0BD",
+                            "on-secondary-fixed": "#141d1c",
+                            "on-primary-container": "#78aea6",
+                            "on-tertiary-fixed": "#331103",
+                            "focus-ring": "#006D63",
+                            "tertiary-container": "#592f1c",
+                            "on-tertiary-fixed-variant": "#683b27",
+                            "surface-bright": "#f8faf8",
+                            "surface-container-low": "#f3f4f2",
+                            "on-primary-fixed": "#00201d",
+                            "on-primary": "#ffffff",
+                            "inverse-on-surface": "#f0f1ef",
+                            "inverse-primary": "#9ad1c8",
+                            "primary": "#002a26",
+                            "primary-fixed": "#b5ede4",
+                            "outline": "#707977"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.125rem",
+                            "lg": "0.25rem",
+                            "xl": "0.5rem",
+                            "full": "0.75rem"
+                    },
+                    "spacing": {
+                            "gutter": "16px",
+                            "unit": "4px",
+                            "top-bar-height": "72px",
+                            "margin": "24px",
+                            "sidebar-width": "260px"
+                    },
+                    "fontFamily": {
+                            "body": ["IBM Plex Sans Arabic", "sans-serif"],
+                            "caption": ["IBM Plex Sans Arabic", "sans-serif"],
+                            "title": ["IBM Plex Sans Arabic", "sans-serif"],
+                            "display": ["IBM Plex Sans Arabic", "sans-serif"],
+                            "headline": ["IBM Plex Sans Arabic", "sans-serif"],
+                            "label": ["IBM Plex Sans Arabic", "sans-serif"]
+                    },
+                    "fontSize": {
+                            "body": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                            "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                            "title": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                            "display": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                            "headline": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                            "label": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<!-- Google Fonts -->
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+    </style>
+<style>
+        /* Custom Scrollbar for a more polished desktop feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D6DAD7;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #B7C0BD;
+        }
+    </style>
+</head>
+<body class="bg-canvas font-body text-body text-text-primary antialiased h-screen overflow-hidden flex flex-row">
+<!-- SideNavBar -->
+<aside class="fixed top-0 right-0 h-full w-[260px] bg-surface dark:bg-inverse-surface border-l border-border-default dark:border-outline flex flex-col z-20 shadow-none">
+<!-- Logo Area -->
+<div class="h-[72px] flex items-center gap-3 px-4 border-b border-border-default shrink-0">
+<img alt="الشعار الرسمي للمكتب" class="w-10 h-10 object-contain rounded" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQ8yIj1xwZ-jrcGhF3yBrokql8bFt1SaKTgsg0XHlqvVjpnY2UJHqdViIE9Z0AqOknHNDO5WogaADJGwVy_Pp5-C3roZmn3uNO-nZ-4MR4NP64YuUEm7eTsJxQXf7VnkdOJlOB-_6OJGAAoS4sKmsTCZOd9F_EDhf7Qh2heJB8S93C2eQV7VNW_1oox8WRaHjprLhsaHFG-KaxbmBLYTt_XoK0RA4xAIXKb6-zcqBmTIVJUuDR88AAaJwGgy6JQfzY"/>
+<div class="flex flex-col">
+<span class="font-headline text-headline text-primary dark:text-on-primary-fixed-variant leading-tight">مكتب المحاماة</span>
+<span class="font-caption text-caption text-text-secondary">النظام القضائي المتكامل</span>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-2">
+<a class="flex flex-row items-center gap-unit text-on-surface-variant dark:text-surface-variant px-4 py-3 rounded hover:bg-surface-container-lowest dark:hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">dashboard</span>
+<span class="font-label text-label">اليوم</span>
+</a>
+<a class="flex flex-row items-center gap-unit text-on-surface-variant dark:text-surface-variant px-4 py-3 rounded hover:bg-surface-container-lowest dark:hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">calendar_month</span>
+<span class="font-label text-label">الأجندة</span>
+</a>
+<a class="flex flex-row items-center gap-unit bg-surface-container-low dark:bg-secondary-container text-primary dark:text-on-primary-container border-r-4 border-primary px-4 py-3 rounded-l cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-label text-label">الموكلون</span>
+</a>
+<a class="flex flex-row items-center gap-unit text-on-surface-variant dark:text-surface-variant px-4 py-3 rounded hover:bg-surface-container-lowest dark:hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">assignment_ind</span>
+<span class="font-label text-label">التوكيلات</span>
+</a>
+<a class="flex flex-row items-center gap-unit text-on-surface-variant dark:text-surface-variant px-4 py-3 rounded hover:bg-surface-container-lowest dark:hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">gavel</span>
+<span class="font-label text-label">القضايا</span>
+</a>
+<a class="flex flex-row items-center gap-unit text-on-surface-variant dark:text-surface-variant px-4 py-3 rounded hover:bg-surface-container-lowest dark:hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">task_alt</span>
+<span class="font-label text-label">المهام</span>
+</a>
+<a class="flex flex-row items-center gap-unit text-on-surface-variant dark:text-surface-variant px-4 py-3 rounded hover:bg-surface-container-lowest dark:hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">account_balance_wallet</span>
+<span class="font-label text-label">المالية</span>
+</a>
+</nav>
+<!-- Bottom Actions -->
+<div class="mt-auto px-2 py-4 border-t border-border-default flex flex-col gap-1">
+<a class="flex flex-row items-center gap-unit text-on-surface-variant dark:text-surface-variant px-4 py-3 rounded hover:bg-surface-container-lowest dark:hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">settings</span>
+<span class="font-label text-label">الإعدادات</span>
+</a>
+<a class="flex flex-row items-center gap-unit text-on-surface-variant dark:text-surface-variant px-4 py-3 rounded hover:bg-surface-container-lowest dark:hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">lock</span>
+<span class="font-label text-label">قفل البرنامج</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 mr-[260px] flex flex-col h-full overflow-hidden bg-canvas">
+<!-- TopNavBar -->
+<header class="h-[72px] bg-canvas dark:bg-background border-b border-border-default dark:border-outline-variant flex flex-row justify-between items-center px-gutter shrink-0 z-10 w-full shadow-none">
+<!-- Global Search -->
+<div class="flex-1 max-w-2xl relative">
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
+<input class="w-full bg-surface-container-lowest border border-border-default rounded-lg pl-4 pr-10 py-2.5 font-body text-body text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-focus-ring transition-all" placeholder="ابحث عن قضية، موكل، أو مستند..." type="text"/>
+</div>
+<!-- Global Actions -->
+<div class="flex items-center gap-4 mr-4">
+<button class="text-secondary hover:text-primary transition-colors active:opacity-80 p-2 rounded-full hover:bg-surface-subtle">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-secondary hover:text-primary transition-colors active:opacity-80 p-2 rounded-full hover:bg-surface-subtle">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+<button class="bg-primary text-on-primary font-label text-label px-6 py-2.5 rounded-lg hover:bg-primary-container active:scale-95 transition-all flex items-center gap-2 mr-2">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                    إضافة
+                </button>
+</div>
+</header>
+<!-- Page Content -->
+<div class="flex-1 overflow-y-auto p-margin flex flex-col gap-6">
+<!-- Page Header -->
+<div class="flex flex-col gap-1">
+<h1 class="font-display text-display text-text-primary">الموكلون</h1>
+<p class="font-caption text-caption text-text-secondary">إجمالي ١٢٤ موكل</p>
+</div>
+<!-- Toolbar / Filters (Glassmorphic influence on a solid card for stability) -->
+<div class="bg-surface-container-lowest border border-border-default rounded-xl p-4 flex flex-col lg:flex-row justify-between gap-4 items-start lg:items-center shadow-sm">
+<!-- Search & Filters -->
+<div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+<!-- Local Search -->
+<div class="relative w-full sm:w-72">
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-[20px]">search</span>
+<input class="w-full bg-surface-subtle border border-border-default rounded-lg pl-3 pr-10 py-2 font-body text-[14px] text-text-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" placeholder="بحث بالاسم، الهاتف، القومي..." type="text"/>
+</div>
+<!-- Filter Chips -->
+<div class="flex gap-2 items-center overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border-default bg-surface-subtle hover:bg-surface-dim transition-colors font-caption text-caption text-text-secondary whitespace-nowrap">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+                            لديه قضايا نشطة
+                        </button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border-default bg-surface-subtle hover:bg-surface-dim transition-colors font-caption text-caption text-text-secondary whitespace-nowrap">
+<span class="material-symbols-outlined text-[16px]">account_balance</span>
+                            لديه رصيد مستحق
+                        </button>
+</div>
+</div>
+<!-- View/Sort Controls -->
+<div class="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-end">
+<!-- Segmented Control -->
+<div class="flex bg-surface-container-high p-1 rounded-lg">
+<button class="px-4 py-1.5 rounded-md bg-surface-container-lowest shadow-sm font-label text-[13px] text-text-primary">الكل</button>
+<button class="px-4 py-1.5 rounded-md hover:bg-surface-container font-label text-[13px] text-text-secondary transition-colors">النشطون</button>
+<button class="px-4 py-1.5 rounded-md hover:bg-surface-container font-label text-[13px] text-text-secondary transition-colors">المؤرشفون</button>
+</div>
+</div>
+</div>
+<!-- Main Data Table -->
+<div class="bg-surface-container-lowest border border-border-default rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col">
+<div class="overflow-x-auto flex-1">
+<table class="w-full text-right border-collapse">
+<thead class="bg-surface-subtle border-b border-border-default sticky top-0 z-10">
+<tr>
+<th class="px-4 py-3 font-label text-caption text-text-secondary w-24">رقم العميل</th>
+<th class="px-4 py-3 font-label text-caption text-text-primary cursor-pointer hover:bg-surface-dim transition-colors group">
+<div class="flex items-center gap-1">
+                                        اسم الموكل
+                                        <span class="material-symbols-outlined text-[16px] text-primary">arrow_downward</span>
+</div>
+</th>
+<th class="px-4 py-3 font-label text-caption text-text-secondary w-32">الهاتف</th>
+<th class="px-4 py-3 font-label text-caption text-text-secondary w-40">الرقم القومي</th>
+<th class="px-4 py-3 font-label text-caption text-text-secondary w-24 text-center">القضايا</th>
+<th class="px-4 py-3 font-label text-caption text-text-secondary w-32">الرصيد المتبقي</th>
+<th class="px-4 py-3 font-label text-caption text-text-secondary w-16 text-center">الإجراءات</th>
+</tr>
+</thead>
+<tbody class="font-body text-[14px]">
+<!-- Row 1: Selected State -->
+<tr class="border-b border-border-default bg-surface-selected hover:bg-surface-selected transition-colors h-[56px]">
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px]">C-1042</td>
+<td class="px-4 py-2 font-medium text-text-primary">أحمد محمود عبد الرحمن</td>
+<td class="px-4 py-2 text-text-secondary dir-ltr text-left">010 1234 5678</td>
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px] tracking-widest">29***01</td>
+<td class="px-4 py-2 text-center">
+<span class="inline-flex items-center justify-center bg-primary-container text-on-primary-container w-6 h-6 rounded-full text-[12px] font-bold">3</span>
+</td>
+<td class="px-4 py-2 text-error font-medium">15,000 ج.م</td>
+<td class="px-4 py-2 text-center">
+<button class="text-secondary hover:text-primary p-1 rounded-full hover:bg-surface-subtle transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Hovered State -->
+<tr class="border-b border-border-default bg-surface-subtle transition-colors h-[56px] relative">
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px]">C-1043</td>
+<td class="px-4 py-2 font-medium text-text-primary">شركة النصر للتجارة والمقاولات العامة</td>
+<td class="px-4 py-2 text-text-secondary dir-ltr text-left">011 9876 5432</td>
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px] tracking-widest">--</td>
+<td class="px-4 py-2 text-center">
+<span class="inline-flex items-center justify-center bg-surface-container-high text-text-secondary w-6 h-6 rounded-full text-[12px] font-bold">12</span>
+</td>
+<td class="px-4 py-2 text-success font-medium">0 ج.م</td>
+<td class="px-4 py-2 text-center relative">
+<!-- Open Overflow Menu for Demonstration -->
+<button class="text-primary bg-surface-dim p-1 rounded-full transition-colors relative z-10">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+<!-- Popover Menu (Demonstrating the active state) -->
+<div class="absolute left-8 top-8 w-48 bg-surface-container-lowest border border-border-default rounded-lg shadow-lg z-20 py-1 flex flex-col text-right">
+<a class="px-4 py-2 hover:bg-surface-subtle text-[13px] text-text-primary flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[16px] text-secondary">visibility</span>
+                                            عرض الملف الشخصي
+                                        </a>
+<a class="px-4 py-2 hover:bg-surface-subtle text-[13px] text-text-primary flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[16px] text-secondary">edit</span>
+                                            تعديل الموكل
+                                        </a>
+<a class="px-4 py-2 hover:bg-surface-subtle text-[13px] text-text-primary flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[16px] text-secondary">add_box</span>
+                                            إضافة قضية
+                                        </a>
+<div class="border-t border-border-default my-1"></div>
+<a class="px-4 py-2 hover:bg-error-container text-[13px] text-error flex items-center gap-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-[16px]">archive</span>
+                                            أرشفة الموكل
+                                        </a>
+</div>
+</td>
+</tr>
+<!-- Row 3: Normal -->
+<tr class="border-b border-border-default hover:bg-surface-subtle transition-colors h-[56px]">
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px]">C-1044</td>
+<td class="px-4 py-2 font-medium text-text-primary">سارة كمال الدين حلمي</td>
+<td class="px-4 py-2 text-text-secondary dir-ltr text-left">012 3456 7890</td>
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px] tracking-widest">28***02</td>
+<td class="px-4 py-2 text-center">
+<span class="inline-flex items-center justify-center bg-surface-container-high text-text-secondary w-6 h-6 rounded-full text-[12px] font-bold">1</span>
+</td>
+<td class="px-4 py-2 text-warning font-medium">2,500 ج.م</td>
+<td class="px-4 py-2 text-center">
+<button class="text-secondary hover:text-primary p-1 rounded-full hover:bg-surface-subtle transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="border-b border-border-default hover:bg-surface-subtle transition-colors h-[56px]">
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px]">C-1045</td>
+<td class="px-4 py-2 font-medium text-text-primary">مؤسسة الأهرام للصحافة والنشر</td>
+<td class="px-4 py-2 text-text-secondary dir-ltr text-left">02 2345 6789</td>
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px] tracking-widest">--</td>
+<td class="px-4 py-2 text-center">
+<span class="inline-flex items-center justify-center bg-surface-container-high text-text-secondary w-6 h-6 rounded-full text-[12px] font-bold">8</span>
+</td>
+<td class="px-4 py-2 text-success font-medium">0 ج.م</td>
+<td class="px-4 py-2 text-center">
+<button class="text-secondary hover:text-primary p-1 rounded-full hover:bg-surface-subtle transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="border-b border-border-default hover:bg-surface-subtle transition-colors h-[56px]">
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px]">C-1046</td>
+<td class="px-4 py-2 font-medium text-text-primary">طارق عبد الله حسن</td>
+<td class="px-4 py-2 text-text-secondary dir-ltr text-left">015 1122 3344</td>
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px] tracking-widest">27***09</td>
+<td class="px-4 py-2 text-center">
+<span class="inline-flex items-center justify-center bg-surface-container-high text-text-secondary w-6 h-6 rounded-full text-[12px] font-bold">0</span>
+</td>
+<td class="px-4 py-2 text-success font-medium">0 ج.م</td>
+<td class="px-4 py-2 text-center">
+<button class="text-secondary hover:text-primary p-1 rounded-full hover:bg-surface-subtle transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="border-b border-border-default hover:bg-surface-subtle transition-colors h-[56px]">
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px]">C-1047</td>
+<td class="px-4 py-2 font-medium text-text-primary">منى سعيد زكي</td>
+<td class="px-4 py-2 text-text-secondary dir-ltr text-left">010 9988 7766</td>
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px] tracking-widest">29***14</td>
+<td class="px-4 py-2 text-center">
+<span class="inline-flex items-center justify-center bg-surface-container-high text-text-secondary w-6 h-6 rounded-full text-[12px] font-bold">2</span>
+</td>
+<td class="px-4 py-2 text-warning font-medium">500 ج.م</td>
+<td class="px-4 py-2 text-center">
+<button class="text-secondary hover:text-primary p-1 rounded-full hover:bg-surface-subtle transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="border-b border-border-default hover:bg-surface-subtle transition-colors h-[56px]">
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px]">C-1048</td>
+<td class="px-4 py-2 font-medium text-text-primary">عمر إبراهيم الدسوقي</td>
+<td class="px-4 py-2 text-text-secondary dir-ltr text-left">011 4455 6677</td>
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px] tracking-widest">28***05</td>
+<td class="px-4 py-2 text-center">
+<span class="inline-flex items-center justify-center bg-surface-container-high text-text-secondary w-6 h-6 rounded-full text-[12px] font-bold">1</span>
+</td>
+<td class="px-4 py-2 text-error font-medium">4,200 ج.م</td>
+<td class="px-4 py-2 text-center">
+<button class="text-secondary hover:text-primary p-1 rounded-full hover:bg-surface-subtle transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="border-b border-border-default hover:bg-surface-subtle transition-colors h-[56px]">
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px]">C-1049</td>
+<td class="px-4 py-2 font-medium text-text-primary">ليلى مصطفى حافظ</td>
+<td class="px-4 py-2 text-text-secondary dir-ltr text-left">012 2233 4455</td>
+<td class="px-4 py-2 text-text-secondary font-mono text-[13px] tracking-widest">30***11</td>
+<td class="px-4 py-2 text-center">
+<span class="inline-flex items-center justify-center bg-surface-container-high text-text-secondary w-6 h-6 rounded-full text-[12px] font-bold">4</span>
+</td>
+<td class="px-4 py-2 text-success font-medium">0 ج.م</td>
+<td class="px-4 py-2 text-center">
+<button class="text-secondary hover:text-primary p-1 rounded-full hover:bg-surface-subtle transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="bg-surface-subtle border-t border-border-default p-3 flex items-center justify-between">
+<span class="font-caption text-caption text-text-secondary">عرض ١-٨ من إجمالي ١٢٤ موكل</span>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-dim text-text-disabled" disabled="">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-primary text-on-primary font-label text-[13px] flex items-center justify-center">١</button>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-dim text-text-primary font-label text-[13px] flex items-center justify-center transition-colors">٢</button>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-dim text-text-primary font-label text-[13px] flex items-center justify-center transition-colors">٣</button>
+<span class="text-text-secondary px-1">...</span>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-dim text-text-primary font-label text-[13px] flex items-center justify-center transition-colors">١٦</button>
+<button class="p-1 rounded hover:bg-surface-dim text-text-secondary transition-colors">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

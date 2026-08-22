@@ -46,6 +46,14 @@ pub fn document_check_missing(
     document_service::check_missing(&app, &state, &id)
 }
 #[tauri::command]
+pub fn document_open(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
+    document_service::open(&app, &state, &id)
+}
+#[tauri::command]
+pub fn document_reveal(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
+    document_service::reveal(&app, &state, &id)
+}
+#[tauri::command]
 pub fn document_remove(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
     document_service::remove(&app, &state, &id)
 }

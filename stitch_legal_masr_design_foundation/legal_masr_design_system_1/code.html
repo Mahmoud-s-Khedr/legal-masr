@@ -1,0 +1,305 @@
+<!DOCTYPE html><html dir="rtl" lang="ar"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Legal Masr - Design System Specs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#78aea6",
+                        "text-secondary": "#5B6966",
+                        "tertiary-fixed-dim": "#f9b89d",
+                        "on-secondary": "#ffffff",
+                        "warning": "#B85C00",
+                        "on-background": "#191c1b",
+                        "on-primary-fixed-variant": "#154f49",
+                        "surface-subtle": "#F7F8F6",
+                        "inverse-surface": "#2e3130",
+                        "border-strong": "#B7C0BD",
+                        "primary-container": "#00423c",
+                        "inverse-on-surface": "#f0f1ef",
+                        "outline": "#707977",
+                        "information": "#1565C0",
+                        "completed": "#336B3D",
+                        "surface-container-high": "#e7e8e7",
+                        "surface-bright": "#f8faf8",
+                        "tertiary-fixed": "#ffdbcd",
+                        "on-tertiary-fixed-variant": "#683b27",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#bfc8c6",
+                        "on-surface-variant": "#404947",
+                        "border-default": "#D6DAD7",
+                        "on-surface": "#191c1b",
+                        "surface-dim": "#d9dad9",
+                        "primary-fixed-dim": "#9ad1c8",
+                        "error-container": "#ffdad6",
+                        "overdue": "#A61B1B",
+                        "surface-tint": "#316760",
+                        "error": "#C62828",
+                        "success": "#2E7D32",
+                        "on-secondary-fixed": "#141d1c",
+                        "on-primary-fixed": "#00201d",
+                        "tertiary": "#3f1a09",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#3f4947",
+                        "tertiary-container": "#592f1c",
+                        "surface-container-low": "#f3f4f2",
+                        "text-disabled": "#8D9794",
+                        "surface-selected": "#D5E9E4",
+                        "background": "#f8faf8",
+                        "text-primary": "#101E1D",
+                        "secondary": "#57605e",
+                        "surface-container": "#edeeec",
+                        "secondary-fixed": "#dbe5e2",
+                        "surface": "#f8faf8",
+                        "secondary-fixed-dim": "#bfc9c6",
+                        "on-tertiary-fixed": "#331103",
+                        "canvas": "#F8F5ED",
+                        "secondary-container": "#d8e2df",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#d2967d",
+                        "surface-container-highest": "#e1e3e1",
+                        "focus-ring": "#006D63",
+                        "surface-variant": "#e1e3e1",
+                        "primary-fixed": "#b5ede4",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#9ad1c8",
+                        "primary": "#002a26",
+                        "on-secondary-container": "#5b6562"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sidebar-width": "260px",
+                        "top-bar-height": "72px",
+                        "unit": "4px",
+                        "margin": "24px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "display": ["IBM Plex Sans Arabic"],
+                        "caption": ["IBM Plex Sans Arabic"],
+                        "title": ["IBM Plex Sans Arabic"],
+                        "body": ["IBM Plex Sans Arabic"],
+                        "headline": ["IBM Plex Sans Arabic"],
+                        "label": ["IBM Plex Sans Arabic"]
+                    },
+                    "fontSize": {
+                        "display": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "caption": ["12px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                        "title": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "body": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "label": ["14px", { "lineHeight": "1.4", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.canvas'); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .focus-visible-ring:focus-visible { outline: 2px solid theme('colors.focus-ring'); outline-offset: 2px; }
+    </style>
+</head>
+<body class="font-body text-body text-text-primary min-h-screen p-8 md:p-12">
+<!-- Design System Board Container -->
+<div class="max-w-7xl mx-auto bg-surface-container-lowest border border-border-default shadow-sm rounded-xl overflow-hidden">
+<!-- Header -->
+<header class="bg-primary text-on-primary p-margin flex items-center justify-between border-b border-primary-container">
+<div class="flex items-center gap-gutter">
+<img alt="Legal Masr Logo" class="w-16 h-16 rounded bg-on-primary p-2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXZ6g-GlIywdQ8bvTZTe_V6S6HLkQ17mNJDCrS1yabu389OoV5U8bol6y76ri08n88bOLn3Uxs4QvHCiJroRf-3Wh4tla9teZW1sBNObC2lb0E_Cz82gS5LPRP4KZoPZl_fgyyuGK0x06VAru8kQdq5Oh2IVu5B-h7DBbIC4QcKFEr6v8DCCKYgcSaIt1oEPgHKs3v3Zjc2ZGEyPCj1tsygnb3cSAvDBEyXm2KMcMoxuPLpjLNJeqeL9bL9YwcT1vu">
+<div>
+<h1 class="font-display text-display">Legal Masr Design System</h1>
+<p class="font-title text-title text-inverse-primary opacity-80">Technical Specifications &amp; UI Patterns</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label text-label opacity-80">Version 2.1</p>
+<p class="font-caption text-caption opacity-60">Status: Approved</p>
+</div>
+</header>
+<div class="p-margin grid grid-cols-1 lg:grid-cols-12 gap-margin">
+<!-- Left Column: Core Identity -->
+<div class="lg:col-span-4 space-y-margin">
+<!-- Color Palette -->
+<section class="border border-border-default rounded-lg p-gutter bg-surface">
+<h2 class="font-headline text-headline mb-gutter text-primary border-b border-border-default pb-2">Color Palette</h2>
+<div class="space-y-4">
+<div>
+<h3 class="font-title text-title mb-2">Primary Brand</h3>
+<div class="flex gap-2">
+<div class="w-12 h-12 rounded bg-primary border border-border-default flex items-center justify-center text-on-primary font-caption text-caption" title="primary">P</div>
+<div class="w-12 h-12 rounded bg-primary-container border border-border-default flex items-center justify-center text-on-primary-container font-caption text-caption" title="primary-container">Pc</div>
+<div class="w-12 h-12 rounded bg-inverse-primary border border-border-default flex items-center justify-center text-primary font-caption text-caption" title="inverse-primary">Pi</div>
+</div>
+</div>
+<div>
+<h3 class="font-title text-title mb-2">Surfaces</h3>
+<div class="flex gap-2">
+<div class="w-12 h-12 rounded bg-canvas border border-border-default flex items-center justify-center text-text-primary font-caption text-caption" title="canvas">C</div>
+<div class="w-12 h-12 rounded bg-surface border border-border-default flex items-center justify-center text-text-primary font-caption text-caption" title="surface">S</div>
+<div class="w-12 h-12 rounded bg-surface-container-low border border-border-default flex items-center justify-center text-text-primary font-caption text-caption" title="surface-container-low">Sl</div>
+</div>
+</div>
+<div>
+<h3 class="font-title text-title mb-2">Semantic / Status</h3>
+<div class="flex gap-2">
+<div class="w-12 h-12 rounded bg-success border border-border-default flex items-center justify-center text-on-primary font-caption text-caption" title="success">S</div>
+<div class="w-12 h-12 rounded bg-warning border border-border-default flex items-center justify-center text-on-primary font-caption text-caption" title="warning">W</div>
+<div class="w-12 h-12 rounded bg-error border border-border-default flex items-center justify-center text-on-error font-caption text-caption" title="error">E</div>
+<div class="w-12 h-12 rounded bg-information border border-border-default flex items-center justify-center text-on-primary font-caption text-caption" title="information">I</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Typography -->
+<section class="border border-border-default rounded-lg p-gutter bg-surface">
+<h2 class="font-headline text-headline mb-gutter text-primary border-b border-border-default pb-2">Typography</h2>
+<div class="space-y-4">
+<div>
+<div class="font-display text-display text-text-primary">Display - 32px / 700</div>
+<div class="font-caption text-caption text-text-secondary">Used for major headers and section titles.</div>
+</div>
+<div>
+<div class="font-headline text-headline text-text-primary">Headline - 24px / 600</div>
+<div class="font-caption text-caption text-text-secondary">Card titles, dialog headers.</div>
+</div>
+<div>
+<div class="font-title text-title text-text-primary">Title - 20px / 600</div>
+<div class="font-caption text-caption text-text-secondary">Sub-sections, important list items.</div>
+</div>
+<div>
+<div class="font-body text-body text-text-primary">Body - 16px / 400</div>
+<div class="font-caption text-caption text-text-secondary">Main content, paragraphs.</div>
+</div>
+<div>
+<div class="font-label text-label text-text-primary">Label - 14px / 500</div>
+<div class="font-caption text-caption text-text-secondary">Buttons, form inputs, metadata.</div>
+</div>
+<div>
+<div class="font-caption text-caption text-text-secondary">Caption - 12px / 400</div>
+<div class="font-caption text-caption text-text-secondary">Helper text, timestamps.</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Specs & Components -->
+<div class="lg:col-span-8 space-y-margin">
+<!-- Technical Specs (Bento Grid) -->
+<section>
+<h2 class="font-headline text-headline mb-gutter text-primary border-b border-border-default pb-2">Technical Specifications</h2>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+<div class="bg-surface-subtle border border-border-default rounded-lg p-4 flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-text-secondary mb-2">view_sidebar</span>
+<div class="font-label text-label text-text-secondary">Sidebar Width</div>
+<div class="font-title text-title text-primary">260px</div>
+</div>
+<div class="bg-surface-subtle border border-border-default rounded-lg p-4 flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-text-secondary mb-2">top_panel_open</span>
+<div class="font-label text-label text-text-secondary">Top Bar Height</div>
+<div class="font-title text-title text-primary">72px</div>
+</div>
+<div class="bg-surface-subtle border border-border-default rounded-lg p-4 flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-text-secondary mb-2">space_dashboard</span>
+<div class="font-label text-label text-text-secondary">Base Unit</div>
+<div class="font-title text-title text-primary">4px</div>
+</div>
+<div class="bg-surface-subtle border border-border-default rounded-lg p-4 flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-text-secondary mb-2">format_line_spacing</span>
+<div class="font-label text-label text-text-secondary">Margins / Gutters</div>
+<div class="font-title text-title text-primary">24px / 16px</div>
+</div>
+<div class="bg-surface-subtle border border-border-default rounded-lg p-4 flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-text-secondary mb-2">table_rows</span>
+<div class="font-label text-label text-text-secondary">Table Row Height</div>
+<div class="font-title text-title text-primary">48px (min)</div>
+</div>
+<div class="bg-surface-subtle border border-border-default rounded-lg p-4 flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-text-secondary mb-2">chrome_reader_mode</span>
+<div class="font-label text-label text-text-secondary">Dialog Widths</div>
+<div class="font-caption text-caption text-primary">S: 400, M: 600, L: 800</div>
+</div>
+</div>
+</section>
+<!-- UI Components & States -->
+<section class="border border-border-default rounded-lg p-gutter bg-surface">
+<h2 class="font-headline text-headline mb-gutter text-primary border-b border-border-default pb-2">Component States (Buttons &amp; Inputs)</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Buttons -->
+<div class="space-y-4">
+<h3 class="font-title text-title mb-2 text-text-secondary">Primary Actions</h3>
+<div class="flex flex-col gap-3">
+<button class="bg-primary text-on-primary px-4 py-2 rounded font-label text-label focus-visible-ring w-full text-center">Default State</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded font-label text-label focus-visible-ring w-full text-center hover:bg-surface-tint hover:text-on-primary transition-colors">Hover State</button>
+<button class="bg-primary text-on-primary px-4 py-2 rounded font-label text-label focus-visible-ring w-full text-center opacity-50 cursor-not-allowed">Disabled State</button>
+</div>
+</div>
+<!-- Inputs -->
+<div class="space-y-4">
+<h3 class="font-title text-title mb-2 text-text-secondary">Form Fields (48px H)</h3>
+<div class="flex flex-col gap-3">
+<input class="w-full h-[48px] bg-surface-container-lowest border border-border-default rounded px-3 font-body text-body text-text-primary focus:border-focus-ring focus:ring-1 focus:ring-focus-ring outline-none" placeholder="Default Input" type="text">
+<input class="w-full h-[48px] bg-surface-container-lowest border border-focus-ring ring-1 ring-focus-ring rounded px-3 font-body text-body text-text-primary outline-none" type="text" value="Focused Input">
+<div class="relative">
+<input class="w-full h-[48px] bg-error-container border border-error rounded px-3 font-body text-body text-error outline-none" type="text" value="Error State">
+<span class="absolute left-3 top-3 material-symbols-outlined text-error">error</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- RTL Data & Selection -->
+<section class="border border-border-default rounded-lg p-gutter bg-surface">
+<h2 class="font-headline text-headline mb-gutter text-primary border-b border-border-default pb-2">RTL Layout &amp; Selection (Data Tables)</h2>
+<div class="border border-border-default rounded overflow-hidden">
+<table class="w-full text-right border-collapse">
+<thead class="bg-surface-container-low border-b border-border-default">
+<tr>
+<th class="p-3 font-label text-label text-text-secondary w-12"><input class="rounded border-border-default text-primary focus:ring-focus-ring" type="checkbox"></th>
+<th class="p-3 font-label text-label text-text-secondary">رقم القضية</th>
+<th class="p-3 font-label text-label text-text-secondary">اسم الموكل</th>
+<th class="p-3 font-label text-label text-text-secondary">الحالة</th>
+</tr>
+</thead>
+<tbody>
+<!-- Default Row -->
+<tr class="border-b border-border-default hover:bg-surface-subtle transition-colors">
+<td class="p-3"><input class="rounded border-border-default text-primary focus:ring-focus-ring" type="checkbox"></td>
+<td class="p-3 font-body text-body text-text-primary dir-ltr">CASE-2023-0891</td>
+<td class="p-3 font-body text-body text-text-primary">أحمد محمود عبد الرحمن</td>
+<td class="p-3"><span class="bg-surface-container-high text-text-secondary px-2 py-1 rounded font-caption text-caption">قيد الانتظار</span></td>
+</tr>
+<!-- Selected Row -->
+<tr class="bg-surface-selected border-b border-border-default">
+<td class="p-3"><input checked="" class="rounded border-border-default text-primary focus:ring-focus-ring bg-primary" type="checkbox"></td>
+<td class="p-3 font-body text-body text-primary font-medium dir-ltr">CASE-2023-0902</td>
+<td class="p-3 font-body text-body text-primary font-medium">شركة الأفق للتجارة</td>
+<td class="p-3"><span class="bg-success text-on-primary px-2 py-1 rounded font-caption text-caption">مكتمل</span></td>
+</tr>
+<!-- Alert Row -->
+<tr class="border-b border-border-default">
+<td class="p-3"><input class="rounded border-border-default text-primary focus:ring-focus-ring" type="checkbox"></td>
+<td class="p-3 font-body text-body text-error dir-ltr">CASE-2023-0915</td>
+<td class="p-3 font-body text-body text-text-primary">محمد سعيد خليل</td>
+<td class="p-3"><span class="bg-overdue text-on-primary px-2 py-1 rounded font-caption text-caption">متأخر</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</div>
+</div>
+</body></html>

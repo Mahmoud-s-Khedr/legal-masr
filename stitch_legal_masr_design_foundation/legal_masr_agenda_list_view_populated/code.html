@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Legal Masr - الأجندة</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error-container": "#93000a",
+                      "surface-subtle": "#F7F8F6",
+                      "outline": "#707977",
+                      "secondary-container": "#d8e2df",
+                      "background": "#f8faf8",
+                      "surface-bright": "#f8faf8",
+                      "on-surface-variant": "#404947",
+                      "inverse-on-surface": "#f0f1ef",
+                      "text-primary": "#101E1D",
+                      "on-secondary-container": "#5b6562",
+                      "on-background": "#191c1b",
+                      "surface-variant": "#e1e3e1",
+                      "primary-fixed-dim": "#9ad1c8",
+                      "tertiary": "#3f1a09",
+                      "overdue": "#A61B1B",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-container": "#d2967d",
+                      "on-primary-fixed": "#00201d",
+                      "surface-container-highest": "#e1e3e1",
+                      "primary-fixed": "#b5ede4",
+                      "border-strong": "#B7C0BD",
+                      "surface-selected": "#D5E9E4",
+                      "surface-dim": "#d9dad9",
+                      "completed": "#336B3D",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed-dim": "#bfc9c6",
+                      "surface-container-lowest": "#ffffff",
+                      "text-secondary": "#5B6966",
+                      "border-default": "#D6DAD7",
+                      "on-primary-fixed-variant": "#154f49",
+                      "primary-container": "#00423c",
+                      "secondary": "#57605e",
+                      "tertiary-container": "#592f1c",
+                      "error-container": "#ffdad6",
+                      "surface-container-high": "#e7e8e7",
+                      "canvas": "#F8F5ED",
+                      "tertiary-fixed": "#ffdbcd",
+                      "outline-variant": "#bfc8c6",
+                      "success": "#2E7D32",
+                      "on-secondary-fixed-variant": "#3f4947",
+                      "focus-ring": "#006D63",
+                      "on-secondary-fixed": "#141d1c",
+                      "information": "#1565C0",
+                      "inverse-surface": "#2e3130",
+                      "inverse-primary": "#9ad1c8",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-container": "#78aea6",
+                      "on-tertiary-fixed-variant": "#683b27",
+                      "tertiary-fixed-dim": "#f9b89d",
+                      "warning": "#B85C00",
+                      "secondary-fixed": "#dbe5e2",
+                      "error": "#C62828",
+                      "on-surface": "#191c1b",
+                      "on-tertiary-fixed": "#331103",
+                      "on-error": "#ffffff",
+                      "surface-container-low": "#f3f4f2",
+                      "surface": "#f8faf8",
+                      "text-disabled": "#8D9794",
+                      "primary": "#002a26",
+                      "surface-container": "#edeeec",
+                      "surface-tint": "#316760"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "top-bar-height": "72px",
+                      "margin": "24px",
+                      "gutter": "16px",
+                      "unit": "4px",
+                      "sidebar-width": "260px"
+              },
+              "fontFamily": {
+                      "body": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "headline": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "label": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "title": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "display": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "caption": [
+                              "IBM Plex Sans Arabic"
+                      ]
+              },
+              "fontSize": {
+                      "body": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "title": [
+                              "20px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "caption": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for desktop application feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D6DAD7;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #B7C0BD;
+        }
+    </style>
+</head>
+<body class="bg-canvas font-body text-text-primary min-h-screen overflow-hidden flex font-body text-body">
+<!-- Application Shell: Fixed Right Sidebar -->
+<nav class="fixed right-0 top-0 h-full w-sidebar-width z-50 shadow-sm dark:shadow-none bg-surface-container-low dark:bg-inverse-surface border-l border-outline-variant dark:border-outline flex flex-col rtl">
+<!-- Sidebar Header / Brand -->
+<div class="h-top-bar-height flex items-center px-6 border-b border-border-default">
+<div class="flex items-center gap-3">
+<img alt="Legal Masr Logo" class="w-10 h-10 object-contain rounded" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWpoZDVbf316fqdb8pPfdx6D5mT1yq-JtaSRiPREMQmkxh_Jq9JEaHNabkae1OlK3l_B1ZUwtIAetjBV97uRf_QHE_PvNgpAnZ0QrylRjJL2p70SFDcUVXcKW21cI1zAsMMIBoMphNtz0iQx5p8hg8ruuVC4tkVmj5Cd8SE2huP53HpkkfwyqyC0sCQtbh5oLrW-mgypRX0LKLtDJ6fAuU-pSO4xpPf-R50CwQqQo_pt_jxQmS-XYrN5BSY23bShGZ"/>
+<div>
+<h1 class="font-headline text-headline font-bold text-primary dark:text-primary-fixed">ليجال مصر</h1>
+<p class="font-caption text-caption text-text-secondary">نظام إدارة المحاماة</p>
+</div>
+</div>
+</div>
+<!-- Sidebar Navigation Tabs -->
+<div class="flex-1 overflow-y-auto py-4 flex flex-col gap-1">
+<!-- Inactive Tab -->
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant dark:hover:bg-on-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">today</span>
+<span class="font-label text-label">اليوم</span>
+</a>
+<!-- Active Tab (Agenda) -->
+<a class="flex flex-row-reverse items-center gap-3 bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container border-r-4 border-primary dark:border-primary-fixed px-4 py-3 font-bold active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+<span class="font-label text-label">الأجندة</span>
+</a>
+<!-- Inactive Tabs -->
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant dark:hover:bg-on-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label text-label">الموكلون</span>
+</a>
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant dark:hover:bg-on-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">assignment_ind</span>
+<span class="font-label text-label">التوكيلات</span>
+</a>
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant dark:hover:bg-on-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span class="font-label text-label">القضايا</span>
+</a>
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant dark:hover:bg-on-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">task</span>
+<span class="font-label text-label">المهام</span>
+</a>
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant dark:hover:bg-on-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label text-label">المالية</span>
+</a>
+</div>
+<!-- Sidebar Footer Tabs -->
+<div class="border-t border-border-default py-2 flex flex-col gap-1">
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant dark:hover:bg-on-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label text-label">الإعدادات</span>
+</a>
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant dark:hover:bg-on-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">lock</span>
+<span class="font-label text-label">قفل البرنامج</span>
+</a>
+</div>
+</nav>
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 right-sidebar-width h-top-bar-height z-40 shadow-sm bg-surface-glass border-b border-border-muted dark:border-outline bg-surface-glass dark:bg-inverse-surface backdrop-blur-md flex flex-row-reverse justify-between items-center px-margin w-auto">
+<!-- Brand / Empty on Desktop as Sidebar handles it, but structurally present -->
+<div class="hidden"></div>
+<!-- Search Bar (on_right / relative to LTR, so left in RTL) -->
+<div class="flex-1 flex justify-end max-w-md ml-auto">
+<div class="relative w-full focus-within:ring-2 focus-within:ring-primary-container rounded">
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-text-secondary">
+<span class="material-symbols-outlined">search</span>
+</span>
+<input class="w-full bg-surface-container-lowest border border-border-default rounded py-2 pr-10 pl-4 text-body font-body text-text-primary focus:outline-none focus:ring-2 focus:ring-focus-ring placeholder:text-text-disabled" placeholder="بحث في الأجندة، القضايا، الموكلين..." type="text"/>
+</div>
+</div>
+<!-- Trailing Primary Action -->
+<div class="flex items-center gap-4 mr-6">
+<button class="bg-primary hover:bg-primary-container text-on-primary font-label text-label py-2 px-4 rounded flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-focus-ring">
+<span class="material-symbols-outlined">add</span>
+<span>إضافة</span>
+</button>
+<button class="text-text-secondary hover:text-text-primary transition-colors focus:outline-none rounded p-1">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant border border-border-default flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-text-secondary">person</span>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="mt-top-bar-height mr-sidebar-width flex-1 h-[calc(100vh-72px)] overflow-y-auto bg-canvas p-margin">
+<!-- Content Container -->
+<div class="max-w-5xl mx-auto flex flex-col gap-6">
+<!-- 1. Header Section -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<h2 class="font-display text-display text-text-primary">الأجندة</h2>
+<div class="h-6 w-px bg-border-default"></div>
+<div class="flex items-center gap-2 text-text-secondary">
+<button class="p-1 rounded hover:bg-surface-variant transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-focus-ring">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+<span class="font-title text-title whitespace-nowrap">٢٤ - ٣٠ أكتوبر، ٢٠٢٣</span>
+<button class="p-1 rounded hover:bg-surface-variant transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-focus-ring">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+</div>
+</div>
+<!-- View Selector -->
+<div class="flex bg-surface-container-low border border-border-default rounded p-1">
+<button class="px-4 py-1.5 font-label text-label rounded text-text-secondary hover:bg-surface-variant transition-colors focus:outline-none">شهر</button>
+<button class="px-4 py-1.5 font-label text-label rounded text-text-secondary hover:bg-surface-variant transition-colors focus:outline-none">أسبوع</button>
+<button class="px-4 py-1.5 font-label text-label rounded bg-surface-container-highest shadow-sm text-text-primary font-bold focus:outline-none">قائمة</button>
+</div>
+</div>
+<!-- 2. Filters -->
+<div class="flex flex-wrap gap-2">
+<button class="px-3 py-1.5 rounded-full border border-border-default bg-surface-container-lowest text-text-secondary font-label text-label hover:bg-surface-variant transition-colors flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-focus-ring">
+<span class="material-symbols-outlined text-[18px]">gavel</span>
+                    جلسات
+                </button>
+<button class="px-3 py-1.5 rounded-full border border-border-default bg-surface-container-lowest text-text-secondary font-label text-label hover:bg-surface-variant transition-colors flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-focus-ring">
+<span class="material-symbols-outlined text-[18px]">task</span>
+                    مهام
+                </button>
+<button class="px-3 py-1.5 rounded-full border border-border-default bg-surface-container-lowest text-text-secondary font-label text-label hover:bg-surface-variant transition-colors flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-focus-ring">
+<span class="material-symbols-outlined text-[18px]">event</span>
+                    مواعيد
+                </button>
+<button class="px-3 py-1.5 rounded-full border border-border-default bg-surface-container-lowest text-text-secondary font-label text-label hover:bg-surface-variant transition-colors flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-focus-ring">
+<span class="material-symbols-outlined text-[18px]">alarm</span>
+                    مواعيد نهائية
+                </button>
+</div>
+<!-- 3. Main List Surface -->
+<div class="bg-surface-container-lowest border border-border-default rounded-lg shadow-sm flex flex-col">
+<!-- Overdue Group -->
+<div class="border-b border-border-default last:border-b-0">
+<div class="bg-error-container/30 px-gutter py-2 border-b border-border-default flex items-center gap-2">
+<span class="material-symbols-outlined text-overdue text-[20px]">warning</span>
+<h3 class="font-title text-title text-overdue">متأخرات</h3>
+</div>
+<!-- Item Row: Overdue Task -->
+<div class="flex items-center justify-between px-gutter h-[64px] border-b border-border-default last:border-b-0 hover:bg-surface-subtle transition-colors group relative cursor-pointer">
+<!-- Left Accent Line -->
+<div class="absolute right-0 top-0 bottom-0 w-1 bg-overdue"></div>
+<div class="flex items-center gap-4 flex-1 pr-2">
+<!-- Time -->
+<div class="w-20 font-label text-label text-text-secondary shrink-0 text-left">
+                                الأمس
+                            </div>
+<!-- Icon -->
+<div class="w-8 h-8 rounded-full bg-error-container/50 flex items-center justify-center text-overdue shrink-0">
+<span class="material-symbols-outlined text-[18px]">task</span>
+</div>
+<!-- Content -->
+<div class="flex flex-col justify-center flex-1 min-w-0">
+<div class="font-body text-body text-text-primary truncate font-medium">تقديم مذكرة الدفاع - محكمة استئناف القاهرة</div>
+<div class="font-caption text-caption text-text-secondary truncate">قضية رقم ٤٥٢/٢٠٢٣ • موكل: شركة النيل للتجارة</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-2 shrink-0">
+<label class="flex items-center cursor-pointer p-2 rounded-full hover:bg-surface-variant">
+<input class="w-5 h-5 border-border-strong rounded text-primary focus:ring-focus-ring cursor-pointer" type="checkbox"/>
+</label>
+<button class="p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface-variant focus:outline-none focus:ring-2 focus:ring-focus-ring opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Today Group -->
+<div class="border-b border-border-default last:border-b-0">
+<div class="bg-surface-selected/50 px-gutter py-2 border-b border-border-default flex items-center gap-2 sticky top-0 z-10 backdrop-blur-sm">
+<h3 class="font-title text-title text-text-primary font-bold">اليوم، ٢٥ أكتوبر</h3>
+<span class="px-2 py-0.5 rounded-full bg-primary text-on-primary font-caption text-caption">٣ عناصر</span>
+</div>
+<!-- Item Row: Hearing (Hovered State) -->
+<div class="flex items-center justify-between px-gutter h-[64px] border-b border-border-default last:border-b-0 bg-surface-subtle shadow-[inset_4px_0_0_0_#002a26] cursor-pointer relative">
+<div class="flex items-center gap-4 flex-1 pr-2">
+<div class="w-20 font-label text-label text-text-primary font-bold shrink-0 text-left">
+                                ٠٩:٠٠ ص
+                            </div>
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-text-primary shrink-0 border border-border-default">
+<span class="material-symbols-outlined text-[18px]">gavel</span>
+</div>
+<div class="flex flex-col justify-center flex-1 min-w-0">
+<div class="font-body text-body text-text-primary truncate font-bold">جلسة مرافعة - محكمة الجيزة الابتدائية</div>
+<div class="font-caption text-caption text-text-secondary truncate">قضية رقم ١١٢/٢٠٢٣ • الدائرة الرابعة مدني</div>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<button class="px-3 py-1 text-sm font-label border border-border-strong rounded hover:bg-surface-container text-text-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
+                                تسجيل القرار
+                            </button>
+<button class="p-2 rounded-full text-text-primary bg-surface-variant focus:outline-none focus:ring-2 focus:ring-focus-ring transition-opacity">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Item Row: Task (Completed State) -->
+<div class="flex items-center justify-between px-gutter h-[64px] border-b border-border-default last:border-b-0 hover:bg-surface-subtle transition-colors group relative cursor-pointer opacity-70">
+<div class="absolute right-0 top-0 bottom-0 w-1 bg-completed"></div>
+<div class="flex items-center gap-4 flex-1 pr-2">
+<div class="w-20 font-label text-label text-text-secondary shrink-0 text-left line-through">
+                                ١٢:٣٠ م
+                            </div>
+<div class="w-8 h-8 rounded-full bg-completed/20 flex items-center justify-center text-completed shrink-0">
+<span class="material-symbols-outlined text-[18px]">task</span>
+</div>
+<div class="flex flex-col justify-center flex-1 min-w-0">
+<div class="font-body text-body text-text-secondary truncate line-through">مراجعة عقد الشراكة - شركة الأمل</div>
+<div class="font-caption text-caption text-text-disabled truncate">تم الإنجاز بواسطة: أحمد محمود</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<label class="flex items-center cursor-pointer p-2 rounded-full">
+<input checked="" class="w-5 h-5 border-border-strong rounded text-completed focus:ring-focus-ring cursor-pointer" type="checkbox"/>
+</label>
+<button class="p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface-variant focus:outline-none focus:ring-2 focus:ring-focus-ring opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Item Row: Appointment (Keyboard Focused State) -->
+<div class="flex items-center justify-between px-gutter h-[64px] border-b border-border-default last:border-b-0 bg-surface-container-lowest ring-2 ring-inset ring-focus-ring cursor-pointer relative rounded-sm">
+<div class="absolute right-0 top-0 bottom-0 w-1 bg-information"></div>
+<div class="flex items-center gap-4 flex-1 pr-2">
+<div class="w-20 font-label text-label text-text-primary shrink-0 text-left">
+                                ٠٢:٠٠ م
+                            </div>
+<div class="w-8 h-8 rounded-full bg-information/10 flex items-center justify-center text-information shrink-0">
+<span class="material-symbols-outlined text-[18px]">event</span>
+</div>
+<div class="flex flex-col justify-center flex-1 min-w-0">
+<div class="font-body text-body text-text-primary truncate font-medium">اجتماع مع الموكل لمناقشة التسوية</div>
+<div class="font-caption text-caption text-text-secondary truncate">غرفة الاجتماعات الرئيسية • السيد/ محمد عبد الله</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface-variant focus:outline-none focus:ring-2 focus:ring-focus-ring opacity-100 transition-opacity">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Tomorrow Group -->
+<div class="border-b border-border-default last:border-b-0">
+<div class="bg-surface-container px-gutter py-2 border-b border-border-default flex items-center gap-2">
+<h3 class="font-title text-title text-text-secondary">غداً، ٢٦ أكتوبر</h3>
+</div>
+<!-- Item Row: Hearing (Open Menu State) -->
+<div class="flex items-center justify-between px-gutter h-[64px] border-b border-border-default last:border-b-0 hover:bg-surface-subtle transition-colors group relative cursor-pointer z-20">
+<div class="absolute right-0 top-0 bottom-0 w-1 bg-secondary-container"></div>
+<div class="flex items-center gap-4 flex-1 pr-2">
+<div class="w-20 font-label text-label text-text-secondary shrink-0 text-left">
+                                طوال اليوم
+                            </div>
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-text-primary shrink-0 border border-border-default">
+<span class="material-symbols-outlined text-[18px]">gavel</span>
+</div>
+<div class="flex flex-col justify-center flex-1 min-w-0">
+<div class="font-body text-body text-text-primary truncate font-medium">جلسة نطق بالحكم - محكمة النقض</div>
+<div class="font-caption text-caption text-text-secondary truncate">قضية رقم ٨٨/٢٠٢٢ • الدائرة الجنائية</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0 relative">
+<button class="p-2 rounded-full text-text-primary bg-surface-variant focus:outline-none focus:ring-2 focus:ring-focus-ring">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+<!-- Overflow Menu Dropdown -->
+<div class="absolute left-0 top-full mt-1 w-48 bg-surface-container-lowest border border-border-default shadow-md rounded-md py-1 z-50">
+<button class="w-full text-right px-4 py-2 font-body text-body text-text-primary hover:bg-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+                                    عرض القضية
+                                </button>
+<button class="w-full text-right px-4 py-2 font-body text-body text-text-primary hover:bg-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">edit_calendar</span>
+                                    إعادة جدولة
+                                </button>
+<div class="h-px bg-border-default my-1"></div>
+<button class="w-full text-right px-4 py-2 font-body text-body text-error hover:bg-error-container/30 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+                                    إلغاء
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

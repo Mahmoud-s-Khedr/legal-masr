@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>تعديل المصروف - Legal Masr</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "border-default": "#D6DAD7",
+                        "primary-container": "#00423c",
+                        "secondary-fixed": "#dbe5e2",
+                        "surface-container-high": "#e7e8e7",
+                        "overdue": "#A61B1B",
+                        "information": "#1565C0",
+                        "surface-bright": "#f8faf8",
+                        "on-surface-variant": "#404947",
+                        "error-container": "#ffdad6",
+                        "completed": "#336B3D",
+                        "outline": "#707977",
+                        "text-primary": "#101E1D",
+                        "on-primary-fixed": "#00201d",
+                        "inverse-on-surface": "#f0f1ef",
+                        "secondary": "#57605e",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#9ad1c8",
+                        "surface-container-low": "#f3f4f2",
+                        "primary-fixed": "#b5ede4",
+                        "border-strong": "#B7C0BD",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#316760",
+                        "on-secondary-fixed": "#141d1c",
+                        "focus-ring": "#006D63",
+                        "on-surface": "#191c1b",
+                        "secondary-container": "#d8e2df",
+                        "primary": "#002a26",
+                        "success": "#2E7D32",
+                        "on-secondary": "#ffffff",
+                        "text-disabled": "#8D9794",
+                        "canvas": "#F8F5ED",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#683b27",
+                        "surface-container-highest": "#e1e3e1",
+                        "tertiary-fixed-dim": "#f9b89d",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#592f1c",
+                        "on-primary": "#ffffff",
+                        "background": "#f8faf8",
+                        "on-tertiary-fixed": "#331103",
+                        "surface": "#f8faf8",
+                        "warning": "#B85C00",
+                        "surface-selected": "#D5E9E4",
+                        "on-background": "#191c1b",
+                        "on-primary-container": "#78aea6",
+                        "on-tertiary-container": "#d2967d",
+                        "text-secondary": "#5B6966",
+                        "on-primary-fixed-variant": "#154f49",
+                        "on-secondary-container": "#5b6562",
+                        "surface-subtle": "#F7F8F6",
+                        "primary-fixed-dim": "#9ad1c8",
+                        "tertiary-fixed": "#ffdbcd",
+                        "surface-container": "#edeeec",
+                        "tertiary": "#3f1a09",
+                        "inverse-surface": "#2e3130",
+                        "secondary-fixed-dim": "#bfc9c6",
+                        "on-secondary-fixed-variant": "#3f4947",
+                        "error": "#C62828",
+                        "outline-variant": "#bfc8c6",
+                        "surface-dim": "#d9dad9",
+                        "surface-variant": "#e1e3e1"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "top-bar-height": "72px",
+                        "margin": "24px",
+                        "sidebar-width": "260px"
+                    },
+                    fontFamily: {
+                        "display": ["IBM Plex Sans Arabic"],
+                        "caption": ["IBM Plex Sans Arabic"],
+                        "title": ["IBM Plex Sans Arabic"],
+                        "headline": ["IBM Plex Sans Arabic"],
+                        "label": ["IBM Plex Sans Arabic"],
+                        "body": ["IBM Plex Sans Arabic"]
+                    },
+                    fontSize: {
+                        "display": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "caption": ["12px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                        "title": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "headline": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "label": ["14px", { "lineHeight": "1.4", "fontWeight": "500" }],
+                        "body": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-canvas text-text-primary font-body flex h-screen overflow-hidden antialiased">
+<!-- Global Background / Application Canvas (simulated blurred state) -->
+<div class="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm flex items-center justify-center p-4">
+<!-- Modal Container -->
+<div class="bg-surface w-full max-w-[720px] rounded-xl shadow-lg border border-border-default flex flex-col overflow-hidden">
+<!-- Header -->
+<div class="flex items-center justify-between px-6 py-4 border-b border-border-default bg-surface-subtle">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined icon-fill">receipt_long</span>
+</div>
+<div><form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary flex items-center gap-1" for="expense-amount">
+المبلغ
+<span class="text-error">*</span>
+</label>
+<div class="relative">
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 text-text-secondary font-body">ج.م</span>
+<input class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring pr-12 pl-3 py-2 outline-none transition-colors" id="expense-amount" required="" type="number" value="1250.00"/>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary flex items-center gap-1" for="expense-date">
+التاريخ
+<span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring px-3 py-2 outline-none transition-colors" id="expense-date" required="" type="date" value="2024-05-14"/>
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary flex items-center gap-1" for="expense-type">
+نوع المصروف
+<span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring px-3 py-2 outline-none transition-colors appearance-none cursor-pointer pr-10" id="expense-type" required="">
+<option value="court_fees">رسوم محكمة</option>
+<option selected="" value="transportation">انتقالات</option>
+<option value="office_supplies">أدوات مكتبية</option>
+<option value="expert_fees">أتعاب خبراء</option>
+<option value="other">أخرى</option>
+</select>
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[20px]">category</span>
+</span>
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[20px]">arrow_drop_down</span>
+</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-surface-subtle p-4 rounded-lg border border-border-default">
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary" for="related-case">
+القضية المتعلقة <span class="text-text-disabled text-caption font-normal">(اختياري)</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring pr-10 pl-3 py-2 outline-none transition-colors" id="related-case" type="text" value="قضية رقم 452/2023 - استئناف عالي"/>
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary pointer-events-none">
+<span class="material-symbols-outlined text-[20px]">gavel</span>
+</span>
+<button class="absolute inset-y-0 left-0 flex items-center pl-2 text-secondary hover:text-text-primary" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary" for="related-client">
+الموكل <span class="text-text-disabled text-caption font-normal">(اختياري)</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring pr-10 pl-3 py-2 outline-none transition-colors" id="related-client" placeholder="ابحث عن موكل..." type="text"/>
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary pointer-events-none">
+<span class="material-symbols-outlined text-[20px]">person</span>
+</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary" for="expense-notes">
+ملاحظات <span class="text-text-disabled text-caption font-normal">(اختياري)</span>
+</label>
+<textarea class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring p-3 outline-none transition-colors resize-none" id="expense-notes" rows="3">مصاريف انتقال لحضور جلسة النطق بالحكم في محكمة الجيزة الابتدائية.</textarea>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary">
+إيصال / مستند <span class="text-text-disabled text-caption font-normal">(اختياري)</span>
+</label>
+<div class="border border-border-strong rounded-lg bg-surface-container-lowest p-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-error-container text-error flex items-center justify-center">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-label text-text-primary line-clamp-1 truncate w-[200px] sm:w-[300px]">taxi_receipt_giza_court.pdf</span>
+<span class="font-caption text-caption text-text-secondary">1.2 MB • تم الرفع: 14 مايو 2024</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-information hover:bg-surface-subtle p-2 rounded transition-colors flex items-center gap-1" title="معاينة" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="text-secondary hover:bg-surface-subtle p-2 rounded transition-colors flex items-center gap-1" title="استبدال" type="button">
+<span class="material-symbols-outlined text-[18px]">published_with_changes</span>
+</button>
+<button class="text-error hover:bg-error-container/50 p-2 rounded transition-colors flex items-center gap-1" title="حذف" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+</form></div>
+</div>
+<button aria-label="إغلاق" class="text-secondary hover:text-text-primary hover:bg-surface-container p-2 rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Scrollable Content -->
+<div class="p-6 overflow-y-auto flex-1 bg-surface space-y-6"><form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary flex items-center gap-1" for="expense-amount">
+المبلغ
+<span class="text-error">*</span>
+</label>
+<div class="relative">
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 text-text-secondary font-body">ج.م</span>
+<input class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring pr-12 pl-3 py-2 outline-none transition-colors" id="expense-amount" required="" type="number" value="1250.00"/>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary flex items-center gap-1" for="expense-date">
+التاريخ
+<span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring px-3 py-2 outline-none transition-colors" id="expense-date" required="" type="date" value="2024-05-14"/>
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary flex items-center gap-1" for="expense-type">
+نوع المصروف
+<span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring px-3 py-2 outline-none transition-colors appearance-none cursor-pointer pr-10" id="expense-type" required="">
+<option value="court_fees">رسوم محكمة</option>
+<option selected="" value="transportation">انتقالات</option>
+<option value="office_supplies">أدوات مكتبية</option>
+<option value="expert_fees">أتعاب خبراء</option>
+<option value="other">أخرى</option>
+</select>
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[20px]">category</span>
+</span>
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[20px]">arrow_drop_down</span>
+</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-surface-subtle p-4 rounded-lg border border-border-default">
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary" for="related-case">
+القضية المتعلقة <span class="text-text-disabled text-caption font-normal">(اختياري)</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring pr-10 pl-3 py-2 outline-none transition-colors" id="related-case" type="text" value="قضية رقم 452/2023 - استئناف عالي"/>
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary pointer-events-none">
+<span class="material-symbols-outlined text-[20px]">gavel</span>
+</span>
+<button class="absolute inset-y-0 left-0 flex items-center pl-2 text-secondary hover:text-text-primary" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary" for="related-client">
+الموكل <span class="text-text-disabled text-caption font-normal">(اختياري)</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring pr-10 pl-3 py-2 outline-none transition-colors" id="related-client" placeholder="ابحث عن موكل..." type="text"/>
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary pointer-events-none">
+<span class="material-symbols-outlined text-[20px]">person</span>
+</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary" for="expense-notes">
+ملاحظات <span class="text-text-disabled text-caption font-normal">(اختياري)</span>
+</label>
+<textarea class="w-full bg-surface-container-lowest border border-border-default rounded text-text-primary font-body focus:border-focus-ring focus:ring-1 focus:ring-focus-ring p-3 outline-none transition-colors resize-none" id="expense-notes" rows="3">مصاريف انتقال لحضور جلسة النطق بالحكم في محكمة الجيزة الابتدائية.</textarea>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label text-label text-text-primary">
+إيصال / مستند <span class="text-text-disabled text-caption font-normal">(اختياري)</span>
+</label>
+<div class="border border-border-strong rounded-lg bg-surface-container-lowest p-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-error-container text-error flex items-center justify-center">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-label text-text-primary line-clamp-1 truncate w-[200px] sm:w-[300px]">taxi_receipt_giza_court.pdf</span>
+<span class="font-caption text-caption text-text-secondary">1.2 MB • تم الرفع: 14 مايو 2024</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-information hover:bg-surface-subtle p-2 rounded transition-colors flex items-center gap-1" title="معاينة" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="text-secondary hover:bg-surface-subtle p-2 rounded transition-colors flex items-center gap-1" title="استبدال" type="button">
+<span class="material-symbols-outlined text-[18px]">published_with_changes</span>
+</button>
+<button class="text-error hover:bg-error-container/50 p-2 rounded transition-colors flex items-center gap-1" title="حذف" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+</form></div>
+<!-- Footer -->
+<div class="px-6 py-4 border-t border-border-default bg-surface-subtle flex items-center justify-between rounded-b-xl">
+<button class="text-secondary hover:text-text-primary p-2 rounded-lg transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined">more_vert</span>
+<span class="font-label text-label">المزيد</span>
+</button>
+<div class="flex items-center gap-3">
+<button class="px-6 py-2 rounded border border-border-default text-primary font-label text-label hover:bg-surface-container transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 focus:ring-offset-surface" type="button">
+إلغاء
+</button>
+<button class="px-6 py-2 rounded bg-primary text-on-primary font-label text-label hover:bg-primary-container transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 focus:ring-offset-surface shadow-sm" type="button">
+حفظ التغييرات
+</button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

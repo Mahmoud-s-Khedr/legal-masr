@@ -55,7 +55,7 @@ pub fn update_transaction(
     input: &FinancialTransactionInput,
     now: &str,
 ) -> Result<FinancialTransactionDto, Error> {
-    if conn.execute("UPDATE financial_transactions SET client_id=?2,case_id=?3,transaction_type=?4,amount_minor=?5,transaction_date=?6,payment_method=?7,description=?8,receipt_document_id=?9,updated_at=?10 WHERE id=?1 AND reversed_transaction_id IS NULL",params![input.id,input.client_id,input.case_id,input.transaction_type,input.amount_minor,input.transaction_date,input.payment_method,input.description,input.receipt_document_id,now])?==0{return Err(Error::TransactionNotFound)};
+    if conn.execute("UPDATE financial_transactions SET client_id=?2,case_id=?3,transaction_type=?4,amount_minor=?5,transaction_date=?6,payment_method=?7,description=?8,receipt_document_id=?9,updated_at=?10 WHERE id=?1 AND reversed_transaction_id IS NULL AND NOT EXISTS (SELECT 1 FROM financial_transactions reversal WHERE reversal.reversed_transaction_id=financial_transactions.id)",params![input.id,input.client_id,input.case_id,input.transaction_type,input.amount_minor,input.transaction_date,input.payment_method,input.description,input.receipt_document_id,now])?==0{return Err(Error::TransactionNotFound)};
     get_transaction(conn, input.id.as_deref().unwrap_or_default())
 }
 pub fn get_transaction(conn: &Connection, id: &str) -> Result<FinancialTransactionDto, Error> {
@@ -80,7 +80,7 @@ fn totals(
     client_id: Option<&str>,
     case_id: Option<&str>,
 ) -> Result<(i64, i64, i64), Error> {
-    conn.query_row("SELECT COALESCE(SUM(CASE WHEN transaction_type IN ('FEE_PAYMENT','OTHER_INCOME') THEN amount_minor WHEN transaction_type='REFUND' THEN -amount_minor ELSE 0 END),0),COALESCE(SUM(CASE WHEN transaction_type IN ('CASE_EXPENSE','OTHER_EXPENSE') THEN amount_minor ELSE 0 END),0),COALESCE(SUM(CASE WHEN transaction_type='FEE_PAYMENT' THEN amount_minor WHEN transaction_type='REFUND' THEN -amount_minor ELSE 0 END),0) FROM financial_transactions WHERE (?1 IS NULL OR client_id=?1) AND (?2 IS NULL OR case_id=?2)",params![client_id,case_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).map_err(Error::from)
+    conn.query_row("SELECT COALESCE(SUM(CASE WHEN transaction_type IN ('FEE_PAYMENT','OTHER_INCOME') THEN amount_minor WHEN transaction_type='REFUND' THEN -amount_minor ELSE 0 END),0),COALESCE(SUM(CASE WHEN transaction_type IN ('CASE_EXPENSE','OTHER_EXPENSE') THEN amount_minor ELSE 0 END),0),COALESCE(SUM(CASE WHEN transaction_type='FEE_PAYMENT' THEN amount_minor WHEN transaction_type='REFUND' THEN -amount_minor ELSE 0 END),0) FROM financial_transactions current WHERE (?1 IS NULL OR client_id=?1) AND (?2 IS NULL OR case_id=?2) AND reversed_transaction_id IS NULL AND NOT EXISTS (SELECT 1 FROM financial_transactions reversal WHERE reversal.reversed_transaction_id=current.id)",params![client_id,case_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).map_err(Error::from)
 }
 pub fn case_summary(conn: &Connection, case_id: &str) -> Result<CaseFinanceSummary, Error> {
     let a = fee_agreement(conn, case_id)?;

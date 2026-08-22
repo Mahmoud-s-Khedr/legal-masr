@@ -27,6 +27,7 @@ import type {
   DocumentReferenceInput,
   DocumentUpdateInput,
   Settings,
+  LawyerProfile,
   FeeAgreementInput,
   FinancialTransactionInput,
   FinancialTransactionDto,
@@ -43,15 +44,17 @@ export const bridge = {
   recover: (recoveryKey: string, newPassword: string) =>
     invoke<void>('app_recover_access', { recoveryKey, newPassword }),
   lock: () => invoke<void>('app_lock'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    invoke<void>('app_change_password', { currentPassword, newPassword }),
   createBackup: (destination: string) => invoke<string>('backup_create', { destination }),
   validateBackup: (path: string) => invoke<void>('backup_validate', { path }),
   restoreBackup: (path: string) => invoke<void>('backup_restore', { path }),
   settings: () => invoke<Settings>('settings_get'),
-  updateSettings: (
-    settings: Pick<Settings, 'language' | 'theme' | 'lockTimeoutMinutes'> & {
-      backupDirectory: string;
-    },
-  ) => invoke<Settings>('settings_update', settings),
+  updateSettings: (settings: Omit<Settings, 'managedDocumentsDirectory' | 'autostartEnabled'>) =>
+    invoke<Settings>('settings_update', { input: settings }),
+  setAutostart: (enabled: boolean) => invoke<Settings>('settings_set_autostart', { enabled }),
+  profile: () => invoke<LawyerProfile>('profile_get'),
+  updateProfile: (profile: LawyerProfile) => invoke<LawyerProfile>('profile_update', { profile }),
 
   clientCreate: (input: ClientCreateInput) => invoke<ClientDto>('client_create', { input }),
   clientUpdate: (input: ClientUpdateInput) => invoke<ClientDto>('client_update', { input }),
@@ -84,6 +87,8 @@ export const bridge = {
   searchGlobal: (query: string) => invoke<SearchHit[]>('search_global', { query }),
   searchRebuildIndex: () => invoke<{ indexedCount: number }>('search_rebuild_index'),
   dashboardSummary: (today: string) => invoke<DashboardSummary>('dashboard_get_summary', { today }),
+  refreshReminders: (today: string, nowTime: string) =>
+    invoke<number>('reminders_refresh', { today, nowTime }),
   eventCreate: (input: EventInput) => invoke<EventDto>('event_create', { input }),
   eventUpdate: (input: EventInput) => invoke<EventDto>('event_update', { input }),
   eventList: (input: EventListInput) => invoke<EventDto[]>('event_list', { input }),
@@ -110,6 +115,8 @@ export const bridge = {
     invoke<DocumentDto>('document_add_reference', { input }),
   documentUpdate: (input: DocumentUpdateInput) => invoke<DocumentDto>('document_update', { input }),
   documentCheckMissing: (id: string) => invoke<boolean>('document_check_missing', { id }),
+  documentOpen: (id: string) => invoke<void>('document_open', { id }),
+  documentReveal: (id: string) => invoke<void>('document_reveal', { id }),
   documentRemove: (id: string) => invoke<void>('document_remove', { id }),
   financeFeeAgreementSave: (input: FeeAgreementInput) =>
     invoke('finance_fee_agreement_save', { input }),

@@ -63,7 +63,7 @@ Ask them to demonstrate:
 - [~] Windows x86-64 native build workflow implemented; GitHub runner and device validation pending
 - [~] macOS Intel native build workflow with ad-hoc signature verification implemented; runner and device validation pending
 - [~] macOS Apple Silicon native build workflow with ad-hoc signature verification implemented; runner and device validation pending
-- [~] Backup proof of concept — encrypted creation and validation implemented; restore remains
+- [x] Backup proof of concept — encrypted creation, validation, and managed-document restore implemented
 
 ### Deliverable
 
@@ -106,14 +106,14 @@ No feature module begins until this phase passes. The security/database spike
 ### Scope
 
 - [x] Repository structure — Rust split into `commands/services/repositories/dto/db/security/backup/errors/state`; frontend split into `app/components/features/bridge/i18n/lib/styles`.
-- [x] Tauri permissions — unchanged minimal capability set (`core:window:default`, `dialog:allow-open`, `dialog:allow-save`, `window-state:default`); no unrestricted filesystem or shell access added.
+- [x] Tauri permissions — minimal capability set for window state, user-initiated file dialogs, and notification permission prompts; no unrestricted filesystem, shell, or HTTP access added.
 - [x] Error contract — `{ code, message, details }` preserved and extended (`details` now carries typed payloads such as duplicate-client candidates).
 - [x] Logging — `tracing` + `tracing-appender` daily-rotating file log under `<app data dir>/logs/`; only version/OS/error codes/durations logged, never names, phones, case numbers, paths or secrets.
 - [x] React providers — `TanStack Query` (`QueryClientProvider`) and `i18next` wired in `app/providers.tsx`.
 - [x] Routing — `react-router-dom` route table in `app/router.tsx`.
 - [x] RTL foundation — `document.dir`/`lang` now driven reactively by the active i18next language.
-- [x] Design tokens — existing CSS custom properties (`--ink`, `--jade`, `--sand`, `--gold`, `--muted`, `--line`) kept; no visual redesign performed.
-- [x] Main layout — `components/layout/Shell.tsx`.
+- [x] Design tokens — a consistent warm-paper, Egyptian-green, compact RTL system derived from the supplied Sketch reference screens.
+- [x] Main layout — `components/layout/Shell.tsx`, with a single navigation rail, global search, and working quick-create menu.
 - [x] Localization — `i18next`/`react-i18next` with `ar`/`en` resource files; all previously hardcoded Arabic strings extracted into translation keys.
 - [x] Settings storage — unchanged SQLite-backed `app_settings`.
 - [x] Onboarding — revised (deviation from `04-functional-modules.md` §8.1):
@@ -198,8 +198,9 @@ screens.
 - [x] Calendar — date-only agenda display with day/week/month/agenda view selection.
 - [x] Dashboard — local daily events/tasks plus deterministic overdue-task and missing-hearing-outcome attention counts.
 - [x] Overdue and missing-outcome logic, covered by repository-level validation.
-- [ ] Native notifications.
-- [ ] Optional autostart and tray behavior.
+- [x] Native notifications with generic privacy-safe copy and persisted per-item/day deduplication.
+- [x] Optional OS autostart.
+- [ ] Minimize-to-tray behavior and physical-platform validation.
 
 ### Exit criteria
 
@@ -218,7 +219,7 @@ This is the first version suitable for a closely supervised lawyer alpha.
 - [x] Managed document copies — generated internal filenames in the local app-data document directory, checksum calculation, and SQLCipher metadata.
 - [x] External file references — metadata only; application removal never deletes the source file.
 - [x] File categories — constrained schema and typed metadata support.
-- [ ] Native open and reveal.
+- [x] Native open and reveal through Rust commands that resolve a document ID internally.
 - [x] Missing-file detection.
 - [ ] Case-folder export.
 - [x] Global search — grouped client, case, event, task, and document results with deep links.
@@ -233,7 +234,7 @@ A lawyer can locate both records and document metadata from one search field.
 
 ## Phase 6 — Financial tracking
 
-**Status:** In progress
+**Status:** Complete
 
 ### Scope
 
@@ -243,8 +244,8 @@ A lawyer can locate both records and document metadata from one search field.
 - [x] Linked compensating reversals; a transaction cannot be reversed twice.
 - [x] Case/client summary commands.
 - [x] Finance register with entry form, list, reversal action, and browser print action.
-- [ ] Finance summaries embedded in client and case detail views.
-- [ ] Complete date-filtered client statement with Arabic labels and print layout.
+- [x] Finance summaries embedded in client and case detail views.
+- [x] Date/client/case-filtered statement with Arabic labels and print layout.
 
 ### Exit criteria
 
@@ -271,7 +272,8 @@ The lawyer can answer:
 - [ ] Restore preview and whole-vault atomic swap.
 - [ ] Complete, client, and case exports in the documented CSV/manifest format.
 - [ ] Permanent-deletion workflows and full application-data deletion.
-- [ ] Privacy screen and manually generated redacted support bundle.
+- [x] Privacy and local data-location screen.
+- [ ] Manually generated redacted support bundle.
 
 ### Exit criteria
 

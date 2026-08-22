@@ -17,6 +17,12 @@ pub fn run() {
     tauri::Builder::default()
         .manage(AppState::default())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|_, _, _| {}))
         .setup(|app| {
@@ -37,6 +43,9 @@ pub fn run() {
             commands::backup::backup_restore,
             commands::settings::settings_get,
             commands::settings::settings_update,
+            commands::settings::profile_get,
+            commands::settings::profile_update,
+            commands::settings::settings_set_autostart,
             commands::clients::client_create,
             commands::clients::client_update,
             commands::clients::client_get,
@@ -76,13 +85,16 @@ pub fn run() {
             commands::documents::document_list,
             commands::documents::document_update,
             commands::documents::document_check_missing,
+            commands::documents::document_open,
+            commands::documents::document_reveal,
             commands::documents::document_remove,
             commands::finances::finance_fee_agreement_save,
             commands::finances::finance_transaction_save,
             commands::finances::finance_transaction_reverse,
             commands::finances::finance_transaction_list,
             commands::finances::finance_case_summary,
-            commands::finances::finance_client_summary
+            commands::finances::finance_client_summary,
+            commands::reminders::reminders_refresh
         ])
         .run(tauri::generate_context!())
         .expect("error while running LegalMaster Solo");

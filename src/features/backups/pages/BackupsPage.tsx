@@ -23,6 +23,9 @@ export function BackupSettingsPanel() {
     await updateSettings.mutateAsync({
       language: settings.language,
       theme: settings.theme,
+      dateFormat: settings.dateFormat,
+      weekStartsOn: settings.weekStartsOn,
+      defaultReminderMinutes: settings.defaultReminderMinutes,
       lockTimeoutMinutes: settings.lockTimeoutMinutes,
       backupDirectory: selected,
     });
@@ -126,5 +129,21 @@ export function BackupSettingsPanel() {
         )}
       </div>
     </div>
+  );
+}
+
+export function BackupsPage() {
+  const { t } = useTranslation();
+  return (
+    <section className="work-page backup-page">
+      <header className="page-heading">
+        <div>
+          <p className="kicker">{t('backups.kicker')}</p>
+          <h2>{t('backups.title')}</h2>
+          <p>{t('backups.description')}</p>
+        </div>
+      </header>
+      <BackupSettingsPanel />
+    </section>
   );
 }

@@ -34,9 +34,36 @@ fn default_lock_timeout_minutes() -> u32 {
 pub struct SettingsDto {
     pub language: String,
     pub theme: String,
+    pub date_format: String,
+    pub week_starts_on: u8,
+    pub default_reminder_minutes: u32,
+    pub autostart_enabled: bool,
     pub lock_timeout_minutes: u32,
     pub managed_documents_directory: Option<String>,
     pub backup_directory: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SettingsUpdateInput {
+    pub language: String,
+    pub theme: String,
+    pub date_format: String,
+    pub week_starts_on: u8,
+    pub default_reminder_minutes: u32,
+    pub lock_timeout_minutes: u32,
+    pub backup_directory: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LawyerProfileDto {
+    pub full_name: String,
+    pub bar_number: Option<String>,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub office_address: Option<String>,
+    pub default_currency: String,
 }
 
 #[derive(Serialize, Clone)]

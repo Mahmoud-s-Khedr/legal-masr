@@ -1,28 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BrowserRouter, NavLink } from 'react-router-dom';
+import { BrowserRouter, Link, NavLink } from 'react-router-dom';
 import { AppRoutes, NAV_ITEMS } from '../../app/router';
 import { GlobalSearch } from '../../features/search/components/GlobalSearch';
 import { useSettings } from '../../features/settings/api/settingsApi';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Icon } from './Icon';
 
-const NAV_ICONS = [
-  'home',
-  'clients',
-  'cases',
-  'calendar',
-  'tasks',
-  'documents',
-  'finances',
-  'settings',
-] as const;
-
 export function Shell({ onLock }: { onLock: () => void }) {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const lockTimeoutMinutes = settings?.lockTimeoutMinutes;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     if (!lockTimeoutMinutes) return;
@@ -53,9 +43,9 @@ export function Shell({ onLock }: { onLock: () => void }) {
   const navigation = (onNavigate?: () => void) => (
     <nav aria-label={t('app.workspaceKicker')}>
       <p className="sidebar-section-label">{t('app.workspaceKicker')}</p>
-      {NAV_ITEMS.map(({ to, key }, index) => (
+      {NAV_ITEMS.map(({ to, key, icon }) => (
         <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate}>
-          <Icon name={NAV_ICONS[index]} />
+          <Icon name={icon} />
           <span>{t(key)}</span>
         </NavLink>
       ))}
@@ -65,8 +55,21 @@ export function Shell({ onLock }: { onLock: () => void }) {
   return (
     <BrowserRouter>
       <div className="app-shell">
+        <aside className="sidebar">
+          <div className="sidebar-brand brand-block">
+            <img src="/logo.png" alt="" />
+            <div>
+              <strong>{t('app.brandName')}</strong>
+              <span>{t('app.brandTagline')}</span>
+            </div>
+          </div>
+          {navigation()}
+          <div className="sidebar-footer">
+            <span>{t('app.localOnly')}</span>
+          </div>
+        </aside>
         <header className="topbar">
-          <div className="topbar-brand">
+          <div className="topbar-main">
             <button
               className="menu-button"
               type="button"
@@ -76,33 +79,56 @@ export function Shell({ onLock }: { onLock: () => void }) {
             >
               <Icon name="menu" size={21} />
             </button>
-            <div className="brand-block">
-              <img src="/logo.png" alt="" />
-              <div>
-                <strong>{t('app.brandName')}</strong>
-                <span>{t('app.brandTagline')}</span>
-              </div>
+            <div className="search-wrap">
+              <Icon name="search" size={19} />
+              <GlobalSearch />
             </div>
           </div>
           <div className="topbar-actions">
-            <div className="search-wrap">
-              <Icon name="search" size={18} />
-              <GlobalSearch />
+            <div className="create-menu-wrap">
+              <button
+                className="create-button"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={createOpen}
+                onClick={() => setCreateOpen((current) => !current)}
+              >
+                <Icon name="plus" size={18} />
+                <span>{t('app.add')}</span>
+                <Icon name="chevron-down" size={15} />
+              </button>
+              {createOpen && (
+                <div className="create-menu" role="menu">
+                  <Link to="/clients/new" role="menuitem" onClick={() => setCreateOpen(false)}>
+                    <Icon name="clients" size={18} />
+                    {t('dashboard.addClient')}
+                  </Link>
+                  <Link to="/cases/new" role="menuitem" onClick={() => setCreateOpen(false)}>
+                    <Icon name="cases" size={18} />
+                    {t('dashboard.addCase')}
+                  </Link>
+                  <Link to="/calendar" role="menuitem" onClick={() => setCreateOpen(false)}>
+                    <Icon name="calendar" size={18} />
+                    {t('app.addEvent')}
+                  </Link>
+                  <Link to="/tasks" role="menuitem" onClick={() => setCreateOpen(false)}>
+                    <Icon name="tasks" size={18} />
+                    {t('app.addTask')}
+                  </Link>
+                </div>
+              )}
             </div>
             <span className="local-status">{t('app.localOnly')}</span>
             <LanguageSwitcher />
-            <button className="lock-button" onClick={onLock} aria-label={t('app.lockButton')}>
+            <button
+              className="lock-button icon-button"
+              onClick={onLock}
+              aria-label={t('app.lockButton')}
+            >
               <Icon name="lock" size={17} />
-              <span>{t('app.lockButton')}</span>
             </button>
           </div>
         </header>
-        <aside className="sidebar">
-          {navigation()}
-          <div className="sidebar-footer">
-            <span>{t('app.localOnly')}</span>
-          </div>
-        </aside>
         <main className="workspace">
           <AppRoutes />
         </main>

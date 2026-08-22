@@ -16,7 +16,13 @@ export function ClientListPage() {
   return (
     <section className="entity-list">
       <div className="entity-list-header">
-        <h2>{t('clients.title')}</h2>
+        <div>
+          <p className="kicker">سجل العملاء</p>
+          <h2>{t('clients.title')}</h2>
+          <p className="page-description">
+            ابحث بسرعة، وافتح ملف الموكل بكل قضاياه ومستنداته وحسابه.
+          </p>
+        </div>
         <button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</button>
       </div>
 
@@ -39,7 +45,17 @@ export function ClientListPage() {
       {isLoading ? (
         <p className="table-message">{t('clients.loading')}</p>
       ) : !clients?.length ? (
-        <p className="table-message">{t('clients.empty')}</p>
+        <div className="empty-state-card">
+          <strong>{query ? 'لا توجد نتائج مطابقة' : t('clients.empty')}</strong>
+          <span>
+            {query
+              ? 'جرّب جزءًا من الاسم أو رقم الهاتف.'
+              : 'أضف أول موكل لبدء تنظيم القضايا والمتابعات.'}
+          </span>
+          {!query && (
+            <button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</button>
+          )}
+        </div>
       ) : (
         <div className="data-table-scroll">
           <table className="data-table">

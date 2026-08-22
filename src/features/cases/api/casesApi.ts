@@ -54,6 +54,12 @@ export function useRestoreCase() {
   });
 }
 
+export const useExportCase = () =>
+  useMutation({
+    mutationFn: ({ id, destination }: { id: string; destination: string }) =>
+      bridge.caseExport(id, destination),
+  });
+
 export function useAttachClient() {
   const queryClient = useQueryClient();
   return useMutation({

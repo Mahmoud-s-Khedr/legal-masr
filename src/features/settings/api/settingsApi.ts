@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
-import type { Settings } from '../../../bridge/types';
+import type { LawyerProfile, Settings } from '../../../bridge/types';
 import { useAppStatus } from '../../onboarding/api/onboardingApi';
 
 const SETTINGS_QUERY_KEY = ['settings'];
@@ -22,11 +22,37 @@ export const useSettings = () => {
 export function useUpdateSettings() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (
-      settings: Pick<Settings, 'language' | 'theme' | 'lockTimeoutMinutes'> & {
-        backupDirectory: string;
-      },
-    ) => bridge.updateSettings(settings),
+    mutationFn: (settings: Omit<Settings, 'managedDocumentsDirectory' | 'autostartEnabled'>) =>
+      bridge.updateSettings(settings),
     onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
   });
 }
+
+export const useProfile = () => {
+  const { data: status } = useAppStatus();
+  return useQuery({ queryKey: ['profile'], queryFn: bridge.profile, enabled: !!status?.unlocked });
+};
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (profile: LawyerProfile) => bridge.updateProfile(profile),
+    onSuccess: (profile) => queryClient.setQueryData(['profile'], profile),
+  });
+};
+export const useChangePassword = () =>
+  useMutation({
+    mutationFn: ({
+      currentPassword,
+      newPassword,
+    }: {
+      currentPassword: string;
+      newPassword: string;
+    }) => bridge.changePassword(currentPassword, newPassword),
+  });
+export const useSetAutostart = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bridge.setAutostart,
+    onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
+  });
+};

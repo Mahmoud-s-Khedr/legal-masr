@@ -1,6 +1,6 @@
 use legalmaster_lib::{
     db,
-    dto::InitializeInput,
+    dto::{InitializeInput, LawyerProfileDto, SettingsUpdateInput},
     security,
     services::{app_service, backup_service, settings_service},
     state::AppState,
@@ -19,6 +19,60 @@ fn lock_app_dir() -> MutexGuard<'static, ()> {
     APP_DIR_LOCK
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+#[test]
+fn lawyer_profile_updates_locally_and_rejects_invalid_identity_data() {
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    app_service::initialize(
+        handle,
+        &state,
+        InitializeInput {
+            password: "a secure local password".into(),
+            full_name: "محامٍ تجريبي".into(),
+            language: "ar".into(),
+            managed_documents_directory: None,
+            backup_directory: None,
+            lock_timeout_minutes: 15,
+        },
+    )
+    .unwrap();
+
+    let updated = settings_service::update_profile(
+        handle,
+        &state,
+        LawyerProfileDto {
+            full_name: "أحمد مصطفى".into(),
+            bar_number: Some("12345".into()),
+            phone: Some("01000000000".into()),
+            email: None,
+            office_address: Some("القاهرة".into()),
+            default_currency: "EGP".into(),
+        },
+    )
+    .unwrap();
+    assert_eq!(updated.full_name, "أحمد مصطفى");
+    assert_eq!(updated.default_currency, "EGP");
+
+    let invalid = settings_service::update_profile(
+        handle,
+        &state,
+        LawyerProfileDto {
+            full_name: "  ".into(),
+            bar_number: None,
+            phone: None,
+            email: None,
+            office_address: None,
+            default_currency: "EGP".into(),
+        },
+    );
+    assert!(invalid.is_err());
+
+    let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
 }
 
 fn fresh_mock_app() -> tauri::App<tauri::test::MockRuntime> {
@@ -108,8 +162,20 @@ fn settings_update_changes_the_backup_directory_and_backups_still_work_against_i
     let new_backup_dir = tempfile::tempdir().unwrap();
     let new_backup_dir_str = new_backup_dir.path().to_str().unwrap().to_string();
 
-    let updated = settings_service::update(handle, &state, "ar", "system", 20, &new_backup_dir_str)
-        .expect("settings_update must accept a new backup directory");
+    let updated = settings_service::update(
+        handle,
+        &state,
+        &SettingsUpdateInput {
+            language: "ar".into(),
+            theme: "system".into(),
+            date_format: "dd/MM/yyyy".into(),
+            week_starts_on: 6,
+            default_reminder_minutes: 60,
+            lock_timeout_minutes: 20,
+            backup_directory: Some(new_backup_dir_str.clone()),
+        },
+    )
+    .expect("settings_update must accept a new backup directory");
     assert_eq!(
         updated.backup_directory.as_deref(),
         Some(new_backup_dir_str.as_str())
@@ -125,6 +191,48 @@ fn settings_update_changes_the_backup_directory_and_backups_still_work_against_i
     let backup_path = backup_service::create(handle, &state, &new_backup_dir_str)
         .expect("backup_create must succeed against the newly configured directory");
     assert!(std::path::Path::new(&backup_path).exists());
+
+    let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
+}
+
+#[test]
+fn general_settings_can_be_saved_before_a_backup_directory_is_selected() {
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    app_service::initialize(
+        handle,
+        &state,
+        InitializeInput {
+            password: "a secure local password".into(),
+            full_name: "محامٍ تجريبي".into(),
+            language: "ar".into(),
+            managed_documents_directory: None,
+            backup_directory: None,
+            lock_timeout_minutes: 15,
+        },
+    )
+    .unwrap();
+
+    let updated = settings_service::update(
+        handle,
+        &state,
+        &SettingsUpdateInput {
+            language: "ar".into(),
+            theme: "light".into(),
+            date_format: "yyyy-MM-dd".into(),
+            week_starts_on: 0,
+            default_reminder_minutes: 30,
+            lock_timeout_minutes: 10,
+            backup_directory: None,
+        },
+    )
+    .expect("general settings must not require a backup destination");
+    assert_eq!(updated.theme, "light");
+    assert_eq!(updated.date_format, "yyyy-MM-dd");
+    assert!(updated.backup_directory.is_none());
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
 }

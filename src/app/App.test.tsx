@@ -15,6 +15,8 @@ vi.mock('../bridge/commands', () => ({
     updateSettings: vi.fn(),
     clientList: vi.fn(),
     caseList: vi.fn(),
+    dashboardSummary: vi.fn(),
+    refreshReminders: vi.fn(),
   },
 }));
 import { bridge } from '../bridge/commands';
@@ -37,6 +39,13 @@ describe('application gate', () => {
     });
     vi.mocked(bridge.clientList).mockResolvedValue([]);
     vi.mocked(bridge.caseList).mockResolvedValue([]);
+    vi.mocked(bridge.dashboardSummary).mockResolvedValue({
+      todayEvents: [],
+      todayTasks: [],
+      overdueTasks: [],
+      missingOutcomeEvents: [],
+      upcomingEvents: [],
+    });
   });
 
   it('starts with the Arabic secure onboarding form', async () => {
@@ -56,12 +65,16 @@ describe('application gate', () => {
     vi.mocked(bridge.settings).mockResolvedValue({
       language: 'ar',
       theme: 'system',
+      dateFormat: 'dd/MM/yyyy',
+      weekStartsOn: 6,
+      defaultReminderMinutes: 60,
+      autostartEnabled: false,
       lockTimeoutMinutes: 15,
       managedDocumentsDirectory: '/docs',
       backupDirectory: '/backups',
     });
     render(<App />);
-    expect(await screen.findByRole('heading', { name: 'سجل العمل' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'اليوم' })).toBeInTheDocument();
     expect(screen.getByText('ليجال مصر')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'الرئيسية' })).toHaveClass('active');
     expect(document.documentElement).toHaveAttribute('data-theme', 'system');
@@ -72,6 +85,10 @@ describe('application gate', () => {
     vi.mocked(bridge.settings).mockResolvedValue({
       language: 'ar',
       theme: 'system',
+      dateFormat: 'dd/MM/yyyy',
+      weekStartsOn: 6,
+      defaultReminderMinutes: 60,
+      autostartEnabled: false,
       lockTimeoutMinutes: 15,
       managedDocumentsDirectory: null,
       backupDirectory: null,
@@ -108,6 +125,10 @@ describe('application gate', () => {
     vi.mocked(bridge.settings).mockResolvedValue({
       language: 'ar',
       theme: 'system',
+      dateFormat: 'dd/MM/yyyy',
+      weekStartsOn: 6,
+      defaultReminderMinutes: 60,
+      autostartEnabled: false,
       lockTimeoutMinutes: 15,
       managedDocumentsDirectory: null,
       backupDirectory: null,

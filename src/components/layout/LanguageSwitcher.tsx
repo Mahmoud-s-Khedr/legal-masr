@@ -18,8 +18,11 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           updateSettings.mutate({
             language: next,
             theme: settings.theme,
+            dateFormat: settings.dateFormat,
+            weekStartsOn: settings.weekStartsOn,
+            defaultReminderMinutes: settings.defaultReminderMinutes,
             lockTimeoutMinutes: settings.lockTimeoutMinutes,
-            backupDirectory: settings.backupDirectory ?? '',
+            backupDirectory: settings.backupDirectory,
           });
         }
       }}

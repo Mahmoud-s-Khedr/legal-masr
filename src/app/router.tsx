@@ -1,6 +1,4 @@
-import { useTranslation } from 'react-i18next';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { Placeholder } from '../components/layout/Placeholder';
+import { Route, Routes } from 'react-router-dom';
 import { CalendarPage } from '../features/events/pages/CalendarPage';
 import { TasksPage } from '../features/tasks/pages/TasksPage';
 import { DocumentsPage } from '../features/documents/pages/DocumentsPage';
@@ -13,22 +11,22 @@ import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { NewCasePage } from '../features/cases/pages/NewCasePage';
 import { FinancesPage } from '../features/finances/pages/FinancesPage';
+import { BackupsPage } from '../features/backups/pages/BackupsPage';
+import type { IconName } from '../components/layout/Icon';
 
 export const NAV_ITEMS = [
-  { to: '/', key: 'nav.home' },
-  { to: '/clients', key: 'nav.clients' },
-  { to: '/cases', key: 'nav.cases' },
-  { to: '/calendar', key: 'nav.calendar' },
-  { to: '/tasks', key: 'nav.tasks' },
-  { to: '/documents', key: 'nav.documents' },
-  { to: '/finances', key: 'nav.finances' },
-  { to: '/settings', key: 'nav.settings' },
-] as const;
-
-const PLACEHOLDER_NAV_KEYS = new Set<string>();
+  { to: '/', key: 'nav.home', icon: 'home' },
+  { to: '/clients', key: 'nav.clients', icon: 'clients' },
+  { to: '/cases', key: 'nav.cases', icon: 'cases' },
+  { to: '/calendar', key: 'nav.calendar', icon: 'calendar' },
+  { to: '/tasks', key: 'nav.tasks', icon: 'tasks' },
+  { to: '/documents', key: 'nav.documents', icon: 'documents' },
+  { to: '/finances', key: 'nav.finances', icon: 'finances' },
+  { to: '/backups', key: 'nav.backups', icon: 'backup' },
+  { to: '/settings', key: 'nav.settings', icon: 'settings' },
+] as const satisfies ReadonlyArray<{ to: string; key: string; icon: IconName }>;
 
 export function AppRoutes() {
-  const { t } = useTranslation();
   return (
     <Routes>
       <Route path="/" element={<DashboardPage />} />
@@ -42,10 +40,7 @@ export function AppRoutes() {
       <Route path="/tasks" element={<TasksPage />} />
       <Route path="/documents" element={<DocumentsPage />} />
       <Route path="/finances" element={<FinancesPage />} />
-      {NAV_ITEMS.filter(({ to }) => PLACEHOLDER_NAV_KEYS.has(to)).map(({ to, key }) => (
-        <Route key={to} path={to} element={<Placeholder label={t(key)} />} />
-      ))}
-      <Route path="/backups" element={<Navigate to="/settings?tab=backups" replace />} />
+      <Route path="/backups" element={<BackupsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Routes>
   );
