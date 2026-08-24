@@ -74,8 +74,10 @@ export function ClientListPage() {
                   <th scope="row">
                     <Link to={`/clients/${client.id}`}>{client.fullName}</Link>
                   </th>
-                  <td>{client.internalNumber}</td>
-                  <td dir="ltr">{client.primaryPhone ?? '—'}</td>
+                  <td>
+                    <bdi>{client.internalNumber}</bdi>
+                  </td>
+                  <td>{client.primaryPhone ? <bdi>{client.primaryPhone}</bdi> : '—'}</td>
                   <td>
                     {client.archivedAt ? (
                       <span className="badge">{t('clients.archivedBadge')}</span>

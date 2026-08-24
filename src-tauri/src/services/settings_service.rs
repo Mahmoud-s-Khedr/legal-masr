@@ -74,3 +74,15 @@ pub fn set_autostart<R: Runtime>(
     settings_repository::update_autostart(&connection, enabled)?;
     settings_repository::get_settings(&connection)
 }
+
+pub fn set_usage_counters<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    enabled: bool,
+) -> Result<SettingsDto, Error> {
+    let master = state.unlocked()?;
+    let (_, database_path) = db::paths(app)?;
+    let connection = db::open_db(&database_path, &master)?;
+    settings_repository::update_usage_counters(&connection, enabled)?;
+    settings_repository::get_settings(&connection)
+}

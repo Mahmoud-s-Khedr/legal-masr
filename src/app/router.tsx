@@ -13,6 +13,7 @@ import { NewCasePage } from '../features/cases/pages/NewCasePage';
 import { FinancesPage } from '../features/finances/pages/FinancesPage';
 import { BackupsPage } from '../features/backups/pages/BackupsPage';
 import { PowersOfAttorneyPage } from '../features/powersOfAttorney/pages/PowersOfAttorneyPage';
+import { PowerOfAttorneyDetailPage } from '../features/powersOfAttorney/pages/PowerOfAttorneyDetailPage';
 import type { IconName } from '../components/layout/Icon';
 
 export const NAV_ITEMS = [
@@ -34,6 +35,7 @@ export function AppRoutes() {
       <Route path="/clients/new" element={<NewClientPage />} />
       <Route path="/clients/:id" element={<ClientDetailPage />} />
       <Route path="/powers-of-attorney" element={<PowersOfAttorneyPage />} />
+      <Route path="/powers-of-attorney/:id" element={<PowerOfAttorneyDetailPage />} />
       <Route path="/cases" element={<CaseListPage />} />
       <Route path="/cases/new" element={<NewCasePage />} />
       <Route path="/cases/:id" element={<CaseDetailPage />} />

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useAttachments } from '../../documents/api/documentsApi';
+import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
 import {
   useCaseFinanceSummary,
   usePayments,
@@ -25,7 +25,6 @@ export function CaseDetailPage() {
   const item = useCase(id);
   const hearings = useHearings({ caseId: id });
   const tasks = useTaskList({ view: 'ALL', referenceDate: '9999-12-31', caseId: id });
-  const attachments = useAttachments({ caseId: id });
   const account = useCaseFinanceSummary(id);
   const payments = usePayments({ caseId: id });
   const archive = useArchiveCase();
@@ -41,11 +40,15 @@ export function CaseDetailPage() {
       <header className="detail-hero">
         <div>
           <p className="kicker">قضية</p>
-          <h2>{caseDto.internalNumber}</h2>
+          <h2>
+            <bdi>{caseDto.internalNumber}</bdi>
+          </h2>
           <p>
-            {caseDto.officialNumber
-              ? `${caseDto.officialNumber}${caseDto.officialYear ? ` / ${caseDto.officialYear}` : ''}`
-              : 'لا يوجد رقم رسمي'}
+            {caseDto.officialNumber ? (
+              <bdi>{`${caseDto.officialNumber}${caseDto.officialYear ? ` / ${caseDto.officialYear}` : ''}`}</bdi>
+            ) : (
+              'لا يوجد رقم رسمي'
+            )}
           </p>
         </div>
         <div className="detail-actions">
@@ -78,7 +81,17 @@ export function CaseDetailPage() {
             className={tab === value ? 'active' : ''}
             onClick={() => setTab(value)}
           >
-            {value}
+            {
+              {
+                summary: 'الملخص',
+                relationships: 'الأطراف',
+                hearings: 'الجلسات',
+                tasks: 'المهام',
+                attachments: 'المرفقات',
+                account: 'الحساب',
+                edit: 'تعديل',
+              }[value]
+            }
           </button>
         ))}
       </nav>
@@ -93,7 +106,11 @@ export function CaseDetailPage() {
               <dd>{caseDto.subject ?? '—'}</dd>
               <dt>الجلسة القادمة</dt>
               <dd>
-                {nextHearing ? `${nextHearing.hearingDate} ${nextHearing.hearingTime ?? ''}` : '—'}
+                {nextHearing ? (
+                  <bdi>{`${nextHearing.hearingDate} ${nextHearing.hearingTime ?? ''}`}</bdi>
+                ) : (
+                  '—'
+                )}
               </dd>
             </dl>
           </section>
@@ -111,7 +128,8 @@ export function CaseDetailPage() {
           <ul>
             {hearings.data?.map((hearing) => (
               <li key={hearing.id}>
-                {hearing.hearingDate} · {hearing.hearingType ?? 'جلسة'} · {hearing.status}
+                <bdi>{hearing.hearingDate}</bdi> · {hearing.hearingType ?? 'جلسة'} ·{' '}
+                {hearing.status}
               </li>
             ))}
           </ul>
@@ -123,29 +141,19 @@ export function CaseDetailPage() {
           <ul>
             {tasks.data?.map((task) => (
               <li key={task.id}>
-                {task.completed ? '✓' : '○'} {task.title} · {task.dueDate}
+                {task.completed ? '✓' : '○'} {task.title} · <bdi>{task.dueDate}</bdi>
               </li>
             ))}
           </ul>
         </section>
       )}
-      {tab === 'attachments' && (
-        <section className="detail-card">
-          <h3>المرفقات</h3>
-          <Link to={`/attachments?case=${id}`}>إضافة مرفق</Link>
-          <ul>
-            {attachments.data?.map((attachment) => (
-              <li key={attachment.id}>{attachment.originalFilename}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {tab === 'attachments' && <AttachmentPanel owner={{ caseId: id }} title="مرفقات القضية" />}
       {tab === 'account' && (
         <section className="detail-card">
           <h3>الحساب</h3>
           <p>
-            المتفق عليه: {money(account.data?.agreedFeeMinor ?? 0)} · المحصل:{' '}
-            {money(account.data?.receivedMinor ?? 0)}
+            المتفق عليه: <bdi>{money(account.data?.agreedFeeMinor ?? 0)}</bdi> · المحصل:{' '}
+            <bdi>{money(account.data?.receivedMinor ?? 0)}</bdi>
           </p>
           <form
             onSubmit={(event) => {
@@ -164,7 +172,7 @@ export function CaseDetailPage() {
           <ul>
             {payments.data?.map((payment) => (
               <li key={payment.id}>
-                {payment.paymentDate} · {money(payment.amountMinor)}
+                <bdi>{payment.paymentDate}</bdi> · <bdi>{money(payment.amountMinor)}</bdi>
               </li>
             ))}
           </ul>

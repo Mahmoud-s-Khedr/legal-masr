@@ -179,27 +179,30 @@ feature work.
 
 ## Phase 5 — Feature implementation and visual parity
 
+**Status: Feature implementation complete (2026-08-24); formal screenshot
+comparison and visual sign-off remain Phase 7 work.**
+
 Implement in dependency order, using the corresponding refined/final Stitch
 screen at each step.
 
-1. Clients: list, add/edit, profile tabs, internal number, archive, accounts,
-   linked cases/POAs, and attachments.
-2. Powers of Attorney: list, add/edit, details, clients, lawyers, linked cases,
-   and POA scan attachments.
-3. Cases: list, add/edit, summary, CaseClient editor, opponents, account, and
-   attachments.
-4. Hearings/Agenda/Today: dedicated hearing forms, decision/next-hearing flow,
-   month/week/list agenda, and accurate derived states.
-5. Tasks: finalized add/edit/details dialogs, semantic interactive completion
-   checkbox, and no priority/time/assignee controls.
-6. Finance: separate payment/expense tabs and dialogs, payer filtered to case
-   clients, optional payment method, independently optional expense links.
-7. Attachments: managed-copy picker only, owner-specific lists, and no
-   unavailable preview controls.
-8. Settings/backup/privacy: minimal profile/security, manual backup/restore
-   and latest successful backup, aggregate opt-in usage counters, About.
-9. Global search: Clients, Cases, and POAs with normalized Arabic/digit lookup
-   and correct deep links.
+1. [x] Clients: list, add/edit, profile tabs, internal number, archive, accounts,
+       linked cases/POAs, and attachments.
+2. [x] Powers of Attorney: list, add/edit, details, clients, lawyers, linked cases,
+       and POA scan attachments.
+3. [x] Cases: list, add/edit, summary, CaseClient editor, opponents, account, and
+       attachments.
+4. [x] Hearings/Agenda/Today: dedicated hearing forms, decision/next-hearing flow,
+       month/week/list agenda, and accurate derived states.
+5. [x] Tasks: finalized add/edit/details dialogs, semantic interactive completion
+       checkbox, and no priority/time/assignee controls.
+6. [x] Finance: separate payment/expense tabs and dialogs, payer filtered to case
+       clients, optional payment method, independently optional expense links.
+7. [x] Attachments: managed-copy picker only, owner-specific lists, and no
+       unavailable preview controls.
+8. [x] Settings/backup/privacy: minimal profile/security, manual backup/restore
+       and latest successful backup, aggregate opt-in usage counters, About.
+9. [x] Global search: Clients, Cases, and POAs with normalized Arabic/digit lookup
+       and correct deep links.
 
 Use `<bdi>` for identifiers, dates, money, phones, filenames, and versions.
 

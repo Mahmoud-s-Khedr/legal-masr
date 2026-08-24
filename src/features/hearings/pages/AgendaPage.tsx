@@ -1,224 +1,470 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { HearingDto } from '../../../bridge/types';
+import type { HearingDto, HearingInput } from '../../../bridge/types';
+import { Dialog } from '../../../components/ui/Dialog';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { Tabs } from '../../../components/ui/Tabs';
 import { useCaseList } from '../../cases/api/casesApi';
-import { useHearings, useRecordHearingDecision, useSaveHearing } from '../api/hearingsApi';
 import { useTaskList } from '../../tasks/api/tasksApi';
+import { useHearings, useRecordHearingDecision, useSaveHearing } from '../api/hearingsApi';
 
 const pad = (value: number) => String(value).padStart(2, '0');
 const localDate = (date = new Date()) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+const plusDays = (date: Date, days: number) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+const formatDate = (date: Date) => localDate(date);
 
 export function AgendaPage() {
   const [params] = useSearchParams();
-  const [selectedDate, setSelectedDate] = useState(localDate());
-  const [caseId, setCaseId] = useState(params.get('case') ?? '');
-  const [hearingTime, setHearingTime] = useState('');
-  const [hearingType, setHearingType] = useState('');
-  const [location, setLocation] = useState('');
-  const [notes, setNotes] = useState('');
-  const [decisionText, setDecisionText] = useState('');
-  const [nextDate, setNextDate] = useState('');
-  const cases = useCaseList({});
+  const [view, setView] = useState<'month' | 'week' | 'list'>('month');
+  const [cursor, setCursor] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(params.get('date') ?? localDate());
+  const [editing, setEditing] = useState<HearingDto | 'new' | null>(
+    params.get('case') ? 'new' : null,
+  );
+  const [deciding, setDeciding] = useState<HearingDto | null>(null);
   const hearings = useHearings({});
-  const tasks = useTaskList({ view: 'ALL', referenceDate: selectedDate });
+  const tasks = useTaskList({ view: 'ALL', referenceDate: '9999-12-31' });
   const save = useSaveHearing();
   const decide = useRecordHearingDecision();
-  const selectedHearing = hearings.data?.find((item) => item.id === params.get('hearing'));
-  const activeDate = selectedHearing?.hearingDate ?? selectedDate;
-  const itemsByDate = useMemo(() => {
-    const records = new Map<string, { hearings: HearingDto[]; tasks: string[] }>();
+  const items = useMemo(() => {
+    const dates = new Map<string, { hearings: HearingDto[]; tasks: string[] }>();
     for (const hearing of hearings.data ?? []) {
-      const entry = records.get(hearing.hearingDate) ?? { hearings: [], tasks: [] };
-      entry.hearings.push(hearing);
-      records.set(hearing.hearingDate, entry);
+      const row = dates.get(hearing.hearingDate) ?? { hearings: [], tasks: [] };
+      row.hearings.push(hearing);
+      dates.set(hearing.hearingDate, row);
     }
     for (const task of tasks.data ?? []) {
-      const entry = records.get(task.dueDate) ?? { hearings: [], tasks: [] };
-      entry.tasks.push(task.title);
-      records.set(task.dueDate, entry);
+      const row = dates.get(task.dueDate) ?? { hearings: [], tasks: [] };
+      row.tasks.push(task.title);
+      dates.set(task.dueDate, row);
     }
-    return records;
+    return dates;
   }, [hearings.data, tasks.data]);
-  const active = itemsByDate.get(activeDate) ?? { hearings: [], tasks: [] };
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    if (!caseId) return;
-    save.mutate(
-      {
-        caseId,
-        hearingDate: selectedDate,
-        hearingTime: hearingTime || undefined,
-        hearingType: hearingType || undefined,
-        location: location || undefined,
-        circuitName: undefined,
-        requiredDocuments: undefined,
-        notes: notes || undefined,
-        reminderMinutes: undefined,
-      },
-      {
-        onSuccess: () => {
-          setHearingTime('');
-          setHearingType('');
-          setLocation('');
-          setNotes('');
-        },
-      },
+  const selected = items.get(selectedDate) ?? { hearings: [], tasks: [] };
+  const label = new Intl.DateTimeFormat('ar-EG', { month: 'long', year: 'numeric' }).format(cursor);
+  const shift = (direction: -1 | 1) =>
+    setCursor((current) =>
+      view === 'month'
+        ? new Date(current.getFullYear(), current.getMonth() + direction, 1)
+        : plusDays(current, direction * 7),
     );
-  };
   return (
     <section className="calendar-page">
-      <header className="page-heading calendar-heading">
-        <div>
-          <p className="kicker">الأجندة</p>
-          <h2>الجلسات والمهام</h2>
-          <p>كل التواريخ قانونية يومية ولا تتحول بين المناطق الزمنية.</p>
+      <PageHeader
+        kicker="الأجندة"
+        title="الجلسات والمهام"
+        description="التواريخ القانونية تُعرض كيوم فقط ولا تتحول بين المناطق الزمنية."
+        actions={
+          <button type="button" onClick={() => setEditing('new')}>
+            إضافة جلسة
+          </button>
+        }
+      />
+      <div className="calendar-toolbar">
+        <div className="calendar-period">
+          <button
+            type="button"
+            className="secondary-button"
+            aria-label="الفترة السابقة"
+            onClick={() => shift(-1)}
+          >
+            ‹
+          </button>
+          <strong>
+            <bdi>{label}</bdi>
+          </strong>
+          <button
+            type="button"
+            className="secondary-button"
+            aria-label="الفترة التالية"
+            onClick={() => shift(1)}
+          >
+            ›
+          </button>
         </div>
-      </header>
+        <Tabs
+          label="طريقة عرض الأجندة"
+          value={view}
+          onChange={(value) => setView(value as typeof view)}
+          tabs={[
+            { id: 'month', label: 'شهر' },
+            { id: 'week', label: 'أسبوع' },
+            { id: 'list', label: 'قائمة' },
+          ]}
+        />
+      </div>
       <div className="calendar-layout">
         <section className="calendar-surface">
-          <label>
-            اختر تاريخًا{' '}
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(event) => setSelectedDate(event.target.value)}
+          {view === 'month' ? (
+            <MonthGrid
+              cursor={cursor}
+              selectedDate={selectedDate}
+              items={items}
+              onSelect={setSelectedDate}
             />
-          </label>
-          <div className="calendar-agenda-list">
-            {[...itemsByDate.entries()]
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([date, entry]) => (
-                <section key={date}>
-                  <h3>{date}</h3>
-                  {entry.hearings.map((hearing) => (
-                    <button
-                      className="agenda-item"
-                      type="button"
-                      key={hearing.id}
-                      onClick={() => setSelectedDate(hearing.hearingDate)}
-                    >
-                      <strong>جلسة {hearing.hearingType ?? ''}</strong>
-                      <span>
-                        {hearing.hearingTime ?? 'طوال اليوم'} ·{' '}
-                        {hearing.status === 'COMPLETED' ? 'مكتملة' : 'مجدولة'}
-                      </span>
-                    </button>
-                  ))}
-                  {entry.tasks.map((task, index) => (
-                    <div className="agenda-item" key={`${date}-${index}`}>
-                      <strong>مهمة</strong>
-                      <span>{task}</span>
-                    </div>
-                  ))}
-                </section>
-              ))}
-            {!itemsByDate.size && <p className="table-message">لا توجد جلسات أو مهام بعد.</p>}
-          </div>
+          ) : view === 'week' ? (
+            <WeekList
+              cursor={cursor}
+              selectedDate={selectedDate}
+              items={items}
+              onSelect={setSelectedDate}
+            />
+          ) : (
+            <AgendaList items={items} onSelect={setSelectedDate} />
+          )}
         </section>
         <aside className="calendar-detail">
-          <p className="kicker">{activeDate}</p>
+          <p className="kicker">
+            <bdi>{selectedDate}</bdi>
+          </p>
           <h3>تفاصيل اليوم</h3>
-          {active.hearings.map((hearing) => (
-            <div className="agenda-item" key={hearing.id}>
+          {!selected.hearings.length && !selected.tasks.length && (
+            <p className="empty-compact">لا توجد جلسات أو مهام في هذا التاريخ.</p>
+          )}
+          {selected.hearings.map((hearing) => (
+            <article className="agenda-item" key={hearing.id}>
               <strong>{hearing.hearingType ?? 'جلسة'}</strong>
               <span>
-                {hearing.location ?? '—'} · {hearing.hearingTime ?? 'طوال اليوم'}
+                {hearing.hearingTime ? <bdi>{hearing.hearingTime}</bdi> : 'طوال اليوم'} ·{' '}
+                {hearing.location ?? 'دون مكان'}
               </span>
-              {hearing.status === 'SCHEDULED' && (
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    decide.mutate({
-                      id: hearing.id,
-                      decisionText: decisionText || undefined,
-                      nextHearing: nextDate
-                        ? {
-                            caseId: hearing.caseId,
-                            hearingDate: nextDate,
-                            hearingTime: hearing.hearingTime ?? undefined,
-                            hearingType: hearing.hearingType ?? undefined,
-                            location: hearing.location ?? undefined,
-                            circuitName: hearing.circuitName ?? undefined,
-                            requiredDocuments: hearing.requiredDocuments ?? undefined,
-                            notes: undefined,
-                            reminderMinutes: hearing.reminderMinutes ?? undefined,
-                          }
-                        : undefined,
-                    });
-                  }}
-                >
-                  <input
-                    value={decisionText}
-                    onChange={(event) => setDecisionText(event.target.value)}
-                    placeholder="نص القرار"
-                  />
-                  <input
-                    type="date"
-                    value={nextDate}
-                    onChange={(event) => setNextDate(event.target.value)}
-                  />
-                  <button disabled={decide.isPending}>تسجيل القرار</button>
-                </form>
+              {hearing.status === 'SCHEDULED' ? (
+                <button type="button" className="text-button" onClick={() => setDeciding(hearing)}>
+                  تسجيل القرار
+                </button>
+              ) : (
+                <span>{hearing.decisionText ?? 'قرار مسجل'}</span>
               )}
-            </div>
+            </article>
           ))}
-          {active.tasks.map((task, index) => (
-            <div className="agenda-item" key={`task-${index}`}>
+          {selected.tasks.map((task) => (
+            <article className="agenda-item" key={task}>
               <strong>مهمة</strong>
               <span>{task}</span>
-            </div>
+            </article>
           ))}
         </aside>
       </div>
-      <form className="quick-entry event-entry" onSubmit={submit}>
-        <label>
-          القضية
-          <select required value={caseId} onChange={(event) => setCaseId(event.target.value)}>
-            <option value="">اختر القضية</option>
-            {cases.data?.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.internalNumber}
-              </option>
-            ))}
-          </select>
-        </label>
+      <Dialog
+        open={Boolean(editing)}
+        onOpenChange={(open) => !open && setEditing(null)}
+        title={editing === 'new' ? 'إضافة جلسة' : 'تعديل الجلسة'}
+      >
+        {editing && (
+          <HearingForm
+            initial={editing === 'new' ? undefined : editing}
+            initialCaseId={params.get('case') ?? undefined}
+            initialDate={selectedDate}
+            busy={save.isPending}
+            onCancel={() => setEditing(null)}
+            onSave={async (input) => {
+              await save.mutateAsync(input);
+              setEditing(null);
+            }}
+          />
+        )}
+        {save.isError && <p className="error">تعذر حفظ الجلسة.</p>}
+      </Dialog>
+      <Dialog
+        open={Boolean(deciding)}
+        onOpenChange={(open) => !open && setDeciding(null)}
+        title="تسجيل قرار الجلسة"
+      >
+        {deciding && (
+          <DecisionForm
+            hearing={deciding}
+            busy={decide.isPending}
+            onCancel={() => setDeciding(null)}
+            onSave={async (input) => {
+              await decide.mutateAsync(input);
+              setDeciding(null);
+            }}
+          />
+        )}
+        {decide.isError && <p className="error">تعذر تسجيل القرار أو الجلسة التالية.</p>}
+      </Dialog>
+    </section>
+  );
+}
+
+function MonthGrid({
+  cursor,
+  selectedDate,
+  items,
+  onSelect,
+}: {
+  cursor: Date;
+  selectedDate: string;
+  items: Map<string, { hearings: HearingDto[]; tasks: string[] }>;
+  onSelect: (date: string) => void;
+}) {
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const start = plusDays(first, -((first.getDay() + 1) % 7));
+  const days = Array.from({ length: 42 }, (_, index) => plusDays(start, index));
+  return (
+    <>
+      <div className="calendar-grid">
+        {['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'].map((day) => (
+          <span className="calendar-weekday" key={day}>
+            {day}
+          </span>
+        ))}
+        {days.map((day) => {
+          const date = formatDate(day);
+          const events = items.get(date);
+          return (
+            <button
+              type="button"
+              key={date}
+              className={`calendar-day ${day.getMonth() !== cursor.getMonth() ? 'muted-day' : ''} ${date === selectedDate ? 'selected' : ''} ${date === localDate() ? 'today' : ''}`}
+              onClick={() => onSelect(date)}
+            >
+              <span className="calendar-date">
+                <bdi>{day.getDate()}</bdi>
+              </span>
+              <span className="calendar-events">
+                {events?.hearings.slice(0, 2).map((hearing) => (
+                  <span className="calendar-event" key={hearing.id}>
+                    {hearing.hearingType ?? 'جلسة'}
+                  </span>
+                ))}
+                {(events?.hearings.length ?? 0) + (events?.tasks.length ?? 0) > 2 && (
+                  <span className="calendar-more">مواعيد أخرى</span>
+                )}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+function WeekList({
+  cursor,
+  selectedDate,
+  items,
+  onSelect,
+}: {
+  cursor: Date;
+  selectedDate: string;
+  items: Map<string, { hearings: HearingDto[]; tasks: string[] }>;
+  onSelect: (date: string) => void;
+}) {
+  const start = plusDays(cursor, -((cursor.getDay() + 1) % 7));
+  return (
+    <div className="calendar-agenda-list">
+      {Array.from({ length: 7 }, (_, index) => plusDays(start, index)).map((day) => {
+        const date = formatDate(day);
+        const entry = items.get(date);
+        return (
+          <button
+            className={`agenda-item ${selectedDate === date ? 'selected-record' : ''}`}
+            type="button"
+            key={date}
+            onClick={() => onSelect(date)}
+          >
+            <strong>
+              <bdi>{date}</bdi>
+            </strong>
+            <span>
+              {entry ? `${entry.hearings.length} جلسة · ${entry.tasks.length} مهمة` : 'لا مواعيد'}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+function AgendaList({
+  items,
+  onSelect,
+}: {
+  items: Map<string, { hearings: HearingDto[]; tasks: string[] }>;
+  onSelect: (date: string) => void;
+}) {
+  return (
+    <div className="calendar-agenda-list">
+      {[...items.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, entry]) => (
+          <button className="agenda-item" type="button" key={date} onClick={() => onSelect(date)}>
+            <strong>
+              <bdi>{date}</bdi>
+            </strong>
+            <span>
+              {entry.hearings.map((hearing) => hearing.hearingType ?? 'جلسة').join('، ') || 'مهام'}{' '}
+              · {entry.tasks.length} مهمة
+            </span>
+          </button>
+        ))}
+      {!items.size && <p className="empty-compact">لا توجد جلسات أو مهام بعد.</p>}
+    </div>
+  );
+}
+function HearingForm({
+  initial,
+  initialCaseId,
+  initialDate,
+  busy,
+  onSave,
+  onCancel,
+}: {
+  initial?: HearingDto;
+  initialCaseId?: string;
+  initialDate: string;
+  busy: boolean;
+  onSave: (input: HearingInput) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const cases = useCaseList({});
+  const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
+  const [date, setDate] = useState(initial?.hearingDate ?? initialDate);
+  const [time, setTime] = useState(initial?.hearingTime ?? '');
+  const [type, setType] = useState(initial?.hearingType ?? '');
+  const [location, setLocation] = useState(initial?.location ?? '');
+  const [circuit, setCircuit] = useState(initial?.circuitName ?? '');
+  const [requiredDocuments, setRequiredDocuments] = useState(initial?.requiredDocuments ?? '');
+  const [notes, setNotes] = useState(initial?.notes ?? '');
+  return (
+    <form
+      className="dialog-form"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        await onSave({
+          id: initial?.id,
+          caseId,
+          hearingDate: date,
+          hearingTime: time || undefined,
+          hearingType: type || undefined,
+          location: location || undefined,
+          circuitName: circuit || undefined,
+          requiredDocuments: requiredDocuments || undefined,
+          notes: notes || undefined,
+        });
+      }}
+    >
+      <label>
+        القضية
+        <select required value={caseId} onChange={(event) => setCaseId(event.target.value)}>
+          <option value="">اختر القضية</option>
+          {cases.data?.map((caseItem) => (
+            <option key={caseItem.id} value={caseItem.id}>
+              {caseItem.internalNumber}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="settings-two-columns">
         <label>
           التاريخ
           <input
             required
             type="date"
-            value={selectedDate}
-            onChange={(event) => setSelectedDate(event.target.value)}
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
           />
         </label>
         <label>
-          الوقت
-          <input
-            type="time"
-            value={hearingTime}
-            onChange={(event) => setHearingTime(event.target.value)}
-          />
+          الوقت (اختياري)
+          <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
         </label>
+      </div>
+      <div className="settings-two-columns">
         <label>
           نوع الجلسة
-          <input value={hearingType} onChange={(event) => setHearingType(event.target.value)} />
+          <input value={type} onChange={(event) => setType(event.target.value)} />
         </label>
         <label>
-          المكان
+          المكان أو المحكمة
           <input value={location} onChange={(event) => setLocation(event.target.value)} />
         </label>
-        <label>
-          ملاحظات
-          <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
-        </label>
-        <button disabled={save.isPending}>إضافة جلسة</button>
-      </form>
-      {(save.isError || decide.isError) && (
-        <p className="error" role="alert">
-          تعذر حفظ الجلسة أو قرارها. بقيت البيانات المدخلة للمحاولة مرة أخرى.
-        </p>
-      )}
-    </section>
+      </div>
+      <label>
+        الدائرة
+        <input value={circuit} onChange={(event) => setCircuit(event.target.value)} />
+      </label>
+      <label>
+        المستندات المطلوبة
+        <textarea
+          value={requiredDocuments}
+          onChange={(event) => setRequiredDocuments(event.target.value)}
+        />
+      </label>
+      <label>
+        ملاحظات
+        <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+      </label>
+      <div className="dialog-actions">
+        <button type="button" className="secondary-button" onClick={onCancel}>
+          إلغاء
+        </button>
+        <button disabled={busy}>حفظ الجلسة</button>
+      </div>
+    </form>
+  );
+}
+function DecisionForm({
+  hearing,
+  busy,
+  onSave,
+  onCancel,
+}: {
+  hearing: HearingDto;
+  busy: boolean;
+  onSave: (input: {
+    id: string;
+    decisionText?: string;
+    nextHearing?: HearingInput;
+  }) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [decisionText, setDecisionText] = useState(hearing.decisionText ?? '');
+  const [nextDate, setNextDate] = useState('');
+  return (
+    <form
+      className="dialog-form"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        await onSave({
+          id: hearing.id,
+          decisionText: decisionText || undefined,
+          nextHearing: nextDate
+            ? {
+                caseId: hearing.caseId,
+                hearingDate: nextDate,
+                hearingTime: hearing.hearingTime ?? undefined,
+                hearingType: hearing.hearingType ?? undefined,
+                location: hearing.location ?? undefined,
+                circuitName: hearing.circuitName ?? undefined,
+                requiredDocuments: hearing.requiredDocuments ?? undefined,
+                notes: undefined,
+                reminderMinutes: hearing.reminderMinutes ?? undefined,
+              }
+            : undefined,
+        });
+      }}
+    >
+      <label>
+        نص القرار
+        <textarea
+          autoFocus
+          value={decisionText}
+          onChange={(event) => setDecisionText(event.target.value)}
+        />
+      </label>
+      <label>
+        الجلسة التالية (اختيارية)
+        <input type="date" value={nextDate} onChange={(event) => setNextDate(event.target.value)} />
+      </label>
+      <p className="muted">تُنسخ بيانات الجلسة التالية ويمكن تعديلها لاحقًا بشكل مستقل.</p>
+      <div className="dialog-actions">
+        <button type="button" className="secondary-button" onClick={onCancel}>
+          إلغاء
+        </button>
+        <button disabled={busy}>تسجيل القرار</button>
+      </div>
+    </form>
   );
 }

@@ -131,5 +131,11 @@ describe('canonical Tauri bridge payload contracts', () => {
         input: { payerClientId: 'client-1' },
       },
     );
+    invokeMock.mockResolvedValueOnce(undefined);
+    await bridge.latestSuccessfulBackup();
+    expect(invokeMock).toHaveBeenLastCalledWith('backup_latest_successful');
+    await expectBridgeCall(() => bridge.setUsageCounters(true), 'settings_set_usage_counters', {
+      enabled: true,
+    });
   });
 });

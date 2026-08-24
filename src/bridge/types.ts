@@ -46,6 +46,10 @@ export type SettingsUpdateInput = {
   defaultReminderMinutes: number;
   lockTimeoutMinutes: number;
 };
+export type LatestSuccessfulBackup = {
+  completedAt: string;
+  archiveSizeBytes: number | null;
+};
 export type LawyerProfile = {
   fullName: string;
   barNumber: string | null;

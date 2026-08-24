@@ -1,13 +1,19 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../../../bridge/errors';
-import { useCreateBackup, useRestoreBackup, useValidateBackup } from '../api/backupsApi';
+import {
+  useCreateBackup,
+  useLatestSuccessfulBackup,
+  useRestoreBackup,
+  useValidateBackup,
+} from '../api/backupsApi';
 
 export function BackupSettingsPanel() {
   const { t } = useTranslation();
   const createBackup = useCreateBackup();
   const validateBackup = useValidateBackup();
   const restoreBackup = useRestoreBackup();
+  const latestBackup = useLatestSuccessfulBackup();
   const [restoreArmed, setRestoreArmed] = useState(false);
 
   const createNow = async () => {
@@ -29,6 +35,24 @@ export function BackupSettingsPanel() {
 
   return (
     <div className="backup-settings">
+      <div className="panel">
+        <strong>آخر نسخة احتياطية ناجحة</strong>
+        {latestBackup.isLoading ? (
+          <p className="muted">جارٍ تحميل السجل المحلي…</p>
+        ) : latestBackup.data ? (
+          <p className="muted">
+            اكتملت في <bdi>{latestBackup.data.completedAt}</bdi>
+            {latestBackup.data.archiveSizeBytes !== null && (
+              <>
+                {' '}
+                · الحجم <bdi>{latestBackup.data.archiveSizeBytes}</bdi> بايت
+              </>
+            )}
+          </p>
+        ) : (
+          <p className="muted">لا توجد نسخة احتياطية ناجحة بعد.</p>
+        )}
+      </div>
       <div className="panel">
         <div className="form-actions">
           <button type="button" onClick={createNow} disabled={createBackup.isPending}>

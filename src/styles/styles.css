@@ -727,6 +727,26 @@ html[data-theme='dark'] .sidebar a {
   gap: 0.6rem;
   margin-top: 1.25rem;
 }
+.dialog-form {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+.dialog-form > label,
+.dialog-form fieldset > label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.dialog-form fieldset {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+}
 .danger-button-solid {
   background: var(--danger);
 }
@@ -2209,6 +2229,40 @@ html[dir='rtl'] .drawer-panel {
 .document-pick span:not(.document-glyph) {
   color: var(--muted);
   font-size: 0.76rem;
+}
+.attachment-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+.attachment-panel .card-title {
+  margin-bottom: 0;
+}
+.attachment-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.attachment-actions .text-button {
+  font-size: 0.7rem;
+}
+.task-check {
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.task-check input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+.task-check input:focus-visible + .task-status {
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 3px;
+}
+.task-records li {
+  gap: 0.65rem;
 }
 .document-glyph {
   display: grid;

@@ -28,6 +28,7 @@ import type {
   Settings,
   SettingsUpdateInput,
   LawyerProfile,
+  LatestSuccessfulBackup,
   FeeAgreementInput,
   ExpenseDto,
   ExpenseInput,
@@ -61,12 +62,15 @@ export const bridge = {
   changePassword: (currentPassword: string, newPassword: string) =>
     invoke<void>('app_change_password', { currentPassword, newPassword }),
   createBackup: () => invoke<string>('backup_create'),
+  latestSuccessfulBackup: () => invoke<LatestSuccessfulBackup | null>('backup_latest_successful'),
   validateBackup: () => invoke<void>('backup_validate'),
   restoreBackup: () => invoke<void>('backup_restore'),
   settings: () => invoke<Settings>('settings_get'),
   updateSettings: (settings: SettingsUpdateInput) =>
     invoke<Settings>('settings_update', { input: settings }),
   setAutostart: (enabled: boolean) => invoke<Settings>('settings_set_autostart', { enabled }),
+  setUsageCounters: (enabled: boolean) =>
+    invoke<Settings>('settings_set_usage_counters', { enabled }),
   profile: () => invoke<LawyerProfile>('profile_get'),
   updateProfile: (profile: LawyerProfile) => invoke<LawyerProfile>('profile_update', { profile }),
 

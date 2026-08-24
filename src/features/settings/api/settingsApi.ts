@@ -60,3 +60,10 @@ export const useSetAutostart = () => {
     onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
   });
 };
+export const useSetUsageCounters = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bridge.setUsageCounters,
+    onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
+  });
+};

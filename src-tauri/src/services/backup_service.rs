@@ -1,4 +1,7 @@
-use crate::{backup, db, errors::Error, repositories::backup_repository, state::AppState};
+use crate::{
+    backup, db, dto::LatestSuccessfulBackupDto, errors::Error, repositories::backup_repository,
+    state::AppState,
+};
 use tauri::{AppHandle, Runtime};
 use tauri_plugin_dialog::DialogExt;
 
@@ -37,6 +40,15 @@ pub fn create<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<String
             Err(error)
         }
     }
+}
+
+pub fn latest_successful<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+) -> Result<Option<LatestSuccessfulBackupDto>, Error> {
+    let master = state.unlocked()?;
+    let (_, db_path) = db::paths(app)?;
+    backup_repository::latest_successful(&db::open_db(&db_path, &master)?)
 }
 
 fn choose_backup<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, Error> {

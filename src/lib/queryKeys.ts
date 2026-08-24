@@ -3,6 +3,9 @@ export const queryKeys = {
   appStatus: ['app-status'] as const,
   settings: ['settings'] as const,
   profile: ['profile'] as const,
+  backups: {
+    latestSuccessful: ['backups', 'latest-successful'] as const,
+  },
   clients: {
     all: ['clients'] as const,
     list: (input: object) => ['clients', 'list', input] as const,

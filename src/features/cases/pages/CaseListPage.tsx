@@ -92,9 +92,11 @@ export function CaseListPage() {
               {cases.map((caseSummary) => (
                 <tr key={caseSummary.id}>
                   <th scope="row">
-                    <Link to={`/cases/${caseSummary.id}`}>{caseSummary.internalNumber}</Link>
+                    <Link to={`/cases/${caseSummary.id}`}>
+                      <bdi>{caseSummary.internalNumber}</bdi>
+                    </Link>
                   </th>
-                  <td>{caseSummary.officialYear ?? '—'}</td>
+                  <td>{caseSummary.officialYear ? <bdi>{caseSummary.officialYear}</bdi> : '—'}</td>
                   <td>{caseSummary.clientNames.join('، ') || '—'}</td>
                   <td>
                     <span className="badge">

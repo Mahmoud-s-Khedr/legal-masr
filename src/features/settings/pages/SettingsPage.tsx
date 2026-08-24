@@ -5,18 +5,20 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { Icon } from '../../../components/layout/Icon';
+import { BackupSettingsPanel } from '../../backups/pages/BackupsPage';
 import { developerDiagnostic } from '../../../bridge/devDiagnostics';
 import {
   useChangePassword,
   useProfile,
   useSetAutostart,
+  useSetUsageCounters,
   useSettings,
   useUpdateProfile,
   useUpdateSettings,
 } from '../api/settingsApi';
 import { SettingsFormValues, settingsSchema } from '../schemas/settings.schema';
 
-type Tab = 'profile' | 'general' | 'security' | 'privacy' | 'about';
+type Tab = 'profile' | 'general' | 'security' | 'backups' | 'privacy' | 'about';
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
@@ -33,6 +35,7 @@ export function SettingsPage() {
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
   const setAutostart = useSetAutostart();
+  const setUsageCounters = useSetUsageCounters();
   const [notificationStatus, setNotificationStatus] = useState<'unknown' | 'granted' | 'denied'>(
     'unknown',
   );
@@ -91,7 +94,8 @@ export function SettingsPage() {
   }
   const requested = searchParams.get('tab');
   const selectedTab: Tab =
-    requested && ['profile', 'general', 'security', 'privacy', 'about'].includes(requested)
+    requested &&
+    ['profile', 'general', 'security', 'backups', 'privacy', 'about'].includes(requested)
       ? (requested as Tab)
       : 'profile';
   const chooseTab = (tab: Tab) => {
@@ -134,6 +138,7 @@ export function SettingsPage() {
               ['profile', 'الملف الشخصي', 'clients'],
               ['general', 'العرض والتقويم', 'settings'],
               ['security', 'الأمان والقفل', 'shield'],
+              ['backups', 'النسخ الاحتياطي', 'backup'],
               ['privacy', 'الخصوصية والبيانات', 'backup'],
               ['about', 'حول التطبيق', 'documents'],
             ] as const
@@ -404,6 +409,36 @@ export function SettingsPage() {
                   </div>
                 </form>
               </section>
+              <section className="settings-section">
+                <div className="card-title">
+                  <div>
+                    <h3>عدادات استخدام مجمّعة</h3>
+                    <p>
+                      اختيارية ومحلية فقط؛ لا تتضمن أسماء أو أرقامًا أو أي بيانات قانونية ولا تُرسل
+                      عبر الشبكة.
+                    </p>
+                  </div>
+                </div>
+                <div className="settings-toggle-row">
+                  <div>
+                    <strong>تفعيل العدادات المجمّعة</strong>
+                    <span>
+                      تسجل أعدادًا إجمالية مثل عدد القضايا أو النسخ الاحتياطية التي أُنشئت.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className={settings.usageCountersEnabled ? '' : 'secondary-button'}
+                    disabled={setUsageCounters.isPending}
+                    onClick={() => setUsageCounters.mutate(!settings.usageCountersEnabled)}
+                  >
+                    {settings.usageCountersEnabled ? 'مفعّلة — إيقاف' : 'غير مفعّلة — تشغيل'}
+                  </button>
+                </div>
+                {setUsageCounters.isError && (
+                  <p className="error">تعذر حفظ اختيار العدادات المجمّعة.</p>
+                )}
+              </section>
               <section className="security-note">
                 <Icon name="shield" size={22} />
                 <div>
@@ -455,6 +490,33 @@ export function SettingsPage() {
                   <p>
                     قاعدة البيانات مشفّرة، أما المرفقات فتستفيد من حماية حساب الجهاز وBitLocker أو
                     FileVault. النسخة الاحتياطية الكاملة مشفّرة.
+                  </p>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {selectedTab === 'backups' && (
+            <div className="settings-stack">
+              <section className="settings-section">
+                <div className="card-title">
+                  <div>
+                    <h3>نسخة احتياطية يدوية</h3>
+                    <p>
+                      تتضمن النسخة قاعدة البيانات المشفرة وكل المرفقات المُدارة. تحقّق منها قبل
+                      الاستعادة.
+                    </p>
+                  </div>
+                </div>
+                <BackupSettingsPanel />
+              </section>
+              <section className="security-note">
+                <Icon name="backup" size={22} />
+                <div>
+                  <strong>الاستعادة تستبدل الخزنة الحالية بعد التحقق</strong>
+                  <p>
+                    احتفظ بنسخة مستقلة قبل الاستعادة. سيُرفض أي أرشيف تالف قبل تغيير البيانات
+                    الحالية.
                   </p>
                 </div>
               </section>

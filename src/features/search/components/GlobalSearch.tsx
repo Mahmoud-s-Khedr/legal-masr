@@ -34,7 +34,7 @@ export function GlobalSearch() {
         ? `/clients/${entityId}`
         : entityType === 'CASE'
           ? `/cases/${entityId}`
-          : `/powers-of-attorney?poa=${entityId}`,
+          : `/powers-of-attorney/${entityId}`,
     );
   };
   const selectableHits = entityTypes.flatMap((entityType) => grouped[entityType]);
@@ -105,8 +105,13 @@ export function GlobalSearch() {
                               onMouseEnter={() => setActiveIndex(hitIndex)}
                               onClick={() => goTo(hit.entityType, hit.entityId)}
                             >
-                              {hit.title}
-                              {hit.subtitle && <span className="muted"> — {hit.subtitle}</span>}
+                              <bdi>{hit.title}</bdi>
+                              {hit.subtitle && (
+                                <span className="muted">
+                                  {' '}
+                                  — <bdi>{hit.subtitle}</bdi>
+                                </span>
+                              )}
                             </button>
                           </li>
                         );

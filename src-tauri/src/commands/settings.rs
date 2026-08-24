@@ -42,3 +42,12 @@ pub fn settings_set_autostart(
 ) -> Result<SettingsDto, Error> {
     settings_service::set_autostart(&app, &state, enabled)
 }
+
+#[tauri::command]
+pub fn settings_set_usage_counters(
+    app: AppHandle,
+    state: State<AppState>,
+    enabled: bool,
+) -> Result<SettingsDto, Error> {
+    settings_service::set_usage_counters(&app, &state, enabled)
+}

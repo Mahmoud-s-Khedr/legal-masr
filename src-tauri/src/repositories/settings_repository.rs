@@ -28,6 +28,13 @@ pub fn update_autostart(conn: &Connection, enabled: bool) -> Result<(), Error> {
     )?;
     Ok(())
 }
+pub fn update_usage_counters(conn: &Connection, enabled: bool) -> Result<(), Error> {
+    conn.execute(
+        "UPDATE app_settings SET usage_counters_enabled = ?1, updated_at = ?2 WHERE id = 1",
+        rusqlite::params![enabled, db::now()],
+    )?;
+    Ok(())
+}
 pub fn update_settings(conn: &Connection, input: &SettingsUpdateInput) -> Result<(), Error> {
     conn.execute("UPDATE app_settings SET language = ?1, theme = ?2, date_format = ?3, week_starts_on = ?4, default_reminder_minutes = ?5, lock_timeout_minutes = ?6, updated_at = ?7 WHERE id = 1", rusqlite::params![input.language, input.theme, input.date_format, input.week_starts_on, input.default_reminder_minutes, input.lock_timeout_minutes, db::now()])?;
     Ok(())

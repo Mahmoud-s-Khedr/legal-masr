@@ -49,6 +49,13 @@ pub struct SettingsUpdateInput {
     pub lock_timeout_minutes: u32,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LatestSuccessfulBackupDto {
+    pub completed_at: String,
+    pub archive_size_bytes: Option<i64>,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LawyerProfileDto {
