@@ -15,6 +15,16 @@ pnpm install
 pnpm tauri dev
 ```
 
+### Development diagnostics
+
+To show sanitized command diagnostics in the browser console and relevant failure panels, run:
+
+```bash
+VITE_DETAILED_DIAGNOSTICS=true pnpm tauri dev
+```
+
+The flag is ignored in release builds. Diagnostics contain only a command name, stable error code, and allow-listed implementation facts (for example, a missing SQLite column); they never include legal records, document paths, passwords, or encryption keys.
+
 Validation:
 
 ```bash

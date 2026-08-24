@@ -217,6 +217,25 @@ code {
   background: var(--danger-bg) !important;
   color: var(--danger) !important;
 }
+.developer-diagnostic {
+  margin: 0.75rem 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  direction: ltr;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+  background: var(--paper);
+  color: var(--ink);
+  font:
+    0.8rem/1.6 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+}
 .success {
   background: var(--success-bg);
   color: var(--success);

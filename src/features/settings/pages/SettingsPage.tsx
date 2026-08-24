@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { Icon } from '../../../components/layout/Icon';
+import { developerDiagnostic } from '../../../bridge/devDiagnostics';
 import {
   useChangePassword,
   useProfile,
@@ -24,6 +25,7 @@ export function SettingsPage() {
     data: settings,
     isError: settingsLoadFailed,
     isPending: settingsLoading,
+    error: settingsError,
     refetch,
   } = useSettings();
   const { data: profile } = useProfile();
@@ -66,12 +68,18 @@ export function SettingsPage() {
   }
 
   if (settingsLoadFailed || !settings) {
+    const diagnostic = developerDiagnostic('settings_get', settingsError);
     return (
       <section className="settings settings-workspace">
         <div className="settings-section">
           <p className="error" role="alert">
             {t('settings.loadError')}
           </p>
+          {diagnostic && (
+            <pre className="developer-diagnostic" aria-label={t('settings.developerDiagnostic')}>
+              {diagnostic}
+            </pre>
+          )}
           <div className="form-actions">
             <button type="button" onClick={() => void refetch()}>
               {t('settings.retry')}

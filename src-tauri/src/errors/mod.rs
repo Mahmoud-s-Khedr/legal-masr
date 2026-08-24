@@ -7,6 +7,13 @@ pub struct ApiError {
     code: &'static str,
     message: &'static str,
     details: Option<serde_json::Value>,
+    diagnostic: Option<Diagnostic>,
+}
+
+#[derive(Serialize)]
+struct Diagnostic {
+    kind: &'static str,
+    detail: String,
 }
 
 #[derive(Error, Debug)]
@@ -21,6 +28,8 @@ pub enum Error {
     InvalidRecovery,
     #[error("backup is invalid")]
     BackupInvalid,
+    #[error("a populated legacy vault needs an explicit conversion")]
+    LegacyDataMigrationRequired,
     #[error("validation failed")]
     Validation,
     #[error("client not found")]
@@ -65,6 +74,7 @@ impl Error {
             Self::Initialized => "ALREADY_INITIALIZED",
             Self::InvalidRecovery => "RECOVERY_KEY_INVALID",
             Self::BackupInvalid => "BACKUP_CORRUPTED",
+            Self::LegacyDataMigrationRequired => "LEGACY_DATA_MIGRATION_REQUIRED",
             Self::Validation => "VALIDATION_FAILED",
             Self::ClientNotFound => "CLIENT_NOT_FOUND",
             Self::CaseNotFound => "CASE_NOT_FOUND",
@@ -91,6 +101,9 @@ impl Error {
             Self::Initialized => "تم إعداد التطبيق بالفعل.",
             Self::InvalidRecovery => "مفتاح الاسترداد غير صحيح.",
             Self::BackupInvalid => "ملف النسخة الاحتياطية غير صالح.",
+            Self::LegacyDataMigrationRequired => {
+                "تحتوي قاعدة البيانات القديمة على سجلات وتحتاج إلى ترحيل مخصص قبل التحديث."
+            }
             Self::Validation => "تحقق من البيانات المدخلة.",
             Self::ClientNotFound => "لم يتم العثور على الموكل.",
             Self::CaseNotFound => "لم يتم العثور على القضية.",
@@ -111,6 +124,75 @@ impl Error {
             }
         }
     }
+
+    // Keep diagnostics limited to implementation facts. Source error strings
+    // can contain document paths or, in future, user-provided database values.
+    fn diagnostic(&self) -> Diagnostic {
+        match self {
+            Self::Sql(rusqlite::Error::SqliteFailure(_, message)) => Diagnostic {
+                kind: "SQLITE",
+                detail: safe_sqlite_diagnostic(message.as_deref()),
+            },
+            Self::Sql(_) => Diagnostic {
+                kind: "SQLITE",
+                detail: "SQLite operation failed without a safe diagnostic message.".into(),
+            },
+            Self::Io(_) => Diagnostic {
+                kind: "IO",
+                detail: "Filesystem operation failed; the path is intentionally withheld.".into(),
+            },
+            Self::Json(_) => Diagnostic {
+                kind: "JSON",
+                detail: "Application metadata serialization or parsing failed.".into(),
+            },
+            Self::Zip(_) => Diagnostic {
+                kind: "ZIP",
+                detail: "Backup archive operation failed.".into(),
+            },
+            _ => Diagnostic {
+                kind: "APPLICATION",
+                detail: "The operation returned the stable error code shown above.".into(),
+            },
+        }
+    }
+}
+
+fn detailed_diagnostics_enabled() -> bool {
+    cfg!(debug_assertions)
+        && matches!(
+            std::env::var("VITE_DETAILED_DIAGNOSTICS").as_deref(),
+            Ok("true" | "1")
+        )
+}
+
+fn safe_sqlite_diagnostic(message: Option<&str>) -> String {
+    let Some(message) = message else {
+        return "SQLite operation failed without a database message.".into();
+    };
+
+    for prefix in ["no such column: ", "no such table: "] {
+        if let Some(name) = message.strip_prefix(prefix) {
+            if !name.is_empty()
+                && name.chars().all(|character| {
+                    character.is_ascii_alphanumeric() || matches!(character, '_' | '.')
+                })
+            {
+                return format!("SQLite schema mismatch — {prefix}{name}");
+            }
+        }
+    }
+
+    if message.contains("file is not a database") {
+        return "The local database could not be opened as a SQLite database.".into();
+    }
+    if message.contains("database disk image is malformed") {
+        return "The local SQLite database appears malformed.".into();
+    }
+    if message.contains("database is locked") {
+        return "The local SQLite database is locked by another operation.".into();
+    }
+
+    "SQLite operation failed; the database message was withheld for privacy.".into()
 }
 
 impl Serialize for Error {
@@ -122,11 +204,42 @@ impl Serialize for Error {
             Self::ClientProbableDuplicate(candidates) => serde_json::to_value(candidates).ok(),
             _ => None,
         };
+        let diagnostic = detailed_diagnostics_enabled().then(|| self.diagnostic());
+        if let Some(diagnostic) = &diagnostic {
+            tracing::error!(
+                error_code = self.code(),
+                diagnostic_kind = diagnostic.kind,
+                diagnostic_detail = %diagnostic.detail,
+                "command failed"
+            );
+        }
         ApiError {
             code: self.code(),
             message: self.message(),
             details,
+            diagnostic,
         }
         .serialize(serializer)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::safe_sqlite_diagnostic;
+
+    #[test]
+    fn exposes_a_safe_missing_column_diagnostic() {
+        assert_eq!(
+            safe_sqlite_diagnostic(Some("no such column: autostart_enabled")),
+            "SQLite schema mismatch — no such column: autostart_enabled"
+        );
+    }
+
+    #[test]
+    fn withholds_unrecognised_sqlite_messages() {
+        assert_eq!(
+            safe_sqlite_diagnostic(Some("constraint failed: clients.phone = 01000000000")),
+            "SQLite operation failed; the database message was withheld for privacy."
+        );
     }
 }

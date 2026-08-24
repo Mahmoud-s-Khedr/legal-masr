@@ -31,6 +31,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
         6,
         include_str!("../../migrations/0006_reminder_delivery.sql"),
     ),
+    (
+        7,
+        include_str!("../../migrations/0007_canonical_legal_masr.sql"),
+    ),
 ];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
@@ -64,7 +68,7 @@ pub fn open_db(path: &Path, master: &[u8; 32]) -> Result<Connection, Error> {
 
 pub fn schema_version(db: &Connection) -> i64 {
     db.query_row(
-        "SELECT schema_version FROM app_metadata WHERE id = 1",
+        "SELECT COALESCE(MAX(version), 0) FROM schema_migrations",
         [],
         |r| r.get(0),
     )
@@ -77,15 +81,11 @@ pub fn latest_schema_version() -> i64 {
 
 pub fn migrate(db: &Connection) -> Result<(), Error> {
     for (version, migration) in MIGRATIONS {
-        let current: Option<i64> = db
-            .query_row(
-                "SELECT schema_version FROM app_metadata WHERE id = 1",
-                [],
-                |r| r.get(0),
-            )
-            .ok();
-        if current.unwrap_or(0) >= *version {
+        if migration_is_applied(db, *version) {
             continue;
+        }
+        if *version == 7 && legacy_domain_data_exists(db)? {
+            return Err(Error::LegacyDataMigrationRequired);
         }
         let tx = db.unchecked_transaction()?;
         tx.execute_batch(migration)?;
@@ -96,19 +96,77 @@ pub fn migrate(db: &Connection) -> Result<(), Error> {
                 "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
                 rusqlite::params![version, now()],
             )?;
-            tx.execute(
-                "UPDATE app_metadata SET schema_version = ?1, updated_at = ?2 WHERE id = 1",
-                rusqlite::params![version, now()],
-            )?;
         }
         tx.commit()?;
     }
     Ok(())
 }
 
+fn migration_is_applied(db: &Connection, version: i64) -> bool {
+    let schema_history_exists: bool = db
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations')",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(false);
+    if schema_history_exists {
+        if version == 1 {
+            return db
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'app_metadata')",
+                    [],
+                    |row| row.get(0),
+                )
+                .unwrap_or(false);
+        }
+        return db
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version = ?1)",
+                [version],
+                |row| row.get(0),
+            )
+            .unwrap_or(false);
+    }
+
+    db.query_row(
+        "SELECT schema_version >= ?1 FROM app_metadata WHERE id = 1",
+        [version],
+        |row| row.get(0),
+    )
+    .unwrap_or(false)
+}
+
+fn legacy_domain_data_exists(db: &Connection) -> Result<bool, Error> {
+    const LEGACY_TABLES: &[&str] = &[
+        "clients",
+        "client_contacts",
+        "cases",
+        "case_clients",
+        "case_parties",
+        "case_events",
+        "tasks",
+        "documents",
+        "case_fee_agreements",
+        "financial_transactions",
+        "search_index",
+        "activity_history",
+        "reminder_deliveries",
+    ];
+
+    for table in LEGACY_TABLES {
+        let sql = format!("SELECT EXISTS(SELECT 1 FROM {table} LIMIT 1)");
+        if db.query_row(&sql, [], |row| row.get::<_, bool>(0))? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rusqlite::OptionalExtension;
 
     #[test]
     fn migrations_create_foundation_tables_and_schema_version() {
@@ -129,8 +187,117 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(version, 6);
+        assert_eq!(version, 7);
         assert_eq!(settings_exists, "app_settings");
         assert_eq!(clients_exists, "clients");
+    }
+
+    #[test]
+    fn canonical_schema_enforces_domain_invariants_and_integrity() {
+        let db = Connection::open_in_memory().unwrap();
+        migrate(&db).unwrap();
+        let client_id = uuid::Uuid::new_v4().to_string();
+        let other_client_id = uuid::Uuid::new_v4().to_string();
+        let case_id = uuid::Uuid::new_v4().to_string();
+
+        db.execute(
+            "INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, 'CL-1', 'أحمد', 'now', 'now')",
+            [&client_id],
+        )
+        .unwrap();
+        assert!(db
+            .execute(
+                "INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, 'CL-1', 'سارة', 'now', 'now')",
+                [&other_client_id],
+            )
+            .is_err());
+        db.execute(
+            "INSERT INTO cases (id, internal_number, status, created_at, updated_at) VALUES (?1, 'CA-1', 'ACTIVE', 'now', 'now')",
+            [&case_id],
+        )
+        .unwrap();
+
+        assert!(db
+            .execute(
+                "INSERT INTO payments (id, case_id, payer_client_id, amount_minor, payment_date, created_at, updated_at) VALUES (?1, ?2, ?3, 100, '2026-08-24', 'now', 'now')",
+                rusqlite::params![uuid::Uuid::new_v4().to_string(), case_id, client_id],
+            )
+            .is_err());
+        db.execute(
+            "INSERT INTO case_clients (case_id, client_id, created_at, updated_at) VALUES (?1, ?2, 'now', 'now')",
+            rusqlite::params![case_id, client_id],
+        )
+        .unwrap();
+        db.execute(
+            "INSERT INTO payments (id, case_id, payer_client_id, amount_minor, payment_date, created_at, updated_at) VALUES (?1, ?2, ?3, 100, '2026-08-24', 'now', 'now')",
+            rusqlite::params![uuid::Uuid::new_v4().to_string(), case_id, client_id],
+        )
+        .unwrap();
+        assert!(db
+            .execute(
+                "INSERT INTO tasks (id, title, due_date, completed, created_at, updated_at) VALUES (?1, 'مهمة', '2026-08-24', 2, 'now', 'now')",
+                [uuid::Uuid::new_v4().to_string()],
+            )
+            .is_err());
+        assert!(db
+            .execute(
+                "INSERT INTO attachments (id, original_filename, stored_filename, relative_path, file_size_bytes, sha256, created_at, updated_at) VALUES (?1, 'a.pdf', 'a.pdf', 'attachments/a.pdf', 1, ?2, 'now', 'now')",
+                rusqlite::params![uuid::Uuid::new_v4().to_string(), "a".repeat(64)],
+            )
+            .is_err());
+        assert!(db
+            .execute(
+                "INSERT INTO expenses (id, amount_minor, expense_date, expense_type, created_at, updated_at) VALUES (?1, 0, '2026-08-24', 'OTHER', 'now', 'now')",
+                [uuid::Uuid::new_v4().to_string()],
+            )
+            .is_err());
+
+        let foreign_key_check: Option<String> = db
+            .query_row("PRAGMA foreign_key_check", [], |row| row.get(0))
+            .optional()
+            .unwrap();
+        let integrity_check: String = db
+            .query_row("PRAGMA integrity_check", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(foreign_key_check, None);
+        assert_eq!(integrity_check, "ok");
+    }
+
+    #[test]
+    fn populated_legacy_vault_is_rejected_without_schema_replacement() {
+        let db = Connection::open_in_memory().unwrap();
+        for (_, migration) in MIGRATIONS.iter().take(6) {
+            db.execute_batch(migration).unwrap();
+        }
+        db.execute(
+            "INSERT INTO app_metadata (id, installation_uuid, schema_version, created_at, updated_at) VALUES (1, 'legacy-installation', 6, 'now', 'now')",
+            [],
+        )
+        .unwrap();
+        for version in 2..=6 {
+            db.execute(
+                "INSERT INTO schema_migrations (version, applied_at) VALUES (?1, 'now')",
+                [version],
+            )
+            .unwrap();
+        }
+        db.execute(
+            "INSERT INTO clients (id, client_type, display_name, created_at, updated_at) VALUES ('legacy-client', 'INDIVIDUAL', 'سجل قديم', 'now', 'now')",
+            [],
+        )
+        .unwrap();
+
+        assert!(matches!(
+            migrate(&db),
+            Err(Error::LegacyDataMigrationRequired)
+        ));
+        let legacy_clients: String = db
+            .query_row(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'clients'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(legacy_clients, "clients");
     }
 }

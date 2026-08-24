@@ -1,5 +1,11 @@
 export type AppStatus = { initialized: boolean; unlocked: boolean };
-export type AppError = { code: string; message: string; details: unknown };
+export type AppDiagnostic = { kind: string; detail: string };
+export type AppError = {
+  code: string;
+  message: string;
+  details: unknown;
+  diagnostic?: AppDiagnostic;
+};
 export type Settings = {
   language: 'ar' | 'en';
   theme: 'system' | 'light' | 'dark';
