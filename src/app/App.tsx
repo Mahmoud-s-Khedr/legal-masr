@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { isPermissionGranted } from '@tauri-apps/plugin-notification';
 import { bridge } from '../bridge/commands';
@@ -7,6 +8,8 @@ import { Shell } from '../components/layout/Shell';
 import { OnboardingPage, OnboardingSubGate } from '../features/onboarding/pages/OnboardingPage';
 import { useAppStatus, useLockVault } from '../features/onboarding/api/onboardingApi';
 import { useSettings } from '../features/settings/api/settingsApi';
+import { seedDemoDataOnce } from '../dev/seedDemoData';
+import { queryKeys } from '../lib/queryKeys';
 import { Providers } from './providers';
 
 type Gate = 'loading' | OnboardingSubGate | 'ready';
@@ -58,6 +61,37 @@ function ReminderSync() {
   return null;
 }
 
+function DemoDataSeeder() {
+  const { data: status } = useAppStatus();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || import.meta.env.VITE_SEED_DEMO_DATA !== 'true' || !status?.unlocked)
+      return;
+    void seedDemoDataOnce()
+      .then(async (result) => {
+        if (result !== 'seeded') return;
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: queryKeys.clients.all }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.cases.all }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.powersOfAttorney.all }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.hearings.all }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.today.all }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.agenda }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.payments.all }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.search.all }),
+        ]);
+      })
+      .catch(() => {
+        // Seeding is explicitly opt-in developer support and must not block the workspace.
+      });
+  }, [queryClient, status?.unlocked]);
+
+  return null;
+}
+
 function AppContent() {
   const { t } = useTranslation();
   const { data: status, isLoading } = useAppStatus();
@@ -81,6 +115,7 @@ function AppContent() {
         <ThemeSync />
         <LocaleSync />
         <ReminderSync />
+        <DemoDataSeeder />
         <Shell
           onLock={async () => {
             await lockVault.mutateAsync();

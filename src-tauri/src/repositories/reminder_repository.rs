@@ -75,10 +75,7 @@ mod tests {
         let connection = Connection::open_in_memory().unwrap();
         db::migrate(&connection).unwrap();
         connection
-            .execute(
-                "INSERT INTO app_settings (id,language,created_at,updated_at) VALUES (1,'ar','now','now')",
-                [],
-            )
+            .execute("UPDATE app_settings SET language = 'ar' WHERE id = 1", [])
             .unwrap();
         connection
     }

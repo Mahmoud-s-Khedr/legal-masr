@@ -4,11 +4,13 @@ Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
 
 ## Canonical schema
 
-Migration `0007_canonical_legal_masr.sql` is the current canonical-domain
-schema. Domain tables are SQLite `STRICT` tables. Public records use non-null
-UUID text keys, money is positive EGP integer minor units, and legal dates are
-timezone-free `YYYY-MM-DD` text. `schema_migrations` is the only schema-version
-authority; `app_metadata` holds installation identity only.
+Migration `0007_canonical_legal_masr.sql` establishes the canonical-domain
+schema; `0008_repair_missing_app_settings.sql` ensures every canonical vault
+has its required settings singleton. Domain tables are SQLite `STRICT` tables.
+Public records use non-null UUID text keys, money is positive EGP integer minor
+units, and legal dates are timezone-free `YYYY-MM-DD` text.
+`schema_migrations` is the only schema-version authority; `app_metadata` holds
+installation identity only.
 
 | Area                  | Tables                                                                         | Key rules                                                                                                                                                              |
 | --------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -80,6 +82,9 @@ the current query surface and expected local data size did not justify it.
   Startup rejects a populated legacy vault with
   `LEGACY_DATA_MIGRATION_REQUIRED` before applying it; a real persisted vault
   needs an explicit forward data/file conversion migration.
+- Migration `0008` is a forward-only repair for an absent `app_settings` row.
+  It inserts canonical defaults only when that singleton is missing and never
+  overwrites an existing user's settings.
 - Startup opens SQLCipher, enables foreign keys, applies pending migrations,
   rebuilds derived search data where required, and checks integrity.
 - Migration tests cover a clean canonical database plus refusal to replace a

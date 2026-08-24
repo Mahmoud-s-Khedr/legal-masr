@@ -15,7 +15,10 @@ pub fn insert_initial_profile_and_settings(
         "INSERT INTO lawyer_profile (id, full_name, created_at, updated_at) VALUES (1, ?1, ?2, ?2)",
         [full_name, &now],
     )?;
-    conn.execute("INSERT INTO app_settings (id, language, lock_timeout_minutes, created_at, updated_at) VALUES (1, ?1, ?2, ?3, ?3)", rusqlite::params![language, lock_timeout_minutes, now])?;
+    conn.execute(
+        "INSERT INTO app_settings (id, language, lock_timeout_minutes, created_at, updated_at) VALUES (1, ?1, ?2, ?3, ?3) ON CONFLICT(id) DO UPDATE SET language = excluded.language, lock_timeout_minutes = excluded.lock_timeout_minutes, updated_at = excluded.updated_at",
+        rusqlite::params![language, lock_timeout_minutes, now],
+    )?;
     Ok(())
 }
 pub fn get_settings(conn: &Connection) -> Result<SettingsDto, Error> {

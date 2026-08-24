@@ -35,6 +35,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
         7,
         include_str!("../../migrations/0007_canonical_legal_masr.sql"),
     ),
+    (
+        8,
+        include_str!("../../migrations/0008_repair_missing_app_settings.sql"),
+    ),
 ];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
@@ -187,7 +191,7 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(version, 7);
+        assert_eq!(version, 8);
         assert_eq!(settings_exists, "app_settings");
         assert_eq!(clients_exists, "clients");
     }
@@ -299,5 +303,44 @@ mod tests {
             )
             .unwrap();
         assert_eq!(legacy_clients, "clients");
+    }
+
+    #[test]
+    fn migration_repairs_a_missing_settings_singleton_without_overwriting_preferences() {
+        let db = Connection::open_in_memory().unwrap();
+        migrate(&db).unwrap();
+        db.execute("DELETE FROM app_settings WHERE id = 1", [])
+            .unwrap();
+        db.execute("DELETE FROM schema_migrations WHERE version = 8", [])
+            .unwrap();
+
+        migrate(&db).unwrap();
+
+        let settings: (String, String, i64, i64) = db
+            .query_row(
+                "SELECT language, theme, default_reminder_minutes, lock_timeout_minutes FROM app_settings WHERE id = 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+            )
+            .unwrap();
+        assert_eq!(settings, ("ar".into(), "system".into(), 60, 15));
+        assert_eq!(schema_version(&db), 8);
+
+        db.execute(
+            "UPDATE app_settings SET language = 'en', theme = 'dark', default_reminder_minutes = 45, lock_timeout_minutes = 30 WHERE id = 1",
+            [],
+        )
+        .unwrap();
+        db.execute("DELETE FROM schema_migrations WHERE version = 8", [])
+            .unwrap();
+        migrate(&db).unwrap();
+        let preserved: (String, String, i64, i64) = db
+            .query_row(
+                "SELECT language, theme, default_reminder_minutes, lock_timeout_minutes FROM app_settings WHERE id = 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+            )
+            .unwrap();
+        assert_eq!(preserved, ("en".into(), "dark".into(), 45, 30));
     }
 }

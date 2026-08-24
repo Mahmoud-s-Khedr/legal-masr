@@ -7,8 +7,26 @@ pub struct Status {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InitializeResult {
     pub recovery_key: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::InitializeResult;
+
+    #[test]
+    fn initialize_result_uses_the_camel_case_bridge_contract() {
+        let result = InitializeResult {
+            recovery_key: "recovery-key".into(),
+        };
+
+        assert_eq!(
+            serde_json::to_value(result).unwrap(),
+            serde_json::json!({ "recoveryKey": "recovery-key" })
+        );
+    }
 }
 
 #[derive(Deserialize)]

@@ -115,7 +115,8 @@ pub fn unlock<R: Runtime>(
         security_file.parallelism,
     )?;
     let master = security::unwrap(&derived, &security_file.password_envelope)?;
-    let _ = db::open_db(&db_path, &master)?;
+    let connection = db::open_db(&db_path, &master)?;
+    db::migrate(&connection)?;
     *state.master_key.lock().map_err(|_| Error::Locked)? = Some(master);
     Ok(())
 }
@@ -180,7 +181,8 @@ pub fn recover_access<R: Runtime>(
         &security_file.recovery_envelope,
     )
     .map_err(|_| Error::InvalidRecovery)?;
-    let _ = db::open_db(&db_path, &master)?;
+    let connection = db::open_db(&db_path, &master)?;
+    db::migrate(&connection)?;
     let salt = security::random_32();
     let password_key = security::derive_password(
         new_password,

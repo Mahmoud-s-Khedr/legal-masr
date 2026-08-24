@@ -51,6 +51,18 @@ For sanitized developer diagnostics in a development build only:
 VITE_DETAILED_DIAGNOSTICS=true pnpm tauri dev
 ```
 
+To populate a newly initialized, empty development vault with non-production
+Arabic demo data through the same typed app APIs used by the UI, opt in at
+launch:
+
+```bash
+VITE_SEED_DEMO_DATA=true pnpm tauri dev
+```
+
+The seeder runs only in a development build, skips every non-empty vault, and
+does not create attachments or access SQLite from React. It is intended for
+local visual and workflow testing only.
+
 Diagnostics contain only a command name, stable error code, and allow-listed
 implementation facts. They never contain legal records, document paths,
 passwords, or encryption keys.

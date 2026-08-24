@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../bridge/commands', () => ({
@@ -52,6 +52,21 @@ describe('application gate', () => {
     render(<App />);
     expect(await screen.findByRole('heading', { name: 'أنشئ خزنتك' })).toBeInTheDocument();
     expect(screen.getByLabelText('اسم المحامي')).toBeRequired();
+  });
+
+  it('displays the recovery key returned by vault initialization', async () => {
+    vi.mocked(bridge.initialize).mockResolvedValue({ recoveryKey: 'test-recovery-key' });
+    render(<App />);
+
+    fireEvent.change(await screen.findByLabelText('اسم المحامي'), {
+      target: { value: 'محامٍ تجريبي' },
+    });
+    fireEvent.change(screen.getByLabelText('كلمة المرور'), {
+      target: { value: 'a secure local password' },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'إنشاء الخزنة' }).closest('form')!);
+
+    expect(await screen.findByText('test-recovery-key')).toBeInTheDocument();
   });
 
   it('shows the lock form for an initialized vault', async () => {

@@ -4,16 +4,16 @@ Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
 
 ## Current implementation status — 2026-08-24
 
-| Correction-plan phase                | Status      | Evidence / remaining work                                                                                      |
-| ------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------------- |
-| 0 — Stabilize and inventory          | Complete    | Baseline inventory and reference capture map recorded.                                                         |
-| 1 — Canonical SQLite model           | Complete    | Immutable migration 0007; clean and legacy-refusal integrity tests.                                            |
-| 2 — Rust domain/persistence          | Complete    | Canonical services, repositories, commands, file compensation, and domain tests.                               |
-| 3 — Bridge/frontend types/hooks      | Complete    | Typed DTOs, contracts, schemas, query keys/invalidation tests.                                                 |
-| 4 — Shared component/shell alignment | Complete    | Frozen RTL navigation and accessible shared controls.                                                          |
-| 5 — Feature implementation           | Complete    | Canonical client/POA/case/hearing/task/finance/attachment/settings/search workflows.                           |
-| 6 — Test matrix/migration safety     | Complete    | Automated checks and Linux debug Debian build were previously recorded as passing.                             |
-| 7 — Documentation/visual sign-off    | In progress | Documentation and static boundary scan are being closed; fresh running-app visual captures are still required. |
+| Correction-plan phase                | Status      | Evidence / remaining work                                                                                                    |
+| ------------------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 0 — Stabilize and inventory          | Complete    | Baseline inventory and reference capture map recorded.                                                                       |
+| 1 — Canonical SQLite model           | Complete    | Immutable migrations 0007 (canonical schema) and 0008 (settings-singleton repair); clean and legacy-refusal integrity tests. |
+| 2 — Rust domain/persistence          | Complete    | Canonical services, repositories, commands, file compensation, and domain tests.                                             |
+| 3 — Bridge/frontend types/hooks      | Complete    | Typed DTOs, contracts, schemas, query keys/invalidation tests.                                                               |
+| 4 — Shared component/shell alignment | Complete    | Frozen RTL navigation and accessible shared controls.                                                                        |
+| 5 — Feature implementation           | Complete    | Canonical client/POA/case/hearing/task/finance/attachment/settings/search workflows.                                         |
+| 6 — Test matrix/migration safety     | Complete    | Automated checks and Linux debug Debian build were previously recorded as passing.                                           |
+| 7 — Documentation/visual sign-off    | In progress | Documentation and static boundary scan are being closed; fresh running-app visual captures are still required.               |
 
 ## Public-beta blockers
 
