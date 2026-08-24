@@ -1,9 +1,12 @@
 use crate::{
     db,
-    dto::{DocumentDto, DocumentListInput, DocumentReferenceInput, DocumentUpdateInput},
+    dto::{
+        DocumentDto, DocumentListInput, DocumentReferenceInput, DocumentSourceSelection,
+        DocumentUpdateInput,
+    },
     errors::Error,
     normalize,
-    repositories::{document_repository, search_repository},
+    repositories::{document_repository, search_repository, settings_repository},
     state::AppState,
 };
 use sha2::{Digest, Sha256};
@@ -12,7 +15,9 @@ use std::{
     path::{Path, PathBuf},
 };
 use tauri::{AppHandle, Runtime};
+use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
+use time::{format_description::BorrowedFormatItem, macros::format_description, Date};
 use uuid::Uuid;
 const CATEGORIES: &[&str] = &[
     "PLEADING",
@@ -25,6 +30,11 @@ const CATEGORIES: &[&str] = &[
     "CORRESPONDENCE",
     "OTHER",
 ];
+const DATE_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[year]-[month]-[day]");
+
+fn valid_date(value: Option<&str>) -> bool {
+    value.is_none_or(|value| value.len() == 10 && Date::parse(value, DATE_FORMAT).is_ok())
+}
 fn dto(
     i: &DocumentReferenceInput,
     id: String,
@@ -63,26 +73,61 @@ fn index(c: &rusqlite::Connection, d: &DocumentDto, now: &str) -> Result<(), Err
         now,
     )
 }
-fn check(i: &DocumentReferenceInput) -> Result<(), Error> {
-    if !CATEGORIES.contains(&i.category.as_str()) {
+fn check(i: &DocumentReferenceInput, source: &Path) -> Result<(), Error> {
+    if !CATEGORIES.contains(&i.category.as_str()) || !valid_date(i.document_date.as_deref()) {
         return Err(Error::Validation);
     }
-    if i.path.trim().is_empty() || !Path::new(&i.path).is_file() {
+    if !source.is_file() {
         return Err(Error::DocumentSourceMissing);
     }
     Ok(())
+}
+
+fn managed_root(connection: &rusqlite::Connection) -> Result<PathBuf, Error> {
+    let directory = settings_repository::get_settings(connection)?
+        .managed_documents_directory
+        .filter(|value| !value.trim().is_empty())
+        .ok_or(Error::Operation)?;
+    let path = PathBuf::from(directory);
+    fs::create_dir_all(&path)?;
+    Ok(path)
+}
+
+pub fn select_source<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+) -> Result<DocumentSourceSelection, Error> {
+    let path = app
+        .dialog()
+        .file()
+        .blocking_pick_file()
+        .ok_or(Error::Cancelled)?
+        .into_path()
+        .map_err(|_| Error::Operation)?;
+    if !path.is_file() {
+        return Err(Error::DocumentSourceMissing);
+    }
+    let filename = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or(Error::Validation)?
+        .to_owned();
+    Ok(DocumentSourceSelection {
+        source_token: state.store_document_source(path)?,
+        filename,
+    })
 }
 pub fn add_reference<R: Runtime>(
     a: &AppHandle<R>,
     s: &AppState,
     i: DocumentReferenceInput,
 ) -> Result<DocumentDto, Error> {
-    check(&i)?;
+    let source = s.take_document_source(&i.source_token)?;
+    check(&i, &source)?;
     let m = s.unlocked()?;
     let (_, p) = db::paths(a)?;
     let c = db::open_db(&p, &m)?;
     let now = db::now();
-    let source = Path::new(&i.path);
     let name = source
         .file_name()
         .and_then(|x| x.to_str())
@@ -93,11 +138,19 @@ pub fn add_reference<R: Runtime>(
         Uuid::new_v4().to_string(),
         "EXTERNAL_REFERENCE",
         name,
-        fs::metadata(source)?.len() as i64,
+        fs::metadata(&source)?.len() as i64,
         now.clone(),
     );
     let tx = c.unchecked_transaction()?;
-    document_repository::insert(&tx, &d, None, None, Some(&i.path), None, &now)?;
+    document_repository::insert(
+        &tx,
+        &d,
+        None,
+        None,
+        Some(&source.to_string_lossy()),
+        None,
+        &now,
+    )?;
     index(&tx, &d, &now)?;
     tx.commit()?;
     Ok(d)
@@ -107,11 +160,12 @@ pub fn import_managed<R: Runtime>(
     s: &AppState,
     i: DocumentReferenceInput,
 ) -> Result<DocumentDto, Error> {
-    check(&i)?;
+    let source = s.take_document_source(&i.source_token)?;
+    check(&i, &source)?;
     let m = s.unlocked()?;
-    let root = db::app_dir(a)?.join("documents");
-    fs::create_dir_all(&root)?;
-    let source = Path::new(&i.path);
+    let (_, p) = db::paths(a)?;
+    let c = db::open_db(&p, &m)?;
+    let root = managed_root(&c)?;
     let name = source
         .file_name()
         .and_then(|x| x.to_str())
@@ -135,8 +189,6 @@ pub fn import_managed<R: Runtime>(
         }
     };
     let checksum = hex::encode(Sha256::digest(&bytes));
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
     let now = db::now();
     let d = dto(
         &i,
@@ -188,7 +240,7 @@ pub fn update<R: Runtime>(
     s: &AppState,
     i: DocumentUpdateInput,
 ) -> Result<DocumentDto, Error> {
-    if !CATEGORIES.contains(&i.category.as_str()) {
+    if !CATEGORIES.contains(&i.category.as_str()) || !valid_date(i.document_date.as_deref()) {
         return Err(Error::Validation);
     }
     let m = s.unlocked()?;
@@ -214,9 +266,7 @@ pub fn check_missing<R: Runtime>(a: &AppHandle<R>, s: &AppState, id: &str) -> Re
     let c = db::open_db(&p, &m)?;
     let (mode, relative, external, _) = document_repository::paths(&c, id)?;
     let path = if mode == "MANAGED_COPY" {
-        db::app_dir(a)?
-            .join("documents")
-            .join(relative.unwrap_or_default())
+        managed_root(&c)?.join(relative.unwrap_or_default())
     } else {
         PathBuf::from(external.unwrap_or_default())
     };
@@ -224,16 +274,10 @@ pub fn check_missing<R: Runtime>(a: &AppHandle<R>, s: &AppState, id: &str) -> Re
     document_repository::set_missing(&c, id, missing, &db::now())?;
     Ok(missing)
 }
-fn resolved_path<R: Runtime>(
-    app: &AppHandle<R>,
-    connection: &rusqlite::Connection,
-    id: &str,
-) -> Result<PathBuf, Error> {
+fn resolved_path(connection: &rusqlite::Connection, id: &str) -> Result<PathBuf, Error> {
     let (mode, relative, external, _) = document_repository::paths(connection, id)?;
     Ok(if mode == "MANAGED_COPY" {
-        db::app_dir(app)?
-            .join("documents")
-            .join(relative.unwrap_or_default())
+        managed_root(connection)?.join(relative.unwrap_or_default())
     } else {
         PathBuf::from(external.unwrap_or_default())
     })
@@ -242,7 +286,7 @@ pub fn open<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Resul
     let master = state.unlocked()?;
     let (_, database_path) = db::paths(app)?;
     let connection = db::open_db(&database_path, &master)?;
-    let path = resolved_path(app, &connection, id)?;
+    let path = resolved_path(&connection, id)?;
     if !path.is_file() {
         document_repository::set_missing(&connection, id, true, &db::now())?;
         return Err(Error::DocumentSourceMissing);
@@ -255,7 +299,7 @@ pub fn reveal<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Res
     let master = state.unlocked()?;
     let (_, database_path) = db::paths(app)?;
     let connection = db::open_db(&database_path, &master)?;
-    let path = resolved_path(app, &connection, id)?;
+    let path = resolved_path(&connection, id)?;
     if !path.is_file() {
         document_repository::set_missing(&connection, id, true, &db::now())?;
         return Err(Error::DocumentSourceMissing);
@@ -273,9 +317,7 @@ pub fn remove<R: Runtime>(a: &AppHandle<R>, s: &AppState, id: &str) -> Result<()
     // If the database transaction fails, put it back so a record never points
     // at a silently missing file.
     let pending_delete = if mode == "MANAGED_COPY" {
-        let live = db::app_dir(a)?
-            .join("documents")
-            .join(relative.unwrap_or_default());
+        let live = managed_root(&c)?.join(relative.unwrap_or_default());
         if live.exists() {
             let pending = live.with_extension("deleting");
             fs::rename(&live, &pending)?;
@@ -303,4 +345,17 @@ pub fn remove<R: Runtime>(a: &AppHandle<R>, s: &AppState, id: &str) -> Result<()
         fs::remove_file(pending)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::valid_date;
+
+    #[test]
+    fn document_dates_reject_invalid_or_timestamp_values() {
+        assert!(valid_date(Some("2026-08-24")));
+        assert!(valid_date(None));
+        assert!(!valid_date(Some("2026-02-30")));
+        assert!(!valid_date(Some("2026-08-24T00:00:00Z")));
+    }
 }

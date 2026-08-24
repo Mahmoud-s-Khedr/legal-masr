@@ -41,13 +41,17 @@ pub fn update_autostart(db: &Connection, enabled: bool) -> Result<(), Error> {
 }
 
 pub fn update_settings(db: &Connection, input: &SettingsUpdateInput) -> Result<(), Error> {
-    let backup_directory = input
-        .backup_directory
-        .as_deref()
-        .filter(|value| !value.trim().is_empty());
     db.execute(
-        "UPDATE app_settings SET language = ?1, theme = ?2, date_format = ?3, week_starts_on = ?4, default_reminder_minutes = ?5, lock_timeout_minutes = ?6, backup_directory = ?7, updated_at = ?8 WHERE id = 1",
-        rusqlite::params![input.language, input.theme, input.date_format, input.week_starts_on, input.default_reminder_minutes, input.lock_timeout_minutes, backup_directory, db::now()],
+        "UPDATE app_settings SET language = ?1, theme = ?2, date_format = ?3, week_starts_on = ?4, default_reminder_minutes = ?5, lock_timeout_minutes = ?6, updated_at = ?7 WHERE id = 1",
+        rusqlite::params![input.language, input.theme, input.date_format, input.week_starts_on, input.default_reminder_minutes, input.lock_timeout_minutes, db::now()],
+    )?;
+    Ok(())
+}
+
+pub fn update_backup_directory(db: &Connection, directory: &str) -> Result<(), Error> {
+    db.execute(
+        "UPDATE app_settings SET backup_directory = ?1, updated_at = ?2 WHERE id = 1",
+        rusqlite::params![directory, db::now()],
     )?;
     Ok(())
 }

@@ -71,6 +71,10 @@ pub fn schema_version(db: &Connection) -> i64 {
     .unwrap_or(0)
 }
 
+pub fn latest_schema_version() -> i64 {
+    MIGRATIONS.last().map(|(version, _)| *version).unwrap_or(0)
+}
+
 pub fn migrate(db: &Connection) -> Result<(), Error> {
     for (version, migration) in MIGRATIONS {
         let current: Option<i64> = db

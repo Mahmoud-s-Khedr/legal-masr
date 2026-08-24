@@ -1,4 +1,3 @@
-import { open } from '@tauri-apps/plugin-dialog';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
@@ -63,10 +62,7 @@ export function CaseDetailPage() {
     )
       archiveCase.mutate(caseDto.id);
   };
-  const exportCase = async () => {
-    const destination = await open({ directory: true, multiple: false });
-    if (typeof destination === 'string') exportCaseMutation.mutate({ id: caseDto.id, destination });
-  };
+  const exportCase = () => exportCaseMutation.mutate(caseDto.id);
   const saveAgreement = async (event: React.FormEvent) => {
     event.preventDefault();
     const amountMinor = parseMoneyToMinor(feeAmount);

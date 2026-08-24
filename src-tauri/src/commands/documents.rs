@@ -1,10 +1,20 @@
 use crate::{
-    dto::{DocumentDto, DocumentListInput, DocumentReferenceInput, DocumentUpdateInput},
+    dto::{
+        DocumentDto, DocumentListInput, DocumentReferenceInput, DocumentSourceSelection,
+        DocumentUpdateInput,
+    },
     errors::Error,
     services::document_service,
     state::AppState,
 };
 use tauri::{AppHandle, State};
+#[tauri::command]
+pub fn document_select_source(
+    app: AppHandle,
+    state: State<AppState>,
+) -> Result<DocumentSourceSelection, Error> {
+    document_service::select_source(&app, &state)
+}
 #[tauri::command]
 pub fn document_import_managed(
     app: AppHandle,

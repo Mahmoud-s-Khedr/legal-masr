@@ -57,11 +57,6 @@ pub fn client_restore(
 }
 
 #[tauri::command]
-pub fn client_export(
-    app: AppHandle,
-    state: State<AppState>,
-    id: String,
-    destination: String,
-) -> Result<String, Error> {
-    client_service::export(&app, &state, &id, &destination)
+pub fn client_export(app: AppHandle, state: State<AppState>, id: String) -> Result<String, Error> {
+    client_service::export(&app, &state, &id)
 }

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../bridge/commands', () => ({
@@ -22,10 +22,11 @@ vi.mock('../bridge/commands', () => ({
 import { bridge } from '../bridge/commands';
 import { queryClient } from '../lib/queryClient';
 import { App } from './App';
-import { applyDocumentDirection } from '../i18n';
+import i18n, { applyDocumentDirection } from '../i18n';
 
 describe('application gate', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('ar');
     vi.clearAllMocks();
     // The QueryClient is a module-level singleton shared by every render in
     // this file; without clearing it, cached data from one test (e.g. an
@@ -148,6 +149,25 @@ describe('application gate', () => {
     applyDocumentDirection('ar');
     expect(document.documentElement).toHaveAttribute('dir', 'rtl');
     expect(document.documentElement).toHaveAttribute('lang', 'ar');
+  });
+
+  it('restores the saved interface language after the vault is unlocked', async () => {
+    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+    vi.mocked(bridge.settings).mockResolvedValue({
+      language: 'en',
+      theme: 'system',
+      dateFormat: 'dd/MM/yyyy',
+      weekStartsOn: 6,
+      defaultReminderMinutes: 60,
+      autostartEnabled: false,
+      lockTimeoutMinutes: 15,
+      managedDocumentsDirectory: null,
+      backupDirectory: null,
+    });
+    render(<App />);
+    await waitFor(() => expect(document.documentElement).toHaveAttribute('lang', 'en'));
+    expect(document.documentElement).toHaveAttribute('dir', 'ltr');
+    await i18n.changeLanguage('ar');
   });
 
   it('never calls settings_get while the vault is locked', async () => {

@@ -1,6 +1,7 @@
 use legalmaster_lib::{
-    db,
+    backup, db,
     dto::{InitializeInput, LawyerProfileDto, SettingsUpdateInput},
+    repositories::settings_repository,
     security,
     services::{app_service, backup_service, settings_service},
     state::AppState,
@@ -35,8 +36,6 @@ fn lawyer_profile_updates_locally_and_rejects_invalid_identity_data() {
             password: "a secure local password".into(),
             full_name: "محامٍ تجريبي".into(),
             language: "ar".into(),
-            managed_documents_directory: None,
-            backup_directory: None,
             lock_timeout_minutes: 15,
         },
     )
@@ -107,8 +106,6 @@ fn onboarding_reaches_an_unlocked_ready_state_with_no_backup_gate() {
             password: "a secure local password".into(),
             full_name: "محامٍ تجريبي".into(),
             language: "ar".into(),
-            managed_documents_directory: None,
-            backup_directory: None,
             lock_timeout_minutes: 15,
         },
     )
@@ -128,17 +125,17 @@ fn onboarding_reaches_an_unlocked_ready_state_with_no_backup_gate() {
         .expect("a default backup directory must be computed when none is supplied");
     assert!(!backup_directory.is_empty());
 
-    let backup_path = backup_service::create(handle, &state, &backup_directory)
+    let backup_path = backup_service::create(handle, &state)
         .expect("backup_create must succeed against the auto-computed backup directory");
     assert!(std::path::Path::new(&backup_path).exists());
-    backup_service::validate(&state, &backup_path)
+    backup::validate(&backup_path, &state.unlocked().unwrap())
         .expect("the freshly created backup must validate");
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
 }
 
 #[test]
-fn settings_update_changes_the_backup_directory_and_backups_still_work_against_it() {
+fn backup_directory_is_selected_outside_the_general_settings_payload_and_backups_use_it() {
     let _guard = lock_app_dir();
     let app = fresh_mock_app();
     app.manage(AppState::default());
@@ -152,8 +149,6 @@ fn settings_update_changes_the_backup_directory_and_backups_still_work_against_i
             password: "a secure local password".into(),
             full_name: "محامٍ تجريبي".into(),
             language: "ar".into(),
-            managed_documents_directory: None,
-            backup_directory: None,
             lock_timeout_minutes: 15,
         },
     )
@@ -162,25 +157,15 @@ fn settings_update_changes_the_backup_directory_and_backups_still_work_against_i
     let new_backup_dir = tempfile::tempdir().unwrap();
     let new_backup_dir_str = new_backup_dir.path().to_str().unwrap().to_string();
 
-    let updated = settings_service::update(
-        handle,
-        &state,
-        &SettingsUpdateInput {
-            language: "ar".into(),
-            theme: "system".into(),
-            date_format: "dd/MM/yyyy".into(),
-            week_starts_on: 6,
-            default_reminder_minutes: 60,
-            lock_timeout_minutes: 20,
-            backup_directory: Some(new_backup_dir_str.clone()),
-        },
-    )
-    .expect("settings_update must accept a new backup directory");
+    let (_, database_path) = db::paths(handle).unwrap();
+    let connection = db::open_db(&database_path, &state.unlocked().unwrap()).unwrap();
+    settings_repository::update_backup_directory(&connection, &new_backup_dir_str).unwrap();
+    let updated = settings_service::get(handle, &state).unwrap();
     assert_eq!(
         updated.backup_directory.as_deref(),
         Some(new_backup_dir_str.as_str())
     );
-    assert_eq!(updated.lock_timeout_minutes, 20);
+    assert_eq!(updated.lock_timeout_minutes, 15);
 
     let refetched = settings_service::get(handle, &state).unwrap();
     assert_eq!(
@@ -188,7 +173,7 @@ fn settings_update_changes_the_backup_directory_and_backups_still_work_against_i
         Some(new_backup_dir_str.as_str())
     );
 
-    let backup_path = backup_service::create(handle, &state, &new_backup_dir_str)
+    let backup_path = backup_service::create(handle, &state)
         .expect("backup_create must succeed against the newly configured directory");
     assert!(std::path::Path::new(&backup_path).exists());
 
@@ -196,7 +181,7 @@ fn settings_update_changes_the_backup_directory_and_backups_still_work_against_i
 }
 
 #[test]
-fn general_settings_can_be_saved_before_a_backup_directory_is_selected() {
+fn general_settings_preserve_the_native_selected_backup_directory() {
     let _guard = lock_app_dir();
     let app = fresh_mock_app();
     app.manage(AppState::default());
@@ -209,8 +194,6 @@ fn general_settings_can_be_saved_before_a_backup_directory_is_selected() {
             password: "a secure local password".into(),
             full_name: "محامٍ تجريبي".into(),
             language: "ar".into(),
-            managed_documents_directory: None,
-            backup_directory: None,
             lock_timeout_minutes: 15,
         },
     )
@@ -226,13 +209,12 @@ fn general_settings_can_be_saved_before_a_backup_directory_is_selected() {
             week_starts_on: 0,
             default_reminder_minutes: 30,
             lock_timeout_minutes: 10,
-            backup_directory: None,
         },
     )
     .expect("general settings must not require a backup destination");
     assert_eq!(updated.theme, "light");
     assert_eq!(updated.date_format, "yyyy-MM-dd");
-    assert!(updated.backup_directory.is_none());
+    assert!(updated.backup_directory.is_some());
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
 }

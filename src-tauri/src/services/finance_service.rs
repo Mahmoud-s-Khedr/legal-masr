@@ -9,6 +9,7 @@ use crate::{
     state::AppState,
 };
 use tauri::{AppHandle, Runtime};
+use time::{format_description::BorrowedFormatItem, macros::format_description, Date};
 use uuid::Uuid;
 const TYPES: &[&str] = &[
     "FEE_PAYMENT",
@@ -18,6 +19,12 @@ const TYPES: &[&str] = &[
     "OTHER_EXPENSE",
 ];
 const METHODS: &[&str] = &["CASH", "BANK_TRANSFER", "CARD", "MOBILE_WALLET", "OTHER"];
+const DATE_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[year]-[month]-[day]");
+
+fn is_date(value: &str) -> bool {
+    value.len() == 10 && Date::parse(value, DATE_FORMAT).is_ok()
+}
+
 fn valid(input: &FinancialTransactionInput) -> bool {
     input.amount_minor > 0
         && TYPES.contains(&input.transaction_type.as_str())
@@ -26,7 +33,7 @@ fn valid(input: &FinancialTransactionInput) -> bool {
             .as_deref()
             .map(|x| METHODS.contains(&x))
             .unwrap_or(true)
-        && input.transaction_date.len() == 10
+        && is_date(&input.transaction_date)
 }
 fn ensure_refs(c: &rusqlite::Connection, input: &FinancialTransactionInput) -> Result<(), Error> {
     let exists = |sql: &str, id: &str| c.query_row(sql, [id], |_| Ok(())).is_ok();
@@ -36,6 +43,15 @@ fn ensure_refs(c: &rusqlite::Connection, input: &FinancialTransactionInput) -> R
     if let Some(case_id) = &input.case_id {
         if !exists("SELECT 1 FROM cases WHERE id=?1", case_id) {
             return Err(Error::CaseNotFound);
+        }
+        if c.query_row(
+            "SELECT 1 FROM case_clients WHERE case_id = ?1 AND client_id = ?2",
+            rusqlite::params![case_id, input.client_id],
+            |_| Ok(()),
+        )
+        .is_err()
+        {
+            return Err(Error::Validation);
         }
     };
     if let Some(document_id) = &input.receipt_document_id {
@@ -54,7 +70,7 @@ pub fn save_fee_agreement<R: Runtime>(
         || input
             .agreement_date
             .as_deref()
-            .map(|x| x.len() != 10)
+            .map(|x| !is_date(x))
             .unwrap_or(false)
     {
         return Err(Error::Validation);
@@ -101,7 +117,7 @@ pub fn reverse_transaction<R: Runtime>(
     id: &str,
     date: &str,
 ) -> Result<FinancialTransactionDto, Error> {
-    if date.len() != 10 {
+    if !is_date(date) {
         return Err(Error::Validation);
     }
     let m = s.unlocked()?;
@@ -147,6 +163,17 @@ pub fn list<R: Runtime>(
     s: &AppState,
     input: FinancialTransactionListInput,
 ) -> Result<Vec<FinancialTransactionDto>, Error> {
+    if input
+        .from_date
+        .as_deref()
+        .is_some_and(|value| !is_date(value))
+        || input
+            .to_date
+            .as_deref()
+            .is_some_and(|value| !is_date(value))
+    {
+        return Err(Error::Validation);
+    }
     let m = s.unlocked()?;
     let (_, p) = db::paths(a)?;
     finance_repository::list_transactions(
@@ -174,4 +201,17 @@ pub fn client_summary<R: Runtime>(
     let m = s.unlocked()?;
     let (_, p) = db::paths(a)?;
     finance_repository::client_summary(&db::open_db(&p, &m)?, id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_date;
+
+    #[test]
+    fn financial_dates_must_be_real_date_only_values() {
+        assert!(is_date("2026-08-24"));
+        assert!(!is_date("2026-02-30"));
+        assert!(!is_date("2026-8-24"));
+        assert!(!is_date("2026-08-24T00:00:00Z"));
+    }
 }

@@ -43,12 +43,8 @@ pub fn initialize<R: Runtime>(
         return Err(Error::Initialized);
     }
     let data_dir = db::app_dir(app)?;
-    let managed_documents_directory = input
-        .managed_documents_directory
-        .unwrap_or_else(|| data_dir.join("Documents").to_string_lossy().into_owned());
-    let backup_directory = input
-        .backup_directory
-        .unwrap_or_else(|| data_dir.join("Backups").to_string_lossy().into_owned());
+    let managed_documents_directory = data_dir.join("documents").to_string_lossy().into_owned();
+    let backup_directory = data_dir.join("Backups").to_string_lossy().into_owned();
     fs::create_dir_all(&managed_documents_directory)?;
     fs::create_dir_all(&backup_directory)?;
     let master = security::random_32();
@@ -69,7 +65,7 @@ pub fn initialize<R: Runtime>(
         )?,
     };
     let temp_db = db_path.with_extension("tmp");
-    {
+    let database_setup = (|| -> Result<(), Error> {
         let conn = db::open_db(&temp_db, &master)?;
         db::migrate(&conn)?;
         settings_repository::insert_initial_profile_and_settings(
@@ -80,9 +76,27 @@ pub fn initialize<R: Runtime>(
             &backup_directory,
             input.lock_timeout_minutes,
         )?;
+        Ok(())
+    })();
+    if let Err(error) = database_setup {
+        let _ = fs::remove_file(&temp_db);
+        return Err(error);
     }
-    fs::rename(temp_db, &db_path)?;
-    fs::write(&security_path, serde_json::to_vec_pretty(&security_file)?)?;
+    let temp_security = security_path.with_extension("tmp");
+    if let Err(error) = fs::write(&temp_security, serde_json::to_vec_pretty(&security_file)?) {
+        let _ = fs::remove_file(&temp_db);
+        return Err(error.into());
+    }
+    if let Err(error) = fs::rename(&temp_db, &db_path) {
+        let _ = fs::remove_file(&temp_db);
+        let _ = fs::remove_file(&temp_security);
+        return Err(error.into());
+    }
+    if let Err(error) = fs::rename(&temp_security, &security_path) {
+        let _ = fs::remove_file(&db_path);
+        let _ = fs::remove_file(&temp_security);
+        return Err(error.into());
+    }
     *state.master_key.lock().map_err(|_| Error::Locked)? = Some(master);
     Ok(InitializeResult { recovery_key })
 }

@@ -22,7 +22,7 @@ export const useSettings = () => {
 export function useUpdateSettings() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (settings: Omit<Settings, 'managedDocumentsDirectory' | 'autostartEnabled'>) =>
+    mutationFn: (settings: Omit<Settings, 'managedDocumentsDirectory' | 'autostartEnabled' | 'backupDirectory'>) =>
       bridge.updateSettings(settings),
     onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
   });
@@ -53,6 +53,13 @@ export const useSetAutostart = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: bridge.setAutostart,
+    onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
+  });
+};
+export const useChooseBackupDirectory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bridge.chooseBackupDirectory,
     onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
   });
 };

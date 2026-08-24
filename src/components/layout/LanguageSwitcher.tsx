@@ -22,7 +22,6 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             weekStartsOn: settings.weekStartsOn,
             defaultReminderMinutes: settings.defaultReminderMinutes,
             lockTimeoutMinutes: settings.lockTimeoutMinutes,
-            backupDirectory: settings.backupDirectory,
           });
         }
       }}

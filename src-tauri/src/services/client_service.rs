@@ -3,11 +3,15 @@ use crate::{
     dto::{ClientCreateInput, ClientDto, ClientListInput, ClientSummary, ClientUpdateInput},
     errors::Error,
     normalize,
-    repositories::{client_repository, search_repository},
+    repositories::{
+        case_repository, client_repository, document_repository, event_repository,
+        finance_repository, search_repository, task_repository,
+    },
     state::AppState,
 };
 use std::fs;
 use tauri::{AppHandle, Runtime};
+use tauri_plugin_dialog::DialogExt;
 use uuid::Uuid;
 
 fn upsert_search_entry(
@@ -166,17 +170,42 @@ pub fn restore<R: Runtime>(
     set_archived(app, state, id, false)
 }
 
-pub fn export<R: Runtime>(
-    app: &AppHandle<R>,
-    state: &AppState,
-    id: &str,
-    destination: &str,
-) -> Result<String, Error> {
+pub fn export<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<String, Error> {
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
     let client = client_repository::find_by_id(&conn, id)?;
-    let path = std::path::PathBuf::from(destination).join(format!("client-{}.json", client.id));
-    fs::write(&path, serde_json::to_vec_pretty(&client)?)?;
+    let cases = case_repository::list_summaries(&conn, None, None, Some(id), true)?;
+    let case_records: Vec<_> = cases
+        .iter()
+        .map(|summary| {
+            let mut case = case_repository::find_case_by_id(&conn, &summary.id)?;
+            case.clients = case_repository::list_clients_for_case(&conn, &case.id)?;
+            case.parties = case_repository::list_parties_for_case(&conn, &case.id)?;
+            Ok::<_, Error>(case)
+        })
+        .collect::<Result<_, _>>()?;
+    let events = event_repository::list(&conn, None, None, None, Some(id), None)?;
+    let tasks = task_repository::list(&conn, None, None, None, Some(id), None, None)?;
+    let documents = document_repository::list(&conn, None, Some(id), true)?;
+    let transactions = finance_repository::list_transactions(&conn, Some(id), None, None, None)?;
+    let destination = app
+        .dialog()
+        .file()
+        .blocking_pick_folder()
+        .ok_or(Error::Cancelled)?
+        .into_path()
+        .map_err(|_| Error::Operation)?;
+    let path = destination.join(format!("client-{}.json", client.id));
+    let export = serde_json::json!({
+        "formatVersion": 1,
+        "client": client,
+        "cases": case_records,
+        "events": events,
+        "tasks": tasks,
+        "documents": documents,
+        "financialTransactions": transactions,
+    });
+    fs::write(&path, serde_json::to_vec_pretty(&export)?)?;
     Ok(path.to_string_lossy().into_owned())
 }

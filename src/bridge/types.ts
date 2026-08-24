@@ -23,8 +23,6 @@ export type InitializeInput = {
   password: string;
   fullName: string;
   language: 'ar' | 'en';
-  managedDocumentsDirectory?: string;
-  backupDirectory?: string;
   lockTimeoutMinutes?: number;
 };
 
@@ -300,11 +298,12 @@ export type DocumentDto = {
 export type DocumentReferenceInput = {
   clientId?: string;
   caseId?: string;
-  path: string;
+  sourceToken: string;
   category: string;
   description?: string;
   documentDate?: string;
 };
+export type DocumentSourceSelection = { sourceToken: string; filename: string };
 export type DocumentUpdateInput = {
   id: string;
   category: string;

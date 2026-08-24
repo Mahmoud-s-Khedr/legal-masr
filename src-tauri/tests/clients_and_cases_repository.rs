@@ -267,8 +267,8 @@ fn case_list_filters_by_status_client_and_archived_state() {
     let (_dir, conn, _master) = open_migrated_test_db();
     let client_a = seed_client(&conn, "أ", None);
     let client_b = seed_client(&conn, "ب", None);
-    seed_case(&conn, "4/2026", &[client_a.as_str()], &client_a);
-    let case_b = seed_case(&conn, "5/2026", &[client_b.as_str()], &client_b);
+    seed_case(&conn, "4/2025", &[client_a.as_str()], &client_a);
+    let case_b = seed_case(&conn, "5/2025", &[client_b.as_str()], &client_b);
     case_repository::set_archived(&conn, &case_b, true, &db::now()).unwrap();
 
     let all_active = case_repository::list_summaries(&conn, None, None, None, false).unwrap();
@@ -280,7 +280,18 @@ fn case_list_filters_by_status_client_and_archived_state() {
     let for_client_a =
         case_repository::list_summaries(&conn, None, None, Some(client_a.as_str()), true).unwrap();
     assert_eq!(for_client_a.len(), 1);
-    assert_eq!(for_client_a[0].case_number, "4/2026");
+    assert_eq!(for_client_a[0].case_number, "4/2025");
+
+    conn.execute(
+        "UPDATE cases SET judicial_year = 2026 WHERE case_number = '4/2025'",
+        [],
+    )
+    .unwrap();
+    let by_year = case_repository::list_summaries(&conn, Some("2026"), None, None, true).unwrap();
+    assert_eq!(by_year.len(), 1);
+    let combined =
+        case_repository::list_summaries(&conn, Some("4/2025 2026"), None, None, true).unwrap();
+    assert_eq!(combined.len(), 1);
 }
 
 #[test]

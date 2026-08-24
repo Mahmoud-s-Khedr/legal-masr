@@ -47,7 +47,4 @@ export function useRestoreClient() {
 }
 
 export const useExportClient = () =>
-  useMutation({
-    mutationFn: ({ id, destination }: { id: string; destination: string }) =>
-      bridge.clientExport(id, destination),
-  });
+  useMutation({ mutationFn: bridge.clientExport });

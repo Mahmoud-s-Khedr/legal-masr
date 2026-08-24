@@ -48,7 +48,13 @@ pub fn rebuild_index<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result
             &case.id,
             &case.case_number,
             case.primary_client_name.as_deref(),
-            &normalize::normalize_text(&case.case_number),
+            &normalize::normalize_text(&format!(
+                "{} {}",
+                case.case_number,
+                case.judicial_year
+                    .map(|value| value.to_string())
+                    .unwrap_or_default()
+            )),
             &now,
         )?;
     }

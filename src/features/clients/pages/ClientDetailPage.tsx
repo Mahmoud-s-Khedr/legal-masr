@@ -1,4 +1,3 @@
-import { open } from '@tauri-apps/plugin-dialog';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
@@ -47,10 +46,7 @@ export function ClientDetailPage() {
     )
       archiveClient.mutate(client.id);
   };
-  const exportRecord = async () => {
-    const destination = await open({ directory: true, multiple: false });
-    if (typeof destination === 'string') exportClient.mutate({ id: client.id, destination });
-  };
+  const exportRecord = () => exportClient.mutate(client.id);
 
   return (
     <section className="entity-detail detail-workspace">

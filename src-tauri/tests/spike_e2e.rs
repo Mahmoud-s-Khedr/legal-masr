@@ -77,8 +77,22 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
         b"managed document bytes",
     )
     .unwrap();
-    let backup_path =
-        backup::create(&db_path, &master, backup_dir.path().to_str().unwrap()).unwrap();
+    // Simulate a backup created by the immediately previous application version.
+    // Restore must migrate it before making it the active database.
+    {
+        let conn = db::open_db(&db_path, &master).unwrap();
+        conn.execute_batch(
+            "DROP TABLE reminder_deliveries; UPDATE app_metadata SET schema_version = 5",
+        )
+        .unwrap();
+    }
+    let backup_path = backup::create(
+        &db_path,
+        &master,
+        backup_dir.path().to_str().unwrap(),
+        &source_documents,
+    )
+    .unwrap();
     backup::validate(&backup_path, &master).unwrap();
 
     let active_dir = tempfile::tempdir().unwrap();
@@ -93,7 +107,7 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
             .unwrap();
     }
 
-    backup::restore(&active_db_path, &master, &backup_path).unwrap();
+    backup::restore(&active_db_path, &master, &backup_path, &active_documents).unwrap();
 
     let conn = db::open_db(&active_db_path, &master).unwrap();
     let restored_value: String = conn
@@ -104,6 +118,15 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
         )
         .unwrap();
     assert_eq!(restored_value, SAMPLE_VALUE);
+    assert_eq!(db::schema_version(&conn), 6);
+    let reminder_table: String = conn
+        .query_row(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'reminder_deliveries'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(reminder_table, "reminder_deliveries");
     assert_eq!(
         fs::read(active_documents.join("managed.txt")).unwrap(),
         b"managed document bytes"

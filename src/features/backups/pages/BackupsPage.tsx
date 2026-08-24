@@ -1,45 +1,29 @@
-import { open } from '@tauri-apps/plugin-dialog';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../../../bridge/errors';
-import { useSettings, useUpdateSettings } from '../../settings/api/settingsApi';
+import { useChooseBackupDirectory, useSettings } from '../../settings/api/settingsApi';
 import { useCreateBackup, useRestoreBackup, useValidateBackup } from '../api/backupsApi';
 
 export function BackupSettingsPanel() {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
-  const updateSettings = useUpdateSettings();
+  const chooseBackupDirectory = useChooseBackupDirectory();
   const createBackup = useCreateBackup();
   const validateBackup = useValidateBackup();
   const restoreBackup = useRestoreBackup();
   const [restoreArmed, setRestoreArmed] = useState(false);
 
-  const backupFilters = [{ name: t('backups.filePickerName'), extensions: ['lmsbackup'] }];
-
   const changeFolder = async () => {
-    if (!settings) return;
-    const selected = await open({ directory: true, multiple: false });
-    if (typeof selected !== 'string') return;
-    await updateSettings.mutateAsync({
-      language: settings.language,
-      theme: settings.theme,
-      dateFormat: settings.dateFormat,
-      weekStartsOn: settings.weekStartsOn,
-      defaultReminderMinutes: settings.defaultReminderMinutes,
-      lockTimeoutMinutes: settings.lockTimeoutMinutes,
-      backupDirectory: selected,
-    });
+    await chooseBackupDirectory.mutateAsync();
   };
 
   const createNow = async () => {
     if (!settings?.backupDirectory) return;
-    await createBackup.mutateAsync(settings.backupDirectory);
+    await createBackup.mutateAsync();
   };
 
   const validate = async () => {
-    const selected = await open({ multiple: false, filters: backupFilters });
-    if (typeof selected !== 'string') return;
-    validateBackup.mutate(selected);
+    validateBackup.mutate();
   };
 
   const restore = async () => {
@@ -47,10 +31,8 @@ export function BackupSettingsPanel() {
       setRestoreArmed(true);
       return;
     }
-    const selected = await open({ multiple: false, filters: backupFilters });
     setRestoreArmed(false);
-    if (typeof selected !== 'string') return;
-    await restoreBackup.mutateAsync(selected);
+    await restoreBackup.mutateAsync();
   };
 
   return (
@@ -61,7 +43,7 @@ export function BackupSettingsPanel() {
           {settings?.backupDirectory || t('backups.noFolder')}
         </p>
         <div className="form-actions">
-          <button type="button" onClick={changeFolder} disabled={updateSettings.isPending}>
+          <button type="button" onClick={changeFolder} disabled={chooseBackupDirectory.isPending}>
             {t('backups.changeFolder')}
           </button>
         </div>

@@ -44,3 +44,8 @@ jobs:
           cargo fmt --check
           cargo clippy --all-targets --all-features -- -D warnings
           cargo test --all-features
+      - name: Dependency vulnerability checks
+        run: |
+          pnpm audit --prod --audit-level=high
+          cargo install cargo-audit --locked
+          cd src-tauri && cargo audit

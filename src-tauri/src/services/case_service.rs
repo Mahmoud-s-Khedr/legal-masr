@@ -6,12 +6,17 @@ use crate::{
     },
     errors::Error,
     normalize,
-    repositories::{case_repository, search_repository},
+    repositories::{
+        case_repository, document_repository, event_repository, finance_repository,
+        search_repository, task_repository,
+    },
     state::AppState,
 };
 use rusqlite::Connection;
 use std::fs;
 use tauri::{AppHandle, Runtime};
+use tauri_plugin_dialog::DialogExt;
+use time::{format_description::BorrowedFormatItem, macros::format_description, Date};
 use uuid::Uuid;
 
 const VALID_STATUSES: &[&str] = &[
@@ -25,6 +30,11 @@ const VALID_STATUSES: &[&str] = &[
     "ARCHIVED",
 ];
 const VALID_PARTY_ROLES: &[&str] = &["OPPONENT", "WITNESS", "EXPERT", "OTHER"];
+const DATE_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[year]-[month]-[day]");
+
+fn valid_date(value: Option<&str>) -> bool {
+    value.is_none_or(|value| value.len() == 10 && Date::parse(value, DATE_FORMAT).is_ok())
+}
 
 fn assemble(conn: &Connection, id: &str) -> Result<CaseDto, Error> {
     let mut case = case_repository::find_case_by_id(conn, id)?;
@@ -45,7 +55,13 @@ fn upsert_search_entry(conn: &Connection, case: &CaseDto, now: &str) -> Result<(
         &case.id,
         &case.case_number,
         subtitle.as_deref(),
-        &normalize::normalize_text(&case.case_number),
+        &normalize::normalize_text(&format!(
+            "{} {}",
+            case.case_number,
+            case.judicial_year
+                .map(|value| value.to_string())
+                .unwrap_or_default()
+        )),
         now,
     )
 }
@@ -59,6 +75,7 @@ pub fn create<R: Runtime>(
         || !VALID_STATUSES.contains(&input.status.as_str())
         || input.client_ids.is_empty()
         || !input.client_ids.contains(&input.primary_client_id)
+        || !valid_date(input.filed_on.as_deref())
     {
         return Err(Error::Validation);
     }
@@ -98,7 +115,11 @@ pub fn update<R: Runtime>(
     state: &AppState,
     input: CaseUpdateInput,
 ) -> Result<CaseDto, Error> {
-    if input.case_number.trim().is_empty() || !VALID_STATUSES.contains(&input.status.as_str()) {
+    if input.case_number.trim().is_empty()
+        || !VALID_STATUSES.contains(&input.status.as_str())
+        || !valid_date(input.filed_on.as_deref())
+        || !valid_date(input.closed_on.as_deref())
+    {
         return Err(Error::Validation);
     }
     let master = state.unlocked()?;
@@ -186,18 +207,34 @@ pub fn restore<R: Runtime>(
     set_archived(app, state, id, false)
 }
 
-pub fn export<R: Runtime>(
-    app: &AppHandle<R>,
-    state: &AppState,
-    id: &str,
-    destination: &str,
-) -> Result<String, Error> {
+pub fn export<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<String, Error> {
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
     let case = assemble(&conn, id)?;
-    let path = std::path::PathBuf::from(destination).join(format!("case-{}.json", case.id));
-    fs::write(&path, serde_json::to_vec_pretty(&case)?)?;
+    let events = event_repository::list(&conn, None, None, Some(id), None, None)?;
+    let tasks = task_repository::list(&conn, None, None, Some(id), None, None, None)?;
+    let documents = document_repository::list(&conn, Some(id), None, true)?;
+    let transactions = finance_repository::list_transactions(&conn, None, Some(id), None, None)?;
+    let fee_agreement = finance_repository::fee_agreement(&conn, id)?;
+    let destination = app
+        .dialog()
+        .file()
+        .blocking_pick_folder()
+        .ok_or(Error::Cancelled)?
+        .into_path()
+        .map_err(|_| Error::Operation)?;
+    let path = destination.join(format!("case-{}.json", case.id));
+    let export = serde_json::json!({
+        "formatVersion": 1,
+        "case": case,
+        "events": events,
+        "tasks": tasks,
+        "documents": documents,
+        "feeAgreement": fee_agreement,
+        "financialTransactions": transactions,
+    });
+    fs::write(&path, serde_json::to_vec_pretty(&export)?)?;
     Ok(path.to_string_lossy().into_owned())
 }
 
@@ -350,4 +387,17 @@ pub fn remove_party<R: Runtime>(
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
     case_repository::delete_party(&conn, id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::valid_date;
+
+    #[test]
+    fn legal_case_dates_are_date_only_and_calendar_valid() {
+        assert!(valid_date(Some("2026-08-24")));
+        assert!(valid_date(None));
+        assert!(!valid_date(Some("2026-02-30")));
+        assert!(!valid_date(Some("2026-08-24T00:00:00Z")));
+    }
 }

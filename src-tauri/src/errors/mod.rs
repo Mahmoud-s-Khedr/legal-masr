@@ -45,6 +45,8 @@ pub enum Error {
     TransactionNotFound,
     #[error("operation could not be completed")]
     Operation,
+    #[error("operation cancelled by user")]
+    Cancelled,
     #[error("{0}")]
     Io(#[from] std::io::Error),
     #[error("{0}")]
@@ -77,6 +79,7 @@ impl Error {
             Self::DocumentNotFound => "DOCUMENT_NOT_FOUND",
             Self::TransactionNotFound => "TRANSACTION_NOT_FOUND",
             Self::Operation => "OPERATION_FAILED",
+            Self::Cancelled => "OPERATION_CANCELLED",
             Self::Io(_) | Self::Sql(_) | Self::Json(_) | Self::Zip(_) => "OPERATION_FAILED",
         }
     }
@@ -102,6 +105,7 @@ impl Error {
             Self::DocumentNotFound => "لم يتم العثور على المستند.",
             Self::TransactionNotFound => "لم يتم العثور على العملية المالية.",
             Self::Operation => "تعذر إتمام العملية بأمان.",
+            Self::Cancelled => "تم إلغاء العملية.",
             Self::Io(_) | Self::Sql(_) | Self::Json(_) | Self::Zip(_) => {
                 "تعذر إتمام العملية بأمان."
             }

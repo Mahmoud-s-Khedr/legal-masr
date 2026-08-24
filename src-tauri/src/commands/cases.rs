@@ -52,13 +52,8 @@ pub fn case_restore(app: AppHandle, state: State<AppState>, id: String) -> Resul
 }
 
 #[tauri::command]
-pub fn case_export(
-    app: AppHandle,
-    state: State<AppState>,
-    id: String,
-    destination: String,
-) -> Result<String, Error> {
-    case_service::export(&app, &state, &id, &destination)
+pub fn case_export(app: AppHandle, state: State<AppState>, id: String) -> Result<String, Error> {
+    case_service::export(&app, &state, &id)
 }
 
 #[tauri::command]

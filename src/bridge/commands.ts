@@ -25,6 +25,7 @@ import type {
   DashboardSummary,
   DocumentDto,
   DocumentReferenceInput,
+  DocumentSourceSelection,
   DocumentUpdateInput,
   Settings,
   LawyerProfile,
@@ -46,12 +47,13 @@ export const bridge = {
   lock: () => invoke<void>('app_lock'),
   changePassword: (currentPassword: string, newPassword: string) =>
     invoke<void>('app_change_password', { currentPassword, newPassword }),
-  createBackup: (destination: string) => invoke<string>('backup_create', { destination }),
-  validateBackup: (path: string) => invoke<void>('backup_validate', { path }),
-  restoreBackup: (path: string) => invoke<void>('backup_restore', { path }),
+  createBackup: () => invoke<string>('backup_create'),
+  validateBackup: () => invoke<void>('backup_validate'),
+  restoreBackup: () => invoke<void>('backup_restore'),
   settings: () => invoke<Settings>('settings_get'),
-  updateSettings: (settings: Omit<Settings, 'managedDocumentsDirectory' | 'autostartEnabled'>) =>
+  updateSettings: (settings: Omit<Settings, 'managedDocumentsDirectory' | 'autostartEnabled' | 'backupDirectory'>) =>
     invoke<Settings>('settings_update', { input: settings }),
+  chooseBackupDirectory: () => invoke<Settings>('settings_choose_backup_directory'),
   setAutostart: (enabled: boolean) => invoke<Settings>('settings_set_autostart', { enabled }),
   profile: () => invoke<LawyerProfile>('profile_get'),
   updateProfile: (profile: LawyerProfile) => invoke<LawyerProfile>('profile_update', { profile }),
@@ -62,8 +64,7 @@ export const bridge = {
   clientList: (input: ClientListInput) => invoke<ClientSummary[]>('client_list', { input }),
   clientArchive: (id: string) => invoke<ClientDto>('client_archive', { id }),
   clientRestore: (id: string) => invoke<ClientDto>('client_restore', { id }),
-  clientExport: (id: string, destination: string) =>
-    invoke<string>('client_export', { id, destination }),
+  clientExport: (id: string) => invoke<string>('client_export', { id }),
 
   caseCreate: (input: CaseCreateInput) => invoke<CaseDto>('case_create', { input }),
   caseUpdate: (input: CaseUpdateInput) => invoke<CaseDto>('case_update', { input }),
@@ -71,8 +72,7 @@ export const bridge = {
   caseList: (input: CaseListInput) => invoke<CaseSummary[]>('case_list', { input }),
   caseArchive: (id: string) => invoke<CaseDto>('case_archive', { id }),
   caseRestore: (id: string) => invoke<CaseDto>('case_restore', { id }),
-  caseExport: (id: string, destination: string) =>
-    invoke<string>('case_export', { id, destination }),
+  caseExport: (id: string) => invoke<string>('case_export', { id }),
   caseAttachClient: (caseId: string, clientId: string, makePrimary: boolean) =>
     invoke<CaseDto>('case_attach_client', { caseId, clientId, makePrimary }),
   caseDetachClient: (caseId: string, clientId: string) =>
@@ -109,6 +109,7 @@ export const bridge = {
   taskDelete: (id: string) => invoke<void>('task_delete', { id }),
   documentList: (input: { caseId?: string; clientId?: string; includeArchived?: boolean } = {}) =>
     invoke<DocumentDto[]>('document_list', { input }),
+  documentSelectSource: () => invoke<DocumentSourceSelection>('document_select_source'),
   documentImportManaged: (input: DocumentReferenceInput) =>
     invoke<DocumentDto>('document_import_managed', { input }),
   documentAddReference: (input: DocumentReferenceInput) =>

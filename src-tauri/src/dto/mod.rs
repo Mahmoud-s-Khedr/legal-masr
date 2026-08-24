@@ -17,10 +17,6 @@ pub struct InitializeInput {
     pub password: String,
     pub full_name: String,
     pub language: String,
-    #[serde(default)]
-    pub managed_documents_directory: Option<String>,
-    #[serde(default)]
-    pub backup_directory: Option<String>,
     #[serde(default = "default_lock_timeout_minutes")]
     pub lock_timeout_minutes: u32,
 }
@@ -52,7 +48,6 @@ pub struct SettingsUpdateInput {
     pub week_starts_on: u8,
     pub default_reminder_minutes: u32,
     pub lock_timeout_minutes: u32,
-    pub backup_directory: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -473,10 +468,17 @@ pub struct DocumentDto {
 pub struct DocumentReferenceInput {
     pub client_id: Option<String>,
     pub case_id: Option<String>,
-    pub path: String,
+    pub source_token: String,
     pub category: String,
     pub description: Option<String>,
     pub document_date: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentSourceSelection {
+    pub source_token: String,
+    pub filename: String,
 }
 
 #[derive(Deserialize)]

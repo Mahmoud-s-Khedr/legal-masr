@@ -119,7 +119,7 @@ pub fn list_summaries(
          WHERE {archived_filter}
            AND (?1 IS NULL OR c.status = ?1)
            AND (?2 IS NULL OR EXISTS (SELECT 1 FROM case_clients cc2 WHERE cc2.case_id = c.id AND cc2.client_id = ?2))
-           AND (?3 IS NULL OR c.case_number LIKE ?3)
+           AND (?3 IS NULL OR c.case_number LIKE ?3 OR CAST(c.judicial_year AS TEXT) LIKE ?3 OR (c.case_number || ' ' || COALESCE(CAST(c.judicial_year AS TEXT), '')) LIKE ?3)
          ORDER BY c.created_at DESC"
     );
     let mut stmt = conn.prepare(&sql)?;

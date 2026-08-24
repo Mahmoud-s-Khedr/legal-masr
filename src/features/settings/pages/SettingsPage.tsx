@@ -20,7 +20,12 @@ type Tab = 'profile' | 'general' | 'security' | 'privacy' | 'about';
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: settings, isLoading } = useSettings();
+  const {
+    data: settings,
+    isError: settingsLoadFailed,
+    isPending: settingsLoading,
+    refetch,
+  } = useSettings();
   const { data: profile } = useProfile();
   const updateSettings = useUpdateSettings();
   const updateProfile = useUpdateProfile();
@@ -50,7 +55,32 @@ export function SettingsPage() {
         lockTimeoutMinutes: settings.lockTimeoutMinutes,
       });
   }, [settings, reset]);
-  if (isLoading || !settings) return <p>{t('settings.loading')}</p>;
+  if (settingsLoading) {
+    return (
+      <section className="settings settings-workspace">
+        <p className="loading" role="status">
+          {t('settings.loading')}
+        </p>
+      </section>
+    );
+  }
+
+  if (settingsLoadFailed || !settings) {
+    return (
+      <section className="settings settings-workspace">
+        <div className="settings-section">
+          <p className="error" role="alert">
+            {t('settings.loadError')}
+          </p>
+          <div className="form-actions">
+            <button type="button" onClick={() => void refetch()}>
+              {t('settings.retry')}
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
   const requested = searchParams.get('tab');
   const selectedTab: Tab =
     requested && ['profile', 'general', 'security', 'privacy', 'about'].includes(requested)
@@ -184,7 +214,6 @@ export function SettingsPage() {
                 onSubmit={handleSubmit(async (values) => {
                   await updateSettings.mutateAsync({
                     ...values,
-                    backupDirectory: settings.backupDirectory,
                   });
                   await i18n.changeLanguage(values.language);
                   setSaved(true);
@@ -258,7 +287,6 @@ export function SettingsPage() {
                   onSubmit={handleSubmit(async (values) => {
                     await updateSettings.mutateAsync({
                       ...values,
-                      backupDirectory: settings.backupDirectory,
                     });
                     setSaved(true);
                   })}

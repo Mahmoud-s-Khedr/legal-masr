@@ -2,10 +2,10 @@ import { useMutation } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
 
 export const useCreateBackup = () =>
-  useMutation({ mutationFn: (destination: string) => bridge.createBackup(destination) });
+  useMutation({ mutationFn: bridge.createBackup });
 
 export const useValidateBackup = () =>
-  useMutation({ mutationFn: (path: string) => bridge.validateBackup(path) });
+  useMutation({ mutationFn: bridge.validateBackup });
 
 export const useRestoreBackup = () =>
-  useMutation({ mutationFn: (path: string) => bridge.restoreBackup(path) });
+  useMutation({ mutationFn: bridge.restoreBackup });

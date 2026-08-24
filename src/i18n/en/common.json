@@ -136,6 +136,8 @@
     "save": "Save settings",
     "saved": "Saved locally.",
     "loading": "Loading settings…",
+    "loadError": "The local settings could not be loaded. Please try again.",
+    "retry": "Try again",
     "tabs": { "general": "General", "security": "Security", "backups": "Backups" },
     "themes": { "system": "Use device setting", "light": "Light", "dark": "Dark" }
   },

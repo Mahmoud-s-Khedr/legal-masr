@@ -208,6 +208,19 @@ pub fn complete<R: Runtime>(
             updated_at: now.clone(),
         };
         task_repository::save(&tx, &t, true)?;
+        search_repository::upsert(
+            &tx,
+            "task",
+            &t.id,
+            &t.title,
+            t.due_date.as_deref(),
+            &normalize::normalize_text(&format!(
+                "{} {}",
+                t.title,
+                t.description.clone().unwrap_or_default()
+            )),
+            &now,
+        )?;
     }
     index(&tx, &e, &now)?;
     tx.commit()?;

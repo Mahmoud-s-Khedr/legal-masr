@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
 import { useSearchParams } from 'react-router-dom';
+import { bridge } from '../../../bridge/commands';
 import { Icon } from '../../../components/layout/Icon';
 import {
   useAddDocument,
@@ -36,7 +36,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function DocumentsPage() {
-  const [path, setPath] = useState('');
+  const [source, setSource] = useState<{ token: string; filename: string } | null>(null);
   const [managed, setManaged] = useState(true);
   const [category, setCategory] = useState('OTHER');
   const [description, setDescription] = useState('');
@@ -54,8 +54,8 @@ export function DocumentsPage() {
   const revealDocument = useRevealDocument();
   const selectedDocumentId = searchParams.get('document');
   const choose = async () => {
-    const selected = await open({ multiple: false, directory: false });
-    if (typeof selected === 'string') setPath(selected);
+    const selected = await bridge.documentSelectSource();
+    setSource({ token: selected.sourceToken, filename: selected.filename });
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -76,13 +76,13 @@ export function DocumentsPage() {
           },
         },
       );
-    } else if (path)
+    } else if (source)
       add.mutate(
         {
           input: {
             caseId,
             clientId,
-            path,
+            sourceToken: source.token,
             category,
             description: description || undefined,
             documentDate: documentDate || undefined,
@@ -91,7 +91,7 @@ export function DocumentsPage() {
         },
         {
           onSuccess: () => {
-            setPath('');
+            setSource(null);
             setDescription('');
             setDocumentDate('');
           },
@@ -116,14 +116,14 @@ export function DocumentsPage() {
             <strong>
               {editingId
                 ? 'تعديل بيانات المستند'
-                : path
-                  ? path.split(/[\\/]/).pop()
+                : source
+                  ? source.filename
                   : 'اختر المستند المراد إضافته'}
             </strong>
             <span>
               {editingId
                 ? 'لن يتغير الملف نفسه'
-                : path
+                : source
                   ? 'تم اختيار ملف محلي'
                   : 'PDF، ملفات Office، صور، أو أي مرفق قانوني'}
             </span>
@@ -173,7 +173,7 @@ export function DocumentsPage() {
           </label>
         )}
         <div className="form-actions">
-          <button disabled={editingId ? update.isPending : !path || add.isPending}>
+          <button disabled={editingId ? update.isPending : !source || add.isPending}>
             {editingId
               ? update.isPending
                 ? 'جارٍ الحفظ…'

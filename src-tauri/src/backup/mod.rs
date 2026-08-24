@@ -52,7 +52,12 @@ fn consistent_database_snapshot(db_path: &Path, master: &[u8; 32]) -> Result<Vec
     result
 }
 
-pub fn create(db_path: &Path, master: &[u8; 32], destination: &str) -> Result<String, Error> {
+pub fn create(
+    db_path: &Path,
+    master: &[u8; 32],
+    destination: &str,
+    documents: &Path,
+) -> Result<String, Error> {
     let destination = PathBuf::from(destination);
     fs::create_dir_all(&destination)?;
     let mut archive = ZipWriter::new(Cursor::new(Vec::new()));
@@ -70,13 +75,9 @@ pub fn create(db_path: &Path, master: &[u8; 32], destination: &str) -> Result<St
     checksums.insert("database.sqlite".to_owned(), checksum(&database));
     archive.start_file("database.sqlite", SimpleFileOptions::default())?;
     archive.write_all(&database)?;
-    let documents = db_path
-        .parent()
-        .unwrap_or_else(|| Path::new("."))
-        .join("documents");
     let mut document_count = 0usize;
     if documents.is_dir() {
-        for entry in fs::read_dir(&documents)? {
+        for entry in fs::read_dir(documents)? {
             let entry = entry?;
             if !entry.file_type()?.is_file() {
                 continue;
@@ -155,7 +156,8 @@ pub fn validate(path: &str, master: &[u8; 32]) -> Result<(), Error> {
         .read_to_string(&mut manifest)?;
     let manifest: BackupManifest =
         serde_json::from_str(&manifest).map_err(|_| Error::BackupInvalid)?;
-    if manifest.format_version != 1 || !manifest.database_encrypted {
+    if manifest.format_version != 1 || !manifest.database_encrypted || manifest.schema_version <= 0
+    {
         return Err(Error::BackupInvalid);
     }
     let mut checksums_json = String::new();
@@ -178,7 +180,12 @@ pub fn validate(path: &str, master: &[u8; 32]) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn restore(active_db: &Path, master: &[u8; 32], path: &str) -> Result<(), Error> {
+pub fn restore(
+    active_db: &Path,
+    master: &[u8; 32],
+    path: &str,
+    documents_root: &Path,
+) -> Result<(), Error> {
     validate(path, master)?;
     let bytes = decrypt(path, master)?;
     let mut archive = ZipArchive::new(Cursor::new(bytes))?;
@@ -187,10 +194,6 @@ pub fn restore(active_db: &Path, master: &[u8; 32], path: &str) -> Result<(), Er
         .by_name("database.sqlite")
         .map_err(|_| Error::BackupInvalid)?
         .read_to_end(&mut db_bytes)?;
-    let documents_root = active_db
-        .parent()
-        .unwrap_or_else(|| Path::new("."))
-        .join("documents");
     let documents_staging = documents_root.with_extension("restore.tmp");
     if documents_staging.exists() {
         fs::remove_dir_all(&documents_staging)?;
@@ -215,6 +218,14 @@ pub fn restore(active_db: &Path, master: &[u8; 32], path: &str) -> Result<(), Er
     let staging = active_db.with_extension("restore.tmp");
     fs::write(&staging, db_bytes)?;
     let restored = db::open_db(&staging, master).map_err(|_| Error::BackupInvalid)?;
+    if db::schema_version(&restored) > db::latest_schema_version() {
+        return Err(Error::BackupInvalid);
+    }
+    db::migrate(&restored).map_err(|_| Error::BackupInvalid)?;
+    restored.execute(
+        "UPDATE app_settings SET managed_documents_directory = ?1 WHERE id = 1",
+        [documents_root.to_string_lossy().as_ref()],
+    )?;
     restored
         .query_row("PRAGMA integrity_check", [], |r| r.get::<_, String>(0))
         .map_err(|_| Error::BackupInvalid)
@@ -226,26 +237,32 @@ pub fn restore(active_db: &Path, master: &[u8; 32], path: &str) -> Result<(), Er
             }
         })?;
     drop(restored);
-    let emergency = active_db.with_extension("pre-restore.bak");
-    fs::copy(active_db, &emergency)?;
+    let restore_id = time::OffsetDateTime::now_utc().unix_timestamp_nanos();
+    let emergency = active_db.with_extension(format!("pre-restore-{restore_id}.bak"));
     let documents_emergency = documents_root.with_extension("pre-restore");
     if documents_emergency.exists() {
         fs::remove_dir_all(&documents_emergency)?;
     }
+    fs::rename(active_db, &emergency)?;
     if documents_root.exists() {
-        fs::rename(&documents_root, &documents_emergency)?;
-    }
-    if let Err(error) = fs::rename(&documents_staging, &documents_root) {
-        if documents_emergency.exists() {
-            let _ = fs::rename(&documents_emergency, &documents_root);
+        if let Err(error) = fs::rename(documents_root, &documents_emergency) {
+            let _ = fs::rename(&emergency, active_db);
+            return Err(error.into());
         }
+    }
+    if let Err(error) = fs::rename(&documents_staging, documents_root) {
+        if documents_emergency.exists() {
+            let _ = fs::rename(&documents_emergency, documents_root);
+        }
+        let _ = fs::rename(&emergency, active_db);
         return Err(error.into());
     }
     if let Err(error) = fs::rename(&staging, active_db) {
-        let _ = fs::remove_dir_all(&documents_root);
+        let _ = fs::remove_dir_all(documents_root);
         if documents_emergency.exists() {
-            let _ = fs::rename(&documents_emergency, &documents_root);
+            let _ = fs::rename(&documents_emergency, documents_root);
         }
+        let _ = fs::rename(&emergency, active_db);
         return Err(error.into());
     }
     if documents_emergency.exists() {
