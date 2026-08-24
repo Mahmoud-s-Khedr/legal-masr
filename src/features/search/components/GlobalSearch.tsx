@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalSearch } from '../api/searchApi';
+import type { SearchEntityType } from '../../../bridge/types';
 
 export function GlobalSearch() {
   const { t } = useTranslation();
@@ -17,7 +18,7 @@ export function GlobalSearch() {
   }, [input]);
 
   const { data: hits } = useGlobalSearch(debounced);
-  const entityTypes = ['client', 'case', 'event', 'task', 'document'] as const;
+  const entityTypes: SearchEntityType[] = ['CLIENT', 'CASE', 'POWER_OF_ATTORNEY'];
   const grouped = Object.fromEntries(
     entityTypes.map((type) => [type, (hits ?? []).filter((hit) => hit.entityType === type)]),
   ) as Record<
@@ -29,15 +30,11 @@ export function GlobalSearch() {
     setOpen(false);
     setInput('');
     navigate(
-      entityType === 'client'
+      entityType === 'CLIENT'
         ? `/clients/${entityId}`
-        : entityType === 'case'
+        : entityType === 'CASE'
           ? `/cases/${entityId}`
-          : entityType === 'event'
-            ? `/calendar?event=${entityId}`
-            : entityType === 'task'
-              ? `/tasks?task=${entityId}`
-              : `/documents?document=${entityId}`,
+          : `/powers-of-attorney?poa=${entityId}`,
     );
   };
   const selectableHits = entityTypes.flatMap((entityType) => grouped[entityType]);
@@ -93,7 +90,7 @@ export function GlobalSearch() {
               {entityTypes.map((entityType) =>
                 grouped[entityType].length ? (
                   <div key={entityType}>
-                    <p className="kicker">{t(`search.groups.${entityType}`)}</p>
+                    <p className="kicker">{t(`search.groups.${entityType.toLowerCase()}`)}</p>
                     <ul>
                       {grouped[entityType].map((hit) => {
                         const hitIndex = selectableHits.indexOf(hit);

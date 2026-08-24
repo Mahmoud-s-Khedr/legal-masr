@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
-import type { LawyerProfile, Settings, SettingsUpdateInput } from '../../../bridge/types';
+import type { LawyerProfile, SettingsUpdateInput } from '../../../bridge/types';
 import { useAppStatus } from '../../onboarding/api/onboardingApi';
+import { queryKeys } from '../../../lib/queryKeys';
 
-const SETTINGS_QUERY_KEY = ['settings'];
+const SETTINGS_QUERY_KEY = queryKeys.settings;
 
 // settings_get requires the vault to be unlocked (it errors with APP_LOCKED
 // otherwise). Gating on status.unlocked avoids firing it before that point:
@@ -29,13 +30,17 @@ export function useUpdateSettings() {
 
 export const useProfile = () => {
   const { data: status } = useAppStatus();
-  return useQuery({ queryKey: ['profile'], queryFn: bridge.profile, enabled: !!status?.unlocked });
+  return useQuery({
+    queryKey: queryKeys.profile,
+    queryFn: bridge.profile,
+    enabled: !!status?.unlocked,
+  });
 };
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (profile: LawyerProfile) => bridge.updateProfile(profile),
-    onSuccess: (profile) => queryClient.setQueryData(['profile'], profile),
+    onSuccess: (profile) => queryClient.setQueryData(queryKeys.profile, profile),
   });
 };
 export const useChangePassword = () =>

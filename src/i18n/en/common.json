@@ -27,7 +27,7 @@
     "workspaceHeading": "Your morning, organized",
     "localOnly": "Stored locally",
     "add": "Add",
-    "addEvent": "Add hearing or event",
+    "addHearing": "Add hearing",
     "addTask": "Add task",
     "searchLabel": "Global search",
     "searchPlaceholder": "Search your records soon…"
@@ -269,9 +269,7 @@
     "groups": {
       "client": "Clients",
       "case": "Cases",
-      "event": "Events",
-      "task": "Tasks",
-      "document": "Documents"
+      "power_of_attorney": "Powers of attorney"
     }
   }
 }

@@ -8,11 +8,12 @@ import type {
   PaymentListInput,
 } from '../../../bridge/types';
 import { queryInvalidation } from '../../../lib/queryInvalidation';
+import { queryKeys } from '../../../lib/queryKeys';
 
 export const usePayments = (input: PaymentListInput = {}) =>
-  useQuery({ queryKey: ['payments', input], queryFn: () => bridge.paymentList(input) });
+  useQuery({ queryKey: queryKeys.payments.list(input), queryFn: () => bridge.paymentList(input) });
 export const useExpenses = (input: ExpenseListInput = {}) =>
-  useQuery({ queryKey: ['expenses', input], queryFn: () => bridge.expenseList(input) });
+  useQuery({ queryKey: queryKeys.expenses.list(input), queryFn: () => bridge.expenseList(input) });
 export const useSavePayment = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -28,21 +29,22 @@ export const useSaveExpense = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ExpenseInput) => bridge.expenseSave(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['finances'] });
-    },
+    onSuccess: (expense) =>
+      queryInvalidation.expense(queryClient, {
+        caseId: expense.caseId,
+        clientId: expense.clientId,
+      }),
   });
 };
 export const useCaseFinanceSummary = (id: string) =>
   useQuery({
-    queryKey: ['finances', 'case-summary', id],
+    queryKey: queryKeys.cases.account(id),
     queryFn: () => bridge.financeCaseSummary(id),
     enabled: Boolean(id),
   });
 export const useClientFinanceSummary = (id: string) =>
   useQuery({
-    queryKey: ['finances', 'client-summary', id],
+    queryKey: queryKeys.clients.account(id),
     queryFn: () => bridge.financeClientSummary(id),
     enabled: Boolean(id),
   });
@@ -50,7 +52,6 @@ export const useSaveFeeAgreement = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: FeeAgreementInput) => bridge.feeAgreementSave(input),
-    onSuccess: (_result, input) =>
-      queryClient.invalidateQueries({ queryKey: ['finances', 'case-summary', input.caseId] }),
+    onSuccess: (_result, input) => queryInvalidation.feeAgreement(queryClient, input.caseId),
   });
 };

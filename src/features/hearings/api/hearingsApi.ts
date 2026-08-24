@@ -6,7 +6,7 @@ import { queryKeys } from '../../../lib/queryKeys';
 
 export const useHearings = (input: HearingListInput = {}) =>
   useQuery({
-    queryKey: [...queryKeys.hearings.all, input],
+    queryKey: queryKeys.hearings.list(input),
     queryFn: () => bridge.hearingList(input),
   });
 
@@ -24,5 +24,14 @@ export function useRecordHearingDecision() {
   return useMutation({
     mutationFn: (input: HearingDecisionInput) => bridge.hearingRecordDecision(input),
     onSuccess: ({ hearing }) => queryInvalidation.hearing(queryClient, { caseId: hearing.caseId }),
+  });
+}
+
+export function useDeleteHearing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (hearing: { id: string; caseId: string }) => bridge.hearingDelete(hearing.id),
+    onSuccess: (_result, hearing) =>
+      queryInvalidation.hearing(queryClient, { caseId: hearing.caseId }),
   });
 }

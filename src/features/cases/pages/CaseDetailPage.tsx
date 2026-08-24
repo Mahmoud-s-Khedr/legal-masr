@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useDocuments } from '../../documents/api/documentsApi';
+import { useAttachments } from '../../documents/api/documentsApi';
 import {
   useCaseFinanceSummary,
   usePayments,
@@ -25,7 +25,7 @@ export function CaseDetailPage() {
   const item = useCase(id);
   const hearings = useHearings({ caseId: id });
   const tasks = useTaskList({ view: 'ALL', referenceDate: '9999-12-31', caseId: id });
-  const attachments = useDocuments({ caseId: id });
+  const attachments = useAttachments({ caseId: id });
   const account = useCaseFinanceSummary(id);
   const payments = usePayments({ caseId: id });
   const archive = useArchiveCase();
@@ -132,7 +132,7 @@ export function CaseDetailPage() {
       {tab === 'attachments' && (
         <section className="detail-card">
           <h3>المرفقات</h3>
-          <Link to={`/documents?case=${id}`}>إضافة مرفق</Link>
+          <Link to={`/attachments?case=${id}`}>إضافة مرفق</Link>
           <ul>
             {attachments.data?.map((attachment) => (
               <li key={attachment.id}>{attachment.originalFilename}</li>

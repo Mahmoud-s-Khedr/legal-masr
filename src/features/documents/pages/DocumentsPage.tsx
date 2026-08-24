@@ -1,16 +1,17 @@
 import { FormEvent, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { bridge } from '../../../bridge/commands';
+import type { AttachmentCategory } from '../../../bridge/types';
 import {
-  useAddDocument,
-  useDocuments,
-  useOpenDocument,
-  useRemoveDocument,
-  useRevealDocument,
-  useUpdateDocument,
+  useAddAttachment,
+  useAttachments,
+  useOpenAttachment,
+  useRemoveAttachment,
+  useRevealAttachment,
+  useUpdateAttachment,
 } from '../api/documentsApi';
 
-const CATEGORIES = [
+const CATEGORIES: AttachmentCategory[] = [
   'IDENTIFICATION',
   'POWER_OF_ATTORNEY',
   'CASE_FILE',
@@ -21,21 +22,21 @@ const CATEGORIES = [
   'OTHER',
 ];
 
-export function DocumentsPage() {
+export function AttachmentsPage() {
   const [source, setSource] = useState<{ token: string; filename: string } | null>(null);
-  const [category, setCategory] = useState('OTHER');
+  const [category, setCategory] = useState<AttachmentCategory>('OTHER');
   const [description, setDescription] = useState('');
   const [documentDate, setDocumentDate] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [params] = useSearchParams();
   const caseId = params.get('case') ?? undefined;
   const clientId = params.get('client') ?? undefined;
-  const attachments = useDocuments({ caseId, clientId });
-  const add = useAddDocument();
-  const update = useUpdateDocument();
-  const remove = useRemoveDocument();
-  const open = useOpenDocument();
-  const reveal = useRevealDocument();
+  const attachments = useAttachments({ caseId, clientId });
+  const add = useAddAttachment();
+  const update = useUpdateAttachment();
+  const remove = useRemoveAttachment();
+  const open = useOpenAttachment();
+  const reveal = useRevealAttachment();
   const choose = async () =>
     setSource(
       await bridge
@@ -76,7 +77,10 @@ export function DocumentsPage() {
         </button>
         <label>
           الفئة
-          <select value={category} onChange={(event) => setCategory(event.target.value)}>
+          <select
+            value={category}
+            onChange={(event) => setCategory(event.target.value as AttachmentCategory)}
+          >
             {CATEGORIES.map((item) => (
               <option key={item}>{item}</option>
             ))}
@@ -147,7 +151,7 @@ export function DocumentsPage() {
                     className="text-button danger-button"
                     onClick={() => {
                       if (confirm('سيُحذف المرفق والملف المُدار نهائيًا.'))
-                        remove.mutate(attachment.id);
+                        remove.mutate(attachment);
                     }}
                   >
                     إزالة

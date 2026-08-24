@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useCaseList } from '../../cases/api/casesApi';
-import { useDocuments } from '../../documents/api/documentsApi';
+import { useAttachments } from '../../documents/api/documentsApi';
 import { useClientFinanceSummary } from '../../finances/api/financesApi';
 import { ClientForm } from '../forms/ClientForm';
 import { useArchiveClient, useClient, useRestoreClient, useUpdateClient } from '../api/clientsApi';
@@ -11,7 +11,7 @@ export function ClientDetailPage() {
   const [editing, setEditing] = useState(false);
   const client = useClient(id);
   const cases = useCaseList({ clientId: id });
-  const attachments = useDocuments({ clientId: id });
+  const attachments = useAttachments({ clientId: id });
   const finance = useClientFinanceSummary(id);
   const update = useUpdateClient();
   const archive = useArchiveClient();
@@ -80,7 +80,7 @@ export function ClientDetailPage() {
       </section>
       <section className="detail-card">
         <h3>المرفقات</h3>
-        <Link to={`/documents?client=${id}`}>إضافة مرفق</Link>
+        <Link to={`/attachments?client=${id}`}>إضافة مرفق</Link>
         <ul>
           {attachments.data?.map((attachment) => (
             <li key={attachment.id}>{attachment.originalFilename}</li>

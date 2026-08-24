@@ -1,9 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { ClientSummary } from '../../../bridge/types';
 import { CaseCoreFields } from './CaseCoreFields';
-import { CaseCreateFormValues, caseCreateFormSchema } from '../schemas/case.schema';
+import {
+  CaseCreateFormValues,
+  caseCreateFormDefaults,
+  caseCreateFormSchema,
+} from '../schemas/case.schema';
 
 export function CaseCreateForm({
   clients,
@@ -17,11 +21,10 @@ export function CaseCreateForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const { register, handleSubmit, control, formState } = useForm<CaseCreateFormValues>({
+  const { register, handleSubmit, formState } = useForm<CaseCreateFormValues>({
     resolver: zodResolver(caseCreateFormSchema),
-    defaultValues: { status: 'ACTIVE', clientIds: [] },
+    defaultValues: caseCreateFormDefaults,
   });
-  const selectedClientIds = useWatch({ control, name: 'clientIds' }) ?? [];
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>

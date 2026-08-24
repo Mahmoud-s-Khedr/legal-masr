@@ -27,7 +27,7 @@ pub fn insert(conn: &Connection, attachment: &AttachmentDto) -> Result<(), Error
 }
 pub fn get(conn: &Connection, id: &str) -> Result<AttachmentDto, Error> {
     conn.query_row(&format!("{SELECT} WHERE id = ?1"), [id], row)
-        .map_err(|_| Error::DocumentNotFound)
+        .map_err(|_| Error::AttachmentNotFound)
 }
 pub fn list(
     conn: &Connection,
@@ -43,12 +43,12 @@ pub fn list(
     Ok(rows)
 }
 pub fn update(conn: &Connection, attachment: &AttachmentDto) -> Result<(), Error> {
-    if conn.execute("UPDATE attachments SET category = ?2, description = ?3, document_date = ?4, updated_at = ?5 WHERE id = ?1", params![attachment.id, attachment.category, attachment.description, attachment.document_date, attachment.updated_at])? == 0 { return Err(Error::DocumentNotFound); }
+    if conn.execute("UPDATE attachments SET category = ?2, description = ?3, document_date = ?4, updated_at = ?5 WHERE id = ?1", params![attachment.id, attachment.category, attachment.description, attachment.document_date, attachment.updated_at])? == 0 { return Err(Error::AttachmentNotFound); }
     Ok(())
 }
 pub fn delete(conn: &Connection, id: &str) -> Result<(), Error> {
     if conn.execute("DELETE FROM attachments WHERE id = ?1", [id])? == 0 {
-        return Err(Error::DocumentNotFound);
+        return Err(Error::AttachmentNotFound);
     }
     Ok(())
 }

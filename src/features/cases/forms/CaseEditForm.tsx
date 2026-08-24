@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { CaseDto } from '../../../bridge/types';
 import { CaseCoreFields } from './CaseCoreFields';
-import { caseCoreSchema, CaseCoreFormValues } from '../schemas/case.schema';
+import { caseCoreFormDefaults, caseCoreSchema, CaseCoreFormValues } from '../schemas/case.schema';
 
 export function CaseEditForm({
   caseDto,
@@ -18,6 +18,7 @@ export function CaseEditForm({
   const { register, handleSubmit, formState } = useForm<CaseCoreFormValues>({
     resolver: zodResolver(caseCoreSchema),
     defaultValues: {
+      ...caseCoreFormDefaults,
       internalNumber: caseDto.internalNumber,
       officialNumber: caseDto.officialNumber ?? undefined,
       officialYear: caseDto.officialYear ?? undefined,

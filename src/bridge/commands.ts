@@ -32,6 +32,7 @@ import type {
   ExpenseDto,
   ExpenseInput,
   ExpenseListInput,
+  FeeAgreementDto,
   PaymentDto,
   PaymentInput,
   PaymentListInput,
@@ -46,6 +47,7 @@ import type {
   HearingDto,
   HearingInput,
   HearingListInput,
+  SearchRebuildResult,
 } from './types';
 
 export const bridge = {
@@ -74,6 +76,7 @@ export const bridge = {
   clientList: (input: ClientListInput) => invoke<ClientSummary[]>('client_list', { input }),
   clientArchive: (id: string) => invoke<ClientDto>('client_archive', { id }),
   clientRestore: (id: string) => invoke<ClientDto>('client_restore', { id }),
+  clientExport: (id: string) => invoke<string>('client_export', { id }),
 
   powerOfAttorneyCreate: (input: PowerOfAttorneyInput) =>
     invoke<PowerOfAttorneyDto>('power_of_attorney_create', { input }),
@@ -108,7 +111,7 @@ export const bridge = {
   caseRemoveOpponent: (id: string) => invoke<void>('case_remove_opponent', { id }),
 
   searchGlobal: (query: string) => invoke<SearchHit[]>('search_global', { query }),
-  searchRebuildIndex: () => invoke<{ indexedCount: number }>('search_rebuild_index'),
+  searchRebuildIndex: () => invoke<SearchRebuildResult>('search_rebuild_index'),
   dashboardSummary: (today: string) => invoke<DashboardSummary>('dashboard_get_summary', { today }),
   refreshReminders: (today: string, nowTime: string) =>
     invoke<number>('reminders_refresh', { today, nowTime }),
@@ -127,7 +130,8 @@ export const bridge = {
   attachmentOpen: (id: string) => invoke<void>('attachment_open', { id }),
   attachmentReveal: (id: string) => invoke<void>('attachment_reveal', { id }),
   attachmentRemove: (id: string) => invoke<void>('attachment_remove', { id }),
-  feeAgreementSave: (input: FeeAgreementInput) => invoke('fee_agreement_save', { input }),
+  feeAgreementSave: (input: FeeAgreementInput) =>
+    invoke<FeeAgreementDto>('fee_agreement_save', { input }),
   paymentSave: (input: PaymentInput) => invoke<PaymentDto>('payment_save', { input }),
   paymentList: (input: PaymentListInput = {}) => invoke<PaymentDto[]>('payment_list', { input }),
   expenseSave: (input: ExpenseInput) => invoke<ExpenseDto>('expense_save', { input }),

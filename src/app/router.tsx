@@ -1,7 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import { AgendaPage } from '../features/hearings/pages/AgendaPage';
 import { TasksPage } from '../features/tasks/pages/TasksPage';
-import { DocumentsPage } from '../features/documents/pages/DocumentsPage';
+import { AttachmentsPage } from '../features/documents/pages/DocumentsPage';
 import { CaseDetailPage } from '../features/cases/pages/CaseDetailPage';
 import { CaseListPage } from '../features/cases/pages/CaseListPage';
 import { ClientDetailPage } from '../features/clients/pages/ClientDetailPage';
@@ -39,7 +39,7 @@ export function AppRoutes() {
       <Route path="/cases/:id" element={<CaseDetailPage />} />
       <Route path="/calendar" element={<AgendaPage />} />
       <Route path="/tasks" element={<TasksPage />} />
-      <Route path="/documents" element={<DocumentsPage />} />
+      <Route path="/attachments" element={<AttachmentsPage />} />
       <Route path="/finances" element={<FinancesPage />} />
       <Route path="/backups" element={<BackupsPage />} />
       <Route path="/settings" element={<SettingsPage />} />

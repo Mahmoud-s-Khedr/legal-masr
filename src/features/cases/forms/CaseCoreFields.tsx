@@ -1,6 +1,6 @@
 import { UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { CASE_STATUSES, CaseCoreFormValues } from '../schemas/case.schema';
+import { CASE_STATUSES, CaseCoreFormValues, LITIGATION_DEGREES } from '../schemas/case.schema';
 
 export function CaseCoreFields<T extends CaseCoreFormValues>({
   register,
@@ -45,13 +45,14 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
         <input {...register('caseType' as never)} />
       </label>
       <label>
-        {t('cases.fields.clientLegalCapacity')}
+        الدرجة القضائية
         <select {...register('litigationDegree' as never)}>
           <option value="">—</option>
-          <option value="FIRST_INSTANCE">ابتدائي</option>
-          <option value="APPEAL">استئناف</option>
-          <option value="CASSATION">نقض</option>
-          <option value="OTHER">أخرى</option>
+          {LITIGATION_DEGREES.map((degree) => (
+            <option key={degree} value={degree}>
+              {degree}
+            </option>
+          ))}
         </select>
       </label>
       <label>

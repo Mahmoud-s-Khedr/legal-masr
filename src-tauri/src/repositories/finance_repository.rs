@@ -47,14 +47,14 @@ pub fn upsert_fee_agreement(
     fee_agreement(conn, &input.case_id)?.ok_or(Error::Operation)
 }
 pub fn get_payment(conn: &Connection, id: &str) -> Result<PaymentDto, Error> {
-    conn.query_row("SELECT id, case_id, payer_client_id, amount_minor, payment_date, payment_method, notes, created_at, updated_at FROM payments WHERE id = ?1", [id], payment_row).map_err(|_| Error::TransactionNotFound)
+    conn.query_row("SELECT id, case_id, payer_client_id, amount_minor, payment_date, payment_method, notes, created_at, updated_at FROM payments WHERE id = ?1", [id], payment_row).map_err(|_| Error::PaymentNotFound)
 }
 pub fn insert_payment(conn: &Connection, payment: &PaymentDto) -> Result<(), Error> {
     conn.execute("INSERT INTO payments (id, case_id, payer_client_id, amount_minor, payment_date, payment_method, notes, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)", params![payment.id, payment.case_id, payment.payer_client_id, payment.amount_minor, payment.payment_date, payment.payment_method, payment.notes, payment.created_at])?;
     Ok(())
 }
 pub fn update_payment(conn: &Connection, payment: &PaymentDto) -> Result<(), Error> {
-    if conn.execute("UPDATE payments SET case_id = ?2, payer_client_id = ?3, amount_minor = ?4, payment_date = ?5, payment_method = ?6, notes = ?7, updated_at = ?8 WHERE id = ?1", params![payment.id, payment.case_id, payment.payer_client_id, payment.amount_minor, payment.payment_date, payment.payment_method, payment.notes, payment.updated_at])? == 0 { return Err(Error::TransactionNotFound); }
+    if conn.execute("UPDATE payments SET case_id = ?2, payer_client_id = ?3, amount_minor = ?4, payment_date = ?5, payment_method = ?6, notes = ?7, updated_at = ?8 WHERE id = ?1", params![payment.id, payment.case_id, payment.payer_client_id, payment.amount_minor, payment.payment_date, payment.payment_method, payment.notes, payment.updated_at])? == 0 { return Err(Error::PaymentNotFound); }
     Ok(())
 }
 pub fn list_payments(
@@ -71,14 +71,14 @@ pub fn list_payments(
     Ok(rows)
 }
 pub fn get_expense(conn: &Connection, id: &str) -> Result<ExpenseDto, Error> {
-    conn.query_row("SELECT id, case_id, client_id, amount_minor, expense_date, expense_type, notes, created_at, updated_at FROM expenses WHERE id = ?1", [id], expense_row).map_err(|_| Error::TransactionNotFound)
+    conn.query_row("SELECT id, case_id, client_id, amount_minor, expense_date, expense_type, notes, created_at, updated_at FROM expenses WHERE id = ?1", [id], expense_row).map_err(|_| Error::ExpenseNotFound)
 }
 pub fn insert_expense(conn: &Connection, expense: &ExpenseDto) -> Result<(), Error> {
     conn.execute("INSERT INTO expenses (id, case_id, client_id, amount_minor, expense_date, expense_type, notes, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)", params![expense.id, expense.case_id, expense.client_id, expense.amount_minor, expense.expense_date, expense.expense_type, expense.notes, expense.created_at])?;
     Ok(())
 }
 pub fn update_expense(conn: &Connection, expense: &ExpenseDto) -> Result<(), Error> {
-    if conn.execute("UPDATE expenses SET case_id = ?2, client_id = ?3, amount_minor = ?4, expense_date = ?5, expense_type = ?6, notes = ?7, updated_at = ?8 WHERE id = ?1", params![expense.id, expense.case_id, expense.client_id, expense.amount_minor, expense.expense_date, expense.expense_type, expense.notes, expense.updated_at])? == 0 { return Err(Error::TransactionNotFound); }
+    if conn.execute("UPDATE expenses SET case_id = ?2, client_id = ?3, amount_minor = ?4, expense_date = ?5, expense_type = ?6, notes = ?7, updated_at = ?8 WHERE id = ?1", params![expense.id, expense.case_id, expense.client_id, expense.amount_minor, expense.expense_date, expense.expense_type, expense.notes, expense.updated_at])? == 0 { return Err(Error::ExpenseNotFound); }
     Ok(())
 }
 pub fn list_expenses(

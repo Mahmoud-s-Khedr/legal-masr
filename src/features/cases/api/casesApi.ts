@@ -7,26 +7,35 @@ import type {
   CaseOpponentUpdateInput,
   CaseUpdateInput,
 } from '../../../bridge/types';
-
-const CASES_KEY = ['cases'];
-const caseKey = (id: string) => ['case', id];
+import { queryInvalidation } from '../../../lib/queryInvalidation';
+import { queryKeys } from '../../../lib/queryKeys';
 
 export const useCaseList = (input: CaseListInput) =>
-  useQuery({ queryKey: [...CASES_KEY, input], queryFn: () => bridge.caseList(input) });
+  useQuery({ queryKey: queryKeys.cases.list(input), queryFn: () => bridge.caseList(input) });
 
 export const useCase = (id: string) =>
-  useQuery({ queryKey: caseKey(id), queryFn: () => bridge.caseGet(id) });
+  useQuery({ queryKey: queryKeys.cases.detail(id), queryFn: () => bridge.caseGet(id) });
 
-function invalidateCase(queryClient: ReturnType<typeof useQueryClient>, caseDto: { id: string }) {
-  queryClient.invalidateQueries({ queryKey: CASES_KEY });
-  queryClient.setQueryData(caseKey(caseDto.id), caseDto);
+function invalidateCase(
+  queryClient: ReturnType<typeof useQueryClient>,
+  caseDto: { id: string; clients: { clientId: string; powerOfAttorneyId: string | null }[] },
+) {
+  queryClient.invalidateQueries({ queryKey: queryKeys.cases.all });
+  queryClient.setQueryData(queryKeys.cases.detail(caseDto.id), caseDto);
+  for (const client of caseDto.clients) {
+    queryInvalidation.powerOfAttorneyOrCaseClient(queryClient, {
+      caseId: caseDto.id,
+      clientId: client.clientId,
+      powerOfAttorneyId: client.powerOfAttorneyId ?? undefined,
+    });
+  }
 }
 
 export function useCreateCase() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CaseCreateInput) => bridge.caseCreate(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: CASES_KEY }),
+    onSuccess: (caseDto) => invalidateCase(queryClient, caseDto),
   });
 }
 
@@ -59,7 +68,7 @@ export function useAddOpponent() {
   return useMutation({
     mutationFn: (input: CaseOpponentInput) => bridge.caseAddOpponent(input),
     onSuccess: (_opponent, input) =>
-      queryClient.invalidateQueries({ queryKey: caseKey(input.caseId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases.detail(input.caseId) }),
   });
 }
 
@@ -67,7 +76,7 @@ export function useUpdateOpponent(caseId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CaseOpponentUpdateInput) => bridge.caseUpdateOpponent(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: caseKey(caseId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.cases.detail(caseId) }),
   });
 }
 
@@ -75,6 +84,6 @@ export function useRemoveOpponent(caseId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => bridge.caseRemoveOpponent(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: caseKey(caseId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.cases.detail(caseId) }),
   });
 }

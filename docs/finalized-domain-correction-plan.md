@@ -136,25 +136,26 @@ and service tests; command handlers contain no SQL or business-rule logic.
 
 ## Phase 3 — Bridge, frontend types, and data hooks
 
-1. Update `src/bridge/types.ts`, `commands.ts`, error mapping, and mock
-   contracts atomically with Rust DTOs.
-2. Replace generic events/documents/financial transaction/task-priority and
-   global-case-capacity types with finalized domain types.
-3. Update Zod schemas, React Hook Form defaults, TanStack Query query keys,
-   and mutations.
+**Status: Complete (2026-08-24).**
+
+1. [x] Update `src/bridge/types.ts`, `commands.ts`, error mapping, and mock
+       contracts atomically with Rust DTOs.
+2. [x] Replace generic events/documents/financial transaction/task-priority and
+       global-case-capacity types with finalized domain types.
+3. [x] Update Zod schemas, React Hook Form defaults, TanStack Query query keys,
+       and mutations.
 4. [x] Define invalidation per write in the canonical query-key helper:
    - payment: payments, case account, client account;
    - hearing: hearings, case summary, Today, Agenda;
    - task completion: task lists, Today, Agenda, relevant case;
    - POA/case-client changes: POA, case, client relationship tabs, search.
 
-   The helpers and their normal/failure-scope tests are complete. The hearing
-   mutation now uses the canonical helper; the remaining mutations await their
-   Phase 2 command contracts. Items 1–3 remain incomplete until every legacy
-   DTO, form, and caller is replaced atomically.
+   The helpers and their normal/failure-scope tests are complete. All canonical
+   write hooks now use the shared query-key/invalidation contracts, and bridge
+   payload contract tests cover the finalized command surface.
 
-Exit criteria: TypeScript has no stale DTO use, no broad `any`, and all bridge
-payload contract tests pass.
+Exit criteria: [x] TypeScript has no stale DTO use, no broad `any`, and all
+bridge payload contract tests pass.
 
 ## Phase 4 — Shared Stitch component and shell alignment
 

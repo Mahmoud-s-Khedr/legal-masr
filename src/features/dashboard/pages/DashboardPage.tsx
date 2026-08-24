@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import { bridge } from '../../../bridge/commands';
 import { useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
+import { queryKeys } from '../../../lib/queryKeys';
 
 const today = () => new Date().toISOString().slice(0, 10);
 export function DashboardPage() {
   const date = today();
   const agenda = useQuery({
-    queryKey: ['dashboard', date],
+    queryKey: queryKeys.today.summary(date),
     queryFn: () => bridge.dashboardSummary(date),
   });
   const clients = useClientList({});

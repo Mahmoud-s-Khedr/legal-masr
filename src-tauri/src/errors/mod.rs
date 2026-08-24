@@ -46,16 +46,16 @@ pub enum Error {
     CaseMustHaveClient,
     #[error("case primary client must be reassigned before this client can be detached")]
     CasePrimaryClientReassignmentRequired,
-    #[error("event not found")]
-    EventNotFound,
     #[error("task not found")]
     TaskNotFound,
-    #[error("document source missing")]
-    DocumentSourceMissing,
-    #[error("document not found")]
-    DocumentNotFound,
-    #[error("financial transaction not found")]
-    TransactionNotFound,
+    #[error("attachment source missing")]
+    AttachmentSourceMissing,
+    #[error("attachment not found")]
+    AttachmentNotFound,
+    #[error("payment not found")]
+    PaymentNotFound,
+    #[error("expense not found")]
+    ExpenseNotFound,
     #[error("operation could not be completed")]
     Operation,
     #[error("operation cancelled by user")]
@@ -89,11 +89,11 @@ impl Error {
             Self::CasePrimaryClientReassignmentRequired => {
                 "CASE_PRIMARY_CLIENT_REASSIGNMENT_REQUIRED"
             }
-            Self::EventNotFound => "EVENT_NOT_FOUND",
             Self::TaskNotFound => "TASK_NOT_FOUND",
-            Self::DocumentSourceMissing => "DOCUMENT_SOURCE_MISSING",
-            Self::DocumentNotFound => "DOCUMENT_NOT_FOUND",
-            Self::TransactionNotFound => "TRANSACTION_NOT_FOUND",
+            Self::AttachmentSourceMissing => "ATTACHMENT_SOURCE_MISSING",
+            Self::AttachmentNotFound => "ATTACHMENT_NOT_FOUND",
+            Self::PaymentNotFound => "PAYMENT_NOT_FOUND",
+            Self::ExpenseNotFound => "EXPENSE_NOT_FOUND",
             Self::Operation => "OPERATION_FAILED",
             Self::Cancelled => "OPERATION_CANCELLED",
             Self::Io(_) | Self::Sql(_) | Self::Json(_) | Self::Zip(_) => "OPERATION_FAILED",
@@ -120,11 +120,11 @@ impl Error {
             Self::CasePrimaryClientReassignmentRequired => {
                 "يجب تعيين موكل أساسي آخر قبل إزالة هذا الموكل."
             }
-            Self::EventNotFound => "لم يتم العثور على الحدث.",
             Self::TaskNotFound => "لم يتم العثور على المهمة.",
-            Self::DocumentSourceMissing => "تعذر العثور على الملف المصدر.",
-            Self::DocumentNotFound => "لم يتم العثور على المستند.",
-            Self::TransactionNotFound => "لم يتم العثور على العملية المالية.",
+            Self::AttachmentSourceMissing => "تعذر العثور على الملف المصدر للمرفق.",
+            Self::AttachmentNotFound => "لم يتم العثور على المرفق.",
+            Self::PaymentNotFound => "لم يتم العثور على الدفعة.",
+            Self::ExpenseNotFound => "لم يتم العثور على المصروف.",
             Self::Operation => "تعذر إتمام العملية بأمان.",
             Self::Cancelled => "تم إلغاء العملية.",
             Self::Io(_) | Self::Sql(_) | Self::Json(_) | Self::Zip(_) => {

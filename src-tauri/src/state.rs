@@ -31,7 +31,7 @@ impl AppState {
             .lock()
             .map_err(|_| Error::Operation)?
             .remove(token)
-            .ok_or(Error::DocumentSourceMissing)
+            .ok_or(Error::AttachmentSourceMissing)
     }
 }
 

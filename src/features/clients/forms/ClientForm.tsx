@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ClientFormValues, clientFormSchema } from '../schemas/client.schema';
+import { clientFormDefaults, ClientFormValues, clientFormSchema } from '../schemas/client.schema';
 
 export function ClientForm({
   defaultValues,
@@ -19,7 +19,7 @@ export function ClientForm({
   const { t } = useTranslation();
   const { register, handleSubmit, formState } = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
-    defaultValues: { internalNumber: '', fullName: '', ...defaultValues },
+    defaultValues: { ...clientFormDefaults, ...defaultValues },
   });
 
   return (

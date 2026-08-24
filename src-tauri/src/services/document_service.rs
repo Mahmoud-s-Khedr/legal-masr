@@ -91,7 +91,7 @@ fn validate_owners(conn: &rusqlite::Connection, input: &AttachmentInput) -> Resu
         .as_deref()
         .is_some_and(|id| !exists("expenses", id))
     {
-        return Err(Error::TransactionNotFound);
+        return Err(Error::ExpenseNotFound);
     }
     Ok(())
 }
@@ -112,7 +112,7 @@ pub fn select_source<R: Runtime>(
         .ok_or(Error::Validation)?
         .to_owned();
     if !path.is_file() {
-        return Err(Error::DocumentSourceMissing);
+        return Err(Error::AttachmentSourceMissing);
     }
     Ok(AttachmentSourceSelection {
         source_token: state.store_document_source(path)?,
@@ -127,7 +127,7 @@ pub fn add<R: Runtime>(
     validate_owner(&input)?;
     let source = state.take_document_source(&input.source_token)?;
     if !source.is_file() {
-        return Err(Error::DocumentSourceMissing);
+        return Err(Error::AttachmentSourceMissing);
     }
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
@@ -234,7 +234,7 @@ fn path<R: Runtime>(
     if path.is_file() {
         Ok(path)
     } else {
-        Err(Error::DocumentSourceMissing)
+        Err(Error::AttachmentSourceMissing)
     }
 }
 pub fn open<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {

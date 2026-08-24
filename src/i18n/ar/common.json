@@ -27,7 +27,7 @@
     "brandTagline": "خزنتك القانونية المحلية",
     "localOnly": "محفوظ محليًا",
     "add": "إضافة",
-    "addEvent": "إضافة جلسة أو موعد",
+    "addHearing": "إضافة جلسة",
     "addTask": "إضافة مهمة",
     "searchLabel": "البحث العام",
     "searchPlaceholder": "ابحث في سجلك قريبًا…"
@@ -264,9 +264,7 @@
     "groups": {
       "client": "الموكلون",
       "case": "القضايا",
-      "event": "الأحداث",
-      "task": "المهام",
-      "document": "المستندات"
+      "power_of_attorney": "التوكيلات"
     }
   }
 }

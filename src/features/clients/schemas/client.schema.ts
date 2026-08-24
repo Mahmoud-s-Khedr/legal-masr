@@ -10,3 +10,13 @@ export const clientFormSchema = z.object({
   notes: z.string().trim().optional(),
 });
 export type ClientFormValues = z.infer<typeof clientFormSchema>;
+
+export const clientFormDefaults: ClientFormValues = {
+  internalNumber: '',
+  fullName: '',
+  nationalId: undefined,
+  primaryPhone: undefined,
+  email: undefined,
+  address: undefined,
+  notes: undefined,
+};

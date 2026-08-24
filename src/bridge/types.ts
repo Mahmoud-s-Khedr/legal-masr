@@ -1,11 +1,33 @@
 export type AppStatus = { initialized: boolean; unlocked: boolean };
 export type AppDiagnostic = { kind: string; detail: string };
 export type AppError = {
-  code: string;
+  code: AppErrorCode;
   message: string;
   details: unknown;
   diagnostic?: AppDiagnostic;
 };
+export type AppErrorCode =
+  | 'INVALID_PASSWORD'
+  | 'APP_LOCKED'
+  | 'ALREADY_INITIALIZED'
+  | 'RECOVERY_KEY_INVALID'
+  | 'BACKUP_CORRUPTED'
+  | 'LEGACY_DATA_MIGRATION_REQUIRED'
+  | 'VALIDATION_FAILED'
+  | 'CLIENT_NOT_FOUND'
+  | 'CASE_NOT_FOUND'
+  | 'POWER_OF_ATTORNEY_NOT_FOUND'
+  | 'HEARING_NOT_FOUND'
+  | 'CLIENT_PROBABLE_DUPLICATE'
+  | 'CASE_MUST_HAVE_CLIENT'
+  | 'CASE_PRIMARY_CLIENT_REASSIGNMENT_REQUIRED'
+  | 'TASK_NOT_FOUND'
+  | 'ATTACHMENT_SOURCE_MISSING'
+  | 'ATTACHMENT_NOT_FOUND'
+  | 'PAYMENT_NOT_FOUND'
+  | 'EXPENSE_NOT_FOUND'
+  | 'OPERATION_FAILED'
+  | 'OPERATION_CANCELLED';
 export type Settings = {
   language: 'ar' | 'en';
   theme: 'system' | 'light' | 'dark';
@@ -153,6 +175,7 @@ export type CaseCreateInput = {
   litigationDegree?: 'FIRST_INSTANCE' | 'APPEAL' | 'CASSATION' | 'OTHER';
   status: CaseStatus;
   filedOn?: string;
+  closedOn?: string;
   subject?: string;
   notes?: string;
   clients: CaseClientInput[];
@@ -209,8 +232,9 @@ export type CaseOpponentUpdateInput = {
   notes?: string;
 };
 
+export type SearchEntityType = 'CLIENT' | 'CASE' | 'POWER_OF_ATTORNEY';
 export type SearchHit = {
-  entityType: string;
+  entityType: SearchEntityType;
   entityId: string;
   title: string;
   subtitle: string | null;
@@ -340,6 +364,15 @@ export type DashboardSummary = {
   overdueTasks: TaskDto[];
   upcomingHearings: HearingDto[];
 };
+export type AttachmentCategory =
+  | 'IDENTIFICATION'
+  | 'POWER_OF_ATTORNEY'
+  | 'CASE_FILE'
+  | 'COURT_DECISION'
+  | 'EVIDENCE'
+  | 'RECEIPT'
+  | 'CORRESPONDENCE'
+  | 'OTHER';
 export type AttachmentDto = {
   id: string;
   clientId: string | null;
@@ -349,7 +382,7 @@ export type AttachmentDto = {
   originalFilename: string;
   storedFilename: string;
   relativePath: string;
-  category: string;
+  category: AttachmentCategory;
   description: string | null;
   documentDate: string | null;
   mimeType: string | null;
@@ -364,14 +397,14 @@ export type AttachmentInput = {
   powerOfAttorneyId?: string;
   expenseId?: string;
   sourceToken: string;
-  category: string;
+  category: AttachmentCategory;
   description?: string;
   documentDate?: string;
 };
 export type AttachmentSourceSelection = { sourceToken: string; filename: string };
 export type AttachmentUpdateInput = {
   id: string;
-  category: string;
+  category: AttachmentCategory;
   description?: string;
   documentDate?: string;
 };
@@ -382,6 +415,15 @@ export type AttachmentListInput = {
   expenseId?: string;
 };
 export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CHEQUE' | 'ELECTRONIC' | 'OTHER';
+export type FeeAgreementDto = {
+  id: string;
+  caseId: string;
+  amountMinor: number;
+  agreementDate: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 export type FeeAgreementInput = {
   caseId: string;
   amountMinor: number;
@@ -455,3 +497,4 @@ export type ClientFinanceSummary = {
   expensesMinor: number;
   netCashMinor: number;
 };
+export type SearchRebuildResult = { indexedCount: number };

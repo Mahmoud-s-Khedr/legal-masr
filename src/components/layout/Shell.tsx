@@ -163,7 +163,7 @@ export function Shell({ onLock }: { onLock: () => void }) {
                   </Link>
                   <Link to="/calendar" role="menuitem" onClick={() => setCreateOpen(false)}>
                     <Icon name="calendar" size={18} />
-                    {t('app.addEvent')}
+                    {t('app.addHearing')}
                   </Link>
                   <Link to="/tasks" role="menuitem" onClick={() => setCreateOpen(false)}>
                     <Icon name="tasks" size={18} />

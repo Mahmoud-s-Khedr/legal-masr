@@ -1492,19 +1492,6 @@ html[data-theme='dark'] .sidebar a {
 .task-preview-list .icon {
   color: var(--accent);
 }
-.priority-label {
-  border-radius: 999px;
-  padding: 0.15rem 0.4rem;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 0.62rem;
-  font-weight: 900;
-}
-.priority-label.high,
-.priority-label.urgent {
-  background: var(--danger-bg);
-  color: var(--danger);
-}
 .empty-compact {
   display: flex;
   align-items: center;

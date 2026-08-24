@@ -14,7 +14,7 @@ export const queryInvalidation = {
   hearing(queryClient: QueryClient, input: { caseId: string }) {
     invalidate(queryClient, queryKeys.hearings.all);
     invalidate(queryClient, queryKeys.cases.summary(input.caseId));
-    invalidate(queryClient, queryKeys.today);
+    invalidate(queryClient, queryKeys.today.all);
     invalidate(queryClient, queryKeys.agenda);
   },
   taskCompletion(
@@ -22,7 +22,7 @@ export const queryInvalidation = {
     input: { caseId?: string | null; clientId?: string | null },
   ) {
     invalidate(queryClient, queryKeys.tasks.all);
-    invalidate(queryClient, queryKeys.today);
+    invalidate(queryClient, queryKeys.today.all);
     invalidate(queryClient, queryKeys.agenda);
     if (input.caseId) invalidate(queryClient, queryKeys.cases.detail(input.caseId));
     if (input.clientId) invalidate(queryClient, queryKeys.clients.detail(input.clientId));
@@ -37,6 +37,25 @@ export const queryInvalidation = {
     }
     if (input.caseId) invalidate(queryClient, queryKeys.cases.relationships(input.caseId));
     if (input.clientId) invalidate(queryClient, queryKeys.clients.relationships(input.clientId));
-    invalidate(queryClient, queryKeys.search);
+    invalidate(queryClient, queryKeys.search.all);
+  },
+  attachment(
+    queryClient: QueryClient,
+    input: { caseId?: string | null; clientId?: string | null; powerOfAttorneyId?: string | null },
+  ) {
+    invalidate(queryClient, queryKeys.attachments.all);
+    if (input.caseId) invalidate(queryClient, queryKeys.cases.detail(input.caseId));
+    if (input.clientId) invalidate(queryClient, queryKeys.clients.detail(input.clientId));
+    if (input.powerOfAttorneyId) {
+      invalidate(queryClient, queryKeys.powersOfAttorney.detail(input.powerOfAttorneyId));
+    }
+  },
+  expense(queryClient: QueryClient, input: { caseId?: string | null; clientId?: string | null }) {
+    invalidate(queryClient, queryKeys.expenses.all);
+    if (input.caseId) invalidate(queryClient, queryKeys.cases.account(input.caseId));
+    if (input.clientId) invalidate(queryClient, queryKeys.clients.account(input.clientId));
+  },
+  feeAgreement(queryClient: QueryClient, caseId: string) {
+    invalidate(queryClient, queryKeys.cases.account(caseId));
   },
 };

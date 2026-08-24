@@ -5,28 +5,38 @@ import type {
   AttachmentListInput,
   AttachmentUpdateInput,
 } from '../../../bridge/types';
-export const useDocuments = (input: AttachmentListInput = {}) =>
-  useQuery({ queryKey: ['attachments', input], queryFn: () => bridge.attachmentList(input) });
-export const useAddDocument = () => {
+import { queryInvalidation } from '../../../lib/queryInvalidation';
+import { queryKeys } from '../../../lib/queryKeys';
+export const useAttachments = (input: AttachmentListInput = {}) =>
+  useQuery({
+    queryKey: queryKeys.attachments.list(input),
+    queryFn: () => bridge.attachmentList(input),
+  });
+export const useAddAttachment = () => {
   const q = useQueryClient();
   return useMutation({
     mutationFn: (input: AttachmentInput) => bridge.attachmentAdd(input),
-    onSuccess: () => q.invalidateQueries({ queryKey: ['attachments'] }),
+    onSuccess: (attachment) => queryInvalidation.attachment(q, attachment),
   });
 };
-export const useRemoveDocument = () => {
+export const useRemoveAttachment = () => {
   const q = useQueryClient();
   return useMutation({
-    mutationFn: bridge.attachmentRemove,
-    onSuccess: () => q.invalidateQueries({ queryKey: ['attachments'] }),
+    mutationFn: (attachment: {
+      id: string;
+      caseId: string | null;
+      clientId: string | null;
+      powerOfAttorneyId: string | null;
+    }) => bridge.attachmentRemove(attachment.id),
+    onSuccess: (_result, attachment) => queryInvalidation.attachment(q, attachment),
   });
 };
-export const useUpdateDocument = () => {
+export const useUpdateAttachment = () => {
   const q = useQueryClient();
   return useMutation({
     mutationFn: (input: AttachmentUpdateInput) => bridge.attachmentUpdate(input),
-    onSuccess: () => q.invalidateQueries({ queryKey: ['attachments'] }),
+    onSuccess: (attachment) => queryInvalidation.attachment(q, attachment),
   });
 };
-export const useOpenDocument = () => useMutation({ mutationFn: bridge.attachmentOpen });
-export const useRevealDocument = () => useMutation({ mutationFn: bridge.attachmentReveal });
+export const useOpenAttachment = () => useMutation({ mutationFn: bridge.attachmentOpen });
+export const useRevealAttachment = () => useMutation({ mutationFn: bridge.attachmentReveal });
