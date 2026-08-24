@@ -13,15 +13,21 @@ export type Settings = {
   weekStartsOn: number;
   defaultReminderMinutes: number;
   autostartEnabled: boolean;
+  usageCountersEnabled: boolean;
   lockTimeoutMinutes: number;
-  managedDocumentsDirectory: string | null;
-  backupDirectory: string | null;
+};
+export type SettingsUpdateInput = {
+  language: Settings['language'];
+  theme: Settings['theme'];
+  dateFormat: Settings['dateFormat'];
+  weekStartsOn: number;
+  defaultReminderMinutes: number;
+  lockTimeoutMinutes: number;
 };
 export type LawyerProfile = {
   fullName: string;
   barNumber: string | null;
   phone: string | null;
-  email: string | null;
   officeAddress: string | null;
   defaultCurrency: 'EGP';
 };
@@ -32,14 +38,11 @@ export type InitializeInput = {
   lockTimeoutMinutes?: number;
 };
 
-export type ClientType = 'INDIVIDUAL' | 'ORGANIZATION';
-
 export type ClientDto = {
   id: string;
-  clientType: ClientType;
-  displayName: string;
+  internalNumber: string;
+  fullName: string;
   nationalId: string | null;
-  registrationNumber: string | null;
   primaryPhone: string | null;
   email: string | null;
   address: string | null;
@@ -51,23 +54,22 @@ export type ClientDto = {
 
 export type ClientSummary = {
   id: string;
-  clientType: ClientType;
-  displayName: string;
+  internalNumber: string;
+  fullName: string;
   primaryPhone: string | null;
   archivedAt: string | null;
 };
 
 export type ClientDuplicateCandidate = {
   id: string;
-  displayName: string;
+  fullName: string;
   primaryPhone: string | null;
 };
 
 export type ClientCreateInput = {
-  clientType: ClientType;
-  displayName: string;
+  internalNumber: string;
+  fullName: string;
   nationalId?: string;
-  registrationNumber?: string;
   primaryPhone?: string;
   email?: string;
   address?: string;
@@ -77,9 +79,9 @@ export type ClientCreateInput = {
 
 export type ClientUpdateInput = {
   id: string;
-  displayName: string;
+  internalNumber: string;
+  fullName: string;
   nationalId?: string;
-  registrationNumber?: string;
   primaryPhone?: string;
   email?: string;
   address?: string;
@@ -88,25 +90,23 @@ export type ClientUpdateInput = {
 
 export type ClientListInput = { query?: string; includeArchived?: boolean };
 
-export type CaseStatus =
-  | 'DRAFT'
-  | 'ACTIVE'
-  | 'SUSPENDED'
-  | 'JUDGMENT_ISSUED'
-  | 'APPEALED'
-  | 'ENFORCEMENT'
-  | 'CLOSED'
-  | 'ARCHIVED';
+export type CaseStatus = 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
-export type CasePartyRole = 'OPPONENT' | 'WITNESS' | 'EXPERT' | 'OTHER';
+export type CaseClientDto = {
+  clientId: string;
+  fullName: string;
+  internalNumber: string;
+  legalCapacity: string | null;
+  powerOfAttorneyId: string | null;
+  notes: string | null;
+};
 
-export type CaseClientDto = { clientId: string; displayName: string; isPrimary: boolean };
-
-export type CasePartyDto = {
+export type CaseOpponentDto = {
   id: string;
   caseId: string;
-  role: CasePartyRole;
-  name: string;
+  fullName: string;
+  legalCapacity: string | null;
+  lawyerName: string | null;
   phone: string | null;
   address: string | null;
   notes: string | null;
@@ -114,61 +114,65 @@ export type CasePartyDto = {
 
 export type CaseDto = {
   id: string;
-  caseNumber: string;
-  judicialYear: number | null;
+  internalNumber: string;
+  officialNumber: string | null;
+  officialYear: number | null;
   courtName: string | null;
   circuitName: string | null;
   caseType: string | null;
-  clientLegalCapacity: string | null;
+  litigationDegree: 'FIRST_INSTANCE' | 'APPEAL' | 'CASSATION' | 'OTHER' | null;
   status: CaseStatus;
   filedOn: string | null;
   closedOn: string | null;
-  summary: string | null;
+  subject: string | null;
   notes: string | null;
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
   clients: CaseClientDto[];
-  parties: CasePartyDto[];
+  opponents: CaseOpponentDto[];
 };
 
 export type CaseSummary = {
   id: string;
-  caseNumber: string;
-  judicialYear: number | null;
+  internalNumber: string;
+  officialNumber: string | null;
+  officialYear: number | null;
   status: CaseStatus;
-  primaryClientName: string | null;
+  clientNames: string[];
   archivedAt: string | null;
 };
 
 export type CaseCreateInput = {
-  caseNumber: string;
-  judicialYear?: number;
+  internalNumber: string;
+  officialNumber?: string;
+  officialYear?: number;
   courtName?: string;
   circuitName?: string;
   caseType?: string;
-  clientLegalCapacity?: string;
+  litigationDegree?: 'FIRST_INSTANCE' | 'APPEAL' | 'CASSATION' | 'OTHER';
   status: CaseStatus;
   filedOn?: string;
-  summary?: string;
+  subject?: string;
   notes?: string;
-  clientIds: string[];
-  primaryClientId: string;
+  clients: CaseClientInput[];
 };
 
 export type CaseUpdateInput = {
   id: string;
-  caseNumber: string;
-  judicialYear?: number;
+  internalNumber: string;
+  officialNumber?: string;
+  officialYear?: number;
   courtName?: string;
   circuitName?: string;
   caseType?: string;
-  clientLegalCapacity?: string;
+  litigationDegree?: 'FIRST_INSTANCE' | 'APPEAL' | 'CASSATION' | 'OTHER';
   status: CaseStatus;
   filedOn?: string;
   closedOn?: string;
-  summary?: string;
+  subject?: string;
   notes?: string;
+  clients: CaseClientInput[];
 };
 
 export type CaseListInput = {
@@ -178,19 +182,28 @@ export type CaseListInput = {
   includeArchived?: boolean;
 };
 
-export type CasePartyInput = {
+export type CaseClientInput = {
+  clientId: string;
+  legalCapacity?: string;
+  powerOfAttorneyId?: string;
+  notes?: string;
+};
+
+export type CaseOpponentInput = {
   caseId: string;
-  role: CasePartyRole;
-  name: string;
+  fullName: string;
+  legalCapacity?: string;
+  lawyerName?: string;
   phone?: string;
   address?: string;
   notes?: string;
 };
 
-export type CasePartyUpdateInput = {
+export type CaseOpponentUpdateInput = {
   id: string;
-  role: CasePartyRole;
-  name: string;
+  fullName: string;
+  legalCapacity?: string;
+  lawyerName?: string;
   phone?: string;
   address?: string;
   notes?: string;
@@ -202,61 +215,105 @@ export type SearchHit = {
   title: string;
   subtitle: string | null;
 };
-export type EventDto = {
+
+export type PowerOfAttorneyLawyerInput = {
+  id?: string;
+  fullName: string;
+  barNumber?: string;
+  notes?: string;
+};
+export type PowerOfAttorneyLawyer = Required<
+  Pick<PowerOfAttorneyLawyerInput, 'id' | 'fullName'>
+> & {
+  barNumber: string | null;
+  notes: string | null;
+};
+export type PowerOfAttorneyClient = { id: string; fullName: string; internalNumber: string };
+export type PowerOfAttorneyDto = {
   id: string;
-  caseId: string | null;
-  clientId: string | null;
-  eventType: string;
-  title: string;
-  eventDate: string;
-  startTime: string | null;
-  endTime: string | null;
-  isAllDay: boolean;
+  internalSequence: string;
+  officialNumber: string | null;
+  issueYear: number | null;
+  issueDate: string | null;
+  notaryOffice: string | null;
+  notes: string | null;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clients: PowerOfAttorneyClient[];
+  lawyers: PowerOfAttorneyLawyer[];
+  caseIds: string[];
+};
+export type PowerOfAttorneySummary = Pick<
+  PowerOfAttorneyDto,
+  'id' | 'internalSequence' | 'officialNumber' | 'issueYear' | 'archivedAt'
+> & { clientNames: string[] };
+export type PowerOfAttorneyInput = {
+  id?: string;
+  internalSequence: string;
+  officialNumber?: string;
+  issueYear?: number;
+  issueDate?: string;
+  notaryOffice?: string;
+  notes?: string;
+  clientIds: string[];
+  lawyers: PowerOfAttorneyLawyerInput[];
+};
+export type PowerOfAttorneyListInput = { query?: string; includeArchived?: boolean };
+
+export type HearingStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+export type HearingDto = {
+  id: string;
+  caseId: string;
+  previousHearingId: string | null;
+  hearingDate: string;
+  hearingTime: string | null;
+  hearingType: string | null;
   location: string | null;
   circuitName: string | null;
-  preparationNotes: string | null;
   requiredDocuments: string | null;
-  outcome: string | null;
+  notes: string | null;
   decisionText: string | null;
-  nextAction: string | null;
-  status: string;
+  status: HearingStatus;
   completedAt: string | null;
+  reminderMinutes: number | null;
   createdAt: string;
   updatedAt: string;
 };
-export type EventInput = {
+export type HearingInput = {
   id?: string;
-  caseId?: string;
-  clientId?: string;
-  eventType: string;
-  title: string;
-  eventDate: string;
-  startTime?: string;
-  endTime?: string;
-  isAllDay: boolean;
+  caseId: string;
+  hearingDate: string;
+  hearingTime?: string;
+  hearingType?: string;
   location?: string;
   circuitName?: string;
-  preparationNotes?: string;
   requiredDocuments?: string;
+  notes?: string;
+  reminderMinutes?: number;
 };
-export type EventListInput = {
+export type HearingListInput = {
+  caseId?: string;
   fromDate?: string;
   toDate?: string;
-  caseId?: string;
-  clientId?: string;
-  status?: string;
+  status?: HearingStatus;
 };
+export type HearingDecisionInput = {
+  id: string;
+  decisionText?: string;
+  nextHearing?: HearingInput;
+};
+export type HearingDecisionResult = { hearing: HearingDto; nextHearing: HearingDto | null };
 export type TaskDto = {
   id: string;
   clientId: string | null;
   caseId: string | null;
-  sourceEventId: string | null;
   title: string;
-  description: string | null;
-  dueDate: string | null;
-  dueTime: string | null;
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-  status: 'OPEN' | 'COMPLETED' | 'CANCELLED';
+  details: string | null;
+  notes: string | null;
+  dueDate: string;
+  reminderMinutes: number | null;
+  completed: boolean;
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -265,85 +322,120 @@ export type TaskInput = {
   id?: string;
   clientId?: string;
   caseId?: string;
-  sourceEventId?: string;
   title: string;
-  description?: string;
-  dueDate?: string;
-  dueTime?: string;
-  priority: TaskDto['priority'];
+  details?: string;
+  notes?: string;
+  dueDate: string;
+  reminderMinutes?: number;
 };
 export type TaskListInput = {
-  dueFrom?: string;
-  dueTo?: string;
+  view?: 'TODAY' | 'OVERDUE' | 'UPCOMING' | 'COMPLETED' | 'ALL';
+  referenceDate: string;
   caseId?: string;
   clientId?: string;
-  priority?: TaskDto['priority'];
-  status?: TaskDto['status'];
 };
 export type DashboardSummary = {
-  todayEvents: EventDto[];
+  todayHearings: HearingDto[];
   todayTasks: TaskDto[];
   overdueTasks: TaskDto[];
-  missingOutcomeEvents: EventDto[];
-  upcomingEvents: EventDto[];
+  upcomingHearings: HearingDto[];
 };
-export type DocumentDto = {
+export type AttachmentDto = {
   id: string;
   clientId: string | null;
   caseId: string | null;
-  storageMode: 'MANAGED_COPY' | 'EXTERNAL_REFERENCE';
+  powerOfAttorneyId: string | null;
+  expenseId: string | null;
   originalFilename: string;
+  storedFilename: string;
+  relativePath: string;
   category: string;
   description: string | null;
   documentDate: string | null;
   mimeType: string | null;
-  fileSizeBytes: number | null;
-  missingAt: string | null;
+  fileSizeBytes: number;
+  sha256: string;
   createdAt: string;
+  updatedAt: string;
 };
-export type DocumentReferenceInput = {
+export type AttachmentInput = {
   clientId?: string;
   caseId?: string;
+  powerOfAttorneyId?: string;
+  expenseId?: string;
   sourceToken: string;
   category: string;
   description?: string;
   documentDate?: string;
 };
-export type DocumentSourceSelection = { sourceToken: string; filename: string };
-export type DocumentUpdateInput = {
+export type AttachmentSourceSelection = { sourceToken: string; filename: string };
+export type AttachmentUpdateInput = {
   id: string;
   category: string;
   description?: string;
   documentDate?: string;
 };
-export type FinancialTransactionType =
-  'FEE_PAYMENT' | 'CASE_EXPENSE' | 'REFUND' | 'OTHER_INCOME' | 'OTHER_EXPENSE';
-export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CARD' | 'MOBILE_WALLET' | 'OTHER';
+export type AttachmentListInput = {
+  clientId?: string;
+  caseId?: string;
+  powerOfAttorneyId?: string;
+  expenseId?: string;
+};
+export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CHEQUE' | 'ELECTRONIC' | 'OTHER';
 export type FeeAgreementInput = {
   caseId: string;
   amountMinor: number;
   agreementDate?: string;
   notes?: string;
 };
-export type FinancialTransactionInput = {
-  id?: string;
-  clientId: string;
-  caseId?: string;
-  transactionType: FinancialTransactionType;
-  amountMinor: number;
-  transactionDate: string;
-  paymentMethod?: PaymentMethod;
-  description?: string;
-  receiptDocumentId?: string;
-};
-export type FinancialTransactionDto = FinancialTransactionInput & {
+export type PaymentDto = {
   id: string;
-  currency: 'EGP';
-  reversedTransactionId: string | null;
+  caseId: string;
+  payerClientId: string;
+  amountMinor: number;
+  paymentDate: string;
+  paymentMethod: PaymentMethod | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 };
-export type FinancialTransactionListInput = {
+export type PaymentInput = {
+  id?: string;
+  caseId: string;
+  payerClientId: string;
+  amountMinor: number;
+  paymentDate: string;
+  paymentMethod?: PaymentMethod;
+  notes?: string;
+};
+export type PaymentListInput = {
+  payerClientId?: string;
+  caseId?: string;
+  fromDate?: string;
+  toDate?: string;
+};
+export type ExpenseType = 'COURT_FEE' | 'TRANSPORT' | 'OFFICE_SUPPLIES' | 'EXPERT_FEE' | 'OTHER';
+export type ExpenseDto = {
+  id: string;
+  caseId: string | null;
+  clientId: string | null;
+  amountMinor: number;
+  expenseDate: string;
+  expenseType: ExpenseType;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type ExpenseInput = {
+  id?: string;
+  clientId?: string;
+  caseId?: string;
+  amountMinor: number;
+  expenseDate: string;
+  expenseType: ExpenseType;
+  notes?: string;
+};
+export type ExpenseListInput = {
   clientId?: string;
   caseId?: string;
   fromDate?: string;
@@ -356,12 +448,10 @@ export type CaseFinanceSummary = {
   outstandingMinor: number;
   expensesMinor: number;
   netCashMinor: number;
-  currency: 'EGP';
 };
 export type ClientFinanceSummary = {
   clientId: string;
   receivedMinor: number;
   expensesMinor: number;
   netCashMinor: number;
-  currency: 'EGP';
 };

@@ -1,7 +1,7 @@
 use crate::{
     dto::{
-        CaseCreateInput, CaseDto, CaseListInput, CasePartyDto, CasePartyInput,
-        CasePartyUpdateInput, CaseSummary, CaseUpdateInput,
+        CaseCreateInput, CaseDto, CaseListInput, CaseOpponentDto, CaseOpponentInput,
+        CaseOpponentUpdateInput, CaseSummary, CaseUpdateInput,
     },
     errors::Error,
     services::case_service,
@@ -52,60 +52,28 @@ pub fn case_restore(app: AppHandle, state: State<AppState>, id: String) -> Resul
 }
 
 #[tauri::command]
-pub fn case_export(app: AppHandle, state: State<AppState>, id: String) -> Result<String, Error> {
-    case_service::export(&app, &state, &id)
-}
-
-#[tauri::command]
-pub fn case_attach_client(
+pub fn case_add_opponent(
     app: AppHandle,
     state: State<AppState>,
-    case_id: String,
-    client_id: String,
-    make_primary: bool,
-) -> Result<CaseDto, Error> {
-    case_service::attach_client(&app, &state, &case_id, &client_id, make_primary)
+    input: CaseOpponentInput,
+) -> Result<CaseOpponentDto, Error> {
+    case_service::add_opponent(&app, &state, input)
 }
 
 #[tauri::command]
-pub fn case_detach_client(
+pub fn case_update_opponent(
     app: AppHandle,
     state: State<AppState>,
-    case_id: String,
-    client_id: String,
-) -> Result<CaseDto, Error> {
-    case_service::detach_client(&app, &state, &case_id, &client_id)
+    input: CaseOpponentUpdateInput,
+) -> Result<CaseOpponentDto, Error> {
+    case_service::update_opponent(&app, &state, input)
 }
 
 #[tauri::command]
-pub fn case_set_primary_client(
+pub fn case_remove_opponent(
     app: AppHandle,
     state: State<AppState>,
-    case_id: String,
-    client_id: String,
-) -> Result<CaseDto, Error> {
-    case_service::set_primary_client(&app, &state, &case_id, &client_id)
-}
-
-#[tauri::command]
-pub fn case_add_party(
-    app: AppHandle,
-    state: State<AppState>,
-    input: CasePartyInput,
-) -> Result<CasePartyDto, Error> {
-    case_service::add_party(&app, &state, input)
-}
-
-#[tauri::command]
-pub fn case_update_party(
-    app: AppHandle,
-    state: State<AppState>,
-    input: CasePartyUpdateInput,
-) -> Result<CasePartyDto, Error> {
-    case_service::update_party(&app, &state, input)
-}
-
-#[tauri::command]
-pub fn case_remove_party(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
-    case_service::remove_party(&app, &state, &id)
+    id: String,
+) -> Result<(), Error> {
+    case_service::remove_opponent(&app, &state, &id)
 }

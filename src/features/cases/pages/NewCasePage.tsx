@@ -27,7 +27,8 @@ export function NewCasePage() {
           onSubmit={async (values) => {
             await createCase.mutateAsync({
               ...values,
-              judicialYear: Number.isNaN(values.judicialYear) ? undefined : values.judicialYear,
+              officialYear: Number.isNaN(values.officialYear) ? undefined : values.officialYear,
+              clients: values.clientIds.map((clientId) => ({ clientId })),
             });
             navigate('/cases');
           }}

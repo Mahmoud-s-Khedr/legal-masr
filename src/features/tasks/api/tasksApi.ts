@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
 import type { TaskInput, TaskListInput } from '../../../bridge/types';
-export const useTaskList = (input: TaskListInput = {}) =>
+export const useTaskList = (input: TaskListInput) =>
   useQuery({ queryKey: ['tasks', input], queryFn: () => bridge.taskList(input) });
 export const useSaveTask = () => {
   const q = useQueryClient();
@@ -11,6 +11,7 @@ export const useSaveTask = () => {
     onSuccess: () => q.invalidateQueries({ queryKey: ['tasks'] }),
   });
 };
+export const useCreateTask = useSaveTask;
 export const useCompleteTask = () => {
   const q = useQueryClient();
   return useMutation({

@@ -72,13 +72,9 @@ export function ClientListPage() {
               {clients.map((client) => (
                 <tr key={client.id}>
                   <th scope="row">
-                    <Link to={`/clients/${client.id}`}>{client.displayName}</Link>
+                    <Link to={`/clients/${client.id}`}>{client.fullName}</Link>
                   </th>
-                  <td>
-                    {t(
-                      `clients.fields.${client.clientType === 'INDIVIDUAL' ? 'individual' : 'organization'}`,
-                    )}
-                  </td>
+                  <td>{client.internalNumber}</td>
                   <td dir="ltr">{client.primaryPhone ?? '—'}</td>
                   <td>
                     {client.archivedAt ? (

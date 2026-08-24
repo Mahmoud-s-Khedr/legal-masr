@@ -5,10 +5,8 @@ use crate::{
     repositories::settings_repository,
     state::AppState,
 };
-use std::fs;
 use tauri::{AppHandle, Runtime};
 use tauri_plugin_autostart::ManagerExt as AutostartManagerExt;
-use tauri_plugin_dialog::DialogExt;
 
 pub fn get<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<SettingsDto, Error> {
     let master = state.unlocked()?;
@@ -36,25 +34,6 @@ pub fn update<R: Runtime>(
     let conn = db::open_db(&db_path, &master)?;
     settings_repository::update_settings(&conn, input)?;
     settings_repository::get_settings(&conn)
-}
-
-pub fn choose_backup_directory<R: Runtime>(
-    app: &AppHandle<R>,
-    state: &AppState,
-) -> Result<SettingsDto, Error> {
-    let directory = app
-        .dialog()
-        .file()
-        .blocking_pick_folder()
-        .ok_or(Error::Cancelled)?
-        .into_path()
-        .map_err(|_| Error::Operation)?;
-    fs::create_dir_all(&directory)?;
-    let master = state.unlocked()?;
-    let (_, database_path) = db::paths(app)?;
-    let connection = db::open_db(&database_path, &master)?;
-    settings_repository::update_backup_directory(&connection, &directory.to_string_lossy())?;
-    settings_repository::get_settings(&connection)
 }
 
 pub fn get_profile<R: Runtime>(

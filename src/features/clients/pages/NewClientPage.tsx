@@ -56,7 +56,7 @@ export function NewClientPage() {
             <ul>
               {duplicates.map((candidate) => (
                 <li key={candidate.id}>
-                  {candidate.displayName}
+                  {candidate.fullName}
                   {candidate.primaryPhone ? ` — ${candidate.primaryPhone}` : ''}
                 </li>
               ))}

@@ -34,9 +34,8 @@ pub struct SettingsDto {
     pub week_starts_on: u8,
     pub default_reminder_minutes: u32,
     pub autostart_enabled: bool,
+    pub usage_counters_enabled: bool,
     pub lock_timeout_minutes: u32,
-    pub managed_documents_directory: Option<String>,
-    pub backup_directory: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -56,7 +55,6 @@ pub struct LawyerProfileDto {
     pub full_name: String,
     pub bar_number: Option<String>,
     pub phone: Option<String>,
-    pub email: Option<String>,
     pub office_address: Option<String>,
     pub default_currency: String,
 }
@@ -67,7 +65,6 @@ pub struct FeeAgreementDto {
     pub id: String,
     pub case_id: String,
     pub amount_minor: i64,
-    pub currency: String,
     pub agreement_date: Option<String>,
     pub notes: Option<String>,
     pub created_at: String,
@@ -83,37 +80,63 @@ pub struct FeeAgreementInput {
 }
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct FinancialTransactionDto {
+pub struct PaymentDto {
     pub id: String,
-    pub client_id: String,
-    pub case_id: Option<String>,
-    pub transaction_type: String,
+    pub case_id: String,
+    pub payer_client_id: String,
     pub amount_minor: i64,
-    pub currency: String,
-    pub transaction_date: String,
+    pub payment_date: String,
     pub payment_method: Option<String>,
-    pub description: Option<String>,
-    pub receipt_document_id: Option<String>,
-    pub reversed_transaction_id: Option<String>,
+    pub notes: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FinancialTransactionInput {
+pub struct PaymentInput {
     pub id: Option<String>,
-    pub client_id: String,
-    pub case_id: Option<String>,
-    pub transaction_type: String,
+    pub case_id: String,
+    pub payer_client_id: String,
     pub amount_minor: i64,
-    pub transaction_date: String,
+    pub payment_date: String,
     pub payment_method: Option<String>,
-    pub description: Option<String>,
-    pub receipt_document_id: Option<String>,
+    pub notes: Option<String>,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FinancialTransactionListInput {
+pub struct PaymentListInput {
+    pub payer_client_id: Option<String>,
+    pub case_id: Option<String>,
+    pub from_date: Option<String>,
+    pub to_date: Option<String>,
+}
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpenseDto {
+    pub id: String,
+    pub case_id: Option<String>,
+    pub client_id: Option<String>,
+    pub amount_minor: i64,
+    pub expense_date: String,
+    pub expense_type: String,
+    pub notes: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpenseInput {
+    pub id: Option<String>,
+    pub case_id: Option<String>,
+    pub client_id: Option<String>,
+    pub amount_minor: i64,
+    pub expense_date: String,
+    pub expense_type: String,
+    pub notes: Option<String>,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpenseListInput {
     pub client_id: Option<String>,
     pub case_id: Option<String>,
     pub from_date: Option<String>,
@@ -128,7 +151,6 @@ pub struct CaseFinanceSummary {
     pub outstanding_minor: i64,
     pub expenses_minor: i64,
     pub net_cash_minor: i64,
-    pub currency: String,
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -137,17 +159,15 @@ pub struct ClientFinanceSummary {
     pub received_minor: i64,
     pub expenses_minor: i64,
     pub net_cash_minor: i64,
-    pub currency: String,
 }
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ClientDto {
     pub id: String,
-    pub client_type: String,
-    pub display_name: String,
+    pub internal_number: String,
+    pub full_name: String,
     pub national_id: Option<String>,
-    pub registration_number: Option<String>,
     pub primary_phone: Option<String>,
     pub email: Option<String>,
     pub address: Option<String>,
@@ -160,10 +180,9 @@ pub struct ClientDto {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClientCreateInput {
-    pub client_type: String,
-    pub display_name: String,
+    pub internal_number: String,
+    pub full_name: String,
     pub national_id: Option<String>,
-    pub registration_number: Option<String>,
     pub primary_phone: Option<String>,
     pub email: Option<String>,
     pub address: Option<String>,
@@ -176,9 +195,9 @@ pub struct ClientCreateInput {
 #[serde(rename_all = "camelCase")]
 pub struct ClientUpdateInput {
     pub id: String,
-    pub display_name: String,
+    pub internal_number: String,
+    pub full_name: String,
     pub national_id: Option<String>,
-    pub registration_number: Option<String>,
     pub primary_phone: Option<String>,
     pub email: Option<String>,
     pub address: Option<String>,
@@ -189,8 +208,8 @@ pub struct ClientUpdateInput {
 #[serde(rename_all = "camelCase")]
 pub struct ClientSummary {
     pub id: String,
-    pub client_type: String,
-    pub display_name: String,
+    pub internal_number: String,
+    pub full_name: String,
     pub primary_phone: Option<String>,
     pub archived_at: Option<String>,
 }
@@ -207,7 +226,7 @@ pub struct ClientListInput {
 #[serde(rename_all = "camelCase")]
 pub struct ClientDuplicateCandidate {
     pub id: String,
-    pub display_name: String,
+    pub full_name: String,
     pub primary_phone: Option<String>,
 }
 
@@ -215,17 +234,21 @@ pub struct ClientDuplicateCandidate {
 #[serde(rename_all = "camelCase")]
 pub struct CaseClientDto {
     pub client_id: String,
-    pub display_name: String,
-    pub is_primary: bool,
+    pub full_name: String,
+    pub internal_number: String,
+    pub legal_capacity: Option<String>,
+    pub power_of_attorney_id: Option<String>,
+    pub notes: Option<String>,
 }
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct CasePartyDto {
+pub struct CaseOpponentDto {
     pub id: String,
     pub case_id: String,
-    pub role: String,
-    pub name: String,
+    pub full_name: String,
+    pub legal_capacity: Option<String>,
+    pub lawyer_name: Option<String>,
     pub phone: Option<String>,
     pub address: Option<String>,
     pub notes: Option<String>,
@@ -235,66 +258,80 @@ pub struct CasePartyDto {
 #[serde(rename_all = "camelCase")]
 pub struct CaseDto {
     pub id: String,
-    pub case_number: String,
-    pub judicial_year: Option<i64>,
+    pub internal_number: String,
+    pub official_number: Option<String>,
+    pub official_year: Option<i64>,
+    pub case_type: Option<String>,
+    pub litigation_degree: Option<String>,
     pub court_name: Option<String>,
     pub circuit_name: Option<String>,
-    pub case_type: Option<String>,
-    pub client_legal_capacity: Option<String>,
     pub status: String,
     pub filed_on: Option<String>,
     pub closed_on: Option<String>,
-    pub summary: Option<String>,
+    pub subject: Option<String>,
     pub notes: Option<String>,
     pub archived_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
     pub clients: Vec<CaseClientDto>,
-    pub parties: Vec<CasePartyDto>,
+    pub opponents: Vec<CaseOpponentDto>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CaseCreateInput {
-    pub case_number: String,
-    pub judicial_year: Option<i64>,
+    pub internal_number: String,
+    pub official_number: Option<String>,
+    pub official_year: Option<i64>,
+    pub case_type: Option<String>,
+    pub litigation_degree: Option<String>,
     pub court_name: Option<String>,
     pub circuit_name: Option<String>,
-    pub case_type: Option<String>,
-    pub client_legal_capacity: Option<String>,
     pub status: String,
     pub filed_on: Option<String>,
-    pub summary: Option<String>,
+    pub closed_on: Option<String>,
+    pub subject: Option<String>,
     pub notes: Option<String>,
-    pub client_ids: Vec<String>,
-    pub primary_client_id: String,
+    pub clients: Vec<CaseClientInput>,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CaseClientInput {
+    pub client_id: String,
+    pub legal_capacity: Option<String>,
+    pub power_of_attorney_id: Option<String>,
+    pub notes: Option<String>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CaseUpdateInput {
     pub id: String,
-    pub case_number: String,
-    pub judicial_year: Option<i64>,
+    pub internal_number: String,
+    pub official_number: Option<String>,
+    pub official_year: Option<i64>,
+    pub case_type: Option<String>,
+    pub litigation_degree: Option<String>,
     pub court_name: Option<String>,
     pub circuit_name: Option<String>,
-    pub case_type: Option<String>,
-    pub client_legal_capacity: Option<String>,
     pub status: String,
     pub filed_on: Option<String>,
     pub closed_on: Option<String>,
-    pub summary: Option<String>,
+    pub subject: Option<String>,
     pub notes: Option<String>,
+    pub clients: Vec<CaseClientInput>,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CaseSummary {
     pub id: String,
-    pub case_number: String,
-    pub judicial_year: Option<i64>,
+    pub internal_number: String,
+    pub official_number: Option<String>,
+    pub official_year: Option<i64>,
     pub status: String,
-    pub primary_client_name: Option<String>,
+    pub client_names: Vec<String>,
     pub archived_at: Option<String>,
 }
 
@@ -310,10 +347,11 @@ pub struct CaseListInput {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CasePartyInput {
+pub struct CaseOpponentInput {
     pub case_id: String,
-    pub role: String,
-    pub name: String,
+    pub full_name: String,
+    pub legal_capacity: Option<String>,
+    pub lawyer_name: Option<String>,
     pub phone: Option<String>,
     pub address: Option<String>,
     pub notes: Option<String>,
@@ -321,10 +359,11 @@ pub struct CasePartyInput {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CasePartyUpdateInput {
+pub struct CaseOpponentUpdateInput {
     pub id: String,
-    pub role: String,
-    pub name: String,
+    pub full_name: String,
+    pub legal_capacity: Option<String>,
+    pub lawyer_name: Option<String>,
     pub phone: Option<String>,
     pub address: Option<String>,
     pub notes: Option<String>,
@@ -339,83 +378,18 @@ pub struct SearchHit {
     pub subtitle: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct EventDto {
-    pub id: String,
-    pub case_id: Option<String>,
-    pub client_id: Option<String>,
-    pub event_type: String,
-    pub title: String,
-    pub event_date: String,
-    pub start_time: Option<String>,
-    pub end_time: Option<String>,
-    pub is_all_day: bool,
-    pub location: Option<String>,
-    pub circuit_name: Option<String>,
-    pub preparation_notes: Option<String>,
-    pub required_documents: Option<String>,
-    pub outcome: Option<String>,
-    pub decision_text: Option<String>,
-    pub next_action: Option<String>,
-    pub status: String,
-    pub completed_at: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EventInput {
-    pub id: Option<String>,
-    pub case_id: Option<String>,
-    pub client_id: Option<String>,
-    pub event_type: String,
-    pub title: String,
-    pub event_date: String,
-    pub start_time: Option<String>,
-    pub end_time: Option<String>,
-    pub is_all_day: bool,
-    pub location: Option<String>,
-    pub circuit_name: Option<String>,
-    pub preparation_notes: Option<String>,
-    pub required_documents: Option<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EventCompleteInput {
-    pub id: String,
-    pub outcome: Option<String>,
-    pub decision_text: Option<String>,
-    pub next_action: Option<String>,
-    pub next_hearing_date: Option<String>,
-    pub create_task_title: Option<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EventListInput {
-    pub from_date: Option<String>,
-    pub to_date: Option<String>,
-    pub case_id: Option<String>,
-    pub client_id: Option<String>,
-    pub status: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskDto {
     pub id: String,
     pub client_id: Option<String>,
     pub case_id: Option<String>,
-    pub source_event_id: Option<String>,
     pub title: String,
-    pub description: Option<String>,
-    pub due_date: Option<String>,
-    pub due_time: Option<String>,
-    pub priority: String,
-    pub status: String,
+    pub details: Option<String>,
+    pub notes: Option<String>,
+    pub due_date: String,
+    pub reminder_minutes: Option<u32>,
+    pub completed: bool,
     pub completed_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -427,47 +401,50 @@ pub struct TaskInput {
     pub id: Option<String>,
     pub client_id: Option<String>,
     pub case_id: Option<String>,
-    pub source_event_id: Option<String>,
     pub title: String,
-    pub description: Option<String>,
-    pub due_date: Option<String>,
-    pub due_time: Option<String>,
-    pub priority: String,
+    pub details: Option<String>,
+    pub notes: Option<String>,
+    pub due_date: String,
+    pub reminder_minutes: Option<u32>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskListInput {
-    pub due_from: Option<String>,
-    pub due_to: Option<String>,
+    pub view: Option<String>,
+    pub reference_date: String,
     pub case_id: Option<String>,
     pub client_id: Option<String>,
-    pub priority: Option<String>,
-    pub status: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct DocumentDto {
+pub struct AttachmentDto {
     pub id: String,
     pub client_id: Option<String>,
     pub case_id: Option<String>,
-    pub storage_mode: String,
+    pub power_of_attorney_id: Option<String>,
+    pub expense_id: Option<String>,
     pub original_filename: String,
+    pub stored_filename: String,
+    pub relative_path: String,
     pub category: String,
     pub description: Option<String>,
     pub document_date: Option<String>,
     pub mime_type: Option<String>,
-    pub file_size_bytes: Option<i64>,
-    pub missing_at: Option<String>,
+    pub file_size_bytes: i64,
+    pub sha256: String,
     pub created_at: String,
+    pub updated_at: String,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DocumentReferenceInput {
+pub struct AttachmentInput {
     pub client_id: Option<String>,
     pub case_id: Option<String>,
+    pub power_of_attorney_id: Option<String>,
+    pub expense_id: Option<String>,
     pub source_token: String,
     pub category: String,
     pub description: Option<String>,
@@ -476,14 +453,14 @@ pub struct DocumentReferenceInput {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DocumentSourceSelection {
+pub struct AttachmentSourceSelection {
     pub source_token: String,
     pub filename: String,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DocumentUpdateInput {
+pub struct AttachmentUpdateInput {
     pub id: String,
     pub category: String,
     pub description: Option<String>,
@@ -492,19 +469,157 @@ pub struct DocumentUpdateInput {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DocumentListInput {
+pub struct AttachmentListInput {
     pub case_id: Option<String>,
     pub client_id: Option<String>,
-    #[serde(default)]
-    pub include_archived: bool,
+    pub power_of_attorney_id: Option<String>,
+    pub expense_id: Option<String>,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DashboardSummary {
-    pub today_events: Vec<EventDto>,
+    pub today_hearings: Vec<HearingDto>,
     pub today_tasks: Vec<TaskDto>,
     pub overdue_tasks: Vec<TaskDto>,
-    pub missing_outcome_events: Vec<EventDto>,
-    pub upcoming_events: Vec<EventDto>,
+    pub upcoming_hearings: Vec<HearingDto>,
+}
+
+// Canonical Legal Masr contracts.  These coexist with the legacy DTOs only
+// while the remaining feature callers are migrated in Phase 3.
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PowerOfAttorneyDto {
+    pub id: String,
+    pub internal_sequence: String,
+    pub official_number: Option<String>,
+    pub issue_year: Option<i64>,
+    pub issue_date: Option<String>,
+    pub notary_office: Option<String>,
+    pub notes: Option<String>,
+    pub archived_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub clients: Vec<PowerOfAttorneyClientDto>,
+    pub lawyers: Vec<PowerOfAttorneyLawyerDto>,
+    pub case_ids: Vec<String>,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PowerOfAttorneySummary {
+    pub id: String,
+    pub internal_sequence: String,
+    pub official_number: Option<String>,
+    pub issue_year: Option<i64>,
+    pub client_names: Vec<String>,
+    pub archived_at: Option<String>,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PowerOfAttorneyClientDto {
+    pub id: String,
+    pub full_name: String,
+    pub internal_number: String,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PowerOfAttorneyLawyerDto {
+    pub id: String,
+    pub full_name: String,
+    pub bar_number: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PowerOfAttorneyInput {
+    pub id: Option<String>,
+    pub internal_sequence: String,
+    pub official_number: Option<String>,
+    pub issue_year: Option<i64>,
+    pub issue_date: Option<String>,
+    pub notary_office: Option<String>,
+    pub notes: Option<String>,
+    pub client_ids: Vec<String>,
+    pub lawyers: Vec<PowerOfAttorneyLawyerInput>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PowerOfAttorneyLawyerInput {
+    pub id: Option<String>,
+    pub full_name: String,
+    pub bar_number: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PowerOfAttorneyListInput {
+    pub query: Option<String>,
+    #[serde(default)]
+    pub include_archived: bool,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HearingDto {
+    pub id: String,
+    pub case_id: String,
+    pub previous_hearing_id: Option<String>,
+    pub hearing_date: String,
+    pub hearing_time: Option<String>,
+    pub hearing_type: Option<String>,
+    pub location: Option<String>,
+    pub circuit_name: Option<String>,
+    pub required_documents: Option<String>,
+    pub notes: Option<String>,
+    pub decision_text: Option<String>,
+    pub status: String,
+    pub completed_at: Option<String>,
+    pub reminder_minutes: Option<u32>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HearingInput {
+    pub id: Option<String>,
+    pub case_id: String,
+    pub hearing_date: String,
+    pub hearing_time: Option<String>,
+    pub hearing_type: Option<String>,
+    pub location: Option<String>,
+    pub circuit_name: Option<String>,
+    pub required_documents: Option<String>,
+    pub notes: Option<String>,
+    pub reminder_minutes: Option<u32>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HearingListInput {
+    pub case_id: Option<String>,
+    pub from_date: Option<String>,
+    pub to_date: Option<String>,
+    pub status: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HearingDecisionInput {
+    pub id: String,
+    pub decision_text: Option<String>,
+    pub next_hearing: Option<HearingInput>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HearingDecisionResult {
+    pub hearing: HearingDto,
+    pub next_hearing: Option<HearingDto>,
 }

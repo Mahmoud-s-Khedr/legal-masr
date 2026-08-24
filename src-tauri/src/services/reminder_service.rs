@@ -31,13 +31,14 @@ pub fn refresh<R: Runtime>(
     let master = state.unlocked()?;
     let (_, database_path) = db::paths(app)?;
     let connection = db::open_db(&database_path, &master)?;
-    let reminder_minutes = reminder_repository::default_minutes(&connection)?;
     let mut delivered = 0;
     for candidate in reminder_repository::candidates(&connection, today)? {
         if !is_due(
             now_time,
             candidate.scheduled_time.as_deref(),
-            reminder_minutes,
+            candidate
+                .reminder_minutes
+                .unwrap_or(reminder_repository::default_minutes(&connection)?),
         ) || reminder_repository::already_delivered(
             &connection,
             &candidate.entity_type,
@@ -46,7 +47,7 @@ pub fn refresh<R: Runtime>(
         )? {
             continue;
         }
-        let body = if candidate.entity_type == "EVENT" {
+        let body = if candidate.entity_type == "HEARING" {
             candidate
                 .scheduled_time
                 .as_deref()

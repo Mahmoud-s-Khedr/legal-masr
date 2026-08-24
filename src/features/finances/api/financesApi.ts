@@ -1,25 +1,37 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
 import type {
+  ExpenseInput,
+  ExpenseListInput,
   FeeAgreementInput,
-  FinancialTransactionInput,
-  FinancialTransactionListInput,
+  PaymentInput,
+  PaymentListInput,
 } from '../../../bridge/types';
-export const useTransactions = (input: FinancialTransactionListInput = {}) =>
-  useQuery({ queryKey: ['finances', input], queryFn: () => bridge.financeTransactionList(input) });
-export const useSaveTransaction = () => {
-  const q = useQueryClient();
+import { queryInvalidation } from '../../../lib/queryInvalidation';
+
+export const usePayments = (input: PaymentListInput = {}) =>
+  useQuery({ queryKey: ['payments', input], queryFn: () => bridge.paymentList(input) });
+export const useExpenses = (input: ExpenseListInput = {}) =>
+  useQuery({ queryKey: ['expenses', input], queryFn: () => bridge.expenseList(input) });
+export const useSavePayment = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: FinancialTransactionInput) => bridge.financeTransactionSave(input),
-    onSuccess: () => q.invalidateQueries({ queryKey: ['finances'] }),
+    mutationFn: (input: PaymentInput) => bridge.paymentSave(input),
+    onSuccess: (payment) =>
+      queryInvalidation.payment(queryClient, {
+        caseId: payment.caseId,
+        payerClientId: payment.payerClientId,
+      }),
   });
 };
-export const useReverseTransaction = () => {
-  const q = useQueryClient();
+export const useSaveExpense = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, date }: { id: string; date: string }) =>
-      bridge.financeTransactionReverse(id, date),
-    onSuccess: () => q.invalidateQueries({ queryKey: ['finances'] }),
+    mutationFn: (input: ExpenseInput) => bridge.expenseSave(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['finances'] });
+    },
   });
 };
 export const useCaseFinanceSummary = (id: string) =>
@@ -37,7 +49,7 @@ export const useClientFinanceSummary = (id: string) =>
 export const useSaveFeeAgreement = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: FeeAgreementInput) => bridge.financeFeeAgreementSave(input),
+    mutationFn: (input: FeeAgreementInput) => bridge.feeAgreementSave(input),
     onSuccess: (_result, input) =>
       queryClient.invalidateQueries({ queryKey: ['finances', 'case-summary', input.caseId] }),
   });

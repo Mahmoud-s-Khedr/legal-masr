@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
-import type { LawyerProfile, Settings } from '../../../bridge/types';
+import type { LawyerProfile, Settings, SettingsUpdateInput } from '../../../bridge/types';
 import { useAppStatus } from '../../onboarding/api/onboardingApi';
 
 const SETTINGS_QUERY_KEY = ['settings'];
@@ -22,8 +22,7 @@ export const useSettings = () => {
 export function useUpdateSettings() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (settings: Omit<Settings, 'managedDocumentsDirectory' | 'autostartEnabled' | 'backupDirectory'>) =>
-      bridge.updateSettings(settings),
+    mutationFn: (settings: SettingsUpdateInput) => bridge.updateSettings(settings),
     onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
   });
 }
@@ -53,13 +52,6 @@ export const useSetAutostart = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: bridge.setAutostart,
-    onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
-  });
-};
-export const useChooseBackupDirectory = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: bridge.chooseBackupDirectory,
     onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
   });
 };

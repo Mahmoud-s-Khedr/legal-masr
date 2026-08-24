@@ -1,4 +1,4 @@
-use crate::{backup, db, errors::Error, repositories::settings_repository, state::AppState};
+use crate::{backup, db, errors::Error, repositories::backup_repository, state::AppState};
 use tauri::{AppHandle, Runtime};
 use tauri_plugin_dialog::DialogExt;
 
@@ -6,21 +6,37 @@ pub fn create<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<String
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let connection = db::open_db(&db_path, &master)?;
-    let settings = settings_repository::get_settings(&connection)?;
-    let destination = settings
-        .backup_directory
-        .filter(|value| !value.trim().is_empty())
-        .ok_or(Error::Validation)?;
-    let documents = settings
-        .managed_documents_directory
-        .filter(|value| !value.trim().is_empty())
-        .ok_or(Error::Operation)?;
-    backup::create(
+    let history_id = uuid::Uuid::new_v4().to_string();
+    backup_repository::start(&connection, &history_id, &db::now())?;
+    let data_dir = db::app_dir(app)?;
+    let destination = data_dir.join("Backups");
+    let documents = data_dir.join("attachments");
+    let result = backup::create(
         &db_path,
         &master,
-        &destination,
-        std::path::Path::new(&documents),
-    )
+        &destination.to_string_lossy(),
+        &documents,
+    );
+    match result {
+        Ok(path) => {
+            let size = std::fs::metadata(&path)
+                .ok()
+                .map(|metadata| metadata.len() as i64);
+            backup_repository::finish(&connection, &history_id, true, size, None, &db::now())?;
+            Ok(path)
+        }
+        Err(error) => {
+            backup_repository::finish(
+                &connection,
+                &history_id,
+                false,
+                None,
+                Some(error.code()),
+                &db::now(),
+            )?;
+            Err(error)
+        }
+    }
 }
 
 fn choose_backup<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, Error> {
@@ -42,17 +58,6 @@ pub fn restore<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<(), E
     let master = state.unlocked()?;
     let (_, active_db) = db::paths(app)?;
     let path = choose_backup(app)?;
-    let documents = {
-        let connection = db::open_db(&active_db, &master)?;
-        settings_repository::get_settings(&connection)?
-            .managed_documents_directory
-            .filter(|value| !value.trim().is_empty())
-            .ok_or(Error::Operation)?
-    };
-    backup::restore(
-        &active_db,
-        &master,
-        &path.to_string_lossy(),
-        std::path::Path::new(&documents),
-    )
+    let documents = db::app_dir(app)?.join("attachments");
+    backup::restore(&active_db, &master, &path.to_string_lossy(), &documents)
 }

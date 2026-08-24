@@ -4,8 +4,8 @@ use crate::{
     errors::Error,
     normalize,
     repositories::{
-        case_repository, client_repository, document_repository, event_repository,
-        finance_repository, search_repository, task_repository,
+        case_repository, client_repository, document_repository, finance_repository,
+        hearing_repository, search_repository, task_repository,
     },
     state::AppState,
 };
@@ -21,11 +21,11 @@ fn upsert_search_entry(
 ) -> Result<(), Error> {
     search_repository::upsert(
         conn,
-        "client",
+        "CLIENT",
         &client.id,
-        &client.display_name,
+        &client.full_name,
         client.primary_phone.as_deref(),
-        &normalize::normalize_text(&client.display_name),
+        &normalize::normalize_text(&format!("{} {}", client.internal_number, client.full_name)),
         now,
     )
 }
@@ -35,9 +35,7 @@ pub fn create<R: Runtime>(
     state: &AppState,
     input: ClientCreateInput,
 ) -> Result<ClientDto, Error> {
-    if !matches!(input.client_type.as_str(), "INDIVIDUAL" | "ORGANIZATION")
-        || input.display_name.trim().is_empty()
-    {
+    if input.internal_number.trim().is_empty() || input.full_name.trim().is_empty() {
         return Err(Error::Validation);
     }
     let master = state.unlocked()?;
@@ -52,7 +50,7 @@ pub fn create<R: Runtime>(
         let candidates = client_repository::find_probable_duplicates(
             &conn,
             normalized_phone.as_deref().filter(|p| !p.is_empty()),
-            &input.display_name,
+            &input.full_name,
         )?;
         if !candidates.is_empty() {
             return Err(Error::ClientProbableDuplicate(candidates));
@@ -65,10 +63,9 @@ pub fn create<R: Runtime>(
     client_repository::insert(
         &tx,
         &id,
-        &input.client_type,
-        &input.display_name,
+        input.internal_number.trim(),
+        input.full_name.trim(),
         input.national_id.as_deref(),
-        input.registration_number.as_deref(),
         input.primary_phone.as_deref(),
         normalized_phone.as_deref(),
         input.email.as_deref(),
@@ -87,7 +84,7 @@ pub fn update<R: Runtime>(
     state: &AppState,
     input: ClientUpdateInput,
 ) -> Result<ClientDto, Error> {
-    if input.display_name.trim().is_empty() {
+    if input.internal_number.trim().is_empty() || input.full_name.trim().is_empty() {
         return Err(Error::Validation);
     }
     let master = state.unlocked()?;
@@ -102,9 +99,9 @@ pub fn update<R: Runtime>(
     client_repository::update(
         &tx,
         &input.id,
-        &input.display_name,
+        input.internal_number.trim(),
+        input.full_name.trim(),
         input.national_id.as_deref(),
-        input.registration_number.as_deref(),
         input.primary_phone.as_deref(),
         normalized_phone.as_deref(),
         input.email.as_deref(),
@@ -175,20 +172,22 @@ pub fn export<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Res
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
     let client = client_repository::find_by_id(&conn, id)?;
-    let cases = case_repository::list_summaries(&conn, None, None, Some(id), true)?;
+    let cases = case_repository::list(&conn, None, None, Some(id), true)?;
     let case_records: Vec<_> = cases
         .iter()
-        .map(|summary| {
-            let mut case = case_repository::find_case_by_id(&conn, &summary.id)?;
-            case.clients = case_repository::list_clients_for_case(&conn, &case.id)?;
-            case.parties = case_repository::list_parties_for_case(&conn, &case.id)?;
-            Ok::<_, Error>(case)
-        })
+        .map(|summary| case_repository::hydrate(&conn, case_repository::get(&conn, &summary.id)?))
         .collect::<Result<_, _>>()?;
-    let events = event_repository::list(&conn, None, None, None, Some(id), None)?;
-    let tasks = task_repository::list(&conn, None, None, None, Some(id), None, None)?;
-    let documents = document_repository::list(&conn, None, Some(id), true)?;
-    let transactions = finance_repository::list_transactions(&conn, Some(id), None, None, None)?;
+    let hearings = case_records
+        .iter()
+        .map(|case_record| hearing_repository::list(&conn, Some(&case_record.id), None, None, None))
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+    let tasks = task_repository::list(&conn, Some("ALL"), "9999-12-31", None, Some(id))?;
+    let attachments = document_repository::list(&conn, None, Some(id), None, None)?;
+    let payments = finance_repository::list_payments(&conn, Some(id), None, None, None)?;
+    let expenses = finance_repository::list_expenses(&conn, Some(id), None, None, None)?;
     let destination = app
         .dialog()
         .file()
@@ -201,10 +200,11 @@ pub fn export<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Res
         "formatVersion": 1,
         "client": client,
         "cases": case_records,
-        "events": events,
+        "hearings": hearings,
         "tasks": tasks,
-        "documents": documents,
-        "financialTransactions": transactions,
+        "attachments": attachments,
+        "payments": payments,
+        "expenses": expenses,
     });
     fs::write(&path, serde_json::to_vec_pretty(&export)?)?;
     Ok(path.to_string_lossy().into_owned())

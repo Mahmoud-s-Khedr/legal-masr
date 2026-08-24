@@ -41,11 +41,10 @@ describe('application gate', () => {
     vi.mocked(bridge.clientList).mockResolvedValue([]);
     vi.mocked(bridge.caseList).mockResolvedValue([]);
     vi.mocked(bridge.dashboardSummary).mockResolvedValue({
-      todayEvents: [],
+      todayHearings: [],
       todayTasks: [],
       overdueTasks: [],
-      missingOutcomeEvents: [],
-      upcomingEvents: [],
+      upcomingHearings: [],
     });
   });
 
@@ -71,13 +70,12 @@ describe('application gate', () => {
       defaultReminderMinutes: 60,
       autostartEnabled: false,
       lockTimeoutMinutes: 15,
-      managedDocumentsDirectory: '/docs',
-      backupDirectory: '/backups',
+      usageCountersEnabled: false,
     });
     render(<App />);
     expect(await screen.findByRole('heading', { name: 'اليوم' })).toBeInTheDocument();
     expect(screen.getByText('ليجال مصر')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'الرئيسية' })).toHaveClass('active');
+    expect(screen.getByRole('link', { name: 'اليوم' })).toHaveClass('active');
     expect(document.documentElement).toHaveAttribute('data-theme', 'system');
   });
 
@@ -91,14 +89,13 @@ describe('application gate', () => {
       defaultReminderMinutes: 60,
       autostartEnabled: false,
       lockTimeoutMinutes: 15,
-      managedDocumentsDirectory: null,
-      backupDirectory: null,
+      usageCountersEnabled: false,
     });
     vi.mocked(bridge.clientList).mockResolvedValue([
       {
         id: 'client-1',
-        clientType: 'INDIVIDUAL',
-        displayName: 'أحمد',
+        internalNumber: 'C-1',
+        fullName: 'أحمد',
         primaryPhone: '01000000000',
         archivedAt: null,
       },
@@ -106,17 +103,18 @@ describe('application gate', () => {
     vi.mocked(bridge.caseList).mockResolvedValue([
       {
         id: 'case-1',
-        caseNumber: '123',
-        judicialYear: 2026,
+        internalNumber: '123',
+        officialNumber: null,
+        officialYear: 2026,
         status: 'ACTIVE',
-        primaryClientName: 'أحمد',
+        clientNames: ['أحمد'],
         archivedAt: null,
       },
     ]);
 
     render(<App />);
 
-    expect((await screen.findAllByRole('table')).length).toBe(2);
+    await screen.findByRole('link', { name: 'أحمد' });
     expect(screen.getByRole('link', { name: 'أحمد' })).toHaveAttribute('href', '/clients/client-1');
     expect(screen.getByRole('link', { name: '123' })).toHaveAttribute('href', '/cases/case-1');
   });
@@ -131,15 +129,13 @@ describe('application gate', () => {
       defaultReminderMinutes: 60,
       autostartEnabled: false,
       lockTimeoutMinutes: 15,
-      managedDocumentsDirectory: null,
-      backupDirectory: null,
+      usageCountersEnabled: false,
     });
 
     render(<App />);
 
-    expect(await screen.findByText('لا يوجد موكلون بعد.')).toBeInTheDocument();
-    expect(screen.getByText('لا توجد قضايا بعد.')).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect((await screen.findAllByText('الموكلون')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('القضايا').length).toBeGreaterThan(0);
   });
 
   it('mirrors the document direction with the selected interface language', () => {
@@ -161,8 +157,7 @@ describe('application gate', () => {
       defaultReminderMinutes: 60,
       autostartEnabled: false,
       lockTimeoutMinutes: 15,
-      managedDocumentsDirectory: null,
-      backupDirectory: null,
+      usageCountersEnabled: false,
     });
     render(<App />);
     await waitFor(() => expect(document.documentElement).toHaveAttribute('lang', 'en'));

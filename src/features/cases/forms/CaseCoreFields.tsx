@@ -12,14 +12,14 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
     <>
       <label>
         {t('cases.fields.caseNumber')}
-        <input dir="ltr" {...register('caseNumber' as never)} required autoFocus />
+        <input dir="ltr" {...register('internalNumber' as never)} required autoFocus />
       </label>
       <label>
         {t('cases.fields.judicialYear')}
         <input
           type="number"
           dir="ltr"
-          {...register('judicialYear' as never, { valueAsNumber: true })}
+          {...register('officialYear' as never, { valueAsNumber: true })}
         />
       </label>
       <label>
@@ -46,7 +46,13 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
       </label>
       <label>
         {t('cases.fields.clientLegalCapacity')}
-        <input {...register('clientLegalCapacity' as never)} />
+        <select {...register('litigationDegree' as never)}>
+          <option value="">—</option>
+          <option value="FIRST_INSTANCE">ابتدائي</option>
+          <option value="APPEAL">استئناف</option>
+          <option value="CASSATION">نقض</option>
+          <option value="OTHER">أخرى</option>
+        </select>
       </label>
       <label>
         {t('cases.fields.filedOn')}
@@ -58,7 +64,7 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
       </label>
       <label>
         {t('cases.fields.summary')}
-        <textarea {...register('summary' as never)} />
+        <textarea {...register('subject' as never)} />
       </label>
       <label>
         {t('cases.fields.notes')}

@@ -3,8 +3,8 @@ import { bridge } from '../../../bridge/commands';
 import type {
   CaseCreateInput,
   CaseListInput,
-  CasePartyInput,
-  CasePartyUpdateInput,
+  CaseOpponentInput,
+  CaseOpponentUpdateInput,
   CaseUpdateInput,
 } from '../../../bridge/types';
 
@@ -54,64 +54,27 @@ export function useRestoreCase() {
   });
 }
 
-export const useExportCase = () =>
-  useMutation({ mutationFn: bridge.caseExport });
-
-export function useAttachClient() {
+export function useAddOpponent() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      caseId,
-      clientId,
-      makePrimary,
-    }: {
-      caseId: string;
-      clientId: string;
-      makePrimary: boolean;
-    }) => bridge.caseAttachClient(caseId, clientId, makePrimary),
-    onSuccess: (caseDto) => invalidateCase(queryClient, caseDto),
-  });
-}
-
-export function useDetachClient() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ caseId, clientId }: { caseId: string; clientId: string }) =>
-      bridge.caseDetachClient(caseId, clientId),
-    onSuccess: (caseDto) => invalidateCase(queryClient, caseDto),
-  });
-}
-
-export function useSetPrimaryClient() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ caseId, clientId }: { caseId: string; clientId: string }) =>
-      bridge.caseSetPrimaryClient(caseId, clientId),
-    onSuccess: (caseDto) => invalidateCase(queryClient, caseDto),
-  });
-}
-
-export function useAddParty() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: CasePartyInput) => bridge.caseAddParty(input),
-    onSuccess: (_party, input) =>
+    mutationFn: (input: CaseOpponentInput) => bridge.caseAddOpponent(input),
+    onSuccess: (_opponent, input) =>
       queryClient.invalidateQueries({ queryKey: caseKey(input.caseId) }),
   });
 }
 
-export function useUpdateParty(caseId: string) {
+export function useUpdateOpponent(caseId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: CasePartyUpdateInput) => bridge.caseUpdateParty(input),
+    mutationFn: (input: CaseOpponentUpdateInput) => bridge.caseUpdateOpponent(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: caseKey(caseId) }),
   });
 }
 
-export function useRemoveParty(caseId: string) {
+export function useRemoveOpponent(caseId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => bridge.caseRemoveParty(id),
+    mutationFn: (id: string) => bridge.caseRemoveOpponent(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: caseKey(caseId) }),
   });
 }

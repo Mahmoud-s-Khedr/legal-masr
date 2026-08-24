@@ -5,13 +5,14 @@ pub struct ReminderCandidate {
     pub entity_type: String,
     pub entity_id: String,
     pub scheduled_time: Option<String>,
+    pub reminder_minutes: Option<u32>,
 }
 
 pub fn candidates(conn: &Connection, today: &str) -> Result<Vec<ReminderCandidate>, Error> {
     let mut statement = conn.prepare(
-        "SELECT 'EVENT',id,start_time FROM case_events WHERE event_date=?1 AND status='SCHEDULED'
+        "SELECT 'HEARING',id,hearing_time,reminder_minutes FROM hearings WHERE hearing_date=?1 AND status='SCHEDULED'
          UNION ALL
-         SELECT 'TASK',id,due_time FROM tasks WHERE due_date=?1 AND status='OPEN'",
+         SELECT 'TASK',id,NULL,reminder_minutes FROM tasks WHERE due_date=?1 AND completed=0",
     )?;
     let candidates = statement
         .query_map([today], |row| {
@@ -19,6 +20,7 @@ pub fn candidates(conn: &Connection, today: &str) -> Result<Vec<ReminderCandidat
                 entity_type: row.get(0)?,
                 entity_id: row.get(1)?,
                 scheduled_time: row.get(2)?,
+                reminder_minutes: row.get(3)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()
@@ -86,26 +88,28 @@ mod tests {
         let connection = prepared_database();
         connection
             .execute(
-                "INSERT INTO tasks (id,title,due_date,due_time,priority,status,created_at,updated_at)
-                 VALUES ('open','طلب مستند','2026-08-22','09:30','NORMAL','OPEN','now','now'),
-                        ('done','مهمة منتهية','2026-08-22','08:00','NORMAL','COMPLETED','now','now')",
-                [],
+                "INSERT INTO tasks (id,title,due_date,reminder_minutes,completed,completed_at,created_at,updated_at)
+                 VALUES (?1,'طلب مستند','2026-08-22',60,0,NULL,'now','now'),
+                        (?2,'مهمة منتهية','2026-08-22',60,1,'completed','now','now')",
+                rusqlite::params![uuid::Uuid::new_v4().to_string(), uuid::Uuid::new_v4().to_string()],
             )
             .unwrap();
 
         let result = candidates(&connection, "2026-08-22").unwrap();
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].entity_id, "open");
-        assert_eq!(result[0].scheduled_time.as_deref(), Some("09:30"));
+        assert_eq!(result[0].entity_type, "TASK");
+        assert_eq!(result[0].scheduled_time, None);
+        assert_eq!(result[0].reminder_minutes, Some(60));
     }
 
     #[test]
     fn delivery_marker_deduplicates_the_same_item_and_day() {
         let connection = prepared_database();
-        assert!(!already_delivered(&connection, "TASK", "task-1", "2026-08-22").unwrap());
-        mark_delivered(&connection, "TASK", "task-1", "2026-08-22", "now").unwrap();
-        mark_delivered(&connection, "TASK", "task-1", "2026-08-22", "later").unwrap();
-        assert!(already_delivered(&connection, "TASK", "task-1", "2026-08-22").unwrap());
+        let task_id = uuid::Uuid::new_v4().to_string();
+        assert!(!already_delivered(&connection, "TASK", &task_id, "2026-08-22").unwrap());
+        mark_delivered(&connection, "TASK", &task_id, "2026-08-22", "now").unwrap();
+        mark_delivered(&connection, "TASK", &task_id, "2026-08-22", "later").unwrap();
+        assert!(already_delivered(&connection, "TASK", &task_id, "2026-08-22").unwrap());
         let count: i64 = connection
             .query_row("SELECT COUNT(*) FROM reminder_deliveries", [], |row| {
                 row.get(0)

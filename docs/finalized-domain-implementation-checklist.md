@@ -1,6 +1,8 @@
 # Finalized-domain implementation checklist
 
-Status: Phase 0 complete; Phase 1 schema complete. This is an implementation
+Status: Phase 0 complete; Phase 1 schema complete; Phase 2 POA/hearing/reminder/search
+slices complete; Phase 3 POA/hearing bridge slices complete; Phase 4 shared
+shell/primitives complete. This is an implementation
 inventory for [`finalized-domain-correction-plan.md`](finalized-domain-correction-plan.md),
 not a replacement for the active product plan.
 
@@ -97,11 +99,47 @@ verifies the failure path preserves a populated legacy schema.
 ## Deferred contracts and risk
 
 Migration 0007 deliberately makes the old repositories, command DTOs, bridge
-types, query hooks, and feature screens stale. Updating them is Phase 2/3
-work, not a safe Phase 1 schema-only edit. Until that work lands, a canonical
-database cannot be served by the legacy repositories; the final validation
-report must call this out rather than treating the old CRUD tests as evidence
-of canonical-domain readiness. Post-migration `cargo test` reaches the legacy
-reminder repository first and fails because it inserts the removed `due_time`
-column (and still uses legacy task entity identifiers); the remaining legacy
-repository integration tests require the same Phase 2 conversion.
+types, query hooks, and feature screens stale. Canonical POA, case, and hearing
+vertical slices now exist, including their Tauri DTOs/commands; reminders query
+canonical hearings/tasks and search rebuilding indexes Clients, Cases, and
+POAs. The legacy client, task, attachment, finance, dashboard, backup, and
+settings paths remain to be replaced; browser case callers await their Phase 3
+contract migration. A canonical database therefore still cannot serve the full
+application, and legacy task/document repository tests continue to fail on
+removed columns rather than providing readiness evidence.
+
+## Phase 3–4 implementation note — 2026-08-24
+
+- POA persistence supports multiple clients, descriptive lawyers, archive and
+  restore, linked-case visibility, and canonical search indexing. Case
+  persistence now uses explicit internal/official identifiers, per-client legal
+  capacity/POA/notes, and dedicated lightweight opponents. Dedicated hearing
+  persistence supports CRUD plus a transactional decision/next-hearing chain.
+  Rust repository normal/failure tests cover POA relationships, case-client POA
+  ownership, missing cases, opponent persistence, hearing completion, and
+  missing hearings.
+- Tasks now persist only their legal due date, details/notes, optional client or
+  case link, reminder, and completion state; Today, Overdue, Upcoming, and
+  Completed are repository query views. Finance now has separate fee agreement,
+  payment, and expense contracts; payment membership is validated by both the
+  service and its `(case_id, payer_client_id)` database foreign key. Attachments
+  are managed copies with one canonical owner, hash metadata, compensating file
+  cleanup, native open/reveal, and staged removal.
+- `types.ts` and `commands.ts` expose canonical client, case, POA, hearing,
+  task, attachment, payment, expense, Today, and settings contracts. Agenda
+  combines hearing and task query views; the legacy event bridge is removed.
+- Phase 4 now has the approved frozen shell navigation: Today, Agenda,
+  Clients, Powers of Attorney, Cases, Tasks, Finance, Settings, and Lock
+  Application. Legacy Documents and Backups routes remain direct destinations
+  until their Phase 5 replacement screens are implemented, but are no longer
+  shell navigation destinations.
+- Shared accessible `Dialog`, `ConfirmDialog`, `Tabs`, `PageHeader`, and
+  `Toast` primitives plus canonical query-key/invalidation helpers are present.
+  The invalidation helper covers payment, hearing, task completion, and
+  POA/case-client write rules. The hearing mutation is connected; remaining
+  write hooks will connect as their Phase 2 contracts land.
+- Validation after these slices: `pnpm typecheck`, `pnpm test` (17 tests),
+  `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and
+  `cargo test --lib` (23 tests) pass. The canonical case integration test also
+  passes. Full `cargo test` remains blocked by legacy task/document integration
+  tests that still refer to removed `priority` and `documents` columns.

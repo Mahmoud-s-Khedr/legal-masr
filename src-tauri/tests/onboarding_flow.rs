@@ -1,7 +1,6 @@
 use legalmaster_lib::{
     backup, db,
     dto::{InitializeInput, LawyerProfileDto, SettingsUpdateInput},
-    repositories::settings_repository,
     security,
     services::{app_service, backup_service, settings_service},
     state::AppState,
@@ -48,7 +47,6 @@ fn lawyer_profile_updates_locally_and_rejects_invalid_identity_data() {
             full_name: "أحمد مصطفى".into(),
             bar_number: Some("12345".into()),
             phone: Some("01000000000".into()),
-            email: None,
             office_address: Some("القاهرة".into()),
             default_currency: "EGP".into(),
         },
@@ -64,7 +62,6 @@ fn lawyer_profile_updates_locally_and_rejects_invalid_identity_data() {
             full_name: "  ".into(),
             bar_number: None,
             phone: None,
-            email: None,
             office_address: None,
             default_currency: "EGP".into(),
         },
@@ -120,10 +117,7 @@ fn onboarding_reaches_an_unlocked_ready_state_with_no_backup_gate() {
 
     let settings =
         settings_service::get(handle, &state).expect("settings should be readable once unlocked");
-    let backup_directory = settings
-        .backup_directory
-        .expect("a default backup directory must be computed when none is supplied");
-    assert!(!backup_directory.is_empty());
+    assert_eq!(settings.language, "ar");
 
     let backup_path = backup_service::create(handle, &state)
         .expect("backup_create must succeed against the auto-computed backup directory");
@@ -135,53 +129,7 @@ fn onboarding_reaches_an_unlocked_ready_state_with_no_backup_gate() {
 }
 
 #[test]
-fn backup_directory_is_selected_outside_the_general_settings_payload_and_backups_use_it() {
-    let _guard = lock_app_dir();
-    let app = fresh_mock_app();
-    app.manage(AppState::default());
-    let handle = app.handle();
-    let state: State<AppState> = handle.state();
-
-    app_service::initialize(
-        handle,
-        &state,
-        InitializeInput {
-            password: "a secure local password".into(),
-            full_name: "محامٍ تجريبي".into(),
-            language: "ar".into(),
-            lock_timeout_minutes: 15,
-        },
-    )
-    .unwrap();
-
-    let new_backup_dir = tempfile::tempdir().unwrap();
-    let new_backup_dir_str = new_backup_dir.path().to_str().unwrap().to_string();
-
-    let (_, database_path) = db::paths(handle).unwrap();
-    let connection = db::open_db(&database_path, &state.unlocked().unwrap()).unwrap();
-    settings_repository::update_backup_directory(&connection, &new_backup_dir_str).unwrap();
-    let updated = settings_service::get(handle, &state).unwrap();
-    assert_eq!(
-        updated.backup_directory.as_deref(),
-        Some(new_backup_dir_str.as_str())
-    );
-    assert_eq!(updated.lock_timeout_minutes, 15);
-
-    let refetched = settings_service::get(handle, &state).unwrap();
-    assert_eq!(
-        refetched.backup_directory.as_deref(),
-        Some(new_backup_dir_str.as_str())
-    );
-
-    let backup_path = backup_service::create(handle, &state)
-        .expect("backup_create must succeed against the newly configured directory");
-    assert!(std::path::Path::new(&backup_path).exists());
-
-    let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
-}
-
-#[test]
-fn general_settings_preserve_the_native_selected_backup_directory() {
+fn general_settings_update_without_backup_configuration() {
     let _guard = lock_app_dir();
     let app = fresh_mock_app();
     app.manage(AppState::default());
@@ -214,7 +162,6 @@ fn general_settings_preserve_the_native_selected_backup_directory() {
     .expect("general settings must not require a backup destination");
     assert_eq!(updated.theme, "light");
     assert_eq!(updated.date_format, "yyyy-MM-dd");
-    assert!(updated.backup_directory.is_some());
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
 }

@@ -1,14 +1,18 @@
 {
   "nav": {
     "home": "Home",
+    "today": "Today",
+    "agenda": "Agenda",
     "clients": "Clients",
+    "powersOfAttorney": "Powers of attorney",
     "cases": "Cases",
     "calendar": "Calendar",
     "tasks": "Tasks",
     "documents": "Documents",
     "finances": "Finances",
     "backups": "Backups",
-    "settings": "Settings"
+    "settings": "Settings",
+    "lock": "Lock application"
   },
   "app": {
     "brandName": "Legal Masr",
@@ -126,6 +130,13 @@
   "placeholder": {
     "tag": "Coming soon",
     "description": "This module is being built in the upcoming phases."
+  },
+  "powersOfAttorney": {
+    "kicker": "Powers of attorney",
+    "title": "Powers of attorney",
+    "description": "Keep powers of attorney connected to clients and cases in one place.",
+    "emptyTitle": "The POA register is ready",
+    "emptyDescription": "Powers of attorney will appear here once the canonical data contract is available."
   },
   "settings": {
     "kicker": "Settings",

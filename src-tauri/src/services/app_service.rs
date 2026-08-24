@@ -43,10 +43,8 @@ pub fn initialize<R: Runtime>(
         return Err(Error::Initialized);
     }
     let data_dir = db::app_dir(app)?;
-    let managed_documents_directory = data_dir.join("documents").to_string_lossy().into_owned();
-    let backup_directory = data_dir.join("Backups").to_string_lossy().into_owned();
-    fs::create_dir_all(&managed_documents_directory)?;
-    fs::create_dir_all(&backup_directory)?;
+    fs::create_dir_all(data_dir.join("attachments"))?;
+    fs::create_dir_all(data_dir.join("Backups"))?;
     let master = security::random_32();
     let salt = security::random_32();
     let password_key = security::derive_password(&input.password, &salt, 19_456, 2, 1)?;
@@ -72,8 +70,6 @@ pub fn initialize<R: Runtime>(
             &conn,
             &input.full_name,
             &input.language,
-            &managed_documents_directory,
-            &backup_directory,
             input.lock_timeout_minutes,
         )?;
         Ok(())

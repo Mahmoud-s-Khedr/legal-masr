@@ -1,69 +1,54 @@
-use crate::{dto::DocumentDto, errors::Error};
+use crate::{dto::AttachmentDto, errors::Error};
 use rusqlite::{params, Connection};
-fn row(r: &rusqlite::Row<'_>) -> rusqlite::Result<DocumentDto> {
-    Ok(DocumentDto {
-        id: r.get(0)?,
-        client_id: r.get(1)?,
-        case_id: r.get(2)?,
-        storage_mode: r.get(3)?,
-        original_filename: r.get(4)?,
-        category: r.get(5)?,
-        description: r.get(6)?,
-        document_date: r.get(7)?,
-        mime_type: r.get(8)?,
-        file_size_bytes: r.get(9)?,
-        missing_at: r.get(10)?,
-        created_at: r.get(11)?,
+const SELECT: &str = "SELECT id, client_id, case_id, power_of_attorney_id, expense_id, original_filename, stored_filename, relative_path, mime_type, file_size_bytes, sha256, category, description, document_date, created_at, updated_at FROM attachments";
+fn row(row: &rusqlite::Row<'_>) -> rusqlite::Result<AttachmentDto> {
+    Ok(AttachmentDto {
+        id: row.get(0)?,
+        client_id: row.get(1)?,
+        case_id: row.get(2)?,
+        power_of_attorney_id: row.get(3)?,
+        expense_id: row.get(4)?,
+        original_filename: row.get(5)?,
+        stored_filename: row.get(6)?,
+        relative_path: row.get(7)?,
+        mime_type: row.get(8)?,
+        file_size_bytes: row.get(9)?,
+        sha256: row.get(10)?,
+        category: row.get(11)?,
+        description: row.get(12)?,
+        document_date: row.get(13)?,
+        created_at: row.get(14)?,
+        updated_at: row.get(15)?,
     })
 }
-pub fn insert(
-    db: &Connection,
-    d: &DocumentDto,
-    stored: Option<&str>,
-    relative: Option<&str>,
-    external: Option<&str>,
-    sha: Option<&str>,
-    now: &str,
-) -> Result<(), Error> {
-    db.execute("INSERT INTO documents(id,client_id,case_id,storage_mode,original_filename,stored_filename,relative_path,external_path,mime_type,file_size_bytes,sha256,category,description,document_date,created_at,updated_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?15)",params![d.id,d.client_id,d.case_id,d.storage_mode,d.original_filename,stored,relative,external,d.mime_type,d.file_size_bytes,sha,d.category,d.description,d.document_date,now])?;
+pub fn insert(conn: &Connection, attachment: &AttachmentDto) -> Result<(), Error> {
+    conn.execute("INSERT INTO attachments (id, client_id, case_id, power_of_attorney_id, expense_id, original_filename, stored_filename, relative_path, mime_type, file_size_bytes, sha256, category, description, document_date, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?15)", params![attachment.id, attachment.client_id, attachment.case_id, attachment.power_of_attorney_id, attachment.expense_id, attachment.original_filename, attachment.stored_filename, attachment.relative_path, attachment.mime_type, attachment.file_size_bytes, attachment.sha256, attachment.category, attachment.description, attachment.document_date, attachment.created_at])?;
     Ok(())
+}
+pub fn get(conn: &Connection, id: &str) -> Result<AttachmentDto, Error> {
+    conn.query_row(&format!("{SELECT} WHERE id = ?1"), [id], row)
+        .map_err(|_| Error::DocumentNotFound)
 }
 pub fn list(
-    db: &Connection,
+    conn: &Connection,
     case_id: Option<&str>,
     client_id: Option<&str>,
-    archived: bool,
-) -> Result<Vec<DocumentDto>, Error> {
-    let mut s=db.prepare("SELECT id,client_id,case_id,storage_mode,original_filename,category,description,document_date,mime_type,file_size_bytes,missing_at,created_at FROM documents WHERE (?1 IS NULL OR case_id=?1) AND (?2 IS NULL OR client_id=?2) AND (?3=1 OR archived_at IS NULL) ORDER BY created_at DESC")?;
-    let v = s
-        .query_map(params![case_id, client_id, archived as i64], row)?
+    poa_id: Option<&str>,
+    expense_id: Option<&str>,
+) -> Result<Vec<AttachmentDto>, Error> {
+    let mut stmt = conn.prepare(&format!("{SELECT} WHERE (?1 IS NULL OR case_id = ?1) AND (?2 IS NULL OR client_id = ?2) AND (?3 IS NULL OR power_of_attorney_id = ?3) AND (?4 IS NULL OR expense_id = ?4) ORDER BY created_at DESC"))?;
+    let rows = stmt
+        .query_map(params![case_id, client_id, poa_id, expense_id], row)?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(v)
+    Ok(rows)
 }
-pub fn update(
-    db: &Connection,
-    id: &str,
-    category: &str,
-    description: Option<&str>,
-    date: Option<&str>,
-    now: &str,
-) -> Result<DocumentDto, Error> {
-    if db.execute("UPDATE documents SET category=?2,description=?3,document_date=?4,updated_at=?5 WHERE id=?1",params![id,category,description,date,now])?==0{return Err(Error::DocumentNotFound)};
-    db.query_row("SELECT id,client_id,case_id,storage_mode,original_filename,category,description,document_date,mime_type,file_size_bytes,missing_at,created_at FROM documents WHERE id=?1",[id],row).map_err(Error::from)
-}
-pub fn paths(
-    db: &Connection,
-    id: &str,
-) -> Result<(String, Option<String>, Option<String>, String), Error> {
-    db.query_row("SELECT storage_mode,relative_path,external_path,original_filename FROM documents WHERE id=?1",[id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).map_err(|_|Error::DocumentNotFound)
-}
-pub fn set_missing(db: &Connection, id: &str, missing: bool, now: &str) -> Result<(), Error> {
-    db.execute("UPDATE documents SET missing_at=CASE WHEN ?2=1 THEN ?3 ELSE NULL END,updated_at=?3 WHERE id=?1",params![id,missing as i64,now])?;
+pub fn update(conn: &Connection, attachment: &AttachmentDto) -> Result<(), Error> {
+    if conn.execute("UPDATE attachments SET category = ?2, description = ?3, document_date = ?4, updated_at = ?5 WHERE id = ?1", params![attachment.id, attachment.category, attachment.description, attachment.document_date, attachment.updated_at])? == 0 { return Err(Error::DocumentNotFound); }
     Ok(())
 }
-pub fn delete(db: &Connection, id: &str) -> Result<(), Error> {
-    if db.execute("DELETE FROM documents WHERE id=?1", [id])? == 0 {
+pub fn delete(conn: &Connection, id: &str) -> Result<(), Error> {
+    if conn.execute("DELETE FROM attachments WHERE id = ?1", [id])? == 0 {
         return Err(Error::DocumentNotFound);
-    };
+    }
     Ok(())
 }

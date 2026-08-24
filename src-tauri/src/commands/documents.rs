@@ -1,7 +1,7 @@
 use crate::{
     dto::{
-        DocumentDto, DocumentListInput, DocumentReferenceInput, DocumentSourceSelection,
-        DocumentUpdateInput,
+        AttachmentDto, AttachmentInput, AttachmentListInput, AttachmentSourceSelection,
+        AttachmentUpdateInput,
     },
     errors::Error,
     services::document_service,
@@ -9,61 +9,45 @@ use crate::{
 };
 use tauri::{AppHandle, State};
 #[tauri::command]
-pub fn document_select_source(
+pub fn attachment_select_source(
     app: AppHandle,
     state: State<AppState>,
-) -> Result<DocumentSourceSelection, Error> {
+) -> Result<AttachmentSourceSelection, Error> {
     document_service::select_source(&app, &state)
 }
 #[tauri::command]
-pub fn document_import_managed(
+pub fn attachment_add(
     app: AppHandle,
     state: State<AppState>,
-    input: DocumentReferenceInput,
-) -> Result<DocumentDto, Error> {
-    document_service::import_managed(&app, &state, input)
+    input: AttachmentInput,
+) -> Result<AttachmentDto, Error> {
+    document_service::add(&app, &state, input)
 }
 #[tauri::command]
-pub fn document_add_reference(
+pub fn attachment_list(
     app: AppHandle,
     state: State<AppState>,
-    input: DocumentReferenceInput,
-) -> Result<DocumentDto, Error> {
-    document_service::add_reference(&app, &state, input)
-}
-#[tauri::command]
-pub fn document_list(
-    app: AppHandle,
-    state: State<AppState>,
-    input: DocumentListInput,
-) -> Result<Vec<DocumentDto>, Error> {
+    input: AttachmentListInput,
+) -> Result<Vec<AttachmentDto>, Error> {
     document_service::list(&app, &state, input)
 }
 #[tauri::command]
-pub fn document_update(
+pub fn attachment_update(
     app: AppHandle,
     state: State<AppState>,
-    input: DocumentUpdateInput,
-) -> Result<DocumentDto, Error> {
+    input: AttachmentUpdateInput,
+) -> Result<AttachmentDto, Error> {
     document_service::update(&app, &state, input)
 }
 #[tauri::command]
-pub fn document_check_missing(
-    app: AppHandle,
-    state: State<AppState>,
-    id: String,
-) -> Result<bool, Error> {
-    document_service::check_missing(&app, &state, &id)
-}
-#[tauri::command]
-pub fn document_open(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
+pub fn attachment_open(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
     document_service::open(&app, &state, &id)
 }
 #[tauri::command]
-pub fn document_reveal(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
+pub fn attachment_reveal(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
     document_service::reveal(&app, &state, &id)
 }
 #[tauri::command]
-pub fn document_remove(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
+pub fn attachment_remove(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
     document_service::remove(&app, &state, &id)
 }

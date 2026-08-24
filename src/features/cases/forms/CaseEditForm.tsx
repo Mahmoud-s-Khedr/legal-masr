@@ -18,16 +18,17 @@ export function CaseEditForm({
   const { register, handleSubmit, formState } = useForm<CaseCoreFormValues>({
     resolver: zodResolver(caseCoreSchema),
     defaultValues: {
-      caseNumber: caseDto.caseNumber,
-      judicialYear: caseDto.judicialYear ?? undefined,
+      internalNumber: caseDto.internalNumber,
+      officialNumber: caseDto.officialNumber ?? undefined,
+      officialYear: caseDto.officialYear ?? undefined,
       courtName: caseDto.courtName ?? undefined,
       circuitName: caseDto.circuitName ?? undefined,
       caseType: caseDto.caseType ?? undefined,
-      clientLegalCapacity: caseDto.clientLegalCapacity ?? undefined,
+      litigationDegree: caseDto.litigationDegree ?? undefined,
       status: caseDto.status,
       filedOn: caseDto.filedOn ?? undefined,
       closedOn: caseDto.closedOn ?? undefined,
-      summary: caseDto.summary ?? undefined,
+      subject: caseDto.subject ?? undefined,
       notes: caseDto.notes ?? undefined,
     },
   });

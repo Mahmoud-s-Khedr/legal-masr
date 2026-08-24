@@ -1,8 +1,10 @@
+pub mod backup_repository;
 pub mod case_repository;
 pub mod client_repository;
 pub mod document_repository;
-pub mod event_repository;
 pub mod finance_repository;
+pub mod hearing_repository;
+pub mod power_of_attorney_repository;
 pub mod reminder_repository;
 pub mod search_repository;
 pub mod settings_repository;

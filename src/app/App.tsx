@@ -24,7 +24,8 @@ function LocaleSync() {
   const { data: settings } = useSettings();
   const { i18n } = useTranslation();
   useEffect(() => {
-    if (settings && i18n.language !== settings.language) void i18n.changeLanguage(settings.language);
+    if (settings && i18n.language !== settings.language)
+      void i18n.changeLanguage(settings.language);
   }, [i18n, settings]);
   return null;
 }

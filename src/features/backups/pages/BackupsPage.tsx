@@ -1,24 +1,16 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../../../bridge/errors';
-import { useChooseBackupDirectory, useSettings } from '../../settings/api/settingsApi';
 import { useCreateBackup, useRestoreBackup, useValidateBackup } from '../api/backupsApi';
 
 export function BackupSettingsPanel() {
   const { t } = useTranslation();
-  const { data: settings } = useSettings();
-  const chooseBackupDirectory = useChooseBackupDirectory();
   const createBackup = useCreateBackup();
   const validateBackup = useValidateBackup();
   const restoreBackup = useRestoreBackup();
   const [restoreArmed, setRestoreArmed] = useState(false);
 
-  const changeFolder = async () => {
-    await chooseBackupDirectory.mutateAsync();
-  };
-
   const createNow = async () => {
-    if (!settings?.backupDirectory) return;
     await createBackup.mutateAsync();
   };
 
@@ -38,24 +30,8 @@ export function BackupSettingsPanel() {
   return (
     <div className="backup-settings">
       <div className="panel">
-        <label>{t('backups.folderLabel')}</label>
-        <p className="muted" dir="ltr">
-          {settings?.backupDirectory || t('backups.noFolder')}
-        </p>
         <div className="form-actions">
-          <button type="button" onClick={changeFolder} disabled={chooseBackupDirectory.isPending}>
-            {t('backups.changeFolder')}
-          </button>
-        </div>
-      </div>
-
-      <div className="panel">
-        <div className="form-actions">
-          <button
-            type="button"
-            onClick={createNow}
-            disabled={createBackup.isPending || !settings?.backupDirectory}
-          >
+          <button type="button" onClick={createNow} disabled={createBackup.isPending}>
             {createBackup.isPending ? t('backups.creating') : t('backups.createNow')}
           </button>
         </div>

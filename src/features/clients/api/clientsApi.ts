@@ -45,6 +45,3 @@ export function useRestoreClient() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: CLIENTS_KEY }),
   });
 }
-
-export const useExportClient = () =>
-  useMutation({ mutationFn: bridge.clientExport });

@@ -84,7 +84,7 @@ pub fn create(
             }
             let bytes = fs::read(entry.path())?;
             let name = entry.file_name().to_string_lossy().into_owned();
-            let archive_name = format!("documents/{name}");
+            let archive_name = format!("attachments/{name}");
             checksums.insert(archive_name.clone(), checksum(&bytes));
             archive.start_file(archive_name, SimpleFileOptions::default())?;
             archive.write_all(&bytes)?;
@@ -204,7 +204,7 @@ pub fn restore(
         let Some(name) = entry.enclosed_name() else {
             return Err(Error::BackupInvalid);
         };
-        let relative = name.strip_prefix("documents/");
+        let relative = name.strip_prefix("attachments/");
         let Ok(relative) = relative else {
             continue;
         };
@@ -222,10 +222,6 @@ pub fn restore(
         return Err(Error::BackupInvalid);
     }
     db::migrate(&restored).map_err(|_| Error::BackupInvalid)?;
-    restored.execute(
-        "UPDATE app_settings SET managed_documents_directory = ?1 WHERE id = 1",
-        [documents_root.to_string_lossy().as_ref()],
-    )?;
     restored
         .query_row("PRAGMA integrity_check", [], |r| r.get::<_, String>(0))
         .map_err(|_| Error::BackupInvalid)

@@ -1,10 +1,5 @@
 use crate::{
-    db,
-    dto::SearchHit,
-    errors::Error,
-    normalize,
-    repositories::{case_repository, client_repository, search_repository},
-    state::AppState,
+    db, dto::SearchHit, errors::Error, normalize, repositories::search_repository, state::AppState,
 };
 use tauri::{AppHandle, Runtime};
 
@@ -27,41 +22,62 @@ pub fn rebuild_index<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result
     let tx = conn.unchecked_transaction()?;
     search_repository::clear_all(&tx)?;
 
-    let clients = client_repository::list(&tx, None, true)?;
-    for client in &clients {
+    let mut client_statement = tx.prepare(
+        "SELECT id, full_name, internal_number, COALESCE(primary_phone, '') FROM clients",
+    )?;
+    let clients = client_statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    for (id, full_name, internal_number, primary_phone) in &clients {
         search_repository::upsert(
             &tx,
-            "client",
-            &client.id,
-            &client.display_name,
-            client.primary_phone.as_deref(),
-            &normalize::normalize_text(&client.display_name),
+            "CLIENT",
+            id,
+            full_name,
+            Some(primary_phone),
+            &normalize::normalize_text(&format!("{full_name} {internal_number} {primary_phone}")),
             &now,
         )?;
     }
 
-    let cases = case_repository::list_summaries(&tx, None, None, None, true)?;
-    for case in &cases {
+    let mut case_statement = tx.prepare(
+        "SELECT id, internal_number, COALESCE(official_number, ''), COALESCE(official_year, '') FROM cases",
+    )?;
+    let cases = case_statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    for (id, internal_number, official_number, official_year) in &cases {
         search_repository::upsert(
             &tx,
-            "case",
-            &case.id,
-            &case.case_number,
-            case.primary_client_name.as_deref(),
+            "CASE",
+            id,
+            internal_number,
+            (!official_number.is_empty()).then_some(official_number.as_str()),
             &normalize::normalize_text(&format!(
-                "{} {}",
-                case.case_number,
-                case.judicial_year
-                    .map(|value| value.to_string())
-                    .unwrap_or_default()
+                "{internal_number} {official_number} {official_year}"
             )),
             &now,
         )?;
     }
 
-    let mut event_stmt =
-        tx.prepare("SELECT id,title,event_date,COALESCE(outcome,'') FROM case_events")?;
-    let events = event_stmt
+    let mut poa_statement = tx.prepare(
+        "SELECT p.id, p.internal_sequence, COALESCE(p.official_number, ''), COALESCE(group_concat(c.full_name, ' '), '') FROM powers_of_attorney p LEFT JOIN power_of_attorney_clients pc ON pc.power_of_attorney_id = p.id LEFT JOIN clients c ON c.id = pc.client_id GROUP BY p.id",
+    )?;
+    let powers_of_attorney = poa_statement
         .query_map([], |row| {
             Ok((
                 row.get::<_, String>(0)?,
@@ -71,68 +87,24 @@ pub fn rebuild_index<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result
             ))
         })?
         .collect::<Result<Vec<_>, _>>()?;
-    for (id, title, date, outcome) in &events {
+    for (id, internal_sequence, official_number, client_names) in &powers_of_attorney {
         search_repository::upsert(
             &tx,
-            "event",
+            "POWER_OF_ATTORNEY",
             id,
-            title,
-            Some(date),
-            &normalize::normalize_text(&format!("{title} {date} {outcome}")),
-            &now,
-        )?;
-    }
-    let mut task_stmt =
-        tx.prepare("SELECT id,title,COALESCE(description,''),due_date FROM tasks")?;
-    let tasks = task_stmt
-        .query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-                row.get::<_, Option<String>>(3)?,
-            ))
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
-    for (id, title, description, due_date) in &tasks {
-        search_repository::upsert(
-            &tx,
-            "task",
-            id,
-            title,
-            due_date.as_deref(),
-            &normalize::normalize_text(&format!("{title} {description}")),
-            &now,
-        )?;
-    }
-    let mut document_stmt =
-        tx.prepare("SELECT id,original_filename,category,COALESCE(description,'') FROM documents")?;
-    let documents = document_stmt
-        .query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-                row.get::<_, String>(3)?,
-            ))
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
-    for (id, filename, category, description) in &documents {
-        search_repository::upsert(
-            &tx,
-            "document",
-            id,
-            filename,
-            Some(category),
-            &normalize::normalize_text(&format!("{filename} {category} {description}")),
+            internal_sequence,
+            (!official_number.is_empty()).then_some(official_number.as_str()),
+            &normalize::normalize_text(&format!(
+                "{internal_sequence} {official_number} {client_names}"
+            )),
             &now,
         )?;
     }
 
-    drop(document_stmt);
-    drop(task_stmt);
-    drop(event_stmt);
+    drop(poa_statement);
+    drop(case_statement);
+    drop(client_statement);
 
     tx.commit()?;
-    Ok(clients.len() + cases.len() + events.len() + tasks.len() + documents.len())
+    Ok(clients.len() + cases.len() + powers_of_attorney.len())
 }

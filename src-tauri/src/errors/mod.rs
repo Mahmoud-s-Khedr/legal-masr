@@ -36,6 +36,10 @@ pub enum Error {
     ClientNotFound,
     #[error("case not found")]
     CaseNotFound,
+    #[error("power of attorney not found")]
+    PowerOfAttorneyNotFound,
+    #[error("hearing not found")]
+    HearingNotFound,
     #[error("client is a probable duplicate")]
     ClientProbableDuplicate(Vec<ClientDuplicateCandidate>),
     #[error("case must have at least one client")]
@@ -78,6 +82,8 @@ impl Error {
             Self::Validation => "VALIDATION_FAILED",
             Self::ClientNotFound => "CLIENT_NOT_FOUND",
             Self::CaseNotFound => "CASE_NOT_FOUND",
+            Self::PowerOfAttorneyNotFound => "POWER_OF_ATTORNEY_NOT_FOUND",
+            Self::HearingNotFound => "HEARING_NOT_FOUND",
             Self::ClientProbableDuplicate(_) => "CLIENT_PROBABLE_DUPLICATE",
             Self::CaseMustHaveClient => "CASE_MUST_HAVE_CLIENT",
             Self::CasePrimaryClientReassignmentRequired => {
@@ -107,6 +113,8 @@ impl Error {
             Self::Validation => "تحقق من البيانات المدخلة.",
             Self::ClientNotFound => "لم يتم العثور على الموكل.",
             Self::CaseNotFound => "لم يتم العثور على القضية.",
+            Self::PowerOfAttorneyNotFound => "لم يتم العثور على التوكيل.",
+            Self::HearingNotFound => "لم يتم العثور على الجلسة.",
             Self::ClientProbableDuplicate(_) => "يوجد موكل مشابه محتمل بالفعل.",
             Self::CaseMustHaveClient => "يجب أن تحتوي القضية على موكل واحد على الأقل.",
             Self::CasePrimaryClientReassignmentRequired => {

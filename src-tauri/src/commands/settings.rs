@@ -42,11 +42,3 @@ pub fn settings_set_autostart(
 ) -> Result<SettingsDto, Error> {
     settings_service::set_autostart(&app, &state, enabled)
 }
-
-#[tauri::command]
-pub fn settings_choose_backup_directory(
-    app: AppHandle,
-    state: State<AppState>,
-) -> Result<SettingsDto, Error> {
-    settings_service::choose_backup_directory(&app, &state)
-}

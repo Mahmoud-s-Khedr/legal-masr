@@ -1,37 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
-import type { DocumentReferenceInput, DocumentUpdateInput } from '../../../bridge/types';
-export const useDocuments = (
-  input: { caseId?: string; clientId?: string; includeArchived?: boolean } = {},
-) => useQuery({ queryKey: ['documents', input], queryFn: () => bridge.documentList(input) });
+import type {
+  AttachmentInput,
+  AttachmentListInput,
+  AttachmentUpdateInput,
+} from '../../../bridge/types';
+export const useDocuments = (input: AttachmentListInput = {}) =>
+  useQuery({ queryKey: ['attachments', input], queryFn: () => bridge.attachmentList(input) });
 export const useAddDocument = () => {
   const q = useQueryClient();
   return useMutation({
-    mutationFn: ({ input, managed }: { input: DocumentReferenceInput; managed: boolean }) =>
-      managed ? bridge.documentImportManaged(input) : bridge.documentAddReference(input),
-    onSuccess: () => q.invalidateQueries({ queryKey: ['documents'] }),
+    mutationFn: (input: AttachmentInput) => bridge.attachmentAdd(input),
+    onSuccess: () => q.invalidateQueries({ queryKey: ['attachments'] }),
   });
 };
 export const useRemoveDocument = () => {
   const q = useQueryClient();
   return useMutation({
-    mutationFn: bridge.documentRemove,
-    onSuccess: () => q.invalidateQueries({ queryKey: ['documents'] }),
+    mutationFn: bridge.attachmentRemove,
+    onSuccess: () => q.invalidateQueries({ queryKey: ['attachments'] }),
   });
 };
 export const useUpdateDocument = () => {
   const q = useQueryClient();
   return useMutation({
-    mutationFn: (input: DocumentUpdateInput) => bridge.documentUpdate(input),
-    onSuccess: () => q.invalidateQueries({ queryKey: ['documents'] }),
+    mutationFn: (input: AttachmentUpdateInput) => bridge.attachmentUpdate(input),
+    onSuccess: () => q.invalidateQueries({ queryKey: ['attachments'] }),
   });
 };
-export const useCheckDocumentMissing = () => {
-  const q = useQueryClient();
-  return useMutation({
-    mutationFn: bridge.documentCheckMissing,
-    onSuccess: () => q.invalidateQueries({ queryKey: ['documents'] }),
-  });
-};
-export const useOpenDocument = () => useMutation({ mutationFn: bridge.documentOpen });
-export const useRevealDocument = () => useMutation({ mutationFn: bridge.documentReveal });
+export const useOpenDocument = () => useMutation({ mutationFn: bridge.attachmentOpen });
+export const useRevealDocument = () => useMutation({ mutationFn: bridge.attachmentReveal });

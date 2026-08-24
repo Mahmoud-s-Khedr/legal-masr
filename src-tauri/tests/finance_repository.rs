@@ -1,80 +1,43 @@
-use legalmaster_lib::{db, dto::FinancialTransactionInput, repositories::finance_repository};
-
-fn seeded() -> rusqlite::Connection {
-    let c = rusqlite::Connection::open_in_memory().unwrap();
-    db::migrate(&c).unwrap();
-    c.execute("INSERT INTO clients(id,client_type,display_name,created_at,updated_at) VALUES('client','INDIVIDUAL','Client','now','now')", []).unwrap();
-    c.execute("INSERT INTO cases(id,case_number,status,created_at,updated_at) VALUES('case','1','ACTIVE','now','now')", []).unwrap();
-    c
+use legalmaster_lib::{db, dto::PaymentDto, repositories::finance_repository, security};
+use rusqlite::Connection;
+fn db_conn() -> (tempfile::TempDir, Connection) {
+    let dir = tempfile::tempdir().unwrap();
+    let master = security::random_32();
+    let conn = db::open_db(&dir.path().join("vault.sqlite"), &master).unwrap();
+    db::migrate(&conn).unwrap();
+    (dir, conn)
 }
-fn payment(amount: i64) -> FinancialTransactionInput {
-    FinancialTransactionInput {
-        id: None,
-        client_id: "client".into(),
-        case_id: Some("case".into()),
-        transaction_type: "FEE_PAYMENT".into(),
-        amount_minor: amount,
-        transaction_date: "2026-07-27".into(),
+#[test]
+fn database_rejects_payment_payer_that_is_not_a_case_client() {
+    let (_dir, conn) = db_conn();
+    let case_id = uuid::Uuid::new_v4().to_string();
+    let client_id = uuid::Uuid::new_v4().to_string();
+    conn.execute("INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, 'CL-1', 'أحمد', 'now', 'now')", [&client_id]).unwrap();
+    conn.execute("INSERT INTO cases (id, internal_number, status, created_at, updated_at) VALUES (?1, 'CA-1', 'ACTIVE', 'now', 'now')", [&case_id]).unwrap();
+    conn.execute("INSERT INTO case_clients (case_id, client_id, created_at, updated_at) VALUES (?1, ?2, 'now', 'now')", [&case_id, &client_id]).unwrap();
+    let payment = PaymentDto {
+        id: uuid::Uuid::new_v4().to_string(),
+        case_id,
+        payer_client_id: client_id,
+        amount_minor: 500,
+        payment_date: "2026-08-24".into(),
         payment_method: Some("CASH".into()),
-        description: None,
-        receipt_document_id: None,
-    }
-}
-
-#[test]
-fn case_summary_uses_integer_minor_units_and_refunds_reduce_received() {
-    let c = seeded();
-    finance_repository::upsert_fee_agreement(
-        &c,
-        "fee",
-        &legalmaster_lib::dto::FeeAgreementInput {
-            case_id: "case".into(),
-            amount_minor: 10_000,
-            agreement_date: None,
-            notes: None,
-        },
-        "now",
+        notes: None,
+        created_at: "now".into(),
+        updated_at: "now".into(),
+    };
+    finance_repository::insert_payment(&conn, &payment).unwrap();
+    conn.execute(
+        "DELETE FROM case_clients WHERE case_id = ?1 AND client_id = ?2",
+        [&payment.case_id, &payment.payer_client_id],
     )
-    .unwrap();
-    finance_repository::insert_transaction(&c, "payment", &payment(4_000), None, "now").unwrap();
-    let mut refund = payment(500);
-    refund.transaction_type = "REFUND".into();
-    finance_repository::insert_transaction(&c, "refund", &refund, None, "now").unwrap();
-    let summary = finance_repository::case_summary(&c, "case").unwrap();
-    assert_eq!(
-        (
-            summary.agreed_fee_minor,
-            summary.received_minor,
-            summary.outstanding_minor
-        ),
-        (10_000, 3_500, 6_500)
-    );
-}
-
-#[test]
-fn reversed_expense_is_excluded_from_summaries_and_original_cannot_be_edited() {
-    let c = seeded();
-    let mut expense = payment(2_500);
-    expense.transaction_type = "CASE_EXPENSE".into();
-    finance_repository::insert_transaction(&c, "expense", &expense, None, "now").unwrap();
-    let mut reversal = payment(2_500);
-    reversal.transaction_type = "OTHER_INCOME".into();
-    finance_repository::insert_transaction(&c, "reversal", &reversal, Some("expense"), "now")
-        .unwrap();
-
-    let summary = finance_repository::case_summary(&c, "case").unwrap();
-    assert_eq!(summary.expenses_minor, 0);
-    assert_eq!(summary.net_cash_minor, 0);
-
-    let mut edited = expense;
-    edited.id = Some("expense".into());
-    edited.amount_minor = 3_000;
-    assert!(finance_repository::update_transaction(&c, &edited, "later").is_err());
-}
-
-#[test]
-fn database_rejects_non_positive_amounts_and_non_egp_currency() {
-    let c = seeded();
-    assert!(c.execute("INSERT INTO financial_transactions(id,client_id,transaction_type,amount_minor,currency,transaction_date,created_at,updated_at) VALUES('bad','client','FEE_PAYMENT',0,'EGP','2026-07-27','now','now')",[]).is_err());
-    assert!(c.execute("INSERT INTO financial_transactions(id,client_id,transaction_type,amount_minor,currency,transaction_date,created_at,updated_at) VALUES('bad2','client','FEE_PAYMENT',1,'USD','2026-07-27','now','now')",[]).is_err());
+    .unwrap_err();
+    let unlinked_client = uuid::Uuid::new_v4().to_string();
+    conn.execute("INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, 'CL-2', 'سارة', 'now', 'now')", [&unlinked_client]).unwrap();
+    let unlinked_payment = PaymentDto {
+        id: uuid::Uuid::new_v4().to_string(),
+        payer_client_id: unlinked_client,
+        ..payment
+    };
+    assert!(finance_repository::insert_payment(&conn, &unlinked_payment).is_err());
 }

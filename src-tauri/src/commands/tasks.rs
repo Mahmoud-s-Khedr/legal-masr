@@ -31,11 +31,11 @@ pub fn task_list(
 }
 #[tauri::command]
 pub fn task_complete(app: AppHandle, state: State<AppState>, id: String) -> Result<TaskDto, Error> {
-    task_service::status(&app, &state, &id, "COMPLETED")
+    task_service::set_completed(&app, &state, &id, true)
 }
 #[tauri::command]
 pub fn task_reopen(app: AppHandle, state: State<AppState>, id: String) -> Result<TaskDto, Error> {
-    task_service::status(&app, &state, &id, "OPEN")
+    task_service::set_completed(&app, &state, &id, false)
 }
 #[tauri::command]
 pub fn task_delete(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {

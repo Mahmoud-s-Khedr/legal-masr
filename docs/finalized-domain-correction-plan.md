@@ -109,24 +109,27 @@ Evidence: migration `0007_canonical_legal_masr.sql` and
 
 Update repositories first, then services, then thin Tauri commands.
 
-1. Implement POA repositories/services/commands, including multiple clients,
-   descriptive lawyers, linked cases, archiving, and search indexing.
-2. Replace case APIs with explicit internal/official numbers, CaseClient legal
-   capacity/POA/notes, and lightweight opponents.
-3. Implement dedicated hearing commands. Recording a decision must update the
-   source hearing and optionally create a separately editable next hearing
-   linked by `previous_hearing_id`, in one transaction.
-4. Implement simple task creation/editing and completion/reversal, with Today,
-   Overdue, Upcoming, and Completed derived by query—not priority.
-5. Split finance commands into fee agreement, payment, and expense APIs.
-   Validate payer membership in both service and database layers.
-6. Convert document infrastructure to attachment infrastructure. Coordinate
-   copy, hash, metadata insertion, cleanup on failure, native open/reveal, and
-   safe removal.
-7. Update reminders, Today, Agenda, backup manifests/history, settings, and
-   search index rebuilding for the new entities.
-8. Delete obsolete DTOs, commands, repositories, and service paths only after
-   all callers are migrated.
+1. [x] Implement POA repositories/services/commands, including multiple clients,
+       descriptive lawyers, linked cases, archiving, and search indexing.
+2. [x] Replace case APIs with explicit internal/official numbers, CaseClient legal
+       capacity/POA/notes, and lightweight opponents.
+3. [x] Implement dedicated hearing commands. Recording a decision must update the
+       source hearing and optionally create a separately editable next hearing
+       linked by `previous_hearing_id`, in one transaction.
+4. [x] Implement simple task creation/editing and completion/reversal, with Today,
+       Overdue, Upcoming, and Completed derived by query—not priority.
+5. [x] Split finance commands into fee agreement, payment, and expense APIs.
+       Validate payer membership in both service and database layers.
+6. [x] Convert document infrastructure to attachment infrastructure. Coordinate
+       copy, hash, metadata insertion, cleanup on failure, native open/reveal, and
+       safe removal.
+7. [x] Update reminders, Today, Agenda, backup manifests/history, settings, and
+       search index rebuilding for the new entities. Canonical hearing/task reminder
+       selection and Client/Case/POA search rebuilding are complete. The Rust Today
+       summary, backup history, settings, Agenda, and bridge/frontend callers now use
+       canonical entities.
+8. [x] Delete obsolete event DTOs, commands, repositories, and service paths after
+       all callers are migrated.
 
 Exit criteria: all required operations have normal and failure-path repository
 and service tests; command handlers contain no SQL or business-rule logic.
@@ -139,31 +142,39 @@ and service tests; command handlers contain no SQL or business-rule logic.
    global-case-capacity types with finalized domain types.
 3. Update Zod schemas, React Hook Form defaults, TanStack Query query keys,
    and mutations.
-4. Define invalidation per write:
+4. [x] Define invalidation per write in the canonical query-key helper:
    - payment: payments, case account, client account;
    - hearing: hearings, case summary, Today, Agenda;
    - task completion: task lists, Today, Agenda, relevant case;
    - POA/case-client changes: POA, case, client relationship tabs, search.
+
+   The helpers and their normal/failure-scope tests are complete. The hearing
+   mutation now uses the canonical helper; the remaining mutations await their
+   Phase 2 command contracts. Items 1–3 remain incomplete until every legacy
+   DTO, form, and caller is replaced atomically.
 
 Exit criteria: TypeScript has no stale DTO use, no broad `any`, and all bridge
 payload contract tests pass.
 
 ## Phase 4 — Shared Stitch component and shell alignment
 
-1. Audit existing components before creating any new primitive.
-2. Refine the shared RTL shell to the approved frozen navigation: Today,
-   Agenda, Clients, Powers of Attorney, Cases, Tasks, Finance, Settings, and
-   Lock Application.
-3. Remove unsupported shell elements (SaaS account/avatar/bell/upgrade/cloud
-   controls) and legacy navigation destinations.
-4. Reuse/refine primitives for page headers, tabs, inputs, selects/comboboxes,
-   semantic data tables, badges, dialogs, confirmation dialogs, toast,
-   attachment rows, money, filters, and empty states.
-5. Make dialogs, menus, tabs, comboboxes, and checkboxes keyboard-accessible
-   with visible focus, focus containment/return, and Escape behavior.
+1. [x] Audit existing components before creating any new primitive.
+2. [x] Refine the shared RTL shell to the approved frozen navigation: Today,
+       Agenda, Clients, Powers of Attorney, Cases, Tasks, Finance, Settings, and
+       Lock Application.
+3. [x] Remove unsupported shell elements (SaaS account/avatar/bell/upgrade/cloud
+       controls) and legacy navigation destinations.
+4. [x] Add/reuse page-header, tabs, native inputs/selects, semantic table,
+       badge, dialog, confirmation-dialog, toast, filters, and empty-state
+       primitives. Attachment-row and money-display standardization remains with
+       the relevant Phase 5 features.
+5. [x] Make dialogs, menus, tabs, comboboxes, and checkboxes keyboard-accessible
+       with visible focus, focus containment/return, and Escape behavior.
 
-Exit criteria: one shared shell renders all feature routes; components match
-the Stitch system without pasted page HTML or duplicate control systems.
+Exit criteria: [x] one shared shell renders all current feature routes; shared
+components follow the Stitch system without pasted page HTML or duplicate
+control systems. Attachment-row and money-display refinement remains Phase 5
+feature work.
 
 ## Phase 5 — Feature implementation and visual parity
 

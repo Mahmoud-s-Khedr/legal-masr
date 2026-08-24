@@ -19,7 +19,7 @@ export function CaseCreateForm({
   const { t } = useTranslation();
   const { register, handleSubmit, control, formState } = useForm<CaseCreateFormValues>({
     resolver: zodResolver(caseCreateFormSchema),
-    defaultValues: { status: 'DRAFT', clientIds: [], primaryClientId: '' },
+    defaultValues: { status: 'ACTIVE', clientIds: [] },
   });
   const selectedClientIds = useWatch({ control, name: 'clientIds' }) ?? [];
 
@@ -31,27 +31,10 @@ export function CaseCreateForm({
         {clients.map((client) => (
           <label key={client.id} className="checkbox-field">
             <input type="checkbox" value={client.id} {...register('clientIds')} />
-            {client.displayName}
+            {client.fullName}
           </label>
         ))}
       </fieldset>
-      {selectedClientIds.length > 0 && (
-        <label>
-          {t('cases.fields.primaryClient')}
-          <select {...register('primaryClientId')}>
-            <option value="" disabled>
-              {t('cases.fields.primaryClient')}
-            </option>
-            {clients
-              .filter((client) => selectedClientIds.includes(client.id))
-              .map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.displayName}
-                </option>
-              ))}
-          </select>
-        </label>
-      )}
       <div className="form-actions">
         <button disabled={busy || formState.isSubmitting}>{t('cases.save')}</button>
         <button type="button" className="secondary-button" onClick={onCancel}>

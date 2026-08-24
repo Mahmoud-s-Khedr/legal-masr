@@ -28,8 +28,7 @@ const settings = {
   defaultReminderMinutes: 60,
   autostartEnabled: false,
   lockTimeoutMinutes: 15,
-  managedDocumentsDirectory: null,
-  backupDirectory: null,
+  usageCountersEnabled: false,
 };
 
 function renderSettingsPage() {
@@ -54,7 +53,6 @@ describe('SettingsPage', () => {
       fullName: 'أحمد علي',
       barNumber: null,
       phone: null,
-      email: null,
       officeAddress: null,
       defaultCurrency: 'EGP',
     });

@@ -170,7 +170,6 @@ export function SettingsPage() {
                     fullName: text('fullName'),
                     barNumber: text('barNumber') || null,
                     phone: text('phone') || null,
-                    email: text('email') || null,
                     officeAddress: text('officeAddress') || null,
                     defaultCurrency: 'EGP',
                   });
@@ -191,10 +190,6 @@ export function SettingsPage() {
                     <input dir="ltr" name="phone" defaultValue={profile?.phone ?? ''} />
                   </label>
                 </div>
-                <label>
-                  البريد الإلكتروني
-                  <input dir="ltr" type="email" name="email" defaultValue={profile?.email ?? ''} />
-                </label>
                 <label>
                   عنوان المكتب
                   <textarea name="officeAddress" defaultValue={profile?.officeAddress ?? ''} />
@@ -434,13 +429,11 @@ export function SettingsPage() {
                 <dl className="privacy-list">
                   <div>
                     <dt>مجلد المستندات المُدارة</dt>
-                    <dd dir="ltr">
-                      {settings.managedDocumentsDirectory ?? 'داخل مجلد بيانات التطبيق'}
-                    </dd>
+                    <dd dir="ltr">داخل مجلد بيانات التطبيق</dd>
                   </div>
                   <div>
                     <dt>مجلد النسخ الاحتياطي</dt>
-                    <dd dir="ltr">{settings.backupDirectory ?? 'لم يتم اختياره'}</dd>
+                    <dd dir="ltr">داخل مجلد بيانات التطبيق/Backups</dd>
                   </div>
                   <div>
                     <dt>الاتصال بالشبكة</dt>

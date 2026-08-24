@@ -32,6 +32,7 @@ import {
 export type IconName =
   | 'home'
   | 'clients'
+  | 'poa'
   | 'cases'
   | 'calendar'
   | 'tasks'
@@ -60,6 +61,7 @@ export type IconName =
 const icons: Record<IconName, TablerIcon> = {
   home: IconHome,
   clients: IconUsers,
+  poa: IconBriefcase2,
   cases: IconGavel,
   calendar: IconCalendarEvent,
   tasks: IconSquareCheck,

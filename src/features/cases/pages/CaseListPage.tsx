@@ -92,10 +92,10 @@ export function CaseListPage() {
               {cases.map((caseSummary) => (
                 <tr key={caseSummary.id}>
                   <th scope="row">
-                    <Link to={`/cases/${caseSummary.id}`}>{caseSummary.caseNumber}</Link>
+                    <Link to={`/cases/${caseSummary.id}`}>{caseSummary.internalNumber}</Link>
                   </th>
-                  <td>{caseSummary.judicialYear ?? '—'}</td>
-                  <td>{caseSummary.primaryClientName ?? '—'}</td>
+                  <td>{caseSummary.officialYear ?? '—'}</td>
+                  <td>{caseSummary.clientNames.join('، ') || '—'}</td>
                   <td>
                     <span className="badge">
                       {caseSummary.archivedAt

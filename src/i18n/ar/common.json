@@ -1,14 +1,18 @@
 {
   "nav": {
     "home": "الرئيسية",
+    "today": "اليوم",
+    "agenda": "الأجندة",
     "clients": "الموكلون",
+    "powersOfAttorney": "التوكيلات",
     "cases": "القضايا",
     "calendar": "الجدول",
     "tasks": "المهام",
     "documents": "المستندات",
     "finances": "المالية",
     "backups": "النسخ الاحتياطي",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "lock": "قفل التطبيق"
   },
   "app": {
     "brandName": "ليجال مصر",
@@ -126,6 +130,13 @@
   "placeholder": {
     "tag": "قريبًا",
     "description": "هذه الوحدة قيد الإعداد ضمن المراحل التالية."
+  },
+  "powersOfAttorney": {
+    "kicker": "التوكيلات",
+    "title": "التوكيلات",
+    "description": "احتفظ بالتوكيلات وربطها بالموكلين والقضايا من مكان واحد.",
+    "emptyTitle": "سجل التوكيلات جاهز",
+    "emptyDescription": "ستظهر هنا التوكيلات بعد إتاحة عقد البيانات الموحّد."
   },
   "settings": {
     "kicker": "الإعدادات",

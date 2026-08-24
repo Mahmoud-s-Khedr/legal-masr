@@ -19,21 +19,18 @@ export function ClientForm({
   const { t } = useTranslation();
   const { register, handleSubmit, formState } = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
-    defaultValues: { clientType: 'INDIVIDUAL', displayName: '', ...defaultValues },
+    defaultValues: { internalNumber: '', fullName: '', ...defaultValues },
   });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <label>
-        {t('clients.fields.clientType')}
-        <select {...register('clientType')}>
-          <option value="INDIVIDUAL">{t('clients.fields.individual')}</option>
-          <option value="ORGANIZATION">{t('clients.fields.organization')}</option>
-        </select>
+        الرقم الداخلي
+        <input dir="ltr" {...register('internalNumber')} required autoFocus />
       </label>
       <label>
-        {t('clients.fields.displayName')}
-        <input {...register('displayName')} required autoFocus />
+        الاسم الكامل
+        <input {...register('fullName')} required />
       </label>
       <label>
         {t('clients.fields.primaryPhone')}
@@ -42,10 +39,6 @@ export function ClientForm({
       <label>
         {t('clients.fields.nationalId')}
         <input {...register('nationalId')} />
-      </label>
-      <label>
-        {t('clients.fields.registrationNumber')}
-        <input {...register('registrationNumber')} />
       </label>
       <label>
         {t('clients.fields.email')}

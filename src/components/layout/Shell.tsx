@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Link, NavLink } from 'react-router-dom';
 import { AppRoutes, NAV_ITEMS } from '../../app/router';
@@ -13,6 +13,10 @@ export function Shell({ onLock }: { onLock: () => void }) {
   const lockTimeoutMinutes = settings?.lockTimeoutMinutes;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const createMenuRef = useRef<HTMLDivElement>(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
+  const drawerCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!lockTimeoutMinutes) return;
@@ -33,12 +37,32 @@ export function Shell({ onLock }: { onLock: () => void }) {
 
   useEffect(() => {
     if (!drawerOpen) return;
+    drawerCloseRef.current?.focus();
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setDrawerOpen(false);
+      if (event.key === 'Escape') {
+        setDrawerOpen(false);
+        menuButtonRef.current?.focus();
+      }
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [drawerOpen]);
+
+  useEffect(() => {
+    if (!createOpen) return;
+    createMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setCreateOpen(false);
+        createButtonRef.current?.focus();
+      }
+      if (event.key === 'Tab' && !createMenuRef.current?.contains(event.target as Node)) {
+        setCreateOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [createOpen]);
 
   const navigation = (onNavigate?: () => void) => (
     <nav aria-label={t('app.workspaceKicker')}>
@@ -66,11 +90,16 @@ export function Shell({ onLock }: { onLock: () => void }) {
           {navigation()}
           <div className="sidebar-footer">
             <span>{t('app.localOnly')}</span>
+            <button className="sidebar-lock" type="button" onClick={onLock}>
+              <Icon name="lock" size={17} />
+              {t('nav.lock')}
+            </button>
           </div>
         </aside>
         <header className="topbar">
           <div className="topbar-main">
             <button
+              ref={menuButtonRef}
               className="menu-button"
               type="button"
               onClick={() => setDrawerOpen(true)}
@@ -87,6 +116,7 @@ export function Shell({ onLock }: { onLock: () => void }) {
           <div className="topbar-actions">
             <div className="create-menu-wrap">
               <button
+                ref={createButtonRef}
                 className="create-button"
                 type="button"
                 aria-haspopup="menu"
@@ -98,7 +128,31 @@ export function Shell({ onLock }: { onLock: () => void }) {
                 <Icon name="chevron-down" size={15} />
               </button>
               {createOpen && (
-                <div className="create-menu" role="menu">
+                <div
+                  ref={createMenuRef}
+                  className="create-menu"
+                  role="menu"
+                  aria-label={t('app.add')}
+                  onKeyDown={(event) => {
+                    const items = Array.from(
+                      event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+                    );
+                    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                      event.preventDefault();
+                      const offset = event.key === 'ArrowDown' ? 1 : -1;
+                      items[(currentIndex + offset + items.length) % items.length]?.focus();
+                    }
+                    if (event.key === 'Home') {
+                      event.preventDefault();
+                      items[0]?.focus();
+                    }
+                    if (event.key === 'End') {
+                      event.preventDefault();
+                      items.at(-1)?.focus();
+                    }
+                  }}
+                >
                   <Link to="/clients/new" role="menuitem" onClick={() => setCreateOpen(false)}>
                     <Icon name="clients" size={18} />
                     {t('dashboard.addClient')}
@@ -118,7 +172,6 @@ export function Shell({ onLock }: { onLock: () => void }) {
                 </div>
               )}
             </div>
-            <span className="local-status">{t('app.localOnly')}</span>
             <LanguageSwitcher />
             <button
               className="lock-button icon-button"
@@ -142,16 +195,42 @@ export function Shell({ onLock }: { onLock: () => void }) {
             <button
               className="drawer-backdrop"
               type="button"
-              onClick={() => setDrawerOpen(false)}
+              onClick={() => {
+                setDrawerOpen(false);
+                menuButtonRef.current?.focus();
+              }}
               aria-label={t('app.closeMenu')}
             />
-            <aside className="drawer-panel">
+            <aside
+              className="drawer-panel"
+              onKeyDown={(event) => {
+                if (event.key !== 'Tab') return;
+                const controls = Array.from(
+                  event.currentTarget.querySelectorAll<HTMLElement>(
+                    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                  ),
+                );
+                const first = controls[0];
+                const last = controls.at(-1);
+                if (event.shiftKey && document.activeElement === first) {
+                  event.preventDefault();
+                  last?.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                  event.preventDefault();
+                  first?.focus();
+                }
+              }}
+            >
               <div className="drawer-header">
                 <strong>{t('app.brandName')}</strong>
                 <button
+                  ref={drawerCloseRef}
                   className="drawer-close"
                   type="button"
-                  onClick={() => setDrawerOpen(false)}
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    menuButtonRef.current?.focus();
+                  }}
                   aria-label={t('app.closeMenu')}
                 >
                   <Icon name="close" size={20} />
@@ -160,6 +239,18 @@ export function Shell({ onLock }: { onLock: () => void }) {
               {navigation(() => setDrawerOpen(false))}
               <div className="sidebar-footer">
                 <span>{t('app.localOnly')}</span>
+                <button
+                  className="sidebar-lock"
+                  type="button"
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    menuButtonRef.current?.focus();
+                    onLock();
+                  }}
+                >
+                  <Icon name="lock" size={17} />
+                  {t('nav.lock')}
+                </button>
               </div>
             </aside>
           </div>

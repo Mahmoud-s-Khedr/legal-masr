@@ -1,102 +1,104 @@
 use crate::{
     db,
     dto::{
-        DocumentDto, DocumentListInput, DocumentReferenceInput, DocumentSourceSelection,
-        DocumentUpdateInput,
+        AttachmentDto, AttachmentInput, AttachmentListInput, AttachmentSourceSelection,
+        AttachmentUpdateInput,
     },
     errors::Error,
-    normalize,
-    repositories::{document_repository, search_repository, settings_repository},
+    repositories::document_repository,
     state::AppState,
 };
 use sha2::{Digest, Sha256};
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Runtime};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 use time::{format_description::BorrowedFormatItem, macros::format_description, Date};
 use uuid::Uuid;
 const CATEGORIES: &[&str] = &[
-    "PLEADING",
+    "IDENTIFICATION",
+    "POWER_OF_ATTORNEY",
+    "CASE_FILE",
     "COURT_DECISION",
     "EVIDENCE",
-    "CONTRACT",
-    "POWER_OF_ATTORNEY",
-    "IDENTIFICATION",
     "RECEIPT",
     "CORRESPONDENCE",
     "OTHER",
 ];
 const DATE_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[year]-[month]-[day]");
-
 fn valid_date(value: Option<&str>) -> bool {
-    value.is_none_or(|value| value.len() == 10 && Date::parse(value, DATE_FORMAT).is_ok())
+    value.is_none_or(|date| date.len() == 10 && Date::parse(date, DATE_FORMAT).is_ok())
 }
-fn dto(
-    i: &DocumentReferenceInput,
-    id: String,
-    mode: &str,
-    name: String,
-    size: i64,
-    now: String,
-) -> DocumentDto {
-    DocumentDto {
-        id,
-        client_id: i.client_id.clone(),
-        case_id: i.case_id.clone(),
-        storage_mode: mode.into(),
-        original_filename: name,
-        category: i.category.clone(),
-        description: i.description.clone(),
-        document_date: i.document_date.clone(),
-        mime_type: None,
-        file_size_bytes: Some(size),
-        missing_at: None,
-        created_at: now,
-    }
+fn clean(value: Option<String>) -> Option<String> {
+    value.and_then(|value| (!value.trim().is_empty()).then(|| value.trim().to_owned()))
 }
-fn index(c: &rusqlite::Connection, d: &DocumentDto, now: &str) -> Result<(), Error> {
-    search_repository::upsert(
-        c,
-        "document",
-        &d.id,
-        &d.original_filename,
-        Some(&d.category),
-        &normalize::normalize_text(&format!(
-            "{} {}",
-            d.original_filename,
-            d.description.clone().unwrap_or_default()
-        )),
-        now,
-    )
-}
-fn check(i: &DocumentReferenceInput, source: &Path) -> Result<(), Error> {
-    if !CATEGORIES.contains(&i.category.as_str()) || !valid_date(i.document_date.as_deref()) {
-        return Err(Error::Validation);
-    }
-    if !source.is_file() {
-        return Err(Error::DocumentSourceMissing);
-    }
-    Ok(())
-}
-
-fn managed_root(connection: &rusqlite::Connection) -> Result<PathBuf, Error> {
-    let directory = settings_repository::get_settings(connection)?
-        .managed_documents_directory
-        .filter(|value| !value.trim().is_empty())
-        .ok_or(Error::Operation)?;
-    let path = PathBuf::from(directory);
+fn root<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
+    let path = db::app_dir(app)?.join("attachments");
     fs::create_dir_all(&path)?;
     Ok(path)
 }
-
+fn validate_owner(input: &AttachmentInput) -> Result<(), Error> {
+    let owners = [
+        input.client_id.as_ref(),
+        input.case_id.as_ref(),
+        input.power_of_attorney_id.as_ref(),
+        input.expense_id.as_ref(),
+    ]
+    .iter()
+    .filter(|id| id.is_some())
+    .count();
+    if owners != 1
+        || !CATEGORIES.contains(&input.category.as_str())
+        || !valid_date(input.document_date.as_deref())
+    {
+        Err(Error::Validation)
+    } else {
+        Ok(())
+    }
+}
+fn validate_owners(conn: &rusqlite::Connection, input: &AttachmentInput) -> Result<(), Error> {
+    let exists = |table: &str, id: &str| {
+        conn.query_row(
+            &format!("SELECT 1 FROM {table} WHERE id = ?1"),
+            [id],
+            |_| Ok(()),
+        )
+        .is_ok()
+    };
+    if input
+        .client_id
+        .as_deref()
+        .is_some_and(|id| !exists("clients", id))
+    {
+        return Err(Error::ClientNotFound);
+    }
+    if input
+        .case_id
+        .as_deref()
+        .is_some_and(|id| !exists("cases", id))
+    {
+        return Err(Error::CaseNotFound);
+    }
+    if input
+        .power_of_attorney_id
+        .as_deref()
+        .is_some_and(|id| !exists("powers_of_attorney", id))
+    {
+        return Err(Error::PowerOfAttorneyNotFound);
+    }
+    if input
+        .expense_id
+        .as_deref()
+        .is_some_and(|id| !exists("expenses", id))
+    {
+        return Err(Error::TransactionNotFound);
+    }
+    Ok(())
+}
 pub fn select_source<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
-) -> Result<DocumentSourceSelection, Error> {
+) -> Result<AttachmentSourceSelection, Error> {
     let path = app
         .dialog()
         .file()
@@ -104,83 +106,44 @@ pub fn select_source<R: Runtime>(
         .ok_or(Error::Cancelled)?
         .into_path()
         .map_err(|_| Error::Operation)?;
+    let filename = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or(Error::Validation)?
+        .to_owned();
     if !path.is_file() {
         return Err(Error::DocumentSourceMissing);
     }
-    let filename = path
-        .file_name()
-        .and_then(|value| value.to_str())
-        .ok_or(Error::Validation)?
-        .to_owned();
-    Ok(DocumentSourceSelection {
+    Ok(AttachmentSourceSelection {
         source_token: state.store_document_source(path)?,
         filename,
     })
 }
-pub fn add_reference<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
-    i: DocumentReferenceInput,
-) -> Result<DocumentDto, Error> {
-    let source = s.take_document_source(&i.source_token)?;
-    check(&i, &source)?;
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    let now = db::now();
-    let name = source
-        .file_name()
-        .and_then(|x| x.to_str())
-        .ok_or(Error::Validation)?
-        .to_owned();
-    let d = dto(
-        &i,
-        Uuid::new_v4().to_string(),
-        "EXTERNAL_REFERENCE",
-        name,
-        fs::metadata(&source)?.len() as i64,
-        now.clone(),
-    );
-    let tx = c.unchecked_transaction()?;
-    document_repository::insert(
-        &tx,
-        &d,
-        None,
-        None,
-        Some(&source.to_string_lossy()),
-        None,
-        &now,
-    )?;
-    index(&tx, &d, &now)?;
-    tx.commit()?;
-    Ok(d)
-}
-pub fn import_managed<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
-    i: DocumentReferenceInput,
-) -> Result<DocumentDto, Error> {
-    let source = s.take_document_source(&i.source_token)?;
-    check(&i, &source)?;
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    let root = managed_root(&c)?;
-    let name = source
-        .file_name()
-        .and_then(|x| x.to_str())
-        .ok_or(Error::Validation)?
-        .to_owned();
+pub fn add<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: AttachmentInput,
+) -> Result<AttachmentDto, Error> {
+    validate_owner(&input)?;
+    let source = state.take_document_source(&input.source_token)?;
+    if !source.is_file() {
+        return Err(Error::DocumentSourceMissing);
+    }
+    let master = state.unlocked()?;
+    let (_, db_path) = db::paths(app)?;
+    let conn = db::open_db(&db_path, &master)?;
+    validate_owners(&conn, &input)?;
+    let root = root(app)?;
     let id = Uuid::new_v4().to_string();
-    let ext = source
+    let extension = source
         .extension()
-        .and_then(|x| x.to_str())
-        .map(|x| format!(".{x}"))
+        .and_then(|extension| extension.to_str())
+        .map(|extension| format!(".{extension}"))
         .unwrap_or_default();
-    let stored = format!("{id}{ext}");
-    let target = root.join(&stored);
-    let temporary = root.join(format!(".{stored}.partial"));
-    fs::copy(source, &temporary)?;
+    let stored_filename = format!("{id}{extension}");
+    let temporary = root.join(format!(".{stored_filename}.partial"));
+    let target = root.join(&stored_filename);
+    fs::copy(&source, &temporary)?;
     let bytes = match fs::read(&temporary) {
         Ok(bytes) => bytes,
         Err(error) => {
@@ -188,174 +151,149 @@ pub fn import_managed<R: Runtime>(
             return Err(error.into());
         }
     };
-    let checksum = hex::encode(Sha256::digest(&bytes));
     let now = db::now();
-    let d = dto(
-        &i,
+    let original_filename = source
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or(Error::Validation)?
+        .to_owned();
+    let attachment = AttachmentDto {
         id,
-        "MANAGED_COPY",
-        name,
-        bytes.len() as i64,
-        now.clone(),
-    );
-    let write_result = (|| -> Result<(), Error> {
-        let tx = c.unchecked_transaction()?;
-        document_repository::insert(
-            &tx,
-            &d,
-            Some(&stored),
-            Some(&stored),
-            None,
-            Some(&checksum),
-            &now,
-        )?;
-        index(&tx, &d, &now)?;
+        client_id: input.client_id,
+        case_id: input.case_id,
+        power_of_attorney_id: input.power_of_attorney_id,
+        expense_id: input.expense_id,
+        original_filename,
+        stored_filename: stored_filename.clone(),
+        relative_path: stored_filename,
+        mime_type: None,
+        file_size_bytes: bytes.len() as i64,
+        sha256: hex::encode(Sha256::digest(&bytes)),
+        category: input.category,
+        description: clean(input.description),
+        document_date: input.document_date,
+        created_at: now.clone(),
+        updated_at: now.clone(),
+    };
+    let result = (|| -> Result<(), Error> {
+        let tx = conn.unchecked_transaction()?;
+        document_repository::insert(&tx, &attachment)?;
         fs::rename(&temporary, &target)?;
         tx.commit()?;
         Ok(())
     })();
-    if let Err(error) = write_result {
+    if let Err(error) = result {
         let _ = fs::remove_file(&temporary);
         let _ = fs::remove_file(&target);
         return Err(error);
     }
-    Ok(d)
+    Ok(attachment)
 }
 pub fn list<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
-    i: DocumentListInput,
-) -> Result<Vec<DocumentDto>, Error> {
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: AttachmentListInput,
+) -> Result<Vec<AttachmentDto>, Error> {
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
     document_repository::list(
-        &db::open_db(&p, &m)?,
-        i.case_id.as_deref(),
-        i.client_id.as_deref(),
-        i.include_archived,
+        &db::open_db(&path, &master)?,
+        input.case_id.as_deref(),
+        input.client_id.as_deref(),
+        input.power_of_attorney_id.as_deref(),
+        input.expense_id.as_deref(),
     )
 }
 pub fn update<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
-    i: DocumentUpdateInput,
-) -> Result<DocumentDto, Error> {
-    if !CATEGORIES.contains(&i.category.as_str()) || !valid_date(i.document_date.as_deref()) {
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: AttachmentUpdateInput,
+) -> Result<AttachmentDto, Error> {
+    if !CATEGORIES.contains(&input.category.as_str()) || !valid_date(input.document_date.as_deref())
+    {
         return Err(Error::Validation);
     }
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    let now = db::now();
-    let tx = c.unchecked_transaction()?;
-    let d = document_repository::update(
-        &tx,
-        &i.id,
-        &i.category,
-        i.description.as_deref(),
-        i.document_date.as_deref(),
-        &now,
-    )?;
-    index(&tx, &d, &now)?;
-    tx.commit()?;
-    Ok(d)
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    let conn = db::open_db(&path, &master)?;
+    let mut attachment = document_repository::get(&conn, &input.id)?;
+    attachment.category = input.category;
+    attachment.description = clean(input.description);
+    attachment.document_date = input.document_date;
+    attachment.updated_at = db::now();
+    document_repository::update(&conn, &attachment)?;
+    Ok(attachment)
 }
-pub fn check_missing<R: Runtime>(a: &AppHandle<R>, s: &AppState, id: &str) -> Result<bool, Error> {
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    let (mode, relative, external, _) = document_repository::paths(&c, id)?;
-    let path = if mode == "MANAGED_COPY" {
-        managed_root(&c)?.join(relative.unwrap_or_default())
+fn path<R: Runtime>(
+    app: &AppHandle<R>,
+    conn: &rusqlite::Connection,
+    id: &str,
+) -> Result<PathBuf, Error> {
+    let attachment = document_repository::get(conn, id)?;
+    let path = root(app)?.join(attachment.relative_path);
+    if path.is_file() {
+        Ok(path)
     } else {
-        PathBuf::from(external.unwrap_or_default())
-    };
-    let missing = !path.is_file();
-    document_repository::set_missing(&c, id, missing, &db::now())?;
-    Ok(missing)
-}
-fn resolved_path(connection: &rusqlite::Connection, id: &str) -> Result<PathBuf, Error> {
-    let (mode, relative, external, _) = document_repository::paths(connection, id)?;
-    Ok(if mode == "MANAGED_COPY" {
-        managed_root(connection)?.join(relative.unwrap_or_default())
-    } else {
-        PathBuf::from(external.unwrap_or_default())
-    })
+        Err(Error::DocumentSourceMissing)
+    }
 }
 pub fn open<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
     let master = state.unlocked()?;
-    let (_, database_path) = db::paths(app)?;
-    let connection = db::open_db(&database_path, &master)?;
-    let path = resolved_path(&connection, id)?;
-    if !path.is_file() {
-        document_repository::set_missing(&connection, id, true, &db::now())?;
-        return Err(Error::DocumentSourceMissing);
-    }
+    let (_, db_path) = db::paths(app)?;
     app.opener()
-        .open_path(path.to_string_lossy().into_owned(), None::<&str>)
+        .open_path(
+            path(app, &db::open_db(&db_path, &master)?, id)?
+                .to_string_lossy()
+                .into_owned(),
+            None::<&str>,
+        )
         .map_err(|_| Error::Operation)
 }
 pub fn reveal<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
     let master = state.unlocked()?;
-    let (_, database_path) = db::paths(app)?;
-    let connection = db::open_db(&database_path, &master)?;
-    let path = resolved_path(&connection, id)?;
-    if !path.is_file() {
-        document_repository::set_missing(&connection, id, true, &db::now())?;
-        return Err(Error::DocumentSourceMissing);
-    }
+    let (_, db_path) = db::paths(app)?;
     app.opener()
-        .reveal_item_in_dir(path)
+        .reveal_item_in_dir(path(app, &db::open_db(&db_path, &master)?, id)?)
         .map_err(|_| Error::Operation)
 }
-pub fn remove<R: Runtime>(a: &AppHandle<R>, s: &AppState, id: &str) -> Result<(), Error> {
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    let (mode, relative, _, _) = document_repository::paths(&c, id)?;
-    // Move the managed copy out of its live location before deleting metadata.
-    // If the database transaction fails, put it back so a record never points
-    // at a silently missing file.
-    let pending_delete = if mode == "MANAGED_COPY" {
-        let live = managed_root(&c)?.join(relative.unwrap_or_default());
-        if live.exists() {
-            let pending = live.with_extension("deleting");
-            fs::rename(&live, &pending)?;
-            Some((live, pending))
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-    let delete_result = (|| -> Result<(), Error> {
-        let tx = c.unchecked_transaction()?;
-        document_repository::delete(&tx, id)?;
-        search_repository::delete(&tx, "document", id)?;
-        tx.commit()?;
-        Ok(())
-    })();
-    if let Err(error) = delete_result {
-        if let Some((live, pending)) = pending_delete {
-            let _ = fs::rename(pending, live);
+pub fn remove<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
+    let master = state.unlocked()?;
+    let (_, db_path) = db::paths(app)?;
+    let conn = db::open_db(&db_path, &master)?;
+    let attachment = document_repository::get(&conn, id)?;
+    let live = root(app)?.join(&attachment.relative_path);
+    let staged = live.with_extension("deleting");
+    if live.exists() {
+        fs::rename(&live, &staged)?;
+    }
+    let result = document_repository::delete(&conn, id);
+    if let Err(error) = result {
+        if staged.exists() {
+            let _ = fs::rename(staged, live);
         }
         return Err(error);
     }
-    if let Some((_, pending)) = pending_delete {
-        fs::remove_file(pending)?;
+    if staged.exists() {
+        fs::remove_file(staged)?;
     }
     Ok(())
 }
-
 #[cfg(test)]
 mod tests {
-    use super::valid_date;
-
+    use super::*;
     #[test]
-    fn document_dates_reject_invalid_or_timestamp_values() {
-        assert!(valid_date(Some("2026-08-24")));
-        assert!(valid_date(None));
-        assert!(!valid_date(Some("2026-02-30")));
+    fn attachment_requires_one_owner_and_a_date_only_value() {
+        let input = AttachmentInput {
+            client_id: Some("a".into()),
+            case_id: None,
+            power_of_attorney_id: None,
+            expense_id: None,
+            source_token: "token".into(),
+            category: "OTHER".into(),
+            description: None,
+            document_date: Some("2026-08-24".into()),
+        };
+        assert!(validate_owner(&input).is_ok());
         assert!(!valid_date(Some("2026-08-24T00:00:00Z")));
     }
 }

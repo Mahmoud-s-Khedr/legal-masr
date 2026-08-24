@@ -2,127 +2,127 @@ use crate::{
     db,
     dto::{TaskDto, TaskInput, TaskListInput},
     errors::Error,
-    normalize,
-    repositories::{search_repository, task_repository},
+    repositories::task_repository,
     state::AppState,
 };
 use tauri::{AppHandle, Runtime};
-use time::{format_description::BorrowedFormatItem, macros::format_description, Date, Time};
+use time::{format_description::BorrowedFormatItem, macros::format_description, Date};
 use uuid::Uuid;
-const PRIORITIES: &[&str] = &["LOW", "NORMAL", "HIGH", "URGENT"];
+
 const DATE_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[year]-[month]-[day]");
-const TIME_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[hour]:[minute]");
-
-fn valid_date(value: Option<&str>) -> bool {
-    value.is_none_or(|value| value.len() == 10 && Date::parse(value, DATE_FORMAT).is_ok())
+fn valid_date(value: &str) -> bool {
+    value.len() == 10 && Date::parse(value, DATE_FORMAT).is_ok()
 }
-
-fn valid_time(value: Option<&str>) -> bool {
-    value.is_none_or(|value| value.len() == 5 && Time::parse(value, TIME_FORMAT).is_ok())
+fn clean(value: Option<String>) -> Option<String> {
+    value.and_then(|value| (!value.trim().is_empty()).then(|| value.trim().to_owned()))
 }
-fn index(c: &rusqlite::Connection, t: &TaskDto, now: &str) -> Result<(), Error> {
-    search_repository::upsert(
-        c,
-        "task",
-        &t.id,
-        &t.title,
-        t.due_date.as_deref(),
-        &normalize::normalize_text(&format!(
-            "{} {}",
-            t.title,
-            t.description.clone().unwrap_or_default()
-        )),
-        now,
-    )
-}
-pub fn save<R: Runtime>(a: &AppHandle<R>, s: &AppState, i: TaskInput) -> Result<TaskDto, Error> {
-    if i.title.trim().is_empty()
-        || !PRIORITIES.contains(&i.priority.as_str())
-        || !valid_date(i.due_date.as_deref())
-        || !valid_time(i.due_time.as_deref())
+fn validate(input: &TaskInput) -> Result<(), Error> {
+    if input.title.trim().is_empty()
+        || !valid_date(&input.due_date)
+        || input
+            .reminder_minutes
+            .is_some_and(|minutes| minutes > 10_080)
     {
         return Err(Error::Validation);
     }
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    let now = db::now();
-    let is_new = i.id.is_none();
-    let id = i.id.unwrap_or_else(|| Uuid::new_v4().to_string());
-    let mut t = TaskDto {
-        id,
-        client_id: i.client_id,
-        case_id: i.case_id,
-        source_event_id: i.source_event_id,
-        title: i.title,
-        description: i.description,
-        due_date: i.due_date,
-        due_time: i.due_time,
-        priority: i.priority,
-        status: "OPEN".into(),
-        completed_at: None,
-        created_at: now.clone(),
-        updated_at: now.clone(),
-    };
-    if !is_new {
-        let old = task_repository::get(&c, &t.id)?;
-        // A task created as the follow-up to an event keeps that provenance.
-        // Editing ordinary task fields must not silently detach it from the event.
-        t.source_event_id = old.source_event_id;
-        t.status = old.status;
-        t.completed_at = old.completed_at;
-        t.created_at = old.created_at;
-    }
-    let tx = c.unchecked_transaction()?;
-    task_repository::save(&tx, &t, is_new)?;
-    index(&tx, &t, &now)?;
-    tx.commit()?;
-    Ok(t)
+    Ok(())
 }
-pub fn list<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
-    i: TaskListInput,
-) -> Result<Vec<TaskDto>, Error> {
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    task_repository::list(
-        &db::open_db(&p, &m)?,
-        i.due_from.as_deref(),
-        i.due_to.as_deref(),
-        i.case_id.as_deref(),
-        i.client_id.as_deref(),
-        i.priority.as_deref(),
-        i.status.as_deref(),
-    )
-}
-pub fn status<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
-    id: &str,
-    status: &str,
+
+pub fn save<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: TaskInput,
 ) -> Result<TaskDto, Error> {
-    if !["OPEN", "COMPLETED", "CANCELLED"].contains(&status) {
+    validate(&input)?;
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    let conn = db::open_db(&path, &master)?;
+    let now = db::now();
+    let is_new = input.id.is_none();
+    let id = input.id.unwrap_or_else(|| Uuid::new_v4().to_string());
+    let existing = (!is_new)
+        .then(|| task_repository::get(&conn, &id))
+        .transpose()?;
+    let task = TaskDto {
+        id,
+        client_id: input.client_id,
+        case_id: input.case_id,
+        title: input.title.trim().to_owned(),
+        details: clean(input.details),
+        notes: clean(input.notes),
+        due_date: input.due_date,
+        reminder_minutes: input.reminder_minutes,
+        completed: existing.as_ref().is_some_and(|task| task.completed),
+        completed_at: existing.as_ref().and_then(|task| task.completed_at.clone()),
+        created_at: existing
+            .as_ref()
+            .map(|task| task.created_at.clone())
+            .unwrap_or_else(|| now.clone()),
+        updated_at: now,
+    };
+    if is_new {
+        task_repository::insert(&conn, &task)?;
+    } else {
+        task_repository::update(&conn, &task)?;
+    }
+    Ok(task)
+}
+
+pub fn list<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: TaskListInput,
+) -> Result<Vec<TaskDto>, Error> {
+    if !valid_date(&input.reference_date) {
         return Err(Error::Validation);
     }
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    let now = db::now();
-    let tx = c.unchecked_transaction()?;
-    task_repository::set_status(&tx, id, status, &now)?;
-    let t = task_repository::get(&tx, id)?;
-    index(&tx, &t, &now)?;
-    tx.commit()?;
-    Ok(t)
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    task_repository::list(
+        &db::open_db(&path, &master)?,
+        input.view.as_deref(),
+        &input.reference_date,
+        input.case_id.as_deref(),
+        input.client_id.as_deref(),
+    )
 }
-pub fn delete<R: Runtime>(a: &AppHandle<R>, s: &AppState, id: &str) -> Result<(), Error> {
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    let tx = c.unchecked_transaction()?;
-    task_repository::delete(&tx, id)?;
-    search_repository::delete(&tx, "task", id)?;
-    tx.commit()?;
-    Ok(())
+
+pub fn set_completed<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: &str,
+    completed: bool,
+) -> Result<TaskDto, Error> {
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    let conn = db::open_db(&path, &master)?;
+    let now = db::now();
+    task_repository::set_completed(&conn, id, completed, &now)?;
+    task_repository::get(&conn, id)
+}
+
+pub fn delete<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    task_repository::delete(&db::open_db(&path, &master)?, id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn accepts_a_simple_date_only_task_and_rejects_priority_era_inputs() {
+        let input = TaskInput {
+            id: None,
+            client_id: None,
+            case_id: None,
+            title: "مراجعة الملف".into(),
+            details: None,
+            notes: None,
+            due_date: "2026-08-24".into(),
+            reminder_minutes: Some(60),
+        };
+        assert!(validate(&input).is_ok());
+        assert!(!valid_date("2026-08-24T09:00:00Z"));
+    }
 }

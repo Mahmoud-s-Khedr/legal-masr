@@ -1,8 +1,8 @@
 use crate::{
     db,
     dto::{
-        CaseFinanceSummary, ClientFinanceSummary, FeeAgreementDto, FeeAgreementInput,
-        FinancialTransactionDto, FinancialTransactionInput, FinancialTransactionListInput,
+        CaseFinanceSummary, ClientFinanceSummary, ExpenseDto, ExpenseInput, ExpenseListInput,
+        FeeAgreementDto, FeeAgreementInput, PaymentDto, PaymentInput, PaymentListInput,
     },
     errors::Error,
     repositories::finance_repository,
@@ -11,173 +11,220 @@ use crate::{
 use tauri::{AppHandle, Runtime};
 use time::{format_description::BorrowedFormatItem, macros::format_description, Date};
 use uuid::Uuid;
-const TYPES: &[&str] = &[
-    "FEE_PAYMENT",
-    "CASE_EXPENSE",
-    "REFUND",
-    "OTHER_INCOME",
-    "OTHER_EXPENSE",
-];
-const METHODS: &[&str] = &["CASH", "BANK_TRANSFER", "CARD", "MOBILE_WALLET", "OTHER"];
-const DATE_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[year]-[month]-[day]");
 
-fn is_date(value: &str) -> bool {
+const DATE_FORMAT: &[BorrowedFormatItem<'static>] = format_description!("[year]-[month]-[day]");
+const METHODS: &[&str] = &["CASH", "BANK_TRANSFER", "CHEQUE", "ELECTRONIC", "OTHER"];
+const EXPENSE_TYPES: &[&str] = &[
+    "COURT_FEE",
+    "TRANSPORT",
+    "OFFICE_SUPPLIES",
+    "EXPERT_FEE",
+    "OTHER",
+];
+fn valid_date(value: &str) -> bool {
     value.len() == 10 && Date::parse(value, DATE_FORMAT).is_ok()
 }
-
-fn valid(input: &FinancialTransactionInput) -> bool {
-    input.amount_minor > 0
-        && TYPES.contains(&input.transaction_type.as_str())
-        && input
-            .payment_method
-            .as_deref()
-            .map(|x| METHODS.contains(&x))
-            .unwrap_or(true)
-        && is_date(&input.transaction_date)
+fn clean(value: Option<String>) -> Option<String> {
+    value.and_then(|value| (!value.trim().is_empty()).then(|| value.trim().to_owned()))
 }
-fn ensure_refs(c: &rusqlite::Connection, input: &FinancialTransactionInput) -> Result<(), Error> {
-    let exists = |sql: &str, id: &str| c.query_row(sql, [id], |_| Ok(())).is_ok();
-    if !exists("SELECT 1 FROM clients WHERE id=?1", &input.client_id) {
-        return Err(Error::ClientNotFound);
-    };
-    if let Some(case_id) = &input.case_id {
-        if !exists("SELECT 1 FROM cases WHERE id=?1", case_id) {
-            return Err(Error::CaseNotFound);
-        }
-        if c.query_row(
-            "SELECT 1 FROM case_clients WHERE case_id = ?1 AND client_id = ?2",
-            rusqlite::params![case_id, input.client_id],
+fn validate_dates(from: Option<&str>, to: Option<&str>) -> Result<(), Error> {
+    if from.is_some_and(|value| !valid_date(value)) || to.is_some_and(|value| !valid_date(value)) {
+        Err(Error::Validation)
+    } else {
+        Ok(())
+    }
+}
+fn ensure_payer_membership(
+    conn: &rusqlite::Connection,
+    case_id: &str,
+    payer_client_id: &str,
+) -> Result<(), Error> {
+    if conn
+        .query_row("SELECT 1 FROM cases WHERE id = ?1", [case_id], |_| Ok(()))
+        .is_err()
+    {
+        return Err(Error::CaseNotFound);
+    }
+    if conn
+        .query_row(
+            "SELECT 1 FROM clients WHERE id = ?1",
+            [payer_client_id],
             |_| Ok(()),
         )
         .is_err()
-        {
-            return Err(Error::Validation);
-        }
-    };
-    if let Some(document_id) = &input.receipt_document_id {
-        if !exists("SELECT 1 FROM documents WHERE id=?1", document_id) {
-            return Err(Error::DocumentNotFound);
-        }
-    };
+    {
+        return Err(Error::ClientNotFound);
+    }
+    if conn
+        .query_row(
+            "SELECT 1 FROM case_clients WHERE case_id = ?1 AND client_id = ?2",
+            rusqlite::params![case_id, payer_client_id],
+            |_| Ok(()),
+        )
+        .is_err()
+    {
+        return Err(Error::Validation);
+    }
     Ok(())
 }
 pub fn save_fee_agreement<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
+    app: &AppHandle<R>,
+    state: &AppState,
     input: FeeAgreementInput,
 ) -> Result<FeeAgreementDto, Error> {
     if input.amount_minor <= 0
         || input
             .agreement_date
             .as_deref()
-            .map(|x| !is_date(x))
-            .unwrap_or(false)
+            .is_some_and(|date| !valid_date(date))
     {
         return Err(Error::Validation);
     }
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    if c.query_row("SELECT 1 FROM cases WHERE id=?1", [&input.case_id], |_| {
-        Ok(())
-    })
-    .is_err()
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    let conn = db::open_db(&path, &master)?;
+    if conn
+        .query_row(
+            "SELECT 1 FROM cases WHERE id = ?1",
+            [&input.case_id],
+            |_| Ok(()),
+        )
+        .is_err()
     {
         return Err(Error::CaseNotFound);
     }
-    finance_repository::upsert_fee_agreement(&c, &Uuid::new_v4().to_string(), &input, &db::now())
+    finance_repository::upsert_fee_agreement(&conn, &Uuid::new_v4().to_string(), &input, &db::now())
 }
-pub fn save_transaction<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
-    input: FinancialTransactionInput,
-) -> Result<FinancialTransactionDto, Error> {
-    if !valid(&input) {
-        return Err(Error::Validation);
-    }
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    ensure_refs(&c, &input)?;
-    let now = db::now();
-    match input.id.as_deref() {
-        Some(_) => finance_repository::update_transaction(&c, &input, &now),
-        None => finance_repository::insert_transaction(
-            &c,
-            &Uuid::new_v4().to_string(),
-            &input,
-            None,
-            &now,
-        ),
-    }
-}
-pub fn reverse_transaction<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
-    id: &str,
-    date: &str,
-) -> Result<FinancialTransactionDto, Error> {
-    if !is_date(date) {
-        return Err(Error::Validation);
-    }
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    let c = db::open_db(&p, &m)?;
-    let original = finance_repository::get_transaction(&c, id)?;
-    if c.query_row(
-        "SELECT 1 FROM financial_transactions WHERE reversed_transaction_id=?1",
-        [id],
-        |_| Ok(()),
-    )
-    .is_ok()
-    {
-        return Err(Error::Validation);
-    };
-    let inverse = match original.transaction_type.as_str() {
-        "FEE_PAYMENT" | "OTHER_INCOME" => "REFUND",
-        "REFUND" => "FEE_PAYMENT",
-        "CASE_EXPENSE" | "OTHER_EXPENSE" => "OTHER_INCOME",
-        _ => return Err(Error::Validation),
-    };
-    let input = FinancialTransactionInput {
-        id: None,
-        client_id: original.client_id,
-        case_id: original.case_id,
-        transaction_type: inverse.into(),
-        amount_minor: original.amount_minor,
-        transaction_date: date.into(),
-        payment_method: original.payment_method,
-        description: Some(format!("Reversal of {id}")),
-        receipt_document_id: None,
-    };
-    finance_repository::insert_transaction(
-        &c,
-        &Uuid::new_v4().to_string(),
-        &input,
-        Some(id),
-        &db::now(),
-    )
-}
-pub fn list<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
-    input: FinancialTransactionListInput,
-) -> Result<Vec<FinancialTransactionDto>, Error> {
-    if input
-        .from_date
-        .as_deref()
-        .is_some_and(|value| !is_date(value))
+pub fn save_payment<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: PaymentInput,
+) -> Result<PaymentDto, Error> {
+    if input.amount_minor <= 0
+        || !valid_date(&input.payment_date)
         || input
-            .to_date
+            .payment_method
             .as_deref()
-            .is_some_and(|value| !is_date(value))
+            .is_some_and(|method| !METHODS.contains(&method))
     {
         return Err(Error::Validation);
     }
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    finance_repository::list_transactions(
-        &db::open_db(&p, &m)?,
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    let conn = db::open_db(&path, &master)?;
+    ensure_payer_membership(&conn, &input.case_id, &input.payer_client_id)?;
+    let now = db::now();
+    let is_new = input.id.is_none();
+    let id = input.id.unwrap_or_else(|| Uuid::new_v4().to_string());
+    let existing = (!is_new)
+        .then(|| finance_repository::get_payment(&conn, &id))
+        .transpose()?;
+    let payment = PaymentDto {
+        id,
+        case_id: input.case_id,
+        payer_client_id: input.payer_client_id,
+        amount_minor: input.amount_minor,
+        payment_date: input.payment_date,
+        payment_method: input.payment_method,
+        notes: clean(input.notes),
+        created_at: existing
+            .as_ref()
+            .map(|payment| payment.created_at.clone())
+            .unwrap_or_else(|| now.clone()),
+        updated_at: now,
+    };
+    if is_new {
+        finance_repository::insert_payment(&conn, &payment)?;
+    } else {
+        finance_repository::update_payment(&conn, &payment)?;
+    }
+    Ok(payment)
+}
+pub fn save_expense<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: ExpenseInput,
+) -> Result<ExpenseDto, Error> {
+    if input.amount_minor <= 0
+        || !valid_date(&input.expense_date)
+        || !EXPENSE_TYPES.contains(&input.expense_type.as_str())
+    {
+        return Err(Error::Validation);
+    }
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    let conn = db::open_db(&path, &master)?;
+    if let Some(case_id) = &input.case_id {
+        if conn
+            .query_row("SELECT 1 FROM cases WHERE id = ?1", [case_id], |_| Ok(()))
+            .is_err()
+        {
+            return Err(Error::CaseNotFound);
+        }
+    }
+    if let Some(client_id) = &input.client_id {
+        if conn
+            .query_row("SELECT 1 FROM clients WHERE id = ?1", [client_id], |_| {
+                Ok(())
+            })
+            .is_err()
+        {
+            return Err(Error::ClientNotFound);
+        }
+    }
+    let now = db::now();
+    let is_new = input.id.is_none();
+    let id = input.id.unwrap_or_else(|| Uuid::new_v4().to_string());
+    let existing = (!is_new)
+        .then(|| finance_repository::get_expense(&conn, &id))
+        .transpose()?;
+    let expense = ExpenseDto {
+        id,
+        case_id: input.case_id,
+        client_id: input.client_id,
+        amount_minor: input.amount_minor,
+        expense_date: input.expense_date,
+        expense_type: input.expense_type,
+        notes: clean(input.notes),
+        created_at: existing
+            .as_ref()
+            .map(|expense| expense.created_at.clone())
+            .unwrap_or_else(|| now.clone()),
+        updated_at: now,
+    };
+    if is_new {
+        finance_repository::insert_expense(&conn, &expense)?;
+    } else {
+        finance_repository::update_expense(&conn, &expense)?;
+    }
+    Ok(expense)
+}
+pub fn list_payments<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: PaymentListInput,
+) -> Result<Vec<PaymentDto>, Error> {
+    validate_dates(input.from_date.as_deref(), input.to_date.as_deref())?;
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    finance_repository::list_payments(
+        &db::open_db(&path, &master)?,
+        input.payer_client_id.as_deref(),
+        input.case_id.as_deref(),
+        input.from_date.as_deref(),
+        input.to_date.as_deref(),
+    )
+}
+pub fn list_expenses<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: ExpenseListInput,
+) -> Result<Vec<ExpenseDto>, Error> {
+    validate_dates(input.from_date.as_deref(), input.to_date.as_deref())?;
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    finance_repository::list_expenses(
+        &db::open_db(&path, &master)?,
         input.client_id.as_deref(),
         input.case_id.as_deref(),
         input.from_date.as_deref(),
@@ -185,33 +232,31 @@ pub fn list<R: Runtime>(
     )
 }
 pub fn case_summary<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
+    app: &AppHandle<R>,
+    state: &AppState,
     id: &str,
 ) -> Result<CaseFinanceSummary, Error> {
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    finance_repository::case_summary(&db::open_db(&p, &m)?, id)
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    finance_repository::case_summary(&db::open_db(&path, &master)?, id)
 }
 pub fn client_summary<R: Runtime>(
-    a: &AppHandle<R>,
-    s: &AppState,
+    app: &AppHandle<R>,
+    state: &AppState,
     id: &str,
 ) -> Result<ClientFinanceSummary, Error> {
-    let m = s.unlocked()?;
-    let (_, p) = db::paths(a)?;
-    finance_repository::client_summary(&db::open_db(&p, &m)?, id)
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    finance_repository::client_summary(&db::open_db(&path, &master)?, id)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::is_date;
-
+    use super::*;
     #[test]
-    fn financial_dates_must_be_real_date_only_values() {
-        assert!(is_date("2026-08-24"));
-        assert!(!is_date("2026-02-30"));
-        assert!(!is_date("2026-8-24"));
-        assert!(!is_date("2026-08-24T00:00:00Z"));
+    fn payment_rules_reject_bad_dates_and_unsupported_methods() {
+        assert!(!valid_date("2026-02-30"));
+        assert!(!METHODS.contains(&"CARD"));
+        assert!(EXPENSE_TYPES.contains(&"COURT_FEE"));
     }
 }
