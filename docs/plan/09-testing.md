@@ -2,114 +2,45 @@
 
 Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
 
----
+## Automated coverage
 
-# 16. Testing strategy
+Rust unit and integration coverage includes:
 
-This application handles professionally sensitive records. Testing cannot be omitted.
+- clean canonical migration, legacy-vault rejection without mutation, foreign
+  key/integrity checks, strict booleans/money, duplicate internal identifiers,
+  attachment single-owner integrity, and payment payer membership;
+- client/POA/case relationships and archive paths, opponents, hearing decision
+  chains, derived task views, fee/payment/expense summaries, and search index;
+- managed attachment durability, copy failure cleanup, removal behavior, native
+  path resolution, backup creation/validation/restore, and corrupt restore
+  staging safety;
+- password/recovery envelopes, safe error diagnostic redaction, reminder
+  deduplication, and local settings validation.
 
-## 16.1 Rust unit tests
+Frontend Vitest/React Testing Library coverage includes bridge payload
+contracts, typed error mapping, canonical query invalidation including failure
+scope, forms, dialogs, task completion, payer filtering, optional expense
+links, Arabic RTL/mixed-direction rendering, and primary workflow pages.
 
-Test:
+## Required validation commands
 
-- Money calculations
-- Date and overdue calculations
-- Arabic normalization
-- Phone normalization
-- Password-envelope operations
-- Recovery-key operations
-- Backup manifest validation
-- Checksum generation
-- Domain validation
-- Error conversion
+Run format check, lint, typecheck, frontend tests, frontend build, Rust format,
+clippy with warnings denied, full Cargo tests, and a debug Tauri Debian build.
+The Phase 7 report records the exact current run results. Failures must be
+fixed or described as an unresolved release risk; they must not be skipped.
 
-## 16.2 Repository integration tests
+## Manual release matrix
 
-Use temporary encrypted databases.
+| Area                                      | Linux dev |  Windows | macOS Intel | macOS Apple Silicon |
+| ----------------------------------------- | --------: | -------: | ----------: | ------------------: |
+| Vault initialize/unlock/recovery          |  Required | Required |    Required |            Required |
+| Managed attachment picker/open/reveal     |  Required | Required |    Required |            Required |
+| Native notification and autostart         |  Required | Required |    Required |            Required |
+| Manual backup and corrupt-archive refusal |  Required | Required |    Required |            Required |
+| Repeated restore/disaster exercise        |  Required | Required |    Required |            Required |
+| Installer/update/uninstall                |       N/A | Required |    Required |            Required |
+| 1440×900 and 1366×768 visual comparison   |  Required | Required |    Required |            Required |
 
-Test:
-
-- Migrations
-- CRUD
-- Foreign keys
-- Archiving
-- Transaction rollback
-- Search-index synchronization
-- Cascading deletion rules
-- Financial summaries
-- Concurrent command behavior
-
-## 16.3 Frontend tests
-
-Use Vitest and React Testing Library.
-
-Test:
-
-- Forms
-- Validation
-- Empty states
-- Loading states
-- Error states
-- RTL layout behavior
-- Navigation
-- Unsaved-change warnings
-- Finance display
-- Dashboard grouping
-
-## 16.4 Contract tests
-
-Mock the Tauri bridge and verify:
-
-- Command names
-- Request payloads
-- Response DTOs
-- Error codes
-- Optional fields
-- Date serialization
-
-## 16.5 Backup tests
-
-Mandatory scenarios:
-
-- Normal backup
-- Empty database backup
-- Large document backup
-- Interrupted backup
-- Wrong password
-- Corrupted archive
-- Missing document
-- Insufficient disk space
-- Restore over existing installation
-- Restore from previous application version
-- Checksum mismatch
-- Backup path unavailable
-
-## 16.6 Migration tests
-
-For each released version:
-
-```text
-old test fixture
-    → run current migrations
-        → verify record counts
-        → verify critical fields
-        → verify foreign keys
-        → verify search rebuild
-```
-
-## 16.7 Manual platform test matrix
-
-Before every public release:
-
-| Area                |  Windows | macOS Intel | macOS Apple Silicon |
-| ------------------- | -------: | ----------: | ------------------: |
-| Install             | Required |    Required |            Required |
-| Uninstall           | Required |    Required |            Required |
-| Create database     | Required |    Required |            Required |
-| Unlock              | Required |    Required |            Required |
-| Import document     | Required |    Required |            Required |
-| Native notification | Required |    Required |            Required |
-| Autostart           | Required |    Required |            Required |
-| Backup              | Required |    Required |            Required |
-| Restore             | Required |    Required |            Required |
-| Update              | Required |    Required |            Required |
+No visual, notification, autostart, installer, or device claim is satisfied by
+unit tests alone. The current correction-plan closeout still needs fresh seeded
+viewport captures and physical Windows/macOS validation.

@@ -2,351 +2,85 @@
 
 Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
 
----
+## Canonical schema
 
-# 9. Database model
+Migration `0007_canonical_legal_masr.sql` is the current canonical-domain
+schema. Domain tables are SQLite `STRICT` tables. Public records use non-null
+UUID text keys, money is positive EGP integer minor units, and legal dates are
+timezone-free `YYYY-MM-DD` text. `schema_migrations` is the only schema-version
+authority; `app_metadata` holds installation identity only.
 
-Use UUIDs as public/internal entity identifiers.
+| Area                  | Tables                                                                         | Key rules                                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Installation          | `app_metadata`, `lawyer_profile`, `app_settings`                               | One-row records; profile has name/bar number/phone/office address; settings hold language, theme, date/week, reminder, lock, autostart, and aggregate-counter consent. |
+| Clients               | `clients`                                                                      | Unique `internal_number`; name required; optional ID, phone, email, address, notes, and archive time. No organization/contact submodel.                                |
+| POAs                  | `powers_of_attorney`, `power_of_attorney_clients`, `power_of_attorney_lawyers` | Unique internal sequence; official number may repeat; multiple client links and descriptive lawyer rows.                                                               |
+| Cases                 | `cases`, `case_clients`, `case_opponents`                                      | Unique internal number; optional official number/year; each client relationship holds capacity, POA, notes. POA ownership is enforced by a composite foreign key.      |
+| Schedule              | `hearings`, `tasks`, `reminder_deliveries`                                     | Hearings belong to a case and optionally chain to a prior hearing. Tasks have due date/details/notes/links/reminder and constrained `completed` state only.            |
+| Finance               | `case_fee_agreements`, `payments`, `expenses`                                  | One agreement per case. Payment payer must be a client linked to the same case. Expense case/client links are independently optional.                                  |
+| Attachments           | `attachments`                                                                  | Managed-copy metadata only, with exactly one owner: client, case, POA, or expense.                                                                                     |
+| Derived/local history | `search_index`, `backup_history`, `usage_counters`                             | Search indexes Clients/Cases/POAs; backup history excludes destination paths; counters are aggregate-only.                                                             |
 
-Use:
+Removed concepts include generic `case_events`, task priority/status enums,
+external file references, generic financial transactions, client contacts and
+organizations, activity history, and a metadata schema-version field.
 
-- UTC timestamps for moments
-- `YYYY-MM-DD` text for date-only legal dates
-- Integer minor units for money
-- Foreign-key constraints
-- Explicit archive timestamps
-- Transactions for multi-record operations
+## Domain constraints
 
-## 9.1 Core tables
+### Clients, POAs, and cases
 
-```text
-app_metadata
-lawyer_profile
-app_settings
-clients
-client_contacts
-cases
-case_clients
-case_parties
-case_events
-tasks
-documents
-case_fee_agreements
-financial_transactions
-search_index
-backup_history
-activity_history
-```
+- Client internal numbers and POA internal sequences are unique non-empty text.
+- A POA official number is descriptive, not unique.
+- A case has a unique internal number; official number/year are independently
+  optional and indexed for lookup.
+- `case_clients` has primary key `(case_id, client_id)`. Its
+  `(power_of_attorney_id, client_id)` foreign key references a matching POA
+  client link, so a client cannot be assigned another client's POA.
+- Clients are restricted from deletion while case/POA relationships remain.
+- Cases cascade their client links, opponents, hearings, fee agreement, and
+  case-owned attachments. Archiving is the normal UI removal operation.
 
-## 9.2 Proposed schema
+### Hearings and tasks
 
-### `app_metadata`
+- Hearing date is required; time and reminder are optional. Status is one of
+  `SCHEDULED`, `COMPLETED`, or `CANCELLED`.
+- `previous_hearing_id` is optional and becomes `NULL` if its source is removed.
+- A task has a required due date and a `completed` boolean constrained to `0`
+  or `1`. `completed_at` must be null for open tasks and non-null for completed
+  tasks. There is no priority, due-time, assignee, source-event, or generic
+  status field.
+- Reminder delivery deduplicates by `(entity_type, entity_id, reminder_date)`
+  for canonical `HEARING` and `TASK` entities.
 
-```text
-id                    INTEGER PRIMARY KEY CHECK (id = 1)
-installation_uuid     TEXT NOT NULL
-schema_version        INTEGER NOT NULL
-created_at            TEXT NOT NULL
-updated_at            TEXT NOT NULL
-```
+### Finance and attachments
 
-The installation UUID remains local and must not be sent during update checks.
+- Fee agreements, payments, and expenses reject zero/negative money. The
+  application presents EGP; the schema does not carry a mutable currency field.
+- `payments` has a composite foreign key to `case_clients(case_id, client_id)`.
+  Both service and database reject a payer outside the case.
+- Expenses require a constrained type (`COURT_FEE`, `TRANSPORT`,
+  `OFFICE_SUPPLIES`, `EXPERT_FEE`, or `OTHER`) but can have neither, either, or
+  both client and case links.
+- An attachment records generated storage name, relative managed path, SHA-256,
+  non-negative size, optional MIME/type/date/description, and a category. Its
+  ownership check requires exactly one of `client_id`, `case_id`,
+  `power_of_attorney_id`, or `expense_id`.
 
-### `lawyer_profile`
+## Search and indexes
 
-```text
-id                    INTEGER PRIMARY KEY CHECK (id = 1)
-full_name             TEXT NOT NULL
-bar_number            TEXT
-phone                  TEXT
-email                  TEXT
-office_address         TEXT
-logo_relative_path     TEXT
-default_currency       TEXT NOT NULL DEFAULT 'EGP'
-created_at             TEXT NOT NULL
-updated_at             TEXT NOT NULL
-```
+The search index is a normalized B-tree prefix/exact index for Clients, Cases,
+and POAs. Arabic/Western digit and Arabic-letter normalization is performed
+without changing the displayed original input. FTS5 is intentionally deferred:
+the current query surface and expected local data size did not justify it.
 
-### `app_settings`
+## Migration policy
 
-```text
-id                           INTEGER PRIMARY KEY CHECK (id = 1)
-language                     TEXT NOT NULL DEFAULT 'ar'
-theme                        TEXT NOT NULL DEFAULT 'system'
-date_format                  TEXT NOT NULL
-week_starts_on               INTEGER NOT NULL
-default_reminder_minutes     INTEGER NOT NULL
-autostart_enabled            INTEGER NOT NULL DEFAULT 0
-minimize_to_tray             INTEGER NOT NULL DEFAULT 0
-lock_timeout_minutes         INTEGER NOT NULL
-backup_enabled               INTEGER NOT NULL DEFAULT 1
-backup_directory             TEXT
-backup_frequency             TEXT NOT NULL
-backup_retention_count       INTEGER NOT NULL
-last_successful_backup_at    TEXT
-created_at                   TEXT NOT NULL
-updated_at                   TEXT NOT NULL
-```
-
-### `clients`
-
-```text
-id                    TEXT PRIMARY KEY
-client_type           TEXT NOT NULL
-display_name          TEXT NOT NULL
-national_id           TEXT
-registration_number   TEXT
-primary_phone         TEXT
-normalized_phone      TEXT
-email                 TEXT
-address               TEXT
-notes                 TEXT
-archived_at            TEXT
-created_at             TEXT NOT NULL
-updated_at             TEXT NOT NULL
-```
-
-### `client_contacts`
-
-```text
-id                    TEXT PRIMARY KEY
-client_id             TEXT NOT NULL REFERENCES clients(id)
-contact_type          TEXT NOT NULL
-label                 TEXT
-value                 TEXT NOT NULL
-normalized_value      TEXT
-is_primary            INTEGER NOT NULL DEFAULT 0
-created_at            TEXT NOT NULL
-updated_at            TEXT NOT NULL
-```
-
-### `cases`
-
-**Implemented with a deviation from the schema below:** a case may have more
-than one client, so `cases` does **not** carry a `client_id` foreign key.
-See `case_clients` immediately after this table.
-
-```text
-id                    TEXT PRIMARY KEY
-case_number           TEXT NOT NULL
-judicial_year         INTEGER
-court_name            TEXT
-circuit_name          TEXT
-case_type             TEXT
-client_legal_capacity TEXT
-status                TEXT NOT NULL
-filed_on              TEXT
-closed_on             TEXT
-summary               TEXT
-notes                 TEXT
-archived_at            TEXT
-created_at             TEXT NOT NULL
-updated_at             TEXT NOT NULL
-```
-
-### `case_clients`
-
-Join table recording every client on a case, with exactly one marked
-primary (enforced by a partial unique index on `case_id` where
-`is_primary = 1`).
-
-```text
-case_id               TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE
-client_id             TEXT NOT NULL REFERENCES clients(id) ON DELETE RESTRICT
-is_primary            INTEGER NOT NULL DEFAULT 0
-created_at            TEXT NOT NULL
-PRIMARY KEY (case_id, client_id)
-```
-
-`client_id` uses `ON DELETE RESTRICT`: a client linked to a case cannot be
-deleted out from under it. `case_id` cascades: deleting a case removes its
-own join rows.
-
-### `case_parties`
-
-**Implemented with a deviation from the schema below:** the `role` enum no
-longer includes `CLIENT`/`CO_CLIENT`. `case_clients` is the single source of
-truth for which clients are on a case; `case_parties` is exclusively for
-opponents, witnesses, experts and other non-client participants
-(`OPPONENT` / `WITNESS` / `EXPERT` / `OTHER`).
-
-```text
-id                    TEXT PRIMARY KEY
-case_id               TEXT NOT NULL REFERENCES cases(id)
-role                  TEXT NOT NULL
-name                  TEXT NOT NULL
-phone                 TEXT
-address               TEXT
-notes                 TEXT
-created_at            TEXT NOT NULL
-updated_at             TEXT NOT NULL
-```
-
-### `case_events`
-
-```text
-id                    TEXT PRIMARY KEY
-case_id               TEXT REFERENCES cases(id)
-client_id             TEXT REFERENCES clients(id)
-event_type            TEXT NOT NULL
-title                 TEXT NOT NULL
-event_date            TEXT NOT NULL
-starts_at             TEXT
-ends_at               TEXT
-is_all_day            INTEGER NOT NULL
-location              TEXT
-circuit_name          TEXT
-preparation_notes     TEXT
-required_documents    TEXT
-outcome               TEXT
-decision_text         TEXT
-next_action           TEXT
-status                TEXT NOT NULL
-reminder_config_json  TEXT
-completed_at          TEXT
-created_at             TEXT NOT NULL
-updated_at             TEXT NOT NULL
-```
-
-### `tasks`
-
-```text
-id                    TEXT PRIMARY KEY
-client_id             TEXT REFERENCES clients(id)
-case_id               TEXT REFERENCES cases(id)
-source_event_id       TEXT REFERENCES case_events(id)
-title                 TEXT NOT NULL
-description           TEXT
-due_date              TEXT
-due_time              TEXT
-priority              TEXT NOT NULL
-status                TEXT NOT NULL
-reminder_config_json  TEXT
-completed_at          TEXT
-created_at             TEXT NOT NULL
-updated_at             TEXT NOT NULL
-```
-
-### `documents`
-
-```text
-id                    TEXT PRIMARY KEY
-client_id             TEXT REFERENCES clients(id)
-case_id               TEXT REFERENCES cases(id)
-storage_mode          TEXT NOT NULL
-original_filename     TEXT NOT NULL
-stored_filename       TEXT
-relative_path         TEXT
-external_path         TEXT
-mime_type             TEXT
-file_size_bytes       INTEGER
-sha256                TEXT
-category              TEXT NOT NULL
-description           TEXT
-document_date         TEXT
-missing_at            TEXT
-archived_at            TEXT
-created_at             TEXT NOT NULL
-updated_at             TEXT NOT NULL
-```
-
-### `case_fee_agreements`
-
-```text
-id                    TEXT PRIMARY KEY
-case_id               TEXT NOT NULL UNIQUE REFERENCES cases(id)
-amount_minor          INTEGER NOT NULL
-currency              TEXT NOT NULL
-agreement_date        TEXT
-notes                 TEXT
-created_at             TEXT NOT NULL
-updated_at             TEXT NOT NULL
-```
-
-### `financial_transactions`
-
-```text
-id                    TEXT PRIMARY KEY
-client_id             TEXT NOT NULL REFERENCES clients(id)
-case_id               TEXT REFERENCES cases(id)
-transaction_type      TEXT NOT NULL
-amount_minor          INTEGER NOT NULL
-currency              TEXT NOT NULL
-transaction_date      TEXT NOT NULL
-payment_method        TEXT
-description           TEXT
-receipt_document_id   TEXT REFERENCES documents(id)
-reversed_transaction_id TEXT REFERENCES financial_transactions(id)
-created_at             TEXT NOT NULL
-updated_at             TEXT NOT NULL
-```
-
-### `search_index`
-
-```text
-entity_type           TEXT NOT NULL
-entity_id             TEXT NOT NULL
-title                 TEXT NOT NULL
-subtitle              TEXT
-normalized_text       TEXT NOT NULL
-updated_at             TEXT NOT NULL
-PRIMARY KEY (entity_type, entity_id)
-```
-
-### `backup_history`
-
-```text
-id                    TEXT PRIMARY KEY
-started_at            TEXT NOT NULL
-completed_at          TEXT
-status                TEXT NOT NULL
-destination_path      TEXT
-archive_size_bytes    INTEGER
-error_code            TEXT
-created_at             TEXT NOT NULL
-```
-
-See [07-backup-format.md](07-backup-format.md) for the backup archive itself.
-
-### `activity_history`
-
-This is not a multi-user audit log. It supports recent activity and troubleshooting.
-
-```text
-id                    TEXT PRIMARY KEY
-activity_type         TEXT NOT NULL
-entity_type           TEXT
-entity_id             TEXT
-safe_description      TEXT
-created_at             TEXT NOT NULL
-```
-
-Do not store sensitive record content inside activity descriptions.
-
----
-
-# 11. Database migrations
-
-## Rules
-
-- Every schema change requires a numbered migration.
-- Applied migrations are immutable.
-- Never edit a migration already used by a beta tester.
-- Migrations run inside a transaction where SQLite permits.
-- Create a verified backup before an application update that changes schema.
-- Record migration version in the database.
-- Test migration from every publicly released schema version.
-- Do not implement automatic downgrade migrations.
-
-## Startup migration process
-
-1. Unlock database.
-2. Check integrity.
-3. Read schema version.
-4. Determine pending migrations.
-5. Create pre-migration backup.
-6. Apply migrations.
-7. Rebuild derived search index if required.
-8. Run post-migration integrity checks.
-9. Start application.
-10. On failure, keep the pre-migration backup and stop.
+- Every schema change receives a new numbered immutable SQL migration.
+- Migration `0007` replaces the empty experimental development baseline only.
+  Startup rejects a populated legacy vault with
+  `LEGACY_DATA_MIGRATION_REQUIRED` before applying it; a real persisted vault
+  needs an explicit forward data/file conversion migration.
+- Startup opens SQLCipher, enables foreign keys, applies pending migrations,
+  rebuilds derived search data where required, and checks integrity.
+- Migration tests cover a clean canonical database plus refusal to replace a
+  populated legacy schema. No automatic downgrade exists.

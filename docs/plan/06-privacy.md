@@ -2,66 +2,49 @@
 
 Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
 
----
+## Privacy by architecture
 
-# 4.5 Privacy by architecture
+LegalMaster Solo is local-first: feature modules have no general-purpose HTTP
+client, React has no database or arbitrary filesystem access, and the product
+does not use cloud accounts, analytics, telemetry, or legal-record logs.
+Application data, managed attachments, local backups, search index, and backup
+history stay on the device unless the lawyer explicitly chooses a native file
+operation.
 
-Egypt's Personal Data Protection Law No. 151 of 2020 governs electronic processing of personal data, and its executive framework was operationalized by Ministerial Decree No. 816 of 2025. Legal summaries identify a one-year compliance transition ending on **November 1, 2026**. The application's local-only design reduces the amount of case information processed by LegalMaster as a vendor, but it does not by itself certify the lawyer's legal compliance.
+The local-only design reduces vendor processing but does not certify a lawyer's
+legal compliance. Before public release, an Egyptian privacy lawyer must review
+the privacy notice and marketing must not claim blanket legal compliance.
 
-Before public release:
+## Implemented controls
 
-- An Egyptian privacy lawyer must review the privacy notice.
-- Marketing must not claim "fully compliant with Egyptian law" without written legal review.
-- The software must clearly explain which information remains on the device and which limited requests contact the internet.
+- SQLCipher database with password and recovery-key envelopes; passwords and
+  master keys do not leave Rust.
+- Managed-copy attachments accessed only by opaque ID/source-token commands;
+  React never receives an arbitrary local path capability.
+- Settings → Privacy identifies the local-data model, network policy, and
+  aggregate usage-counter opt-in. Counters are local aggregate values only.
+- Native reminders use generic, privacy-safe text.
+- Local daily logs include only version, OS family, stable error codes, and
+  allow-listed diagnostic facts; raw SQLite messages and personal/legal data
+  are withheld.
+- Manual encrypted backup, validation, staged restore, and latest successful
+  backup metadata are available locally.
 
----
+## Data-management status
 
-# 8.13 Privacy and data-management tools
+The current client export command writes one JSON file containing the selected
+client and linked domain records to a user-chosen folder. It is not the stable
+CSV/manifest export format and does not copy attachment files.
 
-### Required tools
+The following privacy/data-management requirements remain unimplemented and
+are release blockers:
 
-- Export one client and all linked data.
-- Export one case.
-- Export complete installation.
-- Archive client.
-- Archive case.
-- Permanently delete a client through a guided workflow.
-- Permanently delete a case through a guided workflow.
-- Remove document metadata.
-- Remove managed document files.
-- Display application data location.
-- Display backup locations.
-- Display network policy.
-- Display current application version.
-- Display privacy notice.
+- complete-installation, case, and documented CSV/manifest exports;
+- guided permanent deletion for client, case, and all application data;
+- deletion impact preview, text confirmation, optional emergency backup, and
+  clear managed-file failure reporting;
+- a manually generated redacted support bundle containing only approved system,
+  version, safe settings, schema version, and error-code information.
 
-### Complete export
-
-Provide:
-
-```text
-export/
-├── clients.csv
-├── cases.csv
-├── events.csv
-├── tasks.csv
-├── financial-transactions.csv
-├── documents.csv
-├── documents/
-└── export-manifest.json
-```
-
-This format should be documented and stable enough to support later migration into LegalMaster Firms.
-
-### Deletion workflow
-
-Permanent deletion should:
-
-1. Display affected records.
-2. Explain attached documents.
-3. Require explicit text confirmation.
-4. Create an optional emergency backup.
-5. Delete within one database transaction where possible.
-6. Remove managed files only after the database operation is prepared.
-7. Report any file-deletion failure.
-8. Avoid claiming guaranteed forensic erasure on SSDs or third-party backup systems.
+No deletion workflow may promise forensic erasure from SSDs or third-party
+backup media.

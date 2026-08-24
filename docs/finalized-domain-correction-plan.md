@@ -236,15 +236,20 @@ passed, including `pnpm tauri build --debug --bundles deb`.
 
 ## Phase 7 — Documentation and visual sign-off
 
-1. Update data model, architecture, functional modules, backup format, privacy,
-   testing, roadmap status, README, and this plan’s decision record so they
-   describe the implemented result.
-2. Compare seeded running-app captures against approved screens at 1440x900 and
-   1366x768; correct meaningful spacing, RTL, typography, focus, table,
-   dialog, overflow, and mixed-direction defects.
-3. Complete a final source scan for obsolete fields/features, React SQL access,
-   arbitrary filesystem/shell/HTTP exposure, and unsafe personal-data logs.
-4. Produce the final change, validation, and remaining-risk report.
+**Status: In progress (2026-08-24).**
+
+1. [x] Update data model, architecture, functional modules, backup format, privacy,
+       testing, roadmap status, README, and this plan’s decision record so they
+       describe the implemented result.
+2. [ ] Compare seeded running-app captures against approved screens at 1440x900 and
+       1366x768; correct meaningful spacing, RTL, typography, focus, table,
+       dialog, overflow, and mixed-direction defects. Blocked: this environment has
+       no approved browser/capture surface for a seeded running Tauri app. Old Phase
+       0 baseline images are not valid sign-off evidence.
+3. [x] Complete a final source scan for obsolete fields/features, React SQL access,
+       arbitrary filesystem/shell/HTTP exposure, and unsafe personal-data logs.
+4. [x] Produce the change, validation, and remaining-risk report:
+       [finalized-domain-phase-7-report.md](finalized-domain-phase-7-report.md).
 
 ## Completion checklist
 

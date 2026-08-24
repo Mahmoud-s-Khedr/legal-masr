@@ -1,12 +1,42 @@
 # LegalMaster Solo
 
-Arabic-first, offline-first desktop practice organizer for individual Egyptian lawyers.
+Arabic-first, offline-first desktop practice organizer for individual Egyptian
+lawyers. Legal records, encryption material, managed attachments, search, and
+backup history remain on the lawyer's device.
 
-## Current milestone
+## Current implementation
 
-The project contains the Phase 1 security spike and Phase 2 application foundation: a Tauri desktop shell, Arabic-first onboarding and lock screens, a SQLCipher-backed local database, password/recovery-key envelopes, immutable migrations, encrypted backup creation/validation/restore, settings storage, and a guarded application shell.
+The canonical Legal Masr domain is implemented through migration
+`0007_canonical_legal_masr.sql`: clients, powers of attorney, cases and their
+client relationships/opponents, hearings, tasks, managed-copy attachments,
+fee agreements, payments, expenses, reminders, local search, and aggregate
+opt-in usage counters.
 
-It intentionally does **not** yet contain client, case, document, financial, or network features. Lawyer workflow research must validate those product fields before Phase 3 begins.
+The application uses a Tauri 2 / React / TypeScript shell and a Rust-only
+SQLCipher boundary. The UI is Arabic RTL by default, supports English as a
+preference, keeps legal dates as `YYYY-MM-DD` values, and stores EGP values as
+integer minor units. Native file selection/open/reveal happens through narrow
+Rust commands; React does not access SQLite or arbitrary local paths.
+
+Available privacy and recovery features include password/recovery-key vault
+access, locking, local manual encrypted backups with checksum validation,
+staged restore with rollback protection, backup history, native safe
+reminders, optional autostart, and an in-app privacy/data-location screen.
+
+## Known release blockers
+
+This is not ready for a public beta. The following work remains:
+
+- visual sign-off from fresh seeded application captures at 1440×900 and
+  1366×768;
+- repeated portable restore and native Windows/macOS runner/device validation;
+- automatic backup/retention and restore preview;
+- documented full-installation and case exports, permanent deletion, and a
+  redacted support bundle.
+
+See [the finalized correction plan](docs/finalized-domain-correction-plan.md)
+and its [Phase 7 report](docs/finalized-domain-phase-7-report.md) for the
+current decision record and evidence.
 
 ## Local development
 
@@ -15,17 +45,17 @@ pnpm install
 pnpm tauri dev
 ```
 
-### Development diagnostics
-
-To show sanitized command diagnostics in the browser console and relevant failure panels, run:
+For sanitized developer diagnostics in a development build only:
 
 ```bash
 VITE_DETAILED_DIAGNOSTICS=true pnpm tauri dev
 ```
 
-The flag is ignored in release builds. Diagnostics contain only a command name, stable error code, and allow-listed implementation facts (for example, a missing SQLite column); they never include legal records, document paths, passwords, or encryption keys.
+Diagnostics contain only a command name, stable error code, and allow-listed
+implementation facts. They never contain legal records, document paths,
+passwords, or encryption keys.
 
-Validation:
+## Validation
 
 ```bash
 pnpm format:check
@@ -37,10 +67,16 @@ pnpm build
 pnpm tauri build --debug --bundles deb
 ```
 
-Format frontend and project files with `pnpm format`; Rust code is formatted with `cd src-tauri && cargo fmt`.
+Format frontend and project files with `pnpm format`; format Rust with
+`cd src-tauri && cargo fmt`.
 
-## Data and security
+## Security and data handling
 
-All database access stays in Rust. Passwords and recovery keys are never stored in React state beyond the current form input and never leave the device. The initial document uses a random database master key wrapped with Argon2id-derived password material and a separate recovery envelope.
+The database master key is random and is wrapped separately for the password
+and recovery key using Argon2id and authenticated encryption. Managed
+attachments are normal local files protected by the operating-system account
+and full-disk encryption; they are not individually application-encrypted.
 
-See [docs/BUILDING.md](docs/BUILDING.md) for Fedora prerequisites and local Linux builds, [docs/RELEASING.md](docs/RELEASING.md) for the draft-release workflow, and [docs/SIGNING_POLICY.md](docs/SIGNING_POLICY.md) for the unsigned Windows and ad-hoc macOS policy.
+See [docs/BUILDING.md](docs/BUILDING.md) for local build prerequisites,
+[docs/RELEASING.md](docs/RELEASING.md) for the draft-release workflow, and
+[docs/SIGNING_POLICY.md](docs/SIGNING_POLICY.md) for current signing policy.
