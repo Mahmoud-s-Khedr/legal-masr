@@ -46,7 +46,11 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
       </label>
       <label>
         الدرجة القضائية
-        <select {...register('litigationDegree' as never)}>
+        <select
+          {...register('litigationDegree' as never, {
+            setValueAs: (value: string) => value || undefined,
+          })}
+        >
           <option value="">—</option>
           {LITIGATION_DEGREES.map((degree) => (
             <option key={degree} value={degree}>

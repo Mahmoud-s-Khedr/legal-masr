@@ -9,7 +9,10 @@ use crate::{
     state::AppState,
 };
 use sha2::{Digest, Sha256};
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use tauri::{AppHandle, Runtime};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
@@ -95,6 +98,50 @@ fn validate_owners(conn: &rusqlite::Connection, input: &AttachmentInput) -> Resu
     }
     Ok(())
 }
+
+fn persist_managed_copy(
+    conn: &rusqlite::Connection,
+    temporary: &Path,
+    target: &Path,
+    attachment: &AttachmentDto,
+) -> Result<(), Error> {
+    let result = (|| -> Result<(), Error> {
+        let tx = conn.unchecked_transaction()?;
+        document_repository::insert(&tx, attachment)?;
+        fs::rename(temporary, target)?;
+        tx.commit()?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(temporary);
+        let _ = fs::remove_file(target);
+    }
+    result
+}
+
+fn remove_managed_attachment(
+    conn: &rusqlite::Connection,
+    attachments_root: &Path,
+    id: &str,
+) -> Result<(), Error> {
+    let attachment = document_repository::get(conn, id)?;
+    let live = attachments_root.join(&attachment.relative_path);
+    let staged = live.with_extension("deleting");
+    if live.exists() {
+        fs::rename(&live, &staged)?;
+    }
+    let result = document_repository::delete(conn, id);
+    if let Err(error) = result {
+        if staged.exists() {
+            let _ = fs::rename(staged, live);
+        }
+        return Err(error);
+    }
+    if staged.exists() {
+        fs::remove_file(staged)?;
+    }
+    Ok(())
+}
 pub fn select_source<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
@@ -175,18 +222,7 @@ pub fn add<R: Runtime>(
         created_at: now.clone(),
         updated_at: now.clone(),
     };
-    let result = (|| -> Result<(), Error> {
-        let tx = conn.unchecked_transaction()?;
-        document_repository::insert(&tx, &attachment)?;
-        fs::rename(&temporary, &target)?;
-        tx.commit()?;
-        Ok(())
-    })();
-    if let Err(error) = result {
-        let _ = fs::remove_file(&temporary);
-        let _ = fs::remove_file(&target);
-        return Err(error);
-    }
+    persist_managed_copy(&conn, &temporary, &target, &attachment)?;
     Ok(attachment)
 }
 pub fn list<R: Runtime>(
@@ -260,27 +296,48 @@ pub fn remove<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Res
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
-    let attachment = document_repository::get(&conn, id)?;
-    let live = root(app)?.join(&attachment.relative_path);
-    let staged = live.with_extension("deleting");
-    if live.exists() {
-        fs::rename(&live, &staged)?;
-    }
-    let result = document_repository::delete(&conn, id);
-    if let Err(error) = result {
-        if staged.exists() {
-            let _ = fs::rename(staged, live);
-        }
-        return Err(error);
-    }
-    if staged.exists() {
-        fs::remove_file(staged)?;
-    }
-    Ok(())
+    remove_managed_attachment(&conn, &root(app)?, id)
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{db, repositories::document_repository};
+
+    fn attachment(id: String, client_id: String, stored_filename: &str) -> AttachmentDto {
+        AttachmentDto {
+            id,
+            client_id: Some(client_id),
+            case_id: None,
+            power_of_attorney_id: None,
+            expense_id: None,
+            original_filename: "source.pdf".into(),
+            stored_filename: stored_filename.into(),
+            relative_path: stored_filename.into(),
+            mime_type: None,
+            file_size_bytes: 7,
+            sha256: "a".repeat(64),
+            category: "OTHER".into(),
+            description: None,
+            document_date: None,
+            created_at: "now".into(),
+            updated_at: "now".into(),
+        }
+    }
+
+    fn test_connection() -> (tempfile::TempDir, rusqlite::Connection, String) {
+        let directory = tempfile::tempdir().unwrap();
+        let connection = rusqlite::Connection::open_in_memory().unwrap();
+        db::migrate(&connection).unwrap();
+        let client_id = Uuid::new_v4().to_string();
+        connection
+            .execute(
+                "INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, 'CL-1', 'أحمد', 'now', 'now')",
+                [&client_id],
+            )
+            .unwrap();
+        (directory, connection, client_id)
+    }
+
     #[test]
     fn attachment_requires_one_owner_and_a_date_only_value() {
         let input = AttachmentInput {
@@ -295,5 +352,50 @@ mod tests {
         };
         assert!(validate_owner(&input).is_ok());
         assert!(!valid_date(Some("2026-08-24T00:00:00Z")));
+    }
+
+    #[test]
+    fn managed_copy_is_durable_and_cleans_up_when_metadata_cannot_be_written() {
+        let (directory, connection, client_id) = test_connection();
+        let root = directory.path().join("attachments");
+        fs::create_dir(&root).unwrap();
+        let first = attachment(Uuid::new_v4().to_string(), client_id.clone(), "first.pdf");
+        let temporary = root.join(".first.partial");
+        let target = root.join("first.pdf");
+        fs::write(&temporary, b"durable").unwrap();
+        persist_managed_copy(&connection, &temporary, &target, &first).unwrap();
+        assert_eq!(fs::read(&target).unwrap(), b"durable");
+        assert_eq!(
+            document_repository::get(&connection, &first.id).unwrap().id,
+            first.id
+        );
+
+        let duplicate = attachment(first.id.clone(), client_id, "duplicate.pdf");
+        let duplicate_temporary = root.join(".duplicate.partial");
+        let duplicate_target = root.join("duplicate.pdf");
+        fs::write(&duplicate_temporary, b"discard").unwrap();
+        assert!(persist_managed_copy(
+            &connection,
+            &duplicate_temporary,
+            &duplicate_target,
+            &duplicate
+        )
+        .is_err());
+        assert!(!duplicate_temporary.exists());
+        assert!(!duplicate_target.exists());
+    }
+
+    #[test]
+    fn removing_an_attachment_removes_its_managed_copy_and_metadata() {
+        let (directory, connection, client_id) = test_connection();
+        let root = directory.path().join("attachments");
+        fs::create_dir(&root).unwrap();
+        let item = attachment(Uuid::new_v4().to_string(), client_id, "remove.pdf");
+        document_repository::insert(&connection, &item).unwrap();
+        fs::write(root.join("remove.pdf"), b"remove me").unwrap();
+
+        remove_managed_attachment(&connection, &root, &item.id).unwrap();
+        assert!(!root.join("remove.pdf").exists());
+        assert!(document_repository::get(&connection, &item.id).is_err());
     }
 }

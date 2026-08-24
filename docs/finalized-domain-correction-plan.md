@@ -211,22 +211,28 @@ implements the product behavior rather than generated Stitch artifacts.
 
 ## Phase 6 — Test matrix, migration safety, and cleanup
 
-1. Schema: clean migration, legacy migration (if applicable), FK/integrity
-   checks, all delete-policy tests.
-2. Domain: client uniqueness/archive; POA links and repeated official number;
-   case capacity per relationship; opponents; hearing chains; task derivation;
-   payment payer constraint/totals; all expense combinations.
-3. Files/backup: managed copy durability, failure cleanup, attachment removal,
-   backup database+attachments+manifest, corrupt restore staging safety, latest
-   successful backup metadata.
-4. UI: forms, tabs, dialogs, comboboxes, task checkbox, payer filtering,
-   optional expense relationships, Case/Client/POA flows, RTL mixed text.
-5. Run `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`,
-   `pnpm build`, `cargo fmt --check`, clippy with warnings denied, full Cargo
-   tests, and the relevant debug Tauri build.
+**Status: Complete (2026-08-24).**
 
-Exit criteria: failures introduced by this work are fixed rather than skipped;
+1. [x] Schema: clean migration, legacy migration (if applicable), FK/integrity
+       checks, all delete-policy tests.
+2. [x] Domain: client uniqueness/archive; POA links and repeated official number;
+       case capacity per relationship; opponents; hearing chains; task derivation;
+       payment payer constraint/totals; all expense combinations.
+3. [x] Files/backup: managed copy durability, failure cleanup, attachment removal,
+       backup database+attachments+manifest, corrupt restore staging safety, latest
+       successful backup metadata.
+4. [x] UI: forms, tabs, dialogs, comboboxes, task checkbox, payer filtering,
+       optional expense relationships, Case/Client/POA flows, RTL mixed text.
+5. [x] Run `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`,
+       `pnpm build`, `cargo fmt --check`, clippy with warnings denied, full Cargo
+       tests, and the relevant debug Tauri Debian build.
+
+Exit criteria: [x] failures introduced by this work are fixed rather than skipped;
 all acceptance invariants have automated coverage.
+
+Evidence: `canonical_domain_matrix` integration coverage; managed-attachment and
+backup restore safety tests; UI form/workflow tests; all listed validation commands
+passed, including `pnpm tauri build --debug --bundles deb`.
 
 ## Phase 7 — Documentation and visual sign-off
 
