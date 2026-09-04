@@ -7,7 +7,7 @@ backup history remain on the lawyer's device.
 ## Current implementation
 
 The canonical Legal Masr domain is implemented through migration
-`0007_canonical_legal_masr.sql`: clients, powers of attorney, cases and their
+`0001_canonical_legal_masr.sql`: clients, powers of attorney, cases and their
 client relationships/opponents, hearings, tasks, managed-copy attachments,
 fee agreements, payments, expenses, reminders, local search, and aggregate
 opt-in usage counters.

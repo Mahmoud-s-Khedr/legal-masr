@@ -13,7 +13,9 @@ use tauri::{AppHandle, Runtime};
 use zeroize::Zeroize;
 
 pub fn get_status<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<Status, Error> {
+    let _security_guard = state.lock_security_operations()?;
     let (security_path, _) = db::paths(app)?;
+    security::recover_interrupted_security_write(&security_path)?;
     let master = state
         .master_key
         .lock()
@@ -31,6 +33,7 @@ pub fn initialize<R: Runtime>(
     state: &AppState,
     input: InitializeInput,
 ) -> Result<InitializeResult, Error> {
+    let _security_guard = state.lock_security_operations()?;
     if input.password.chars().count() < 12
         || input.full_name.trim().is_empty()
         || !matches!(input.language.as_str(), "ar" | "en")
@@ -39,6 +42,7 @@ pub fn initialize<R: Runtime>(
         return Err(Error::Validation);
     }
     let (security_path, db_path) = db::paths(app)?;
+    security::recover_interrupted_security_write(&security_path)?;
     if security_path.exists() {
         return Err(Error::Initialized);
     }
@@ -79,9 +83,9 @@ pub fn initialize<R: Runtime>(
         return Err(error);
     }
     let temp_security = security_path.with_extension("tmp");
-    if let Err(error) = fs::write(&temp_security, serde_json::to_vec_pretty(&security_file)?) {
+    if let Err(error) = security::write_security_atomically(&temp_security, &security_file) {
         let _ = fs::remove_file(&temp_db);
-        return Err(error.into());
+        return Err(error);
     }
     if let Err(error) = fs::rename(&temp_db, &db_path) {
         let _ = fs::remove_file(&temp_db);
@@ -102,7 +106,9 @@ pub fn unlock<R: Runtime>(
     state: &AppState,
     password: &str,
 ) -> Result<(), Error> {
+    let _security_guard = state.lock_security_operations()?;
     let (security_path, db_path) = db::paths(app)?;
+    security::recover_interrupted_security_write(&security_path)?;
     let security_file = security::read_security(&security_path)?;
     let salt = STANDARD
         .decode(security_file.salt)
@@ -134,10 +140,12 @@ pub fn change_password<R: Runtime>(
     current_password: &str,
     new_password: &str,
 ) -> Result<(), Error> {
+    let _security_guard = state.lock_security_operations()?;
     if new_password.chars().count() < 12 {
         return Err(Error::Validation);
     }
     let (security_path, _) = db::paths(app)?;
+    security::recover_interrupted_security_write(&security_path)?;
     let mut security_file = security::read_security(&security_path)?;
     let old_salt = STANDARD
         .decode(&security_file.salt)
@@ -160,7 +168,7 @@ pub fn change_password<R: Runtime>(
     )?;
     security_file.salt = STANDARD.encode(salt);
     security_file.password_envelope = security::wrap(&new_key, &master)?;
-    fs::write(security_path, serde_json::to_vec_pretty(&security_file)?)?;
+    security::write_security_atomically(&security_path, &security_file)?;
     *state.master_key.lock().map_err(|_| Error::Locked)? = Some(master);
     Ok(())
 }
@@ -171,10 +179,12 @@ pub fn recover_access<R: Runtime>(
     recovery_key: &str,
     new_password: &str,
 ) -> Result<(), Error> {
+    let _security_guard = state.lock_security_operations()?;
     if new_password.chars().count() < 12 {
         return Err(Error::Validation);
     }
     let (security_path, db_path) = db::paths(app)?;
+    security::recover_interrupted_security_write(&security_path)?;
     let mut security_file = security::read_security(&security_path)?;
     let master = security::unwrap(
         &security::recovery_key_material(recovery_key),
@@ -193,7 +203,7 @@ pub fn recover_access<R: Runtime>(
     )?;
     security_file.salt = STANDARD.encode(salt);
     security_file.password_envelope = security::wrap(&password_key, &master)?;
-    fs::write(security_path, serde_json::to_vec_pretty(&security_file)?)?;
+    security::write_security_atomically(&security_path, &security_file)?;
     *state.master_key.lock().map_err(|_| Error::Locked)? = Some(master);
     Ok(())
 }

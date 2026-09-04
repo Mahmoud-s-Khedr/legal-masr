@@ -7,6 +7,7 @@ import { Tabs } from '../../../components/ui/Tabs';
 import { useCase, useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
 import { useExpenses, usePayments, useSaveExpense, useSavePayment } from '../api/financesApi';
+import { localDateOnly } from '../../../lib/dateOnly';
 
 const methods: ReadonlyArray<[PaymentMethod, string]> = [
   ['CASH', 'نقدي'],
@@ -22,7 +23,7 @@ const expenseTypes: ReadonlyArray<[ExpenseType, string]> = [
   ['EXPERT_FEE', 'أتعاب خبير'],
   ['OTHER', 'أخرى'],
 ];
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => localDateOnly();
 export const parseMoneyToMinor = (value: string): number | null => {
   const match = value
     .trim()

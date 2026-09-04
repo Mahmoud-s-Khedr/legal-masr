@@ -4,8 +4,9 @@ import { bridge } from '../../../bridge/commands';
 import { useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
 import { queryKeys } from '../../../lib/queryKeys';
+import { localDateOnly } from '../../../lib/dateOnly';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => localDateOnly();
 export function DashboardPage() {
   const date = today();
   const agenda = useQuery({

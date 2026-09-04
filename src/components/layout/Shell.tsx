@@ -28,10 +28,15 @@ export function Shell({ onLock }: { onLock: () => void }) {
     reset();
     window.addEventListener('pointerdown', reset);
     window.addEventListener('keydown', reset);
+    const lockOnResume = () => {
+      if (document.visibilityState === 'visible') void onLock();
+    };
+    document.addEventListener('visibilitychange', lockOnResume);
     return () => {
       clearTimeout(timer);
       window.removeEventListener('pointerdown', reset);
       window.removeEventListener('keydown', reset);
+      document.removeEventListener('visibilitychange', lockOnResume);
     };
   }, [lockTimeoutMinutes, onLock]);
 

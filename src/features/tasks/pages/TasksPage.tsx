@@ -13,8 +13,9 @@ import {
   useSaveTask,
   useTaskList,
 } from '../api/tasksApi';
+import { localDateOnly } from '../../../lib/dateOnly';
 
-const localDate = () => new Date().toISOString().slice(0, 10);
+const localDate = () => localDateOnly();
 const labels = {
   TODAY: 'اليوم',
   OVERDUE: 'متأخرة',

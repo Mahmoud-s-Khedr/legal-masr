@@ -51,3 +51,20 @@ pnpm tauri build --bundles deb
 Expected release output is under `src-tauri/target/release/bundle/`; for the command above, the Debian package is under `src-tauri/target/release/bundle/deb/`. Debug builds use `src-tauri/target/debug/bundle/` instead.
 
 Do not upload Linux artifacts through the public release workflow and do not add Linux signing credentials.
+
+## GitHub Actions builds
+
+You do not need to produce a local package to validate a change. The **Validate**
+workflow runs on pull requests, pushes to `main`, and on demand through the
+Actions tab. It executes every required frontend and Rust check, builds debug
+Debian and Fedora RPM packages, and retains the non-release artifacts for seven
+days as `legalmaster-solo-linux-debug-deb` and
+`legalmaster-solo-linux-debug-rpm`.
+
+To test on Fedora, download and unpack the RPM artifact from the completed
+workflow run, then install the extracted package with
+`sudo dnf install ./<package>.rpm`.
+
+For distributable Windows and macOS packages, use the tag/manual **Draft
+release** workflow described in [RELEASING.md](RELEASING.md). It creates a
+draft prerelease only; it does not publish automatically.

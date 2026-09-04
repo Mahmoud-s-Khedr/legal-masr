@@ -172,6 +172,7 @@ pub fn add<R: Runtime>(
     input: AttachmentInput,
 ) -> Result<AttachmentDto, Error> {
     validate_owner(&input)?;
+    let _attachment_guard = state.lock_attachment_operations()?;
     let source = state.take_document_source(&input.source_token)?;
     if !source.is_file() {
         return Err(Error::AttachmentSourceMissing);
@@ -293,6 +294,7 @@ pub fn reveal<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Res
         .map_err(|_| Error::Operation)
 }
 pub fn remove<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
+    let _attachment_guard = state.lock_attachment_operations()?;
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;

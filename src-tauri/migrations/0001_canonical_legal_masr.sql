@@ -1,27 +1,18 @@
--- The correction-plan compatibility audit found no released vault fixture or
--- distribution history in this repository.  The Rust migration runner refuses
--- a populated legacy vault before reaching this migration; this SQL therefore
--- replaces only the experimental, empty development baseline.
+-- The sole pre-release canonical schema. Existing vaults from the superseded
+-- migration chain are refused by the Rust migration boundary without mutation.
+CREATE TABLE schema_migrations (
+  version INTEGER PRIMARY KEY,
+  applied_at TEXT NOT NULL
+) STRICT;
 
-DROP TABLE IF EXISTS reminder_deliveries;
-DROP TABLE IF EXISTS financial_transactions;
-DROP TABLE IF EXISTS case_fee_agreements;
-DROP TABLE IF EXISTS documents;
-DROP TABLE IF EXISTS tasks;
-DROP TABLE IF EXISTS case_events;
-DROP TABLE IF EXISTS case_parties;
-DROP TABLE IF EXISTS case_clients;
-DROP TABLE IF EXISTS client_contacts;
-DROP TABLE IF EXISTS search_index;
-DROP TABLE IF EXISTS activity_history;
-DROP TABLE IF EXISTS backup_history;
-DROP TABLE IF EXISTS cases;
-DROP TABLE IF EXISTS clients;
-DROP TABLE IF EXISTS lawyer_profile;
-DROP TABLE IF EXISTS app_settings;
-ALTER TABLE app_metadata RENAME TO legacy_app_metadata;
+CREATE TABLE migration_baseline (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  name TEXT NOT NULL CHECK (name = 'canonical-pre-release-2026-09-04')
+) STRICT;
+INSERT INTO migration_baseline (id, name)
+VALUES (1, 'canonical-pre-release-2026-09-04');
 
--- Installation identity only.  schema_migrations is the sole version source.
+-- Installation identity only. schema_migrations is the sole version source.
 CREATE TABLE app_metadata (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   installation_uuid TEXT NOT NULL CHECK (length(installation_uuid) = 36),
@@ -29,21 +20,13 @@ CREATE TABLE app_metadata (
   updated_at TEXT NOT NULL
 ) STRICT;
 INSERT INTO app_metadata (id, installation_uuid, created_at, updated_at)
-SELECT
-  1,
-  CASE
-    WHEN length(installation_uuid) = 32 THEN
-      substr(installation_uuid, 1, 8) || '-' || substr(installation_uuid, 9, 4) || '-' ||
-      substr(installation_uuid, 13, 4) || '-' || substr(installation_uuid, 17, 4) || '-' ||
-      substr(installation_uuid, 21, 12)
-    ELSE lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6)))
-  END,
-  created_at,
-  updated_at
-FROM legacy_app_metadata
-WHERE id = 1;
-INSERT OR IGNORE INTO app_metadata (id, installation_uuid, created_at, updated_at)
 VALUES (1, lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+
+CREATE TABLE spike_records (
+  id TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  created_at TEXT NOT NULL
+) STRICT;
 
 CREATE TABLE lawyer_profile (
   id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -320,7 +303,9 @@ CREATE TABLE reminder_deliveries (
 ) STRICT;
 CREATE INDEX idx_reminder_deliveries_date ON reminder_deliveries(reminder_date DESC);
 
-INSERT OR IGNORE INTO schema_migrations (version, applied_at)
-SELECT 1, created_at FROM app_metadata WHERE id = 1;
-
-DROP TABLE legacy_app_metadata;
+INSERT OR IGNORE INTO app_settings (id, created_at, updated_at)
+VALUES (
+  1,
+  strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
+  strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+);

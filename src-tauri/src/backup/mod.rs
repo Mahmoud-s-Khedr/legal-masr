@@ -140,6 +140,9 @@ fn decrypt(path: &str, master: &[u8; 32]) -> Result<Vec<u8>, Error> {
     let ciphertext = STANDARD
         .decode(payload.ciphertext)
         .map_err(|_| Error::BackupInvalid)?;
+    if nonce.len() != 24 {
+        return Err(Error::BackupInvalid);
+    }
     XChaCha20Poly1305::new_from_slice(&key)
         .map_err(|_| Error::BackupInvalid)?
         .decrypt(XNonce::from_slice(&nonce), ciphertext.as_ref())
@@ -423,5 +426,21 @@ mod tests {
         assert_eq!(fs::read(documents.join("live.pdf")).unwrap(), b"live");
         assert!(!active.with_extension("restore.tmp").exists());
         assert!(!documents.with_extension("restore.tmp").exists());
+    }
+
+    #[test]
+    fn malformed_backup_nonce_is_refused_without_panicking() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("bad-nonce.lmsbackup");
+        let payload = BackupEnvelope {
+            version: 1,
+            nonce: STANDARD.encode([0_u8; 23]),
+            ciphertext: STANDARD.encode([0_u8; 48]),
+        };
+        fs::write(&path, serde_json::to_vec(&payload).unwrap()).unwrap();
+        assert!(matches!(
+            validate(&path.to_string_lossy(), &security::random_32()),
+            Err(Error::BackupInvalid)
+        ));
     }
 }

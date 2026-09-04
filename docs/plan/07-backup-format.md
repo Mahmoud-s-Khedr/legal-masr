@@ -46,6 +46,11 @@ attachments/database, and rolls back the live files if either replacement
 fails. A corrupt restore therefore leaves the active vault and attachments
 unchanged.
 
+Attachment mutations are serialized with backup and restore, so the archive
+cannot pair a database snapshot with a different attachment-directory state.
+After a successful restore the vault locks and the UI drops its cached records;
+the lawyer unlocks it again before viewing restored data.
+
 ## Known gaps
 
 Portable cross-device restore with the original password is not yet designed or

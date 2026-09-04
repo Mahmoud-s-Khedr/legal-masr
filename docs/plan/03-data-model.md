@@ -4,9 +4,9 @@ Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
 
 ## Canonical schema
 
-Migration `0007_canonical_legal_masr.sql` establishes the canonical-domain
-schema; `0008_repair_missing_app_settings.sql` ensures every canonical vault
-has its required settings singleton. Domain tables are SQLite `STRICT` tables.
+Migration `0001_canonical_legal_masr.sql` establishes the complete
+canonical-domain schema and its required settings singleton. Domain tables are
+SQLite `STRICT` tables.
 Public records use non-null UUID text keys, money is positive EGP integer minor
 units, and legal dates are timezone-free `YYYY-MM-DD` text.
 `schema_migrations` is the only schema-version authority; `app_metadata` holds
@@ -77,15 +77,12 @@ the current query surface and expected local data size did not justify it.
 
 ## Migration policy
 
-- Every schema change receives a new numbered immutable SQL migration.
-- Migration `0007` replaces the empty experimental development baseline only.
-  Startup rejects a populated legacy vault with
-  `LEGACY_DATA_MIGRATION_REQUIRED` before applying it; a real persisted vault
-  needs an explicit forward data/file conversion migration.
-- Migration `0008` is a forward-only repair for an absent `app_settings` row.
-  It inserts canonical defaults only when that singleton is missing and never
-  overwrites an existing user's settings.
+- `0001` is the sole pre-release canonical migration. It creates both the
+  complete domain schema and required settings singleton.
+- Startup identifies the baseline with an internal marker. It refuses every
+  superseded schema with `LEGACY_DATA_MIGRATION_REQUIRED` before applying any
+  SQL, so a persisted vault requires an explicit conversion decision.
 - Startup opens SQLCipher, enables foreign keys, applies pending migrations,
   rebuilds derived search data where required, and checks integrity.
 - Migration tests cover a clean canonical database plus refusal to replace a
-  populated legacy schema. No automatic downgrade exists.
+  superseded schema. No automatic downgrade exists.

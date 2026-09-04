@@ -19,4 +19,15 @@ export const useCreateBackup = () => {
 
 export const useValidateBackup = () => useMutation({ mutationFn: bridge.validateBackup });
 
-export const useRestoreBackup = () => useMutation({ mutationFn: bridge.restoreBackup });
+export const useRestoreBackup = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bridge.restoreBackup,
+    onSuccess: async () => {
+      // Restore replaces the entire vault. Drop every record derived from the
+      // previous vault before the locked gate can render again.
+      queryClient.clear();
+      await queryClient.fetchQuery({ queryKey: queryKeys.appStatus, queryFn: bridge.status });
+    },
+  });
+};

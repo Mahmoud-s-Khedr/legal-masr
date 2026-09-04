@@ -8,7 +8,14 @@ use chacha20poly1305::{
 use rand::{rngs::OsRng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{fs, path::Path};
+use std::{
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+};
+use uuid::Uuid;
+
+const XCHACHA_NONCE_BYTES: usize = 24;
 
 #[derive(Serialize, Deserialize)]
 pub struct Envelope {
@@ -68,6 +75,9 @@ pub fn unwrap(key: &[u8; 32], envelope: &Envelope) -> Result<[u8; 32], Error> {
     let ciphertext = STANDARD
         .decode(&envelope.ciphertext)
         .map_err(|_| Error::InvalidPassword)?;
+    if nonce.len() != XCHACHA_NONCE_BYTES {
+        return Err(Error::InvalidPassword);
+    }
     let cipher = XChaCha20Poly1305::new_from_slice(key).map_err(|_| Error::InvalidPassword)?;
     let bytes = cipher
         .decrypt(XNonce::from_slice(&nonce), ciphertext.as_ref())
@@ -81,6 +91,60 @@ pub fn recovery_key_material(key: &str) -> [u8; 32] {
 
 pub fn read_security(path: &Path) -> Result<SecurityFile, Error> {
     Ok(serde_json::from_slice(&fs::read(path)?)?)
+}
+
+fn recovery_path(path: &Path) -> PathBuf {
+    path.with_extension("previous")
+}
+
+/// Restores a preserved security envelope after an interrupted replacement.
+/// On Unix the replacement below is atomic; Windows keeps this fallback because
+/// replacing an existing file requires a two-step rename.
+pub fn recover_interrupted_security_write(path: &Path) -> Result<(), Error> {
+    let previous = recovery_path(path);
+    if !path.exists() && previous.exists() {
+        fs::rename(previous, path)?;
+    } else if path.exists() && previous.exists() {
+        let _ = fs::remove_file(previous);
+    }
+    Ok(())
+}
+
+pub fn write_security_atomically(path: &Path, file: &SecurityFile) -> Result<(), Error> {
+    let temporary = path.with_extension(format!("write-{}.tmp", Uuid::new_v4()));
+    let bytes = serde_json::to_vec_pretty(file)?;
+    let result = (|| -> Result<(), Error> {
+        let mut output = fs::File::create(&temporary)?;
+        output.write_all(&bytes)?;
+        output.sync_all()?;
+        drop(output);
+
+        #[cfg(not(target_os = "windows"))]
+        fs::rename(&temporary, path)?;
+
+        #[cfg(target_os = "windows")]
+        {
+            let previous = recovery_path(path);
+            if previous.exists() {
+                fs::remove_file(&previous)?;
+            }
+            if path.exists() {
+                fs::rename(path, &previous)?;
+            }
+            if let Err(error) = fs::rename(&temporary, path) {
+                if previous.exists() {
+                    let _ = fs::rename(&previous, path);
+                }
+                return Err(error.into());
+            }
+            let _ = fs::remove_file(previous);
+        }
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result
 }
 
 pub fn backup_key(master: &[u8; 32]) -> [u8; 32] {
@@ -100,6 +164,42 @@ mod tests {
         let envelope = wrap(&correct, &master).unwrap();
         assert_eq!(unwrap(&correct, &envelope).unwrap(), master);
         assert!(unwrap(&incorrect, &envelope).is_err());
+    }
+
+    #[test]
+    fn malformed_nonce_is_rejected_without_panicking() {
+        let key = random_32();
+        let envelope = Envelope {
+            nonce: STANDARD.encode([0_u8; 23]),
+            ciphertext: STANDARD.encode([0_u8; 48]),
+        };
+        assert!(unwrap(&key, &envelope).is_err());
+    }
+
+    #[test]
+    fn security_file_write_is_readable_after_replacement() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("security.json");
+        let file = SecurityFile {
+            version: 1,
+            salt: STANDARD.encode([1_u8; 32]),
+            memory_kib: 19_456,
+            iterations: 2,
+            parallelism: 1,
+            password_envelope: Envelope {
+                nonce: STANDARD.encode([2_u8; 24]),
+                ciphertext: STANDARD.encode([3_u8; 48]),
+            },
+            recovery_envelope: Envelope {
+                nonce: STANDARD.encode([4_u8; 24]),
+                ciphertext: STANDARD.encode([5_u8; 48]),
+            },
+        };
+        write_security_atomically(&path, &file).unwrap();
+        let replacement = SecurityFile { version: 2, ..file };
+        write_security_atomically(&path, &replacement).unwrap();
+        assert_eq!(read_security(&path).unwrap().version, 2);
+        assert!(!recovery_path(&path).exists());
     }
 
     #[test]

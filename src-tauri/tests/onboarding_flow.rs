@@ -129,46 +129,6 @@ fn onboarding_reaches_an_unlocked_ready_state_with_no_backup_gate() {
 }
 
 #[test]
-fn unlock_repairs_a_vault_missing_its_settings_singleton() {
-    let _guard = lock_app_dir();
-    let app = fresh_mock_app();
-    app.manage(AppState::default());
-    let handle = app.handle();
-    let state: State<AppState> = handle.state();
-    let password = "a secure local password";
-    app_service::initialize(
-        handle,
-        &state,
-        InitializeInput {
-            password: password.into(),
-            full_name: "محامٍ تجريبي".into(),
-            language: "en".into(),
-            lock_timeout_minutes: 30,
-        },
-    )
-    .unwrap();
-
-    let (_, database_path) = db::paths(handle).unwrap();
-    let master = state.unlocked().unwrap();
-    let connection = db::open_db(&database_path, &master).unwrap();
-    connection
-        .execute("DELETE FROM app_settings WHERE id = 1", [])
-        .unwrap();
-    connection
-        .execute("DELETE FROM schema_migrations WHERE version = 8", [])
-        .unwrap();
-    drop(connection);
-    app_service::lock(&state).unwrap();
-
-    app_service::unlock(handle, &state, password).unwrap();
-    let settings = settings_service::get(handle, &state).unwrap();
-    assert_eq!(settings.language, "ar");
-    assert_eq!(settings.lock_timeout_minutes, 15);
-
-    let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
-}
-
-#[test]
 fn general_settings_update_without_backup_configuration() {
     let _guard = lock_app_dir();
     let app = fresh_mock_app();

@@ -21,11 +21,12 @@ The topic-scoped plan documents remain the product reference:
 | [09-testing.md](plan/09-testing.md)                           | Automated and manual validation matrix             |
 | [10-roadmap-and-phases.md](plan/10-roadmap-and-phases.md)     | Current roadmap and release blockers               |
 | [11-agent-workflow.md](plan/11-agent-workflow.md)             | Contribution and verification workflow             |
+| [database-schema.md](database-schema.md)                      | Current database tables, relationships, and rules  |
 
 ## Current status — 2026-08-24
 
 The canonical domain implementation (correction-plan Phases 0–6) is complete:
-SQLCipher migration `0007`, Rust services and commands, typed bridge,
+SQLCipher baseline migration `0001`, Rust services and commands, typed bridge,
 Arabic RTL workflows, automated domain/backup/UI coverage, and a Linux debug
 bundle have been validated. Phase 7 is in progress: documentation is being
 aligned with the implementation, a source-boundary scan is complete, and

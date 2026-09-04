@@ -1,12 +1,13 @@
 use crate::{
     backup, db, dto::LatestSuccessfulBackupDto, errors::Error, repositories::backup_repository,
-    state::AppState,
+    services::app_service, state::AppState,
 };
 use tauri::{AppHandle, Runtime};
 use tauri_plugin_dialog::DialogExt;
 
 pub fn create<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<String, Error> {
     let master = state.unlocked()?;
+    let _attachment_guard = state.lock_attachment_operations()?;
     let (_, db_path) = db::paths(app)?;
     let connection = db::open_db(&db_path, &master)?;
     let history_id = uuid::Uuid::new_v4().to_string();
@@ -68,8 +69,10 @@ pub fn validate<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<(), 
 
 pub fn restore<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<(), Error> {
     let master = state.unlocked()?;
+    let _attachment_guard = state.lock_attachment_operations()?;
     let (_, active_db) = db::paths(app)?;
     let path = choose_backup(app)?;
     let documents = db::app_dir(app)?.join("attachments");
-    backup::restore(&active_db, &master, &path.to_string_lossy(), &documents)
+    backup::restore(&active_db, &master, &path.to_string_lossy(), &documents)?;
+    app_service::lock(state)
 }
