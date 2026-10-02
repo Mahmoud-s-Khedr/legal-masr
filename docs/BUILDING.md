@@ -56,15 +56,22 @@ Linux artifacts are produced unsigned by the draft-release workflow; do not add 
 
 You do not need to produce a local package to validate a change. The **Validate**
 workflow runs on pull requests, pushes to `main`, and on demand through the
-Actions tab. It executes every required frontend and Rust check, builds debug
-Debian and Fedora RPM packages, and retains the non-release artifacts for seven
-days as `legalmaster-solo-linux-debug-deb` and
-`legalmaster-solo-linux-debug-rpm`.
+Actions tab. It first executes every required frontend and Rust check. Only
+after that job succeeds, Linux and Windows packaging jobs run in parallel. They
+build debug Debian, Fedora RPM, and AppImage packages, and retain the non-release
+artifacts for seven days as `legalmaster-solo-linux-debug-deb`,
+`legalmaster-solo-linux-debug-rpm`, and
+`legalmaster-solo-linux-debug-appimage`. It also builds and retains Windows
+x86-64 debug artifacts for seven days as
+`legalmaster-solo-windows-debug-installer` and
+`legalmaster-solo-windows-debug-portable`.
 
 To test on Fedora, download and unpack the RPM artifact from the completed
 workflow run, then install the extracted package with
 `sudo dnf install ./<package>.rpm`.
 
-For distributable Windows, Linux, and macOS packages, use the tag/manual
+The validation artifacts are debug builds for test installation only. For
+versioned distributable Windows, Linux, and macOS packages, use the tag/manual
 **Draft release** workflow described in [RELEASING.md](RELEASING.md). It
-creates a draft prerelease only; it does not publish automatically.
+also validates the tagged source first, then builds each platform in parallel,
+and creates a draft prerelease only; it does not publish automatically.

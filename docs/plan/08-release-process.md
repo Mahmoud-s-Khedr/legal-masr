@@ -83,6 +83,7 @@ Use GitHub Actions with:
 - Intel macOS target build
 - Apple Silicon macOS target build
 - Validation workflow on pull requests
+- Debug validation artifacts for Windows installer/portable archive and Linux Debian/RPM/AppImage packages
 - Tag/manual draft-release workflow
 - Unsigned Windows x86-64 NSIS installer
 - Windows x86-64 portable archive

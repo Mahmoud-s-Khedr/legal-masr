@@ -7,7 +7,7 @@
 3. Commit the version change and create an annotated tag named exactly `vX.Y.Z` for that version.
 4. Push the tag, or run **Draft release** manually and supply that existing tag as `release_tag`.
 
-The workflow rejects version mismatches and non-tag commits. It builds native Windows x86-64 installer and portable archive, Linux x86-64 Debian/RPM/AppImage packages, Intel macOS, and Apple Silicon macOS installers. It generates final names and `SHA256SUMS.txt`, then creates or updates one GitHub draft prerelease. It never publishes the release automatically.
+The workflow rejects version mismatches and non-tag commits, then validates the tagged source once. After validation passes, it builds the native Windows x86-64 installer and portable archive, Linux x86-64 Debian/RPM/AppImage packages, Intel macOS, and Apple Silicon macOS installers in parallel. It generates final names and `SHA256SUMS.txt`, then creates or updates one GitHub draft prerelease. It never publishes the release automatically.
 
 Release-sensitive third-party Actions are commit-pinned. Update those pins only after reviewing the upstream release and commit; dependency automation should propose future updates.
 

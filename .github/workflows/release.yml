@@ -18,8 +18,55 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    name: Validate release source
+    runs-on: ubuntu-22.04
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+      - name: Confirm exact tagged commit and version
+        run: |
+          git tag --points-at HEAD | grep --fixed-strings --line-regexp "$RELEASE_TAG"
+          node scripts/release-assets.mjs verify-version --tag "$RELEASE_TAG"
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4.1.0
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22.21.1
+      - name: Install Linux Tauri dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2.8.1
+        with:
+          workspaces: src-tauri -> target
+          key: release-validate-linux-x86_64-${{ hashFiles('src-tauri/Cargo.lock') }}
+      - name: Frontend checks
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+          pnpm build
+      - name: Rust checks
+        working-directory: src-tauri
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --all-features
+
   build:
     name: Build ${{ matrix.id }}
+    needs: validate
     permissions:
       contents: read
     strategy:
@@ -54,11 +101,6 @@ jobs:
         with:
           ref: ${{ env.RELEASE_TAG }}
           fetch-depth: 0
-      - name: Confirm exact tagged commit and version
-        shell: bash
-        run: |
-          git tag --points-at HEAD | grep --fixed-strings --line-regexp "$RELEASE_TAG"
-          node scripts/release-assets.mjs verify-version --tag "$RELEASE_TAG"
       - name: Confirm native macOS runner architecture
         if: startsWith(matrix.id, 'macos-')
         shell: bash
@@ -91,18 +133,6 @@ jobs:
         with:
           workspaces: src-tauri -> target
           key: ${{ runner.os }}-${{ matrix.target }}-${{ matrix.id }}-${{ hashFiles('src-tauri/Cargo.lock') }}
-      - name: Frontend checks
-        run: |
-          pnpm lint
-          pnpm typecheck
-          pnpm test
-          pnpm build
-      - name: Rust checks
-        working-directory: src-tauri
-        run: |
-          cargo fmt --check
-          cargo clippy --all-targets --all-features -- -D warnings
-          cargo test --all-features
       - name: Build Tauri bundle
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0.6.2
         with:
