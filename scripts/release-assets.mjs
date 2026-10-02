@@ -52,22 +52,40 @@ async function stage(input, output) {
     throw new Error('stage requires --input <directory> and --output <directory>.');
   const version = applicationVersion();
   const files = await filesRecursively(input);
-  const exes = files.filter((path) => path.toLowerCase().endsWith('.exe'));
+  const installers = files.filter((path) => path.toLowerCase().endsWith('.exe'));
+  const portableArchives = files.filter((path) => path.toLowerCase().endsWith('.zip'));
+  const debs = files.filter((path) => path.toLowerCase().endsWith('.deb'));
+  const rpms = files.filter((path) => path.toLowerCase().endsWith('.rpm'));
+  const appImages = files.filter((path) => path.endsWith('.AppImage'));
   const dmgs = files.filter((path) => path.toLowerCase().endsWith('.dmg'));
   const intel = dmgs.find((path) => /x86_64-apple-darwin|macos-x64|intel/i.test(path));
   const arm = dmgs.find((path) =>
     /aarch64-apple-darwin|macos-arm64|arm64|apple-silicon/i.test(path),
   );
-  if (exes.length !== 1 || dmgs.length !== 2 || !intel || !arm || intel === arm) {
+  if (
+    installers.length !== 1 ||
+    portableArchives.length !== 1 ||
+    debs.length !== 1 ||
+    rpms.length !== 1 ||
+    appImages.length !== 1 ||
+    dmgs.length !== 2 ||
+    !intel ||
+    !arm ||
+    intel === arm
+  ) {
     throw new Error(
-      `Expected one NSIS .exe and distinct Intel/ARM DMGs; found ${exes.length} .exe and ${dmgs.length} .dmg (${dmgs.map((path) => basename(path)).join(', ')}).`,
+      `Expected one Windows installer, portable archive, Debian package, RPM package, AppImage, and distinct Intel/ARM DMGs; found ${installers.length} .exe, ${portableArchives.length} .zip, ${debs.length} .deb, ${rpms.length} .rpm, ${appImages.length} .AppImage, and ${dmgs.length} .dmg (${dmgs.map((path) => basename(path)).join(', ')}).`,
     );
   }
 
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   const artifacts = [
-    [exes[0], `LegalMaster-Solo_${version}_windows_x64-setup.exe`],
+    [installers[0], `LegalMaster-Solo_${version}_windows_x64-setup.exe`],
+    [portableArchives[0], `LegalMaster-Solo_${version}_windows_x64-portable.zip`],
+    [debs[0], `LegalMaster-Solo_${version}_linux_x64.deb`],
+    [rpms[0], `LegalMaster-Solo_${version}_linux_x64.rpm`],
+    [appImages[0], `LegalMaster-Solo_${version}_linux_x64.AppImage`],
     [intel, `LegalMaster-Solo_${version}_macos_x64.dmg`],
     [arm, `LegalMaster-Solo_${version}_macos_arm64.dmg`],
   ];

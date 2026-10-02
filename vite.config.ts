@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', 'for-referance/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'for-referance/**', 'scripts/**/*.test.mjs'],
   },
   clearScreen: false,
   server: { port: 1420, strictPort: true },

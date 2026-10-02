@@ -42,15 +42,15 @@ pnpm build
 (cd src-tauri && cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test --all-features)
 ```
 
-Create an unsigned Linux x86-64 Debian package:
+Create unsigned Linux x86-64 Debian, RPM, and AppImage packages:
 
 ```bash
-pnpm tauri build --bundles deb
+pnpm tauri build --bundles deb,rpm,appimage
 ```
 
-Expected release output is under `src-tauri/target/release/bundle/`; for the command above, the Debian package is under `src-tauri/target/release/bundle/deb/`. Debug builds use `src-tauri/target/debug/bundle/` instead.
+Expected release output is under `src-tauri/target/release/bundle/`, in the `deb/`, `rpm/`, and `appimage/` directories. Debug builds use `src-tauri/target/debug/bundle/` instead. The release workflow builds AppImages on Ubuntu 22.04, the oldest supported GitHub runner baseline with Tauri's required WebKitGTK 4.1 packages.
 
-Do not upload Linux artifacts through the public release workflow and do not add Linux signing credentials.
+Linux artifacts are produced unsigned by the draft-release workflow; do not add Linux signing credentials.
 
 ## GitHub Actions builds
 
@@ -65,6 +65,6 @@ To test on Fedora, download and unpack the RPM artifact from the completed
 workflow run, then install the extracted package with
 `sudo dnf install ./<package>.rpm`.
 
-For distributable Windows and macOS packages, use the tag/manual **Draft
-release** workflow described in [RELEASING.md](RELEASING.md). It creates a
-draft prerelease only; it does not publish automatically.
+For distributable Windows, Linux, and macOS packages, use the tag/manual
+**Draft release** workflow described in [RELEASING.md](RELEASING.md). It
+creates a draft prerelease only; it does not publish automatically.

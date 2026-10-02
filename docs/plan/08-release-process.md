@@ -37,7 +37,7 @@ A normal static manifest request may reveal standard network metadata such as IP
 
 ---
 
-# 15. Windows and macOS packaging
+# 15. Windows, Linux, and macOS packaging
 
 ## Windows
 
@@ -50,6 +50,18 @@ Initial target:
 - Unsigned public beta installer; no self-signed certificate
 
 Tauri builds Windows installers through its CLI on Windows, using the MSVC target and WebView2.
+
+## Linux
+
+Initial target:
+
+- x86-64
+- Unsigned Debian `.deb`, Fedora-compatible `.rpm`, and AppImage packages
+- Native Ubuntu GitHub Actions build
+
+The portable Windows archive and Linux AppImage distribute an application
+binary, not a portable application-data directory. User data remains in the
+normal operating-system location.
 
 ## macOS
 
@@ -73,6 +85,8 @@ Use GitHub Actions with:
 - Validation workflow on pull requests
 - Tag/manual draft-release workflow
 - Unsigned Windows x86-64 NSIS installer
+- Windows x86-64 portable archive
+- Linux x86-64 Debian, RPM, and AppImage packages
 - Ad-hoc signed, unnotarized Intel and Apple Silicon DMGs
 
 The official `tauri-action` builds native Tauri binaries for Windows and macOS and can attach them to GitHub Releases.
@@ -81,6 +95,10 @@ The official `tauri-action` builds native Tauri binaries for Windows and macOS a
 
 ```text
 LegalMaster-Solo_<version>_windows_x64-setup.exe
+LegalMaster-Solo_<version>_windows_x64-portable.zip
+LegalMaster-Solo_<version>_linux_x64.deb
+LegalMaster-Solo_<version>_linux_x64.rpm
+LegalMaster-Solo_<version>_linux_x64.AppImage
 LegalMaster-Solo_<version>_macos_x64.dmg
 LegalMaster-Solo_<version>_macos_arm64.dmg
 SHA256SUMS.txt
