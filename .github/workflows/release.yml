@@ -20,7 +20,7 @@ concurrency:
 jobs:
   validate:
     name: Validate release source
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
     steps:
@@ -50,7 +50,7 @@ jobs:
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2.8.1
         with:
           workspaces: src-tauri -> target
-          key: release-validate-linux-x86_64-${{ hashFiles('src-tauri/Cargo.lock') }}
+          key: release-validate-ubuntu-24.04-x86_64-${{ hashFiles('src-tauri/Cargo.lock') }}
       - name: Frontend checks
         run: |
           pnpm lint
@@ -79,7 +79,7 @@ jobs:
             bundle: nsis
             artifact: raw-windows-x64
           - id: linux-x64
-            runner: ubuntu-22.04
+            runner: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             bundle: deb,rpm,appimage
             artifact: raw-linux-x64
@@ -132,7 +132,7 @@ jobs:
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2.8.1
         with:
           workspaces: src-tauri -> target
-          key: ${{ runner.os }}-${{ matrix.target }}-${{ matrix.id }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          key: ${{ matrix.id == 'linux-x64' && 'ubuntu-24.04' || runner.os }}-${{ matrix.target }}-${{ matrix.id }}-${{ hashFiles('src-tauri/Cargo.lock') }}
       - name: Build Tauri bundle
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0.6.2
         with:

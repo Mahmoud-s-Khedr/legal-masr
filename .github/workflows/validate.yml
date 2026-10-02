@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   validate:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4.1.0
@@ -36,7 +36,7 @@ jobs:
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2.8.1
         with:
           workspaces: src-tauri -> target
-          key: ubuntu-x86_64-${{ hashFiles('src-tauri/Cargo.lock') }}
+          key: ubuntu-24.04-x86_64-${{ hashFiles('src-tauri/Cargo.lock') }}
       - name: Frontend checks
         run: |
           pnpm lint
@@ -58,7 +58,7 @@ jobs:
   linux-packages:
     name: Build Linux debug packages
     needs: validate
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4.1.0
@@ -82,7 +82,7 @@ jobs:
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2.8.1
         with:
           workspaces: src-tauri -> target
-          key: linux-x86_64-debug-${{ hashFiles('src-tauri/Cargo.lock') }}
+          key: ubuntu-24.04-x86_64-debug-${{ hashFiles('src-tauri/Cargo.lock') }}
       - name: Build debug Linux bundles
         run: pnpm tauri build --debug --bundles deb,rpm,appimage
       - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
