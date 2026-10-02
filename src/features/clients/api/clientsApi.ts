@@ -24,6 +24,7 @@ export function useUpdateClient() {
     onSuccess: (client) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
       queryClient.setQueryData(queryKeys.clients.detail(client.id), client);
+      queryClient.invalidateQueries({ queryKey: queryKeys.clients.detail(client.id) });
     },
   });
 }

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -82,5 +82,13 @@ describe('TasksPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'إضافة مهمة' }));
     expect(await screen.findByRole('dialog', { name: 'إضافة مهمة' })).toBeInTheDocument();
+  });
+
+  it('opens a task inspection from the title and exposes its status action', async () => {
+    renderPage();
+    const title = await screen.findByRole('button', { name: 'مراجعة عقد ABC-42' });
+    fireEvent.click(title);
+    const dialog = await screen.findByRole('dialog', { name: 'تفاصيل المهمة' });
+    expect(within(dialog).getByRole('button', { name: 'إتمام المهمة' })).toBeInTheDocument();
   });
 });

@@ -140,4 +140,42 @@ describe('FinancesPage', () => {
       ),
     );
   });
+
+  it('opens a keyboard-accessible transaction inspection before editing a ledger item', async () => {
+    vi.mocked(bridge.paymentList).mockResolvedValueOnce([
+      {
+        id: 'payment-1',
+        caseId: 'case-1',
+        payerClientId: 'client-1',
+        amountMinor: 12_500,
+        paymentDate: '2026-08-24',
+        paymentMethod: 'CASH',
+        notes: 'دفعة أولى',
+        createdAt: 'now',
+        updatedAt: 'now',
+      },
+    ]);
+    renderPage();
+
+    const transaction = await screen.findByRole('button', { name: /2026-08-24/ });
+    transaction.focus();
+    fireEvent.click(transaction);
+    const inspection = await screen.findByRole('dialog', { name: 'تفاصيل الدفعة' });
+    expect(within(inspection).getByText('دفعة أولى')).toBeInTheDocument();
+    fireEvent.click(within(inspection).getByRole('button', { name: 'تعديل السجل' }));
+    expect(await screen.findByRole('dialog', { name: 'تعديل دفعة' })).toBeInTheDocument();
+  });
+
+  it('keeps a failed expense draft in its dialog for retry', async () => {
+    vi.mocked(bridge.expenseSave).mockRejectedValueOnce(new Error('save failed'));
+    renderPage();
+    await screen.findByRole('option', { name: 'CA-1' });
+    fireEvent.click(screen.getByRole('tab', { name: 'المصروفات' }));
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة مصروف' }));
+    const dialog = await screen.findByRole('dialog', { name: 'إضافة مصروف' });
+    fireEvent.change(within(dialog).getByLabelText('المبلغ (ج.م)'), { target: { value: '12.50' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'حفظ المصروف' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('تعذر حفظ السجل');
+    expect(within(dialog).getByLabelText('المبلغ (ج.م)')).toHaveValue('12.50');
+  });
 });

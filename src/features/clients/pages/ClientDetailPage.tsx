@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ConfirmDialog } from '../../../components/ui/Dialog';
+import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
 import { Tabs } from '../../../components/ui/Tabs';
 import { useCaseList } from '../../cases/api/casesApi';
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
@@ -14,9 +14,10 @@ const money = (amount: number) =>
 
 export function ClientDetailPage() {
   const { id = '' } = useParams();
-  const [tab, setTab] = useState<'summary' | 'cases' | 'poas' | 'account' | 'attachments' | 'edit'>(
+  const [tab, setTab] = useState<'summary' | 'cases' | 'poas' | 'account' | 'attachments'>(
     'summary',
   );
+  const [editOpen, setEditOpen] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const client = useClient(id);
   const cases = useCaseList({ clientId: id });
@@ -67,7 +68,7 @@ export function ClientDetailPage() {
               أرشفة
             </button>
           )}
-          <button type="button" onClick={() => setTab('edit')}>
+          <button type="button" onClick={() => setEditOpen(true)}>
             تعديل
           </button>
         </div>
@@ -82,7 +83,6 @@ export function ClientDetailPage() {
           { id: 'poas', label: 'التوكيلات' },
           { id: 'account', label: 'الحساب' },
           { id: 'attachments', label: 'المرفقات' },
-          { id: 'edit', label: 'تعديل' },
         ]}
       />
       {tab === 'summary' && (
@@ -222,28 +222,35 @@ export function ClientDetailPage() {
         </div>
       )}
       {tab === 'attachments' && <AttachmentPanel owner={{ clientId: id }} title="مرفقات الموكل" />}
-      {tab === 'edit' && (
-        <section className="detail-card edit-card">
-          <ClientForm
-            defaultValues={{
-              internalNumber: item.internalNumber,
-              fullName: item.fullName,
-              nationalId: item.nationalId ?? undefined,
-              primaryPhone: item.primaryPhone ?? undefined,
-              email: item.email ?? undefined,
-              address: item.address ?? undefined,
-              notes: item.notes ?? undefined,
-            }}
-            busy={update.isPending}
-            submitLabel="حفظ التعديلات"
-            onCancel={() => setTab('summary')}
-            onSubmit={async (values) => {
+      <Dialog open={editOpen} onOpenChange={setEditOpen} title="تعديل بيانات الموكل">
+        <ClientForm
+          defaultValues={{
+            internalNumber: item.internalNumber,
+            fullName: item.fullName,
+            nationalId: item.nationalId ?? undefined,
+            primaryPhone: item.primaryPhone ?? undefined,
+            email: item.email ?? undefined,
+            address: item.address ?? undefined,
+            notes: item.notes ?? undefined,
+          }}
+          busy={update.isPending}
+          submitLabel="حفظ التعديلات"
+          onCancel={() => setEditOpen(false)}
+          onSubmit={async (values) => {
+            try {
               await update.mutateAsync({ id, ...values });
-              setTab('summary');
-            }}
-          />
-        </section>
-      )}
+              setEditOpen(false);
+            } catch {
+              // Keep the modal open so the lawyer can correct or retry the draft.
+            }
+          }}
+        />
+        {update.isError && (
+          <p className="error" role="alert">
+            تعذر حفظ التعديلات. بقيت البيانات للمحاولة مرة أخرى.
+          </p>
+        )}
+      </Dialog>
       <ConfirmDialog
         open={confirmArchive}
         onOpenChange={setConfirmArchive}

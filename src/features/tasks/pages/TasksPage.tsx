@@ -121,7 +121,13 @@ export function TasksPage() {
                   />
                 </label>
                 <div className="record-copy">
-                  <strong>{task.title}</strong>
+                  <button
+                    type="button"
+                    className="text-button task-title"
+                    onClick={() => setEditing(task)}
+                  >
+                    {task.title}
+                  </button>
                   <span>
                     <bdi>{task.dueDate}</bdi>
                     {task.details && ` · ${task.details}`}
@@ -165,16 +171,31 @@ export function TasksPage() {
             cases={cases.data ?? []}
             clients={clients.data ?? []}
             busy={save.isPending}
+            onToggleCompletion={
+              editing === 'new'
+                ? undefined
+                : () => (editing.completed ? reopen : complete).mutate(editing.id)
+            }
+            toggling={complete.isPending || reopen.isPending}
             onCancel={() => setEditing(null)}
             onSave={async (input) => {
-              await save.mutateAsync(input);
-              setEditing(null);
+              try {
+                await save.mutateAsync(input);
+                setEditing(null);
+              } catch {
+                // The dialog displays the mutation error and preserves the draft.
+              }
             }}
           />
         )}
         {save.isError && (
           <p className="error" role="alert">
             تعذر حفظ المهمة. بقيت البيانات المدخلة للمحاولة مرة أخرى.
+          </p>
+        )}
+        {(complete.isError || reopen.isError) && (
+          <p className="error" role="alert">
+            تعذر تغيير حالة المهمة. حاول مرة أخرى.
           </p>
         )}
       </Dialog>
@@ -194,13 +215,15 @@ export function TasksPage() {
   );
 }
 
-function TaskForm({
+export function TaskForm({
   initial,
   initialCaseId,
   initialClientId,
   cases,
   clients,
   busy,
+  onToggleCompletion,
+  toggling = false,
   onSave,
   onCancel,
 }: {
@@ -210,6 +233,8 @@ function TaskForm({
   cases: ReturnType<typeof useCaseList>['data'];
   clients: ReturnType<typeof useClientList>['data'];
   busy: boolean;
+  onToggleCompletion?: () => void;
+  toggling?: boolean;
   onSave: (input: TaskInput) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -224,15 +249,19 @@ function TaskForm({
       className="dialog-form"
       onSubmit={async (event) => {
         event.preventDefault();
-        await onSave({
-          id: initial?.id,
-          title: title.trim(),
-          dueDate,
-          caseId: caseId || undefined,
-          clientId: clientId || undefined,
-          details: details || undefined,
-          notes: notes || undefined,
-        });
+        try {
+          await onSave({
+            id: initial?.id,
+            title: title.trim(),
+            dueDate,
+            caseId: caseId || undefined,
+            clientId: clientId || undefined,
+            details: details || undefined,
+            notes: notes || undefined,
+          });
+        } catch {
+          // The parent mutation exposes an in-dialog retry message.
+        }
       }}
     >
       <label>
@@ -283,6 +312,19 @@ function TaskForm({
       <label>
         ملاحظات <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
+      {initial && onToggleCompletion && (
+        <div className="dialog-inline-action">
+          <span>الحالة: {initial.completed ? 'مكتملة' : 'مفتوحة'}</span>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={toggling}
+            onClick={onToggleCompletion}
+          >
+            {initial.completed ? 'إعادة فتح المهمة' : 'إتمام المهمة'}
+          </button>
+        </div>
+      )}
       <div className="dialog-actions">
         <button type="button" className="secondary-button" onClick={onCancel}>
           إلغاء

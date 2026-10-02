@@ -40,7 +40,9 @@ export const paymentPayerOptions = (
 ) => caseClients?.map((client) => ({ id: client.clientId, fullName: client.fullName })) ?? [];
 
 type Entry =
-  { type: 'payment'; value?: PaymentDto } | { type: 'expense'; value?: ExpenseDto } | null;
+  | { type: 'payment'; value?: PaymentDto; mode: 'edit' | 'inspect' }
+  | { type: 'expense'; value?: ExpenseDto; mode: 'edit' | 'inspect' }
+  | null;
 
 export function FinancesPage() {
   const [params] = useSearchParams();
@@ -72,7 +74,7 @@ export function FinancesPage() {
         title="الدفعات والمصروفات"
         description="متابعة نقدية بسيطة بالجنيه المصري؛ لا يحول التطبيق هذا السجل إلى دفتر محاسبي."
         actions={
-          <button type="button" onClick={() => setEntry({ type: tab })}>
+          <button type="button" onClick={() => setEntry({ type: tab, mode: 'edit' })}>
             إضافة {tab === 'payment' ? 'دفعة' : 'مصروف'}
           </button>
         }
@@ -164,9 +166,22 @@ export function FinancesPage() {
                     (client) => client.id === (payment?.payerClientId ?? expense?.clientId),
                   )?.fullName;
                   return (
-                    <tr key={record.id}>
+                    <tr key={record.id} className="transaction-row">
                       <td>
-                        <bdi>{payment?.paymentDate ?? expense?.expenseDate}</bdi>
+                        <button
+                          type="button"
+                          className="text-button"
+                          aria-label={`عرض ${payment ? 'الدفعة' : 'المصروف'} بتاريخ ${payment?.paymentDate ?? expense?.expenseDate}`}
+                          onClick={() =>
+                            setEntry(
+                              payment
+                                ? { type: 'payment', value: payment, mode: 'inspect' }
+                                : { type: 'expense', value: expense!, mode: 'inspect' },
+                            )
+                          }
+                        >
+                          <bdi>{payment?.paymentDate ?? expense?.expenseDate}</bdi>
+                        </button>
                       </td>
                       <td>
                         <span className={`transaction-badge ${payment ? 'income' : 'expense'}`}>
@@ -189,13 +204,13 @@ export function FinancesPage() {
                         <button
                           type="button"
                           className="text-button"
-                          onClick={() =>
+                          onClick={() => {
                             setEntry(
                               payment
-                                ? { type: 'payment', value: payment }
-                                : { type: 'expense', value: expense! },
-                            )
-                          }
+                                ? { type: 'payment', value: payment, mode: 'edit' }
+                                : { type: 'expense', value: expense!, mode: 'edit' },
+                            );
+                          }}
                         >
                           تعديل
                         </button>
@@ -211,9 +226,31 @@ export function FinancesPage() {
       <Dialog
         open={Boolean(entry)}
         onOpenChange={(open) => !open && closeEntry()}
-        title={`${entry?.value ? 'تعديل' : 'إضافة'} ${entry?.type === 'payment' ? 'دفعة' : 'مصروف'}`}
+        title={
+          entry?.mode === 'inspect'
+            ? `تفاصيل ${entry.type === 'payment' ? 'الدفعة' : 'المصروف'}`
+            : `${entry?.value ? 'تعديل' : 'إضافة'} ${entry?.type === 'payment' ? 'دفعة' : 'مصروف'}`
+        }
       >
-        {entry?.type === 'payment' ? (
+        {entry?.mode === 'inspect' && entry.value ? (
+          <TransactionInspection
+            entry={
+              entry.type === 'payment'
+                ? { type: 'payment', value: entry.value as PaymentDto }
+                : { type: 'expense', value: entry.value as ExpenseDto }
+            }
+            caseName={cases.data?.find((item) => item.id === entry.value?.caseId)?.internalNumber}
+            clientName={
+              clients.data?.find(
+                (item) =>
+                  item.id ===
+                  (entry.type === 'payment' ? entry.value?.payerClientId : entry.value?.clientId),
+              )?.fullName
+            }
+            onEdit={() => setEntry({ ...entry, mode: 'edit' })}
+            onClose={closeEntry}
+          />
+        ) : entry?.type === 'payment' ? (
           <PaymentForm
             initial={entry.value}
             cases={cases.data ?? []}
@@ -247,20 +284,80 @@ export function FinancesPage() {
   );
 }
 
-function PaymentForm({
+function TransactionInspection({
+  entry,
+  caseName,
+  clientName,
+  onEdit,
+  onClose,
+}: {
+  entry: { type: 'payment'; value: PaymentDto } | { type: 'expense'; value: ExpenseDto };
+  caseName?: string;
+  clientName?: string;
+  onEdit: () => void;
+  onClose: () => void;
+}) {
+  const isPayment = entry.type === 'payment';
+  const record = entry.value;
+  const date = isPayment ? (record as PaymentDto).paymentDate : (record as ExpenseDto).expenseDate;
+  return (
+    <div className="dialog-form transaction-inspection">
+      <dl className="detail-definition-grid">
+        <div>
+          <dt>التاريخ</dt>
+          <dd>
+            <bdi>{date}</bdi>
+          </dd>
+        </div>
+        <div>
+          <dt>القضية</dt>
+          <dd>
+            <bdi>{caseName ?? '—'}</bdi>
+          </dd>
+        </div>
+        <div>
+          <dt>الموكل</dt>
+          <dd>{clientName ?? '—'}</dd>
+        </div>
+        <div>
+          <dt>المبلغ</dt>
+          <dd>
+            <bdi>{money(record.amountMinor)}</bdi>
+          </dd>
+        </div>
+      </dl>
+      <div>
+        <strong>ملاحظات</strong>
+        <p>{record.notes ?? '—'}</p>
+      </div>
+      <div className="dialog-actions">
+        <button type="button" className="secondary-button" onClick={onClose}>
+          إغلاق
+        </button>
+        <button type="button" onClick={onEdit}>
+          تعديل السجل
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function PaymentForm({
   initial,
+  initialCaseId,
   cases,
   busy,
   onSave,
   onCancel,
 }: {
   initial?: PaymentDto;
+  initialCaseId?: string;
   cases: ReturnType<typeof useCaseList>['data'];
   busy: boolean;
   onSave: (input: Parameters<ReturnType<typeof useSavePayment>['mutateAsync']>[0]) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [caseId, setCaseId] = useState(initial?.caseId ?? '');
+  const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
   const caseDetail = useCase(caseId);
   const [payerClientId, setPayerClientId] = useState(initial?.payerClientId ?? '');
   const [amount, setAmount] = useState(initial ? String(initial.amountMinor / 100) : '');
@@ -276,15 +373,19 @@ function PaymentForm({
         const amountMinor = parseMoneyToMinor(amount);
         if (!amountMinor || !caseId || !payerClientId)
           return setError('اختر قضية وموكلًا من موكلي القضية وأدخل مبلغًا صحيحًا.');
-        await onSave({
-          id: initial?.id,
-          caseId,
-          payerClientId,
-          amountMinor,
-          paymentDate: date,
-          paymentMethod: method || undefined,
-          notes: notes || undefined,
-        });
+        try {
+          await onSave({
+            id: initial?.id,
+            caseId,
+            payerClientId,
+            amountMinor,
+            paymentDate: date,
+            paymentMethod: method || undefined,
+            notes: notes || undefined,
+          });
+        } catch {
+          // The parent mutation exposes an in-dialog retry message.
+        }
       }}
     >
       <label>
@@ -369,8 +470,9 @@ function PaymentForm({
   );
 }
 
-function ExpenseForm({
+export function ExpenseForm({
   initial,
+  initialCaseId,
   cases,
   clients,
   busy,
@@ -378,13 +480,14 @@ function ExpenseForm({
   onCancel,
 }: {
   initial?: ExpenseDto;
+  initialCaseId?: string;
   cases: ReturnType<typeof useCaseList>['data'];
   clients: ReturnType<typeof useClientList>['data'];
   busy: boolean;
   onSave: (input: Parameters<ReturnType<typeof useSaveExpense>['mutateAsync']>[0]) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [caseId, setCaseId] = useState(initial?.caseId ?? '');
+  const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
   const [clientId, setClientId] = useState(initial?.clientId ?? '');
   const [amount, setAmount] = useState(initial ? String(initial.amountMinor / 100) : '');
   const [date, setDate] = useState(initial?.expenseDate ?? today());
@@ -398,15 +501,19 @@ function ExpenseForm({
         event.preventDefault();
         const amountMinor = parseMoneyToMinor(amount);
         if (!amountMinor) return setError('أدخل مبلغًا صحيحًا أكبر من صفر.');
-        await onSave({
-          id: initial?.id,
-          caseId: caseId || undefined,
-          clientId: clientId || undefined,
-          amountMinor,
-          expenseDate: date,
-          expenseType: type,
-          notes: notes || undefined,
-        });
+        try {
+          await onSave({
+            id: initial?.id,
+            caseId: caseId || undefined,
+            clientId: clientId || undefined,
+            amountMinor,
+            expenseDate: date,
+            expenseType: type,
+            notes: notes || undefined,
+          });
+        } catch {
+          // The parent mutation exposes an in-dialog retry message.
+        }
       }}
     >
       <p className="muted">يمكن ربط المصروف بقضية أو موكل، أو ترك كلا الرابطين فارغين.</p>

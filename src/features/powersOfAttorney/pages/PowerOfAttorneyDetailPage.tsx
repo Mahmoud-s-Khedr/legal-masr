@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ConfirmDialog } from '../../../components/ui/Dialog';
+import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
 import { Tabs } from '../../../components/ui/Tabs';
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
 import { PowerOfAttorneyForm } from '../components/PowerOfAttorneyForm';
@@ -13,9 +13,10 @@ import {
 
 export function PowerOfAttorneyDetailPage() {
   const { id = '' } = useParams();
-  const [tab, setTab] = useState<
-    'summary' | 'clients' | 'lawyers' | 'cases' | 'attachments' | 'edit'
-  >('summary');
+  const [tab, setTab] = useState<'summary' | 'clients' | 'lawyers' | 'cases' | 'attachments'>(
+    'summary',
+  );
+  const [editOpen, setEditOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const power = usePowerOfAttorney(id);
   const save = useSavePowerOfAttorney();
@@ -59,7 +60,7 @@ export function PowerOfAttorneyDetailPage() {
               أرشفة
             </button>
           )}
-          <button type="button" onClick={() => setTab('edit')}>
+          <button type="button" onClick={() => setEditOpen(true)}>
             تعديل
           </button>
         </div>
@@ -74,7 +75,6 @@ export function PowerOfAttorneyDetailPage() {
           { id: 'lawyers', label: 'المحامون' },
           { id: 'cases', label: 'القضايا' },
           { id: 'attachments', label: 'المرفقات' },
-          { id: 'edit', label: 'تعديل' },
         ]}
       />
       {tab === 'summary' && (
@@ -183,20 +183,22 @@ export function PowerOfAttorneyDetailPage() {
       {tab === 'attachments' && (
         <AttachmentPanel owner={{ powerOfAttorneyId: id }} title="صورة التوكيل والمرفقات" />
       )}
-      {tab === 'edit' && (
-        <section className="detail-card edit-card">
-          <PowerOfAttorneyForm
-            powerOfAttorney={item}
-            busy={save.isPending}
-            onCancel={() => setTab('summary')}
-            onSubmit={async (input) => {
+      <Dialog open={editOpen} onOpenChange={setEditOpen} title="تعديل التوكيل">
+        <PowerOfAttorneyForm
+          powerOfAttorney={item}
+          busy={save.isPending}
+          onCancel={() => setEditOpen(false)}
+          onSubmit={async (input) => {
+            try {
               await save.mutateAsync({ id, ...input });
-              setTab('summary');
-            }}
-          />
-          {save.isError && <p className="error">تعذر حفظ التوكيل.</p>}
-        </section>
-      )}
+              setEditOpen(false);
+            } catch {
+              // Keep the modal open so the lawyer can correct or retry the draft.
+            }
+          }}
+        />
+        {save.isError && <p className="error">تعذر حفظ التوكيل.</p>}
+      </Dialog>
       <ConfirmDialog
         open={archiveOpen}
         onOpenChange={setArchiveOpen}

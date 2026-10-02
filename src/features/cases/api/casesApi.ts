@@ -22,6 +22,7 @@ function invalidateCase(
 ) {
   queryClient.invalidateQueries({ queryKey: queryKeys.cases.all });
   queryClient.setQueryData(queryKeys.cases.detail(caseDto.id), caseDto);
+  queryClient.invalidateQueries({ queryKey: queryKeys.cases.detail(caseDto.id) });
   for (const client of caseDto.clients) {
     queryInvalidation.powerOfAttorneyOrCaseClient(queryClient, {
       caseId: caseDto.id,

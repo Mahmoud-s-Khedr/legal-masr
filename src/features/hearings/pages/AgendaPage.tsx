@@ -160,8 +160,12 @@ export function AgendaPage() {
             busy={save.isPending}
             onCancel={() => setEditing(null)}
             onSave={async (input) => {
-              await save.mutateAsync(input);
-              setEditing(null);
+              try {
+                await save.mutateAsync(input);
+                setEditing(null);
+              } catch {
+                // The dialog displays the mutation error and preserves the draft.
+              }
             }}
           />
         )}
@@ -178,8 +182,12 @@ export function AgendaPage() {
             busy={decide.isPending}
             onCancel={() => setDeciding(null)}
             onSave={async (input) => {
-              await decide.mutateAsync(input);
-              setDeciding(null);
+              try {
+                await decide.mutateAsync(input);
+                setDeciding(null);
+              } catch {
+                // The dialog displays the mutation error and preserves the draft.
+              }
             }}
           />
         )}
@@ -303,7 +311,7 @@ function AgendaList({
     </div>
   );
 }
-function HearingForm({
+export function HearingForm({
   initial,
   initialCaseId,
   initialDate,
@@ -332,17 +340,21 @@ function HearingForm({
       className="dialog-form"
       onSubmit={async (event) => {
         event.preventDefault();
-        await onSave({
-          id: initial?.id,
-          caseId,
-          hearingDate: date,
-          hearingTime: time || undefined,
-          hearingType: type || undefined,
-          location: location || undefined,
-          circuitName: circuit || undefined,
-          requiredDocuments: requiredDocuments || undefined,
-          notes: notes || undefined,
-        });
+        try {
+          await onSave({
+            id: initial?.id,
+            caseId,
+            hearingDate: date,
+            hearingTime: time || undefined,
+            hearingType: type || undefined,
+            location: location || undefined,
+            circuitName: circuit || undefined,
+            requiredDocuments: requiredDocuments || undefined,
+            notes: notes || undefined,
+          });
+        } catch {
+          // The parent mutation exposes an in-dialog retry message.
+        }
       }}
     >
       <label>
@@ -405,7 +417,7 @@ function HearingForm({
     </form>
   );
 }
-function DecisionForm({
+export function DecisionForm({
   hearing,
   busy,
   onSave,
@@ -427,23 +439,27 @@ function DecisionForm({
       className="dialog-form"
       onSubmit={async (event) => {
         event.preventDefault();
-        await onSave({
-          id: hearing.id,
-          decisionText: decisionText || undefined,
-          nextHearing: nextDate
-            ? {
-                caseId: hearing.caseId,
-                hearingDate: nextDate,
-                hearingTime: hearing.hearingTime ?? undefined,
-                hearingType: hearing.hearingType ?? undefined,
-                location: hearing.location ?? undefined,
-                circuitName: hearing.circuitName ?? undefined,
-                requiredDocuments: hearing.requiredDocuments ?? undefined,
-                notes: undefined,
-                reminderMinutes: hearing.reminderMinutes ?? undefined,
-              }
-            : undefined,
-        });
+        try {
+          await onSave({
+            id: hearing.id,
+            decisionText: decisionText || undefined,
+            nextHearing: nextDate
+              ? {
+                  caseId: hearing.caseId,
+                  hearingDate: nextDate,
+                  hearingTime: hearing.hearingTime ?? undefined,
+                  hearingType: hearing.hearingType ?? undefined,
+                  location: hearing.location ?? undefined,
+                  circuitName: hearing.circuitName ?? undefined,
+                  requiredDocuments: hearing.requiredDocuments ?? undefined,
+                  notes: undefined,
+                  reminderMinutes: hearing.reminderMinutes ?? undefined,
+                }
+              : undefined,
+          });
+        } catch {
+          // The parent mutation exposes an in-dialog retry message.
+        }
       }}
     >
       <label>

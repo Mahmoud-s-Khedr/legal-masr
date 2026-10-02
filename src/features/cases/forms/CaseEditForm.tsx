@@ -9,10 +9,12 @@ export function CaseEditForm({
   caseDto,
   busy,
   onSubmit,
+  onCancel,
 }: {
   caseDto: CaseDto;
   busy: boolean;
   onSubmit: (values: CaseCoreFormValues) => Promise<void>;
+  onCancel?: () => void;
 }) {
   const { t } = useTranslation();
   const { register, handleSubmit, formState } = useForm<CaseCoreFormValues>({
@@ -37,7 +39,14 @@ export function CaseEditForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <CaseCoreFields register={register} />
-      <button disabled={busy || formState.isSubmitting}>{t('cases.save')}</button>
+      <div className="form-actions">
+        <button disabled={busy || formState.isSubmitting}>{t('cases.save')}</button>
+        {onCancel && (
+          <button type="button" className="secondary-button" onClick={onCancel}>
+            إلغاء
+          </button>
+        )}
+      </div>
     </form>
   );
 }
