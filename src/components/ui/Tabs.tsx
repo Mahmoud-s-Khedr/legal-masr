@@ -25,38 +25,38 @@ export function Tabs({
     }
   };
   return (
-    <div className="shared-tabs" role="tablist" aria-label={label}>
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          role="tab"
-          aria-selected={tab.id === value}
-          disabled={tab.disabled}
-          className={tab.id === value ? 'active' : ''}
-          onClick={() => onChange(tab.id)}
-          onKeyDown={(event) => {
-            if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-              event.preventDefault();
-              move(1);
-            }
-            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-              event.preventDefault();
-              move(-1);
-            }
-            if (event.key === 'Home') {
-              event.preventDefault();
-              onChange(tabs.find((item) => !item.disabled)?.id ?? value);
-            }
-            if (event.key === 'End') {
-              event.preventDefault();
-              onChange([...tabs].reverse().find((item) => !item.disabled)?.id ?? value);
-            }
-          }}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
+    <BaseTabs.Root value={value} onValueChange={onChange}>
+      <BaseTabs.List className="shared-tabs" aria-label={label}>
+        {tabs.map((tab) => (
+          <BaseTabs.Tab
+            key={tab.id}
+            value={tab.id}
+            disabled={tab.disabled}
+            className={tab.id === value ? 'active' : ''}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                move(1);
+              }
+              if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                move(-1);
+              }
+              if (event.key === 'Home') {
+                event.preventDefault();
+                onChange(tabs.find((item) => !item.disabled)?.id ?? value);
+              }
+              if (event.key === 'End') {
+                event.preventDefault();
+                onChange([...tabs].reverse().find((item) => !item.disabled)?.id ?? value);
+              }
+            }}
+          >
+            {tab.label}
+          </BaseTabs.Tab>
+        ))}
+      </BaseTabs.List>
+    </BaseTabs.Root>
   );
 }
+import { Tabs as BaseTabs } from '@base-ui/react/tabs';

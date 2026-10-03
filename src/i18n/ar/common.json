@@ -18,6 +18,8 @@
     "brandName": "ليجال مصر",
     "brandLogoAlt": "شعار ليجال مصر",
     "loading": "جارٍ تحضير الخزنة المحلية…",
+    "startupError": "تعذر بدء التطبيق. تأكد من تثبيت WebKitGTK ثم أعد المحاولة.",
+    "retry": "إعادة المحاولة",
     "defaultError": "تعذر إتمام العملية بأمان.",
     "lockButton": "قفل التطبيق",
     "openMenu": "فتح قائمة التنقل",
@@ -261,6 +263,8 @@
   "search": {
     "placeholder": "ابحث بالاسم أو رقم القضية…",
     "noResults": "لا توجد نتائج.",
+    "openPalette": "فتح بحث الأوامر",
+    "paletteTitle": "ابحث في سجلاتك",
     "groups": {
       "client": "الموكلون",
       "case": "القضايا",

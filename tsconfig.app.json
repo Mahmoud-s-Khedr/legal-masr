@@ -10,6 +10,8 @@
     "strict": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] },
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,

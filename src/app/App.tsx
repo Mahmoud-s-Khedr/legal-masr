@@ -5,10 +5,13 @@ import { isPermissionGranted } from '@tauri-apps/plugin-notification';
 import { bridge } from '../bridge/commands';
 import { LanguageSwitcher } from '../components/layout/LanguageSwitcher';
 import { Shell } from '../components/layout/Shell';
+import { Button } from '../components/ui/button';
+import { Skeleton } from '../components/ui/skeleton';
 import { OnboardingPage, OnboardingSubGate } from '../features/onboarding/pages/OnboardingPage';
 import { useAppStatus, useLockVault } from '../features/onboarding/api/onboardingApi';
 import { useSettings } from '../features/settings/api/settingsApi';
 import { seedDemoDataOnce } from '../dev/seedDemoData';
+import { captureModeEnabled } from '../dev/captureBridge';
 import { queryKeys } from '../lib/queryKeys';
 import { Providers } from './providers';
 
@@ -94,7 +97,7 @@ function DemoDataSeeder() {
 
 function AppContent() {
   const { t } = useTranslation();
-  const { data: status, isLoading } = useAppStatus();
+  const { data: status, isLoading, isError, refetch } = useAppStatus();
   const lockVault = useLockVault();
   const [manualGate, setManualGate] = useState<Gate | null>(null);
   const [recoveryKey, setRecoveryKey] = useState('');
@@ -107,7 +110,12 @@ function AppContent() {
         : !status.unlocked
           ? 'unlock'
           : 'ready';
-  const gate = manualGate ?? computedGate;
+  // The capture runner can include onboarding without changing the fixture
+  // vault state. This branch is unreachable from production bundles.
+  const gate =
+    captureModeEnabled() && new URLSearchParams(window.location.search).has('captureOnboarding')
+      ? 'setup'
+      : (manualGate ?? computedGate);
 
   if (gate === 'ready') {
     return (
@@ -129,8 +137,19 @@ function AppContent() {
   return (
     <>
       <LanguageSwitcher className="language-switcher-fixed" />
-      {gate === 'loading' ? (
-        <main className="gate loading">{t('app.loading')}</main>
+      {isError ? (
+        <main className="gate loading" role="alert">
+          <div>
+            <p>{t('app.startupError')}</p>
+            <Button type="button" onClick={() => void refetch()}>
+              {t('app.retry')}
+            </Button>
+          </div>
+        </main>
+      ) : gate === 'loading' ? (
+        <main className="gate loading">
+          <Skeleton className="h-10 w-40" aria-label={t('app.loading')} />
+        </main>
       ) : (
         <OnboardingPage
           subGate={gate}

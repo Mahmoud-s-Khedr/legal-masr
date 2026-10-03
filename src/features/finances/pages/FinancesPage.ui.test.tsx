@@ -109,17 +109,16 @@ describe('FinancesPage', () => {
 
   it('filters payment payers to the chosen case and saves expenses with both links optional', async () => {
     renderPage();
-    await screen.findByRole('option', { name: 'CA-1' });
+    await screen.findByRole('combobox', { name: 'القضية' });
     fireEvent.click(screen.getByRole('button', { name: 'إضافة دفعة' }));
     const paymentDialog = await screen.findByRole('dialog', { name: 'إضافة دفعة' });
-    fireEvent.change(within(paymentDialog).getByLabelText('القضية'), {
-      target: { value: 'case-1' },
-    });
-    const payer = await within(paymentDialog).findByLabelText('الموكل الدافع');
-    await waitFor(() =>
-      expect(within(payer).getByRole('option', { name: 'أحمد' })).toBeInTheDocument(),
-    );
-    expect(within(payer).queryByRole('option', { name: 'منى' })).not.toBeInTheDocument();
+    const caseSelect = within(paymentDialog).getByRole('combobox', { name: 'القضية' });
+    fireEvent.click(caseSelect);
+    fireEvent.click(await screen.findByRole('option', { name: 'CA-1' }));
+    const payer = await within(paymentDialog).findByRole('combobox', { name: 'الموكل الدافع' });
+    fireEvent.click(payer);
+    await screen.findByRole('option', { name: 'أحمد' });
+    expect(screen.queryByRole('option', { name: 'منى' })).not.toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
 
     fireEvent.click(screen.getByRole('tab', { name: 'المصروفات' }));
@@ -169,7 +168,7 @@ describe('FinancesPage', () => {
   it('keeps a failed expense draft in its dialog for retry', async () => {
     vi.mocked(bridge.expenseSave).mockRejectedValueOnce(new Error('save failed'));
     renderPage();
-    await screen.findByRole('option', { name: 'CA-1' });
+    await screen.findByRole('combobox', { name: 'القضية' });
     fireEvent.click(screen.getByRole('tab', { name: 'المصروفات' }));
     fireEvent.click(screen.getByRole('button', { name: 'إضافة مصروف' }));
     const dialog = await screen.findByRole('dialog', { name: 'إضافة مصروف' });

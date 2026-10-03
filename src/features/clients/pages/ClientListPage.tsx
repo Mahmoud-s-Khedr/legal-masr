@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { Card } from '../../../components/ui/card';
+import { Input } from '../../../components/ui/input';
+import { Checkbox } from '../../../components/ui/checkbox';
+import { Skeleton } from '../../../components/ui/skeleton';
+import { Table } from '../../../components/ui/table';
 import { useClientList } from '../api/clientsApi';
 
 export function ClientListPage() {
@@ -23,29 +30,25 @@ export function ClientListPage() {
             ابحث بسرعة، وافتح ملف الموكل بكل قضاياه ومستنداته وحسابه.
           </p>
         </div>
-        <button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</button>
+        <Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>
       </div>
 
       <div className="entity-list-toolbar">
-        <input
+        <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('clients.searchPlaceholder')}
         />
         <label className="checkbox-field">
-          <input
-            type="checkbox"
-            checked={includeArchived}
-            onChange={(e) => setIncludeArchived(e.target.checked)}
-          />
+          <Checkbox checked={includeArchived} onCheckedChange={setIncludeArchived} />
           {t('clients.showArchived')}
         </label>
       </div>
 
       {isLoading ? (
-        <p className="table-message">{t('clients.loading')}</p>
+        <Skeleton className="table-message h-24" aria-label={t('clients.loading')} />
       ) : !clients?.length ? (
-        <div className="empty-state-card">
+        <Card className="empty-state-card">
           <strong>{query ? 'لا توجد نتائج مطابقة' : t('clients.empty')}</strong>
           <span>
             {query
@@ -53,12 +56,12 @@ export function ClientListPage() {
               : 'أضف أول موكل لبدء تنظيم القضايا والمتابعات.'}
           </span>
           {!query && (
-            <button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</button>
+            <Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>
           )}
-        </div>
+        </Card>
       ) : (
         <div className="data-table-scroll">
-          <table className="data-table">
+          <Table className="data-table">
             <caption>{t('clients.tableCaption')}</caption>
             <thead>
               <tr>
@@ -80,7 +83,7 @@ export function ClientListPage() {
                   <td>{client.primaryPhone ? <bdi>{client.primaryPhone}</bdi> : '—'}</td>
                   <td>
                     {client.archivedAt ? (
-                      <span className="badge">{t('clients.archivedBadge')}</span>
+                      <Badge className="badge">{t('clients.archivedBadge')}</Badge>
                     ) : (
                       <span className="status-dot">{t('clients.active')}</span>
                     )}
@@ -88,7 +91,7 @@ export function ClientListPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </section>

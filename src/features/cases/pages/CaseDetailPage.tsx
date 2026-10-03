@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { ExpenseDto, HearingDto, PaymentDto, TaskDto } from '../../../bridge/types';
 import { Dialog } from '../../../components/ui/Dialog';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
 import {
   useCaseFinanceSummary,
@@ -85,22 +87,28 @@ export function CaseDetailPage() {
           </p>
         </div>
         <div className="detail-actions">
-          <button type="button" onClick={() => setEditOpen(true)}>
+          <Button type="button" onClick={() => setEditOpen(true)}>
             تعديل
-          </button>
+          </Button>
           {caseDto.archivedAt ? (
-            <button onClick={() => restore.mutate(id)}>استعادة</button>
+            <Button onClick={() => restore.mutate(id)}>استعادة</Button>
           ) : (
-            <button className="secondary-button" onClick={() => archive.mutate(id)}>
+            <Button
+              variant="secondary"
+              className="secondary-button"
+              onClick={() => archive.mutate(id)}
+            >
               أرشفة
-            </button>
+            </Button>
           )}
         </div>
       </header>
       <nav className="detail-tabs">
         {(['summary', 'relationships', 'hearings', 'tasks', 'attachments', 'account'] as const).map(
           (value) => (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               key={value}
               className={tab === value ? 'active' : ''}
               onClick={() => setTab(value)}
@@ -115,7 +123,7 @@ export function CaseDetailPage() {
                   account: 'الحساب',
                 }[value]
               }
-            </button>
+            </Button>
           ),
         )}
       </nav>
@@ -155,29 +163,31 @@ export function CaseDetailPage() {
         <section className="detail-card">
           <div className="card-title">
             <h3>الجلسات</h3>
-            <button type="button" onClick={() => setHearingEditor('new')}>
+            <Button type="button" onClick={() => setHearingEditor('new')}>
               إضافة جلسة
-            </button>
+            </Button>
           </div>
           <ul>
             {hearings.data?.map((hearing) => (
               <li key={hearing.id}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   className="text-button"
                   onClick={() => setHearingEditor(hearing)}
                 >
                   <bdi>{hearing.hearingDate}</bdi> · {hearing.hearingType ?? 'جلسة'} ·{' '}
                   {hearing.status}
-                </button>
+                </Button>
                 {hearing.status === 'SCHEDULED' && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     className="text-button"
                     onClick={() => setHearingDecision(hearing)}
                   >
                     تسجيل القرار
-                  </button>
+                  </Button>
                 )}
               </li>
             ))}
@@ -188,17 +198,22 @@ export function CaseDetailPage() {
         <section className="detail-card">
           <div className="card-title">
             <h3>المهام</h3>
-            <button type="button" onClick={() => setTaskEditor('new')}>
+            <Button type="button" onClick={() => setTaskEditor('new')}>
               إضافة مهمة
-            </button>
+            </Button>
           </div>
           <ul>
             {tasks.data?.map((task) => (
               <li key={task.id}>
                 {task.completed ? '✓' : '○'}{' '}
-                <button type="button" className="text-button" onClick={() => setTaskEditor(task)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-button"
+                  onClick={() => setTaskEditor(task)}
+                >
                   {task.title}
-                </button>{' '}
+                </Button>{' '}
                 · <bdi>{task.dueDate}</bdi>
               </li>
             ))}
@@ -211,16 +226,17 @@ export function CaseDetailPage() {
           <div className="card-title">
             <h3>الحساب</h3>
             <div>
-              <button type="button" onClick={() => setTransactionEditor({ type: 'payment' })}>
+              <Button type="button" onClick={() => setTransactionEditor({ type: 'payment' })}>
                 إضافة دفعة
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
                 className="secondary-button"
                 onClick={() => setTransactionEditor({ type: 'expense' })}
               >
                 إضافة مصروف
-              </button>
+              </Button>
             </div>
           </div>
           <p>
@@ -238,27 +254,28 @@ export function CaseDetailPage() {
           >
             <label>
               قيمة اتفاق الأتعاب (ج.م)
-              <input
+              <Input
                 value={fee}
                 onChange={(event) => setFee(event.target.value)}
                 inputMode="decimal"
               />
             </label>
-            <button>حفظ اتفاق الأتعاب</button>
+            <Button>حفظ اتفاق الأتعاب</Button>
           </form>
           <h4>الدفعات</h4>
           <ul className="entity-list-rows">
             {payments.data?.map((payment) => (
               <li key={payment.id}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   className="text-button"
                   onClick={() =>
                     setTransactionEditor({ type: 'payment', value: payment, inspect: true })
                   }
                 >
                   <bdi>{payment.paymentDate}</bdi> · <bdi>{money(payment.amountMinor)}</bdi>
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -266,15 +283,16 @@ export function CaseDetailPage() {
           <ul className="entity-list-rows">
             {expenses.data?.map((expense) => (
               <li key={expense.id}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   className="text-button"
                   onClick={() =>
                     setTransactionEditor({ type: 'expense', value: expense, inspect: true })
                   }
                 >
                   <bdi>{expense.expenseDate}</bdi> · <bdi>{money(expense.amountMinor)}</bdi>
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -531,12 +549,12 @@ function CaseTransactionInspection({
         <p>{transaction.value.notes ?? '—'}</p>
       </div>
       <div className="dialog-actions">
-        <button type="button" className="secondary-button" onClick={onClose}>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onClose}>
           إغلاق
-        </button>
-        <button type="button" onClick={onEdit}>
+        </Button>
+        <Button type="button" onClick={onEdit}>
           تعديل السجل
-        </button>
+        </Button>
       </div>
     </div>
   );

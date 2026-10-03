@@ -72,6 +72,10 @@ describe('canonical domain forms', () => {
     render(<PowerOfAttorneyForm busy={false} onCancel={vi.fn()} onSubmit={submit} />);
 
     fireEvent.change(screen.getByLabelText('الرقم الداخلي'), { target: { value: 'TA-3' } });
+    const issueDate = screen.getByLabelText('تاريخ الإصدار');
+    expect(issueDate).toHaveAttribute('type', 'text');
+    expect(screen.queryByLabelText('سنة الإصدار')).not.toBeInTheDocument();
+    fireEvent.change(issueDate, { target: { value: '2026-10-22' } });
     fireEvent.click(screen.getByRole('checkbox', { name: /أحمد/ }));
     fireEvent.change(screen.getByLabelText('الاسم'), { target: { value: 'محمود' } });
     fireEvent.change(screen.getByLabelText('رقم القيد'), { target: { value: '123' } });
@@ -82,6 +86,8 @@ describe('canonical domain forms', () => {
       expect(submit).toHaveBeenCalledWith(
         expect.objectContaining({
           internalSequence: 'TA-3',
+          issueDate: '2026-10-22',
+          issueYear: 2026,
           clientIds: ['client-1'],
           lawyers: [expect.objectContaining({ fullName: 'محمود', barNumber: '123' })],
         }),

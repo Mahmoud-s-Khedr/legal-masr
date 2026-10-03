@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 import { useSettings, useUpdateSettings } from '../../features/settings/api/settingsApi';
 
 export function LanguageSwitcher({ className }: { className?: string }) {
@@ -9,7 +10,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   const label = next === 'ar' ? 'العربية' : 'English';
 
   return (
-    <button
+    <Button
       type="button"
       className={['language-switcher', className].filter(Boolean).join(' ')}
       onClick={() => {
@@ -27,6 +28,6 @@ export function LanguageSwitcher({ className }: { className?: string }) {
       }}
     >
       {label}
-    </button>
+    </Button>
   );
 }

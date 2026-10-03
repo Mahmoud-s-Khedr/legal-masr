@@ -11,10 +11,10 @@
   },
   "app": {
     "windows": [
-      { "title": "ليجال ماستر", "width": 1100, "height": 720, "minWidth": 760, "minHeight": 560 }
+      { "title": "ليجال مصر", "width": 1100, "height": 720, "minWidth": 760, "minHeight": 560 }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'"
+      "csp": "default-src 'self'; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; frame-src 'none'"
     }
   },
   "bundle": {

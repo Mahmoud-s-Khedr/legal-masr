@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import type { CaseDto, CaseOpponentDto, CaseOpponentInput } from '../../../bridge/types';
 import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Textarea } from '../../../components/ui/textarea';
 import { useAddOpponent, useRemoveOpponent, useUpdateOpponent } from '../api/casesApi';
 
 export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
@@ -13,9 +16,9 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
     <div className="panel">
       <div className="card-title">
         <h3>الخصوم</h3>
-        <button type="button" onClick={() => setEditing('new')}>
+        <Button type="button" onClick={() => setEditing('new')}>
           إضافة خصم
-        </button>
+        </Button>
       </div>
       {!caseDto.opponents.length ? (
         <p>لا يوجد خصوم مسجلون.</p>
@@ -26,16 +29,22 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
               <strong>{opponent.fullName}</strong>
               {opponent.legalCapacity && <span> · {opponent.legalCapacity}</span>}
               <div>
-                <button type="button" className="text-button" onClick={() => setEditing(opponent)}>
-                  تعديل
-                </button>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  className="text-button"
+                  onClick={() => setEditing(opponent)}
+                >
+                  تعديل
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
                   className="text-button danger-button"
                   onClick={() => setRemoving(opponent)}
                 >
                   إزالة
-                </button>
+                </Button>
               </div>
             </li>
           ))}
@@ -123,7 +132,7 @@ function OpponentForm({
     >
       <label>
         اسم الخصم
-        <input
+        <Input
           required
           autoFocus
           value={fullName}
@@ -132,15 +141,15 @@ function OpponentForm({
       </label>
       <label>
         الصفة
-        <input value={legalCapacity} onChange={(event) => setLegalCapacity(event.target.value)} />
+        <Input value={legalCapacity} onChange={(event) => setLegalCapacity(event.target.value)} />
       </label>
       <label>
         المحامي
-        <input value={lawyerName} onChange={(event) => setLawyerName(event.target.value)} />
+        <Input value={lawyerName} onChange={(event) => setLawyerName(event.target.value)} />
       </label>
       <label>
         الهاتف
-        <input
+        <Input
           dir="ltr"
           inputMode="tel"
           value={phone}
@@ -149,17 +158,17 @@ function OpponentForm({
       </label>
       <label>
         العنوان
-        <input value={address} onChange={(event) => setAddress(event.target.value)} />
+        <Input value={address} onChange={(event) => setAddress(event.target.value)} />
       </label>
       <label>
         ملاحظات
-        <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+        <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       <div className="dialog-actions">
-        <button type="button" className="secondary-button" onClick={onCancel}>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
           إلغاء
-        </button>
-        <button disabled={busy}>حفظ الخصم</button>
+        </Button>
+        <Button disabled={busy}>حفظ الخصم</Button>
       </div>
     </form>
   );

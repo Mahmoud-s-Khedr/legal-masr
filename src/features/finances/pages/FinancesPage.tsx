@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { ExpenseDto, ExpenseType, PaymentDto, PaymentMethod } from '../../../bridge/types';
+import { DatePicker } from '../../../components/ui/DatePicker';
+import { Button } from '../../../components/ui/button';
 import { Dialog } from '../../../components/ui/Dialog';
-import { PageHeader } from '../../../components/ui/PageHeader';
+import { Input } from '../../../components/ui/input';
 import { Tabs } from '../../../components/ui/Tabs';
+import { Select } from '../../../components/ui/select';
+import { Table } from '../../../components/ui/table';
+import { Textarea } from '../../../components/ui/textarea';
 import { useCase, useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
 import { useExpenses, usePayments, useSaveExpense, useSavePayment } from '../api/financesApi';
@@ -69,16 +74,16 @@ export function FinancesPage() {
   const closeEntry = () => setEntry(null);
   return (
     <section className="work-page finance-page">
-      <PageHeader
-        kicker="المالية"
-        title="الدفعات والمصروفات"
-        description="متابعة نقدية بسيطة بالجنيه المصري؛ لا يحول التطبيق هذا السجل إلى دفتر محاسبي."
-        actions={
-          <button type="button" onClick={() => setEntry({ type: tab, mode: 'edit' })}>
-            إضافة {tab === 'payment' ? 'دفعة' : 'مصروف'}
-          </button>
-        }
-      />
+      <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="kicker">المالية</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">الدفعات والمصروفات</h1>
+          <p className="mt-1 text-muted-foreground">متابعة نقدية بسيطة بالجنيه المصري؛ لا يحول التطبيق هذا السجل إلى دفتر محاسبي.</p>
+        </div>
+        <Button type="button" onClick={() => setEntry({ type: tab, mode: 'edit' })}>
+          إضافة {tab === 'payment' ? 'دفعة' : 'مصروف'}
+        </Button>
+      </header>
       <Tabs
         label="سجل المالية"
         value={tab}
@@ -91,38 +96,32 @@ export function FinancesPage() {
       <div className="finance-filters">
         <label>
           القضية
-          <select
+          <Select
             value={filterCaseId}
-            onChange={(event) => {
-              setFilterCaseId(event.target.value);
+            onValueChange={(value) => {
+              setFilterCaseId(value);
               setFilterClientId('');
             }}
-          >
-            <option value="">كل القضايا</option>
-            {cases.data?.map((caseItem) => (
-              <option value={caseItem.id} key={caseItem.id}>
-                {caseItem.internalNumber}
-              </option>
-            ))}
-          </select>
+            items={[
+              { value: '', label: 'كل القضايا' },
+              ...(cases.data ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
+            ]}
+          />
         </label>
         <label>
           الموكل
-          <select
+          <Select
             value={filterClientId}
-            onChange={(event) => setFilterClientId(event.target.value)}
-          >
-            <option value="">كل الموكلين</option>
-            {(tab === 'payment' && filterCaseId ? payerOptions : (clients.data ?? [])).map(
-              (client) => (
-                <option value={client.id} key={client.id}>
-                  {client.fullName}
-                </option>
+            onValueChange={setFilterClientId}
+            items={[
+              { value: '', label: 'كل الموكلين' },
+              ...(tab === 'payment' && filterCaseId ? payerOptions : (clients.data ?? [])).map(
+                (item) => ({ value: item.id, label: item.fullName }),
               ),
-            )}
-          </select>
+            ]}
+          />
         </label>
-        <button
+        <Button
           type="button"
           className="secondary-button"
           onClick={() => {
@@ -131,7 +130,7 @@ export function FinancesPage() {
           }}
         >
           مسح التصفية
-        </button>
+        </Button>
       </div>
       <section className="work-register">
         <div className="card-title">
@@ -144,7 +143,7 @@ export function FinancesPage() {
           <p className="empty-compact">لا توجد {tab === 'payment' ? 'دفعات' : 'مصروفات'} مطابقة.</p>
         ) : (
           <div className="data-table-scroll">
-            <table className="data-table finance-table">
+            <Table className="data-table finance-table">
               <caption>السجل المالي</caption>
               <thead>
                 <tr>
@@ -168,7 +167,8 @@ export function FinancesPage() {
                   return (
                     <tr key={record.id} className="transaction-row">
                       <td>
-                        <button
+                        <Button
+                          variant="ghost"
                           type="button"
                           className="text-button"
                           aria-label={`عرض ${payment ? 'الدفعة' : 'المصروف'} بتاريخ ${payment?.paymentDate ?? expense?.expenseDate}`}
@@ -181,7 +181,7 @@ export function FinancesPage() {
                           }
                         >
                           <bdi>{payment?.paymentDate ?? expense?.expenseDate}</bdi>
-                        </button>
+                        </Button>
                       </td>
                       <td>
                         <span className={`transaction-badge ${payment ? 'income' : 'expense'}`}>
@@ -201,7 +201,8 @@ export function FinancesPage() {
                         <bdi>{money(record.amountMinor)}</bdi>
                       </td>
                       <td>
-                        <button
+                        <Button
+                          variant="ghost"
                           type="button"
                           className="text-button"
                           onClick={() => {
@@ -213,13 +214,13 @@ export function FinancesPage() {
                           }}
                         >
                           تعديل
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
-            </table>
+            </Table>
           </div>
         )}
       </section>
@@ -331,12 +332,12 @@ function TransactionInspection({
         <p>{record.notes ?? '—'}</p>
       </div>
       <div className="dialog-actions">
-        <button type="button" className="secondary-button" onClick={onClose}>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onClose}>
           إغلاق
-        </button>
-        <button type="button" onClick={onEdit}>
+        </Button>
+        <Button type="button" onClick={onEdit}>
           تعديل السجل
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -390,42 +391,35 @@ export function PaymentForm({
     >
       <label>
         القضية
-        <select
+        <Select
           required
           value={caseId}
-          onChange={(event) => {
-            setCaseId(event.target.value);
+          onValueChange={(value) => {
+            setCaseId(value);
             setPayerClientId('');
           }}
-        >
-          <option value="">اختر القضية</option>
-          {cases?.map((caseItem) => (
-            <option key={caseItem.id} value={caseItem.id}>
-              {caseItem.internalNumber}
-            </option>
-          ))}
-        </select>
+          placeholder="اختر القضية"
+          items={(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber }))}
+        />
       </label>
       <label>
         الموكل الدافع
-        <select
+        <Select
           required
           disabled={!caseId}
           value={payerClientId}
-          onChange={(event) => setPayerClientId(event.target.value)}
-        >
-          <option value="">اختر موكل القضية</option>
-          {caseDetail.data?.clients.map((client) => (
-            <option key={client.clientId} value={client.clientId}>
-              {client.fullName}
-            </option>
-          ))}
-        </select>
+          onValueChange={setPayerClientId}
+          placeholder="اختر موكل القضية"
+          items={(caseDetail.data?.clients ?? []).map((item) => ({
+            value: item.clientId,
+            label: item.fullName,
+          }))}
+        />
       </label>
       <div className="settings-two-columns">
         <label>
           المبلغ (ج.م)
-          <input
+          <Input
             required
             inputMode="decimal"
             value={amount}
@@ -434,37 +428,29 @@ export function PaymentForm({
         </label>
         <label>
           تاريخ الدفعة
-          <input
-            required
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-          />
+          <DatePicker required value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
       </div>
       <label>
         طريقة الدفع (اختيارية)
-        <select
+        <Select
           value={method}
-          onChange={(event) => setMethod(event.target.value as PaymentMethod | '')}
-        >
-          <option value="">غير محددة</option>
-          {methods.map(([value, label]) => (
-            <option value={value} key={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+          onValueChange={(value) => setMethod(value as PaymentMethod | '')}
+          items={[
+            { value: '', label: 'غير محددة' },
+            ...methods.map(([value, label]) => ({ value, label })),
+          ]}
+        />
       </label>
       <label>
-        ملاحظات <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+        ملاحظات <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       {error && <p className="error">{error}</p>}
       <div className="dialog-actions">
-        <button type="button" className="secondary-button" onClick={onCancel}>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
           إلغاء
-        </button>
-        <button disabled={busy}>حفظ الدفعة</button>
+        </Button>
+        <Button disabled={busy}>حفظ الدفعة</Button>
       </div>
     </form>
   );
@@ -520,31 +506,31 @@ export function ExpenseForm({
       <div className="settings-two-columns">
         <label>
           القضية
-          <select value={caseId} onChange={(event) => setCaseId(event.target.value)}>
-            <option value="">غير مرتبطة بقضية</option>
-            {cases?.map((caseItem) => (
-              <option key={caseItem.id} value={caseItem.id}>
-                {caseItem.internalNumber}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={caseId}
+            onValueChange={setCaseId}
+            items={[
+              { value: '', label: 'غير مرتبطة بقضية' },
+              ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
+            ]}
+          />
         </label>
         <label>
           الموكل
-          <select value={clientId} onChange={(event) => setClientId(event.target.value)}>
-            <option value="">غير مرتبط بموكل</option>
-            {clients?.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.fullName}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={clientId}
+            onValueChange={setClientId}
+            items={[
+              { value: '', label: 'غير مرتبط بموكل' },
+              ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+            ]}
+          />
         </label>
       </div>
       <div className="settings-two-columns">
         <label>
           المبلغ (ج.م)
-          <input
+          <Input
             required
             inputMode="decimal"
             value={amount}
@@ -553,33 +539,26 @@ export function ExpenseForm({
         </label>
         <label>
           التاريخ
-          <input
-            required
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-          />
+          <DatePicker required value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
       </div>
       <label>
         نوع المصروف
-        <select value={type} onChange={(event) => setType(event.target.value as ExpenseType)}>
-          {expenseTypes.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <Select
+          value={type}
+          onValueChange={(value) => setType(value as ExpenseType)}
+          items={expenseTypes.map(([value, label]) => ({ value, label }))}
+        />
       </label>
       <label>
-        ملاحظات <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+        ملاحظات <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       {error && <p className="error">{error}</p>}
       <div className="dialog-actions">
-        <button type="button" className="secondary-button" onClick={onCancel}>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
           إلغاء
-        </button>
-        <button disabled={busy}>حفظ المصروف</button>
+        </Button>
+        <Button disabled={busy}>حفظ المصروف</Button>
       </div>
     </form>
   );

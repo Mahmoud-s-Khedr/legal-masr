@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Link, NavLink } from 'react-router-dom';
 import { AppRoutes, NAV_ITEMS } from '../../app/router';
 import { GlobalSearch } from '../../features/search/components/GlobalSearch';
+import { DropdownMenu } from '../ui/dropdown-menu';
+import { Button } from '../ui/button';
+import { Sheet } from '../ui/sheet';
 import { useSettings } from '../../features/settings/api/settingsApi';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Icon } from './Icon';
@@ -12,11 +15,8 @@ export function Shell({ onLock }: { onLock: () => void }) {
   const { data: settings } = useSettings();
   const lockTimeoutMinutes = settings?.lockTimeoutMinutes;
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const createMenuRef = useRef<HTMLDivElement>(null);
-  const createButtonRef = useRef<HTMLButtonElement>(null);
-  const drawerCloseRef = useRef<HTMLButtonElement>(null);
+  const [searchPaletteOpen, setSearchPaletteOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!lockTimeoutMinutes) return;
@@ -41,33 +41,15 @@ export function Shell({ onLock }: { onLock: () => void }) {
   }, [lockTimeoutMinutes, onLock]);
 
   useEffect(() => {
-    if (!drawerOpen) return;
-    drawerCloseRef.current?.focus();
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setDrawerOpen(false);
-        menuButtonRef.current?.focus();
+    const openSearchPalette = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchPaletteOpen(true);
       }
     };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [drawerOpen]);
-
-  useEffect(() => {
-    if (!createOpen) return;
-    createMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setCreateOpen(false);
-        createButtonRef.current?.focus();
-      }
-      if (event.key === 'Tab' && !createMenuRef.current?.contains(event.target as Node)) {
-        setCreateOpen(false);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [createOpen]);
+    window.addEventListener('keydown', openSearchPalette);
+    return () => window.removeEventListener('keydown', openSearchPalette);
+  }, []);
 
   const navigation = (onNavigate?: () => void) => (
     <nav aria-label={t('app.workspaceKicker')}>
@@ -83,184 +65,133 @@ export function Shell({ onLock }: { onLock: () => void }) {
 
   return (
     <BrowserRouter>
-      <div className="app-shell">
-        <aside className="sidebar">
-          <div className="sidebar-brand brand-block">
-            <img src="/logo.png" alt="" />
-            <div>
-              <strong>{t('app.brandName')}</strong>
-              <span>{t('app.brandTagline')}</span>
-            </div>
-          </div>
-          {navigation()}
-          <div className="sidebar-footer">
-            <span>{t('app.localOnly')}</span>
-            <button className="sidebar-lock" type="button" onClick={onLock}>
-              <Icon name="lock" size={17} />
-              {t('nav.lock')}
-            </button>
-          </div>
-        </aside>
-        <header className="topbar">
-          <div className="topbar-main">
-            <button
-              ref={menuButtonRef}
-              className="menu-button"
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              aria-label={t('app.openMenu')}
-              aria-expanded={drawerOpen}
-            >
-              <Icon name="menu" size={21} />
-            </button>
-            <div className="search-wrap">
-              <Icon name="search" size={19} />
-              <GlobalSearch />
-            </div>
-          </div>
-          <div className="topbar-actions">
-            <div className="create-menu-wrap">
-              <button
-                ref={createButtonRef}
-                className="create-button"
-                type="button"
-                aria-haspopup="menu"
-                aria-expanded={createOpen}
-                onClick={() => setCreateOpen((current) => !current)}
-              >
-                <Icon name="plus" size={18} />
-                <span>{t('app.add')}</span>
-                <Icon name="chevron-down" size={15} />
-              </button>
-              {createOpen && (
-                <div
-                  ref={createMenuRef}
-                  className="create-menu"
-                  role="menu"
-                  aria-label={t('app.add')}
-                  onKeyDown={(event) => {
-                    const items = Array.from(
-                      event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
-                    );
-                    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
-                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                      event.preventDefault();
-                      const offset = event.key === 'ArrowDown' ? 1 : -1;
-                      items[(currentIndex + offset + items.length) % items.length]?.focus();
-                    }
-                    if (event.key === 'Home') {
-                      event.preventDefault();
-                      items[0]?.focus();
-                    }
-                    if (event.key === 'End') {
-                      event.preventDefault();
-                      items.at(-1)?.focus();
-                    }
-                  }}
-                >
-                  <Link to="/clients/new" role="menuitem" onClick={() => setCreateOpen(false)}>
-                    <Icon name="clients" size={18} />
-                    {t('dashboard.addClient')}
-                  </Link>
-                  <Link to="/cases/new" role="menuitem" onClick={() => setCreateOpen(false)}>
-                    <Icon name="cases" size={18} />
-                    {t('dashboard.addCase')}
-                  </Link>
-                  <Link to="/calendar" role="menuitem" onClick={() => setCreateOpen(false)}>
-                    <Icon name="calendar" size={18} />
-                    {t('app.addHearing')}
-                  </Link>
-                  <Link to="/tasks" role="menuitem" onClick={() => setCreateOpen(false)}>
-                    <Icon name="tasks" size={18} />
-                    {t('app.addTask')}
-                  </Link>
+      <Sheet.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <Sheet.Root open={searchPaletteOpen} onOpenChange={setSearchPaletteOpen}>
+          <div className="app-shell">
+            <aside className="sidebar">
+              <div className="sidebar-brand brand-block">
+                <img src="/logo.png" alt="" />
+                <div>
+                  <strong>{t('app.brandName')}</strong>
+                  <span>{t('app.brandTagline')}</span>
                 </div>
-              )}
-            </div>
-            <LanguageSwitcher />
-            <button
-              className="lock-button icon-button"
-              onClick={onLock}
-              aria-label={t('app.lockButton')}
-            >
-              <Icon name="lock" size={17} />
-            </button>
-          </div>
-        </header>
-        <main className="workspace">
-          <AppRoutes />
-        </main>
-        {drawerOpen && (
-          <div
-            className="mobile-drawer"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('app.workspaceKicker')}
-          >
-            <button
-              className="drawer-backdrop"
-              type="button"
-              onClick={() => {
-                setDrawerOpen(false);
-                menuButtonRef.current?.focus();
-              }}
-              aria-label={t('app.closeMenu')}
-            />
-            <aside
-              className="drawer-panel"
-              onKeyDown={(event) => {
-                if (event.key !== 'Tab') return;
-                const controls = Array.from(
-                  event.currentTarget.querySelectorAll<HTMLElement>(
-                    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-                  ),
-                );
-                const first = controls[0];
-                const last = controls.at(-1);
-                if (event.shiftKey && document.activeElement === first) {
-                  event.preventDefault();
-                  last?.focus();
-                } else if (!event.shiftKey && document.activeElement === last) {
-                  event.preventDefault();
-                  first?.focus();
-                }
-              }}
-            >
-              <div className="drawer-header">
-                <strong>{t('app.brandName')}</strong>
-                <button
-                  ref={drawerCloseRef}
-                  className="drawer-close"
-                  type="button"
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    menuButtonRef.current?.focus();
-                  }}
-                  aria-label={t('app.closeMenu')}
-                >
-                  <Icon name="close" size={20} />
-                </button>
               </div>
-              {navigation(() => setDrawerOpen(false))}
+              {navigation()}
               <div className="sidebar-footer">
                 <span>{t('app.localOnly')}</span>
-                <button
-                  className="sidebar-lock"
-                  type="button"
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    menuButtonRef.current?.focus();
-                    onLock();
-                  }}
-                >
+                <Button className="sidebar-lock" type="button" variant="ghost" onClick={onLock}>
                   <Icon name="lock" size={17} />
                   {t('nav.lock')}
-                </button>
+                </Button>
               </div>
             </aside>
+            <header className="topbar">
+              <div className="topbar-main">
+                <Sheet.Trigger className="menu-button" aria-label={t('app.openMenu')}>
+                  <Icon name="menu" size={21} />
+                </Sheet.Trigger>
+                <div className="search-wrap">
+                  <Icon name="search" size={19} />
+                  <GlobalSearch query={searchQuery} onQueryChange={setSearchQuery} />
+                </div>
+                <Sheet.Trigger
+                  className="search-palette-trigger icon-button"
+                  aria-label={t('search.openPalette')}
+                >
+                  <Icon name="search" size={18} />
+                </Sheet.Trigger>
+              </div>
+              <div className="topbar-actions">
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger className="create-button">
+                    <Icon name="plus" size={18} />
+                    <span>{t('app.add')}</span>
+                    <Icon name="chevron-down" size={15} />
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Positioner side="bottom" align="end" sideOffset={8}>
+                      <DropdownMenu.Popup className="create-menu" aria-label={t('app.add')}>
+                        <DropdownMenu.LinkItem render={<Link to="/clients/new" />} closeOnClick>
+                          <Icon name="clients" size={18} />
+                          {t('dashboard.addClient')}
+                        </DropdownMenu.LinkItem>
+                        <DropdownMenu.LinkItem render={<Link to="/cases/new" />} closeOnClick>
+                          <Icon name="cases" size={18} />
+                          {t('dashboard.addCase')}
+                        </DropdownMenu.LinkItem>
+                        <DropdownMenu.LinkItem render={<Link to="/calendar" />} closeOnClick>
+                          <Icon name="calendar" size={18} />
+                          {t('app.addHearing')}
+                        </DropdownMenu.LinkItem>
+                        <DropdownMenu.LinkItem render={<Link to="/tasks" />} closeOnClick>
+                          <Icon name="tasks" size={18} />
+                          {t('app.addTask')}
+                        </DropdownMenu.LinkItem>
+                      </DropdownMenu.Popup>
+                    </DropdownMenu.Positioner>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <LanguageSwitcher />
+                <Button
+                  className="lock-button icon-button"
+                  variant="ghost"
+                  type="button"
+                  onClick={onLock}
+                  aria-label={t('app.lockButton')}
+                >
+                  <Icon name="lock" size={17} />
+                </Button>
+              </div>
+            </header>
+            <main className="workspace">
+              <AppRoutes />
+            </main>
+            <Sheet.Portal>
+              <Sheet.Backdrop className="drawer-backdrop" />
+              <Sheet.Viewport className="mobile-drawer">
+                <Sheet.Popup className="drawer-panel" aria-label={t('app.workspaceKicker')}>
+                  <div className="drawer-header">
+                    <Sheet.Title>{t('app.brandName')}</Sheet.Title>
+                    <Sheet.Close className="drawer-close" aria-label={t('app.closeMenu')}>
+                      <Icon name="close" size={20} />
+                    </Sheet.Close>
+                  </div>
+                  {navigation(() => setDrawerOpen(false))}
+                  <div className="sidebar-footer">
+                    <span>{t('app.localOnly')}</span>
+                    <Button
+                      className="sidebar-lock"
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setDrawerOpen(false);
+                        onLock();
+                      }}
+                    >
+                      <Icon name="lock" size={17} />
+                      {t('nav.lock')}
+                    </Button>
+                  </div>
+                </Sheet.Popup>
+              </Sheet.Viewport>
+            </Sheet.Portal>
+            <Sheet.Portal>
+              <Sheet.Backdrop className="dialog-backdrop" />
+              <Sheet.Viewport className="dialog-viewport">
+                <Sheet.Popup className="command-palette" aria-label={t('search.paletteTitle')}>
+                  <Sheet.Title>{t('search.paletteTitle')}</Sheet.Title>
+                  <GlobalSearch
+                    palette
+                    query={searchQuery}
+                    onQueryChange={setSearchQuery}
+                    onNavigate={() => setSearchPaletteOpen(false)}
+                  />
+                </Sheet.Popup>
+              </Sheet.Viewport>
+            </Sheet.Portal>
           </div>
-        )}
-      </div>
+        </Sheet.Root>
+      </Sheet.Root>
     </BrowserRouter>
   );
 }

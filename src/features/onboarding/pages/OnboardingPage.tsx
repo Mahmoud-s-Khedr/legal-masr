@@ -2,6 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../../../bridge/errors';
+import { Button } from '../../../components/ui/button';
+import { Card } from '../../../components/ui/card';
+import { Input } from '../../../components/ui/input';
 import { useInitializeVault, useRecoverAccess, useUnlockVault } from '../api/onboardingApi';
 import {
   RecoveryFormValues,
@@ -45,7 +48,7 @@ export function OnboardingPage({
         <img src="/logo.png" alt={t('app.brandLogoAlt')} />
         <p>{t('app.brandTagline')}</p>
       </aside>
-      <section className="gate-card">
+      <Card className="gate-card">
         <p className="kicker">
           {t(`gate.kicker.${subGate === 'recovery-key' ? 'recoveryKey' : subGate}`)}
         </p>
@@ -54,7 +57,7 @@ export function OnboardingPage({
           <>
             <p>{t('gate.recoveryKeyWarning')}</p>
             <code>{recoveryKey}</code>
-            <button onClick={onRecoveryKeySaved}>{t('gate.recoveryKeySavedButton')}</button>
+            <Button onClick={onRecoveryKeySaved}>{t('gate.recoveryKeySavedButton')}</Button>
           </>
         ) : subGate === 'setup' ? (
           <SetupForm
@@ -93,11 +96,11 @@ export function OnboardingPage({
           </p>
         )}
         {subGate === 'unlock' && (
-          <button className="text-button" onClick={onSwitchToRecovery}>
+          <Button variant="ghost" className="text-button" onClick={onSwitchToRecovery}>
             {t('gate.haveRecoveryKey')}
-          </button>
+          </Button>
         )}
-      </section>
+      </Card>
     </main>
   );
 }
@@ -118,15 +121,15 @@ function SetupForm({
     <form onSubmit={handleSubmit(onSubmit)}>
       <label>
         {t('gate.fields.fullName')}
-        <input {...register('fullName')} required autoFocus />
+        <Input {...register('fullName')} required autoFocus />
       </label>
       <label>
         {t('gate.fields.password')}
-        <input type="password" {...register('password')} minLength={12} required />
+        <Input type="password" {...register('password')} minLength={12} required />
       </label>
-      <button disabled={busy || formState.isSubmitting}>
+      <Button disabled={busy || formState.isSubmitting}>
         {busy ? t('gate.submit.busy') : t('gate.submit.setup')}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -147,11 +150,11 @@ function UnlockForm({
     <form onSubmit={handleSubmit(onSubmit)}>
       <label>
         {t('gate.fields.password')}
-        <input type="password" {...register('password')} minLength={12} required autoFocus />
+        <Input type="password" {...register('password')} minLength={12} required autoFocus />
       </label>
-      <button disabled={busy || formState.isSubmitting}>
+      <Button disabled={busy || formState.isSubmitting}>
         {busy ? t('gate.submit.busy') : t('gate.submit.unlock')}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -172,15 +175,15 @@ function RecoveryForm({
     <form onSubmit={handleSubmit(onSubmit)}>
       <label>
         {t('gate.fields.recoveryKey')}
-        <input dir="ltr" {...register('recoveryKey')} required autoFocus />
+        <Input dir="ltr" {...register('recoveryKey')} required autoFocus />
       </label>
       <label>
         {t('gate.fields.newPassword')}
-        <input type="password" {...register('password')} minLength={12} required />
+        <Input type="password" {...register('password')} minLength={12} required />
       </label>
-      <button disabled={busy || formState.isSubmitting}>
+      <Button disabled={busy || formState.isSubmitting}>
         {busy ? t('gate.submit.busy') : t('gate.submit.recovery')}
-      </button>
+      </Button>
     </form>
   );
 }

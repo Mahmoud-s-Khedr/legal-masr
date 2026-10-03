@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { Card } from '../../../components/ui/card';
+import { Input } from '../../../components/ui/input';
+import { Checkbox } from '../../../components/ui/checkbox';
+import { Select } from '../../../components/ui/select';
+import { Skeleton } from '../../../components/ui/skeleton';
+import { Table } from '../../../components/ui/table';
 import { useCaseList } from '../api/casesApi';
 
 export function CaseListPage() {
@@ -23,49 +31,42 @@ export function CaseListPage() {
           <h2>{t('cases.title')}</h2>
           <p className="page-description">كل قضية مع موكليها وجلساتها ومهامها وحركتها المالية.</p>
         </div>
-        <button onClick={() => navigate('/cases/new')}>{t('cases.newButton')}</button>
+        <Button onClick={() => navigate('/cases/new')}>{t('cases.newButton')}</Button>
       </div>
 
       <div className="entity-list-toolbar">
-        <input
+        <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="ابحث برقم القضية أو المحكمة أو الموكل"
         />
-        <select
+        <Select
           value={status}
-          onChange={(event) => setStatus(event.target.value)}
+          onValueChange={setStatus}
           aria-label="تصفية حسب الحالة"
-        >
-          <option value="">كل الحالات</option>
-          {[
-            'DRAFT',
-            'ACTIVE',
-            'SUSPENDED',
-            'JUDGMENT_ISSUED',
-            'APPEALED',
-            'ENFORCEMENT',
-            'CLOSED',
-          ].map((value) => (
-            <option key={value} value={value}>
-              {t(`cases.status.${value}`)}
-            </option>
-          ))}
-        </select>
+          items={[
+            { value: '', label: 'كل الحالات' },
+            ...[
+              'DRAFT',
+              'ACTIVE',
+              'SUSPENDED',
+              'JUDGMENT_ISSUED',
+              'APPEALED',
+              'ENFORCEMENT',
+              'CLOSED',
+            ].map((value) => ({ value, label: t(`cases.status.${value}`) })),
+          ]}
+        />
         <label className="checkbox-field">
-          <input
-            type="checkbox"
-            checked={includeArchived}
-            onChange={(e) => setIncludeArchived(e.target.checked)}
-          />
+          <Checkbox checked={includeArchived} onCheckedChange={setIncludeArchived} />
           {t('cases.showArchived')}
         </label>
       </div>
 
       {isLoading ? (
-        <p className="table-message">{t('cases.loading')}</p>
+        <Skeleton className="table-message h-24" aria-label={t('cases.loading')} />
       ) : !cases?.length ? (
-        <div className="empty-state-card">
+        <Card className="empty-state-card">
           <strong>{query || status ? 'لا توجد قضايا مطابقة' : t('cases.empty')}</strong>
           <span>
             {query || status
@@ -73,12 +74,12 @@ export function CaseListPage() {
               : 'أنشئ أول قضية واربطها بموكل واحد على الأقل.'}
           </span>
           {!query && !status && (
-            <button onClick={() => navigate('/cases/new')}>{t('cases.newButton')}</button>
+            <Button onClick={() => navigate('/cases/new')}>{t('cases.newButton')}</Button>
           )}
-        </div>
+        </Card>
       ) : (
         <div className="data-table-scroll">
-          <table className="data-table">
+          <Table className="data-table">
             <caption>{t('cases.tableCaption')}</caption>
             <thead>
               <tr>
@@ -99,16 +100,16 @@ export function CaseListPage() {
                   <td>{caseSummary.officialYear ? <bdi>{caseSummary.officialYear}</bdi> : '—'}</td>
                   <td>{caseSummary.clientNames.join('، ') || '—'}</td>
                   <td>
-                    <span className="badge">
+                    <Badge className="badge">
                       {caseSummary.archivedAt
                         ? t('cases.archivedBadge')
                         : t(`cases.status.${caseSummary.status}`)}
-                    </span>
+                    </Badge>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </section>

@@ -48,7 +48,7 @@ Create unsigned Linux x86-64 Debian, RPM, and AppImage packages:
 pnpm tauri build --bundles deb,rpm,appimage
 ```
 
-Expected release output is under `src-tauri/target/release/bundle/`, in the `deb/`, `rpm/`, and `appimage/` directories. Debug builds use `src-tauri/target/debug/bundle/` instead. The release workflow builds AppImages on Ubuntu 22.04, the oldest supported GitHub runner baseline with Tauri's required WebKitGTK 4.1 packages.
+Expected release output is under `src-tauri/target/release/bundle/`, in the `deb/`, `rpm/`, and `appimage/` directories. Debug builds use `src-tauri/target/debug/bundle/` instead. Linux CI uses Ubuntu 24.04 because the vendored OpenSSL selected by SQLCipher requires its current glibc ABI during linking.
 
 Linux artifacts are produced unsigned by the draft-release workflow; do not add Linux signing credentials.
 

@@ -1,5 +1,6 @@
+import { Dialog as BaseDialog } from '@base-ui/react/dialog';
 import { type ReactNode, useEffect, useId, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { Button } from './button';
 
 type DialogProps = {
   open: boolean;
@@ -9,80 +10,45 @@ type DialogProps = {
   labelledBy?: string;
 };
 
-const focusableSelector = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(',');
-
-/**
- * A small, dependency-free modal primitive for record actions. It deliberately
- * owns focus while open and returns it to the invoking control when dismissed.
- */
+/** Base UI supplies Escape dismissal, focus containment, and focus restoration. */
 export function Dialog({ open, onOpenChange, title, children, labelledBy }: DialogProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
   const generatedTitleId = useId();
   const titleId = labelledBy ?? generatedTitleId;
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!open) return;
-    returnFocusRef.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const dialog = dialogRef.current;
-    const focusable = dialog?.querySelectorAll<HTMLElement>(focusableSelector);
-    (focusable?.[0] ?? dialog)?.focus();
+    if (open) {
+      returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      return;
+    }
+    returnFocusRef.current?.focus();
+  }, [open]);
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onOpenChange(false);
-        return;
-      }
-      if (event.key !== 'Tab' || !dialog) return;
-      const controls = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector));
-      if (!controls.length) {
-        event.preventDefault();
-        dialog.focus();
-        return;
-      }
-      const first = controls[0];
-      const last = controls.at(-1)!;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      returnFocusRef.current?.focus();
-    };
-  }, [onOpenChange, open]);
-
-  if (!open) return null;
-  return createPortal(
-    <div className="dialog-backdrop" role="presentation" onMouseDown={() => onOpenChange(false)}>
-      <div
-        ref={dialogRef}
-        className="dialog-surface"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <h2 id={titleId}>{title}</h2>
-        {children}
-      </div>
-    </div>,
-    document.body,
+  return (
+    <BaseDialog.Root open={open} onOpenChange={onOpenChange}>
+      <BaseDialog.Portal>
+        <BaseDialog.Backdrop className="dialog-backdrop" />
+        <BaseDialog.Viewport className="dialog-viewport">
+          <BaseDialog.Popup
+            ref={(node) => {
+              if (open) {
+                node?.querySelector<HTMLElement>(
+                  'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                )?.focus();
+              }
+            }}
+            className="dialog-surface"
+            aria-labelledby={titleId}
+            initialFocus={false}
+          >
+            <BaseDialog.Title id={titleId}>
+              {title}
+            </BaseDialog.Title>
+            {children}
+          </BaseDialog.Popup>
+        </BaseDialog.Viewport>
+      </BaseDialog.Portal>
+    </BaseDialog.Root>
   );
 }
 
@@ -109,16 +75,17 @@ export function ConfirmDialog({
     <Dialog open={open} onOpenChange={onOpenChange} title={title}>
       <p className="dialog-description">{description}</p>
       <div className="dialog-actions">
-        <button type="button" className="secondary-button" onClick={() => onOpenChange(false)}>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={() => onOpenChange(false)}>
           {cancelLabel}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant={destructive ? 'destructive' : 'default'}
           className={destructive ? 'danger-button-solid' : undefined}
           onClick={onConfirm}
         >
           {confirmLabel}
-        </button>
+        </Button>
       </div>
     </Dialog>
   );

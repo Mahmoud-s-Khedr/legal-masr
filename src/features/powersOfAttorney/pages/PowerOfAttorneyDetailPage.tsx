@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
 import { Tabs } from '../../../components/ui/Tabs';
+import { Button } from '../../../components/ui/button';
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
 import { PowerOfAttorneyForm } from '../components/PowerOfAttorneyForm';
 import {
@@ -39,30 +40,26 @@ export function PowerOfAttorneyDetailPage() {
           <h2>
             <bdi>{item.internalSequence}</bdi>
           </h2>
-          <p>
-            {item.officialNumber ? (
-              <bdi>
-                {item.officialNumber}
-                {item.issueYear ? ` / ${item.issueYear}` : ''}
-              </bdi>
-            ) : (
-              'لا يوجد رقم رسمي'
-            )}
-          </p>
+          <p>{item.officialNumber ? <bdi>{item.officialNumber}</bdi> : 'لا يوجد رقم رسمي'}</p>
         </div>
         <div className="detail-actions">
           {item.archivedAt ? (
-            <button type="button" onClick={() => restore.mutate(id)}>
+            <Button type="button" onClick={() => restore.mutate(id)}>
               استعادة
-            </button>
+            </Button>
           ) : (
-            <button type="button" className="secondary-button" onClick={() => setArchiveOpen(true)}>
+            <Button
+              type="button"
+              variant="secondary"
+              className="secondary-button"
+              onClick={() => setArchiveOpen(true)}
+            >
               أرشفة
-            </button>
+            </Button>
           )}
-          <button type="button" onClick={() => setEditOpen(true)}>
+          <Button type="button" onClick={() => setEditOpen(true)}>
             تعديل
-          </button>
+          </Button>
         </div>
       </header>
       <Tabs

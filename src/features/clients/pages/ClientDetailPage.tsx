@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
 import { Tabs } from '../../../components/ui/Tabs';
+import { Button } from '../../../components/ui/button';
 import { useCaseList } from '../../cases/api/casesApi';
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
 import { useClientFinanceSummary } from '../../finances/api/financesApi';
@@ -56,21 +57,22 @@ export function ClientDetailPage() {
         </div>
         <div className="detail-actions">
           {item.archivedAt ? (
-            <button type="button" onClick={() => restore.mutate(id)}>
+            <Button type="button" onClick={() => restore.mutate(id)}>
               استعادة
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="secondary"
               className="secondary-button"
               onClick={() => setConfirmArchive(true)}
             >
               أرشفة
-            </button>
+            </Button>
           )}
-          <button type="button" onClick={() => setEditOpen(true)}>
+          <Button type="button" onClick={() => setEditOpen(true)}>
             تعديل
-          </button>
+          </Button>
         </div>
       </header>
       <Tabs

@@ -1,9 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { HearingDto, HearingInput } from '../../../bridge/types';
+import { DatePicker } from '../../../components/ui/DatePicker';
+import { Button } from '../../../components/ui/button';
 import { Dialog } from '../../../components/ui/Dialog';
-import { PageHeader } from '../../../components/ui/PageHeader';
+import { Input } from '../../../components/ui/input';
 import { Tabs } from '../../../components/ui/Tabs';
+import { Select } from '../../../components/ui/select';
+import { Textarea } from '../../../components/ui/textarea';
 import { useCaseList } from '../../cases/api/casesApi';
 import { useTaskList } from '../../tasks/api/tasksApi';
 import { useHearings, useRecordHearingDecision, useSaveHearing } from '../api/hearingsApi';
@@ -52,37 +56,37 @@ export function AgendaPage() {
     );
   return (
     <section className="calendar-page">
-      <PageHeader
-        kicker="الأجندة"
-        title="الجلسات والمهام"
-        description="التواريخ القانونية تُعرض كيوم فقط ولا تتحول بين المناطق الزمنية."
-        actions={
-          <button type="button" onClick={() => setEditing('new')}>
-            إضافة جلسة
-          </button>
-        }
-      />
+      <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="kicker">الأجندة</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">الجلسات والمهام</h1>
+          <p className="mt-1 text-muted-foreground">التواريخ القانونية تُعرض كيوم فقط ولا تتحول بين المناطق الزمنية.</p>
+        </div>
+        <Button type="button" onClick={() => setEditing('new')}>
+          إضافة جلسة
+        </Button>
+      </header>
       <div className="calendar-toolbar">
         <div className="calendar-period">
-          <button
+          <Button
             type="button"
             className="secondary-button"
             aria-label="الفترة السابقة"
             onClick={() => shift(-1)}
           >
             ‹
-          </button>
+          </Button>
           <strong>
             <bdi>{label}</bdi>
           </strong>
-          <button
+          <Button
             type="button"
             className="secondary-button"
             aria-label="الفترة التالية"
             onClick={() => shift(1)}
           >
             ›
-          </button>
+          </Button>
         </div>
         <Tabs
           label="طريقة عرض الأجندة"
@@ -131,9 +135,14 @@ export function AgendaPage() {
                 {hearing.location ?? 'دون مكان'}
               </span>
               {hearing.status === 'SCHEDULED' ? (
-                <button type="button" className="text-button" onClick={() => setDeciding(hearing)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-button"
+                  onClick={() => setDeciding(hearing)}
+                >
                   تسجيل القرار
-                </button>
+                </Button>
               ) : (
                 <span>{hearing.decisionText ?? 'قرار مسجل'}</span>
               )}
@@ -223,7 +232,8 @@ function MonthGrid({
           const date = formatDate(day);
           const events = items.get(date);
           return (
-            <button
+            <Button
+              variant="ghost"
               type="button"
               key={date}
               className={`calendar-day ${day.getMonth() !== cursor.getMonth() ? 'muted-day' : ''} ${date === selectedDate ? 'selected' : ''} ${date === localDate() ? 'today' : ''}`}
@@ -242,7 +252,7 @@ function MonthGrid({
                   <span className="calendar-more">مواعيد أخرى</span>
                 )}
               </span>
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -267,7 +277,8 @@ function WeekList({
         const date = formatDate(day);
         const entry = items.get(date);
         return (
-          <button
+          <Button
+            variant="ghost"
             className={`agenda-item ${selectedDate === date ? 'selected-record' : ''}`}
             type="button"
             key={date}
@@ -279,7 +290,7 @@ function WeekList({
             <span>
               {entry ? `${entry.hearings.length} جلسة · ${entry.tasks.length} مهمة` : 'لا مواعيد'}
             </span>
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -297,7 +308,13 @@ function AgendaList({
       {[...items.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([date, entry]) => (
-          <button className="agenda-item" type="button" key={date} onClick={() => onSelect(date)}>
+          <Button
+            variant="ghost"
+            className="agenda-item"
+            type="button"
+            key={date}
+            onClick={() => onSelect(date)}
+          >
             <strong>
               <bdi>{date}</bdi>
             </strong>
@@ -305,7 +322,7 @@ function AgendaList({
               {entry.hearings.map((hearing) => hearing.hearingType ?? 'جلسة').join('، ') || 'مهام'}{' '}
               · {entry.tasks.length} مهمة
             </span>
-          </button>
+          </Button>
         ))}
       {!items.size && <p className="empty-compact">لا توجد جلسات أو مهام بعد.</p>}
     </div>
@@ -359,60 +376,54 @@ export function HearingForm({
     >
       <label>
         القضية
-        <select required value={caseId} onChange={(event) => setCaseId(event.target.value)}>
-          <option value="">اختر القضية</option>
-          {cases.data?.map((caseItem) => (
-            <option key={caseItem.id} value={caseItem.id}>
-              {caseItem.internalNumber}
-            </option>
-          ))}
-        </select>
+        <Select
+          required
+          value={caseId}
+          onValueChange={setCaseId}
+          placeholder="اختر القضية"
+          items={(cases.data ?? []).map((item) => ({ value: item.id, label: item.internalNumber }))}
+        />
       </label>
       <div className="settings-two-columns">
         <label>
           التاريخ
-          <input
-            required
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-          />
+          <DatePicker required value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
         <label>
           الوقت (اختياري)
-          <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+          <Input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
         </label>
       </div>
       <div className="settings-two-columns">
         <label>
           نوع الجلسة
-          <input value={type} onChange={(event) => setType(event.target.value)} />
+          <Input value={type} onChange={(event) => setType(event.target.value)} />
         </label>
         <label>
           المكان أو المحكمة
-          <input value={location} onChange={(event) => setLocation(event.target.value)} />
+          <Input value={location} onChange={(event) => setLocation(event.target.value)} />
         </label>
       </div>
       <label>
         الدائرة
-        <input value={circuit} onChange={(event) => setCircuit(event.target.value)} />
+        <Input value={circuit} onChange={(event) => setCircuit(event.target.value)} />
       </label>
       <label>
         المستندات المطلوبة
-        <textarea
+        <Textarea
           value={requiredDocuments}
           onChange={(event) => setRequiredDocuments(event.target.value)}
         />
       </label>
       <label>
         ملاحظات
-        <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+        <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       <div className="dialog-actions">
-        <button type="button" className="secondary-button" onClick={onCancel}>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
           إلغاء
-        </button>
-        <button disabled={busy}>حفظ الجلسة</button>
+        </Button>
+        <Button disabled={busy}>حفظ الجلسة</Button>
       </div>
     </form>
   );
@@ -464,7 +475,7 @@ export function DecisionForm({
     >
       <label>
         نص القرار
-        <textarea
+        <Textarea
           autoFocus
           value={decisionText}
           onChange={(event) => setDecisionText(event.target.value)}
@@ -472,14 +483,14 @@ export function DecisionForm({
       </label>
       <label>
         الجلسة التالية (اختيارية)
-        <input type="date" value={nextDate} onChange={(event) => setNextDate(event.target.value)} />
+        <DatePicker value={nextDate} onChange={(event) => setNextDate(event.target.value)} />
       </label>
       <p className="muted">تُنسخ بيانات الجلسة التالية ويمكن تعديلها لاحقًا بشكل مستقل.</p>
       <div className="dialog-actions">
-        <button type="button" className="secondary-button" onClick={onCancel}>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
           إلغاء
-        </button>
-        <button disabled={busy}>تسجيل القرار</button>
+        </Button>
+        <Button disabled={busy}>تسجيل القرار</Button>
       </div>
     </form>
   );

@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { bridge } from '../../../bridge/commands';
 import type { AttachmentCategory, AttachmentDto, AttachmentListInput } from '../../../bridge/types';
+import { DatePicker } from '../../../components/ui/DatePicker';
+import { Button } from '../../../components/ui/button';
 import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
+import { Input } from '../../../components/ui/input';
+import { Select } from '../../../components/ui/select';
 import {
   useAddAttachment,
   useAttachments,
@@ -93,9 +97,9 @@ export function AttachmentPanel({
           <h3>{title}</h3>
           <p className="muted">{description}</p>
         </div>
-        <button type="button" className="compact-button" onClick={() => setDialogOpen(true)}>
+        <Button type="button" className="compact-button" onClick={() => setDialogOpen(true)}>
           إضافة مرفق
-        </button>
+        </Button>
       </div>
       {attachments.isLoading ? (
         <p className="table-message">جارٍ تحميل المرفقات…</p>
@@ -124,21 +128,21 @@ export function AttachmentPanel({
                 </span>
               </div>
               <div className="attachment-actions">
-                <button
+                <Button
                   type="button"
                   className="text-button"
                   onClick={() => open.mutate(attachment.id)}
                 >
                   فتح
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="text-button"
                   onClick={() => reveal.mutate(attachment.id)}
                 >
                   إظهار
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="text-button"
                   onClick={() => {
@@ -150,14 +154,15 @@ export function AttachmentPanel({
                   }}
                 >
                   تعديل
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="destructive"
                   type="button"
                   className="text-button danger-button"
                   onClick={() => setRemoving(attachment)}
                 >
                   إزالة
-                </button>
+                </Button>
               </div>
             </li>
           ))}
@@ -185,50 +190,45 @@ export function AttachmentPanel({
                 </strong>
                 <span>سيُنشأ نسخة مُدارة محليًا؛ لا يُحتفظ بمسار الملف الأصلي.</span>
               </div>
-              <button
+              <Button
+                variant="secondary"
                 type="button"
                 className="secondary-button"
                 onClick={() => void selectSource()}
               >
                 اختيار ملف
-              </button>
+              </Button>
             </div>
           )}
           <label>
             الفئة
-            <select
+            <Select
               value={category}
-              onChange={(event) => setCategory(event.target.value as AttachmentCategory)}
-            >
-              {categories.map(([value, label]) => (
-                <option value={value} key={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(value) => setCategory(value as AttachmentCategory)}
+              items={categories.map(([value, label]) => ({ value, label }))}
+            />
           </label>
           <label>
             الوصف{' '}
-            <input
+            <Input
               value={descriptionValue}
               onChange={(event) => setDescriptionValue(event.target.value)}
             />
           </label>
           <label>
             تاريخ المستند{' '}
-            <input
-              type="date"
+            <DatePicker
               value={documentDate}
               onChange={(event) => setDocumentDate(event.target.value)}
             />
           </label>
           <div className="dialog-actions">
-            <button type="button" className="secondary-button" onClick={close}>
+            <Button type="button" variant="secondary" className="secondary-button" onClick={close}>
               إلغاء
-            </button>
-            <button disabled={add.isPending || update.isPending || (!editingId && !source)}>
+            </Button>
+            <Button disabled={add.isPending || update.isPending || (!editingId && !source)}>
               {editingId ? 'حفظ البيانات' : 'إضافة المرفق'}
-            </button>
+            </Button>
           </div>
         </form>
       </Dialog>

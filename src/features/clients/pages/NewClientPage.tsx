@@ -5,6 +5,7 @@ import { errorMessage } from '../../../bridge/errors';
 import type { AppError, ClientDuplicateCandidate } from '../../../bridge/types';
 import { useCreateClient } from '../api/clientsApi';
 import { ClientForm } from '../forms/ClientForm';
+import { Button } from '../../../components/ui/button';
 import type { ClientFormValues } from '../schemas/client.schema';
 
 export function NewClientPage() {
@@ -61,9 +62,9 @@ export function NewClientPage() {
                 </li>
               ))}
             </ul>
-            <button onClick={() => pendingValues && submit(pendingValues, true)}>
+            <Button onClick={() => pendingValues && submit(pendingValues, true)}>
               {t('clients.confirmCreate')}
-            </button>
+            </Button>
           </div>
         )}
       </div>

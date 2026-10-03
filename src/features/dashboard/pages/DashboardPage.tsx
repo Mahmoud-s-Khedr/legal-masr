@@ -5,6 +5,8 @@ import { useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
 import { queryKeys } from '../../../lib/queryKeys';
 import { localDateOnly } from '../../../lib/dateOnly';
+import { Button } from '../../../components/ui/button';
+import { Card } from '../../../components/ui/card';
 
 const today = () => localDateOnly();
 export function DashboardPage() {
@@ -24,16 +26,20 @@ export function DashboardPage() {
           <p>جلساتك ومهامك القانونية لهذا اليوم.</p>
         </div>
         <div className="quick-actions">
-          <Link className="button-link" to="/calendar">
+          <Button asChild className="button-link">
+            <Link to="/calendar">
             إضافة جلسة
-          </Link>
-          <Link className="button-link secondary-link" to="/tasks">
+            </Link>
+          </Button>
+          <Button variant="secondary" asChild className="button-link secondary-link">
+            <Link to="/tasks">
             إضافة مهمة
-          </Link>
+            </Link>
+          </Button>
         </div>
       </header>
       <div className="dashboard-day-grid">
-        <section className="register-section">
+        <Card className="register-section">
           <h3>جلسات اليوم</h3>
           {agenda.data?.todayHearings.length ? (
             <ul className="agenda-timeline">
@@ -52,8 +58,8 @@ export function DashboardPage() {
           ) : (
             <p>لا توجد جلسات اليوم.</p>
           )}
-        </section>
-        <section className="register-section">
+        </Card>
+        <Card className="register-section">
           <h3>مهام اليوم</h3>
           {agenda.data?.todayTasks.length ? (
             <ul className="task-preview-list">
@@ -67,9 +73,9 @@ export function DashboardPage() {
           ) : (
             <p>لا توجد مهام اليوم.</p>
           )}
-        </section>
+        </Card>
       </div>
-      <section className="attention-panel">
+      <Card className="attention-panel">
         <h3>تحتاج إلى متابعة</h3>
         {agenda.data?.overdueTasks.length ? (
           <ul>
@@ -82,9 +88,9 @@ export function DashboardPage() {
         ) : (
           <p>لا توجد مهام متأخرة.</p>
         )}
-      </section>
+      </Card>
       <div className="dashboard-registers">
-        <section className="register-section">
+        <Card className="register-section">
           <h3>الموكلون</h3>
           <ul>
             {clients.data?.slice(0, 5).map((client) => (
@@ -93,8 +99,8 @@ export function DashboardPage() {
               </li>
             ))}
           </ul>
-        </section>
-        <section className="register-section">
+        </Card>
+        <Card className="register-section">
           <h3>القضايا</h3>
           <ul>
             {cases.data?.slice(0, 5).map((item) => (
@@ -104,7 +110,7 @@ export function DashboardPage() {
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       </div>
     </section>
   );

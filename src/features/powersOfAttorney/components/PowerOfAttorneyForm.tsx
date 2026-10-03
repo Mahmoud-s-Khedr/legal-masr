@@ -1,4 +1,9 @@
 import { useState } from 'react';
+import { DatePicker } from '../../../components/ui/DatePicker';
+import { Button } from '../../../components/ui/button';
+import { Checkbox } from '../../../components/ui/checkbox';
+import { Input } from '../../../components/ui/input';
+import { Textarea } from '../../../components/ui/textarea';
 import type { PowerOfAttorneyDto, PowerOfAttorneyLawyerInput } from '../../../bridge/types';
 import { useClientList } from '../../clients/api/clientsApi';
 
@@ -37,18 +42,20 @@ export function PowerOfAttorneyForm({
   const [lawyerName, setLawyerName] = useState('');
   const [barNumber, setBarNumber] = useState('');
   const [lawyerNotes, setLawyerNotes] = useState('');
+  const [issueDate, setIssueDate] = useState(powerOfAttorney?.issueDate ?? '');
 
   return (
     <form
       onSubmit={async (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        const number = String(data.get('issueYear') ?? '').trim();
+        const date = String(data.get('issueDate') ?? '').trim();
         await onSubmit({
           internalSequence: String(data.get('internalSequence') ?? '').trim(),
           officialNumber: String(data.get('officialNumber') ?? '').trim() || undefined,
-          issueYear: number ? Number(number) : undefined,
-          issueDate: String(data.get('issueDate') ?? '') || undefined,
+          // Keep the legacy summary year in sync without asking the user for the same fact twice.
+          issueYear: date ? Number(date.slice(0, 4)) : undefined,
+          issueDate: date || undefined,
           notaryOffice: String(data.get('notaryOffice') ?? '').trim() || undefined,
           notes: String(data.get('notes') ?? '').trim() || undefined,
           clientIds: selectedClientIds,
@@ -59,7 +66,7 @@ export function PowerOfAttorneyForm({
       <div className="settings-two-columns">
         <label>
           الرقم الداخلي{' '}
-          <input
+          <Input
             required
             dir="ltr"
             name="internalSequence"
@@ -68,31 +75,24 @@ export function PowerOfAttorneyForm({
         </label>
         <label>
           رقم التوكيل{' '}
-          <input
+          <Input
             dir="ltr"
             name="officialNumber"
             defaultValue={powerOfAttorney?.officialNumber ?? ''}
           />
         </label>
         <label>
-          سنة الإصدار{' '}
-          <input
-            type="number"
-            min="1900"
-            max="9999"
-            dir="ltr"
-            name="issueYear"
-            defaultValue={powerOfAttorney?.issueYear ?? ''}
-          />
-        </label>
-        <label>
           تاريخ الإصدار{' '}
-          <input type="date" name="issueDate" defaultValue={powerOfAttorney?.issueDate ?? ''} />
+          <DatePicker
+            name="issueDate"
+            value={issueDate}
+            onChange={(event) => setIssueDate(event.target.value)}
+          />
         </label>
       </div>
       <label>
         مكتب التوثيق{' '}
-        <input name="notaryOffice" defaultValue={powerOfAttorney?.notaryOffice ?? ''} />
+        <Input name="notaryOffice" defaultValue={powerOfAttorney?.notaryOffice ?? ''} />
       </label>
       <fieldset>
         <legend>الموكلون</legend>
@@ -100,20 +100,18 @@ export function PowerOfAttorneyForm({
           <p className="muted">أضف موكلًا أولًا لربطه بالتوكيل.</p>
         ) : (
           clients.data.map((client) => (
-            <label className="checkbox-field" key={client.id}>
-              <input
-                type="checkbox"
+            <div className="checkbox-field" key={client.id}>
+              <Checkbox
+                aria-label={client.fullName}
                 checked={selectedClientIds.includes(client.id)}
-                onChange={(event) =>
+                onCheckedChange={(checked) =>
                   setSelectedClientIds((current) =>
-                    event.target.checked
-                      ? [...current, client.id]
-                      : current.filter((id) => id !== client.id),
+                    checked ? [...current, client.id] : current.filter((id) => id !== client.id),
                   )
                 }
               />
               {client.fullName} · <bdi>{client.internalNumber}</bdi>
-            </label>
+            </div>
           ))
         )}
       </fieldset>
@@ -122,11 +120,11 @@ export function PowerOfAttorneyForm({
         <div className="settings-two-columns">
           <label>
             الاسم{' '}
-            <input value={lawyerName} onChange={(event) => setLawyerName(event.target.value)} />
+            <Input value={lawyerName} onChange={(event) => setLawyerName(event.target.value)} />
           </label>
           <label>
             رقم القيد{' '}
-            <input
+            <Input
               dir="ltr"
               value={barNumber}
               onChange={(event) => setBarNumber(event.target.value)}
@@ -135,10 +133,11 @@ export function PowerOfAttorneyForm({
         </div>
         <label>
           ملاحظات{' '}
-          <input value={lawyerNotes} onChange={(event) => setLawyerNotes(event.target.value)} />
+          <Input value={lawyerNotes} onChange={(event) => setLawyerNotes(event.target.value)} />
         </label>
-        <button
+        <Button
           type="button"
+          variant="secondary"
           className="secondary-button compact-button"
           onClick={() => {
             if (!lawyerName.trim()) return;
@@ -156,7 +155,7 @@ export function PowerOfAttorneyForm({
           }}
         >
           إضافة محامٍ
-        </button>
+        </Button>
         {lawyers.length > 0 && (
           <ul className="compact-records">
             {lawyers.map((lawyer, index) => (
@@ -168,8 +167,9 @@ export function PowerOfAttorneyForm({
                     {lawyer.notes && ` · ${lawyer.notes}`}
                   </span>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="destructive"
                   className="text-button danger-button"
                   onClick={() =>
                     setLawyers((current) =>
@@ -178,20 +178,20 @@ export function PowerOfAttorneyForm({
                   }
                 >
                   إزالة
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
         )}
       </fieldset>
       <label>
-        ملاحظات <textarea name="notes" defaultValue={powerOfAttorney?.notes ?? ''} />
+        ملاحظات <Textarea name="notes" defaultValue={powerOfAttorney?.notes ?? ''} />
       </label>
       <div className="form-actions">
-        <button disabled={busy}>حفظ التوكيل</button>
-        <button type="button" className="secondary-button" onClick={onCancel}>
+        <Button disabled={busy}>حفظ التوكيل</Button>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
           إلغاء
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -49,7 +49,6 @@ export async function seedDemoData(): Promise<DemoSeedResult> {
   const powerOfAttorney = await bridge.powerOfAttorneyCreate({
     internalSequence: 'DEMO-POA-001',
     officialNumber: '1187',
-    issueYear: new Date().getFullYear(),
     issueDate: localDate(-45),
     notaryOffice: 'مكتب توثيق مدينة نصر',
     notes: 'توكيل تجريبي مرتبط بالقضية المعروضة.',

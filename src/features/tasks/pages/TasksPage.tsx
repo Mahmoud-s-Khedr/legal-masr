@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { TaskDto, TaskInput } from '../../../bridge/types';
+import { DatePicker } from '../../../components/ui/DatePicker';
+import { Button } from '../../../components/ui/button';
+import { Checkbox } from '../../../components/ui/checkbox';
 import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
-import { PageHeader } from '../../../components/ui/PageHeader';
+import { Input } from '../../../components/ui/input';
 import { Tabs } from '../../../components/ui/Tabs';
+import { Select } from '../../../components/ui/select';
+import { Textarea } from '../../../components/ui/textarea';
 import { useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
 import {
@@ -45,16 +50,16 @@ export function TasksPage() {
   const remove = useDeleteTask();
   return (
     <section className="work-page">
-      <PageHeader
-        kicker="المهام"
-        title="المهام القانونية"
-        description="تُشتق الحالة من تاريخ الاستحقاق والإتمام؛ لا توجد أولوية أو وقت أو مسؤول في هذا الإصدار."
-        actions={
-          <button type="button" onClick={() => setEditing('new')}>
-            إضافة مهمة
-          </button>
-        }
-      />
+      <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="kicker">المهام</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">المهام القانونية</h1>
+          <p className="mt-1 text-muted-foreground">تُشتق الحالة من تاريخ الاستحقاق والإتمام؛ لا توجد أولوية أو وقت أو مسؤول في هذا الإصدار.</p>
+        </div>
+        <Button type="button" onClick={() => setEditing('new')}>
+          إضافة مهمة
+        </Button>
+      </header>
       <Tabs
         label="تصفية المهام"
         value={view}
@@ -64,27 +69,27 @@ export function TasksPage() {
       <div className="finance-filters">
         <label>
           القضية
-          <select value={caseId} onChange={(event) => setCaseId(event.target.value)}>
-            <option value="">كل القضايا</option>
-            {cases.data?.map((caseItem) => (
-              <option key={caseItem.id} value={caseItem.id}>
-                {caseItem.internalNumber}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={caseId}
+            onValueChange={setCaseId}
+            items={[
+              { value: '', label: 'كل القضايا' },
+              ...(cases.data ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
+            ]}
+          />
         </label>
         <label>
           الموكل
-          <select value={clientId} onChange={(event) => setClientId(event.target.value)}>
-            <option value="">كل الموكلين</option>
-            {clients.data?.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.fullName}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={clientId}
+            onValueChange={setClientId}
+            items={[
+              { value: '', label: 'كل الموكلين' },
+              ...(clients.data ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+            ]}
+          />
         </label>
-        <button
+        <Button
           type="button"
           className="secondary-button"
           onClick={() => {
@@ -93,7 +98,7 @@ export function TasksPage() {
           }}
         >
           مسح التصفية
-        </button>
+        </Button>
       </div>
       <section className="work-register">
         <div className="card-title">
@@ -109,10 +114,9 @@ export function TasksPage() {
             {tasks.data.map((task) => (
               <li key={task.id}>
                 <label className="task-check">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={task.completed}
-                    onChange={() => (task.completed ? reopen : complete).mutate(task.id)}
+                    onCheckedChange={() => (task.completed ? reopen : complete).mutate(task.id)}
                     aria-label={`${task.completed ? 'إعادة فتح' : 'إتمام'} ${task.title}`}
                   />
                   <span
@@ -121,13 +125,13 @@ export function TasksPage() {
                   />
                 </label>
                 <div className="record-copy">
-                  <button
+                  <Button
                     type="button"
                     className="text-button task-title"
                     onClick={() => setEditing(task)}
                   >
                     {task.title}
-                  </button>
+                  </Button>
                   <span>
                     <bdi>{task.dueDate}</bdi>
                     {task.details && ` · ${task.details}`}
@@ -143,16 +147,22 @@ export function TasksPage() {
                         ? 'اليوم'
                         : 'قادمة'}
                 </span>
-                <button type="button" className="text-button" onClick={() => setEditing(task)}>
-                  تفاصيل
-                </button>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  className="text-button"
+                  onClick={() => setEditing(task)}
+                >
+                  تفاصيل
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
                   className="text-button danger-button"
                   onClick={() => setRemoving(task)}
                 >
                   حذف
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -266,7 +276,7 @@ export function TaskForm({
     >
       <label>
         المهمة{' '}
-        <input
+        <Input
           required
           autoFocus
           value={title}
@@ -276,60 +286,59 @@ export function TaskForm({
       <div className="settings-two-columns">
         <label>
           تاريخ الاستحقاق{' '}
-          <input
+          <DatePicker
             required
-            type="date"
             value={dueDate}
             onChange={(event) => setDueDate(event.target.value)}
           />
         </label>
         <label>
           القضية
-          <select value={caseId} onChange={(event) => setCaseId(event.target.value)}>
-            <option value="">غير مرتبطة بقضية</option>
-            {cases?.map((caseItem) => (
-              <option key={caseItem.id} value={caseItem.id}>
-                {caseItem.internalNumber}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={caseId}
+            onValueChange={setCaseId}
+            items={[
+              { value: '', label: 'غير مرتبطة بقضية' },
+              ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
+            ]}
+          />
         </label>
       </div>
       <label>
         الموكل
-        <select value={clientId} onChange={(event) => setClientId(event.target.value)}>
-          <option value="">غير مرتبط بموكل</option>
-          {clients?.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.fullName}
-            </option>
-          ))}
-        </select>
+        <Select
+          value={clientId}
+          onValueChange={setClientId}
+          items={[
+            { value: '', label: 'غير مرتبط بموكل' },
+            ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+          ]}
+        />
       </label>
       <label>
-        التفاصيل <textarea value={details} onChange={(event) => setDetails(event.target.value)} />
+        التفاصيل <Textarea value={details} onChange={(event) => setDetails(event.target.value)} />
       </label>
       <label>
-        ملاحظات <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+        ملاحظات <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       {initial && onToggleCompletion && (
         <div className="dialog-inline-action">
           <span>الحالة: {initial.completed ? 'مكتملة' : 'مفتوحة'}</span>
-          <button
+          <Button
             type="button"
             className="secondary-button"
             disabled={toggling}
             onClick={onToggleCompletion}
           >
             {initial.completed ? 'إعادة فتح المهمة' : 'إتمام المهمة'}
-          </button>
+          </Button>
         </div>
       )}
       <div className="dialog-actions">
-        <button type="button" className="secondary-button" onClick={onCancel}>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
           إلغاء
-        </button>
-        <button disabled={busy}>حفظ المهمة</button>
+        </Button>
+        <Button disabled={busy}>حفظ المهمة</Button>
       </div>
     </form>
   );

@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../../../bridge/errors';
+import { ConfirmDialog } from '../../../components/ui/Dialog';
+import { Button } from '../../../components/ui/button';
+import { Card } from '../../../components/ui/card';
+import { Skeleton } from '../../../components/ui/skeleton';
 import {
   useCreateBackup,
   useLatestSuccessfulBackup,
@@ -14,7 +18,7 @@ export function BackupSettingsPanel() {
   const validateBackup = useValidateBackup();
   const restoreBackup = useRestoreBackup();
   const latestBackup = useLatestSuccessfulBackup();
-  const [restoreArmed, setRestoreArmed] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
 
   const createNow = async () => {
     await createBackup.mutateAsync();
@@ -25,20 +29,16 @@ export function BackupSettingsPanel() {
   };
 
   const restore = async () => {
-    if (!restoreArmed) {
-      setRestoreArmed(true);
-      return;
-    }
-    setRestoreArmed(false);
+    setRestoreOpen(false);
     await restoreBackup.mutateAsync();
   };
 
   return (
     <div className="backup-settings">
-      <div className="panel">
+      <Card className="panel">
         <strong>آخر نسخة احتياطية ناجحة</strong>
         {latestBackup.isLoading ? (
-          <p className="muted">جارٍ تحميل السجل المحلي…</p>
+          <Skeleton className="h-5 w-52" aria-label="جارٍ تحميل السجل المحلي…" />
         ) : latestBackup.data ? (
           <p className="muted">
             اكتملت في <bdi>{latestBackup.data.completedAt}</bdi>
@@ -52,64 +52,62 @@ export function BackupSettingsPanel() {
         ) : (
           <p className="muted">لا توجد نسخة احتياطية ناجحة بعد.</p>
         )}
-      </div>
-      <div className="panel">
+      </Card>
+      <Card className="panel">
         <div className="form-actions">
-          <button type="button" onClick={createNow} disabled={createBackup.isPending}>
+          <Button type="button" onClick={createNow} disabled={createBackup.isPending}>
             {createBackup.isPending ? t('backups.creating') : t('backups.createNow')}
-          </button>
+          </Button>
         </div>
         {createBackup.isSuccess && <p className="success">{t('backups.createSuccess')}</p>}
         {createBackup.isError && (
           <p className="error">{errorMessage(createBackup.error, t('app.defaultError'))}</p>
         )}
-      </div>
+      </Card>
 
-      <div className="panel">
+      <Card className="panel">
         <div className="form-actions">
-          <button
+          <Button
             type="button"
+            variant="secondary"
             className="secondary-button"
             onClick={validate}
             disabled={validateBackup.isPending}
           >
             {validateBackup.isPending ? t('backups.validating') : t('backups.validate')}
-          </button>
+          </Button>
         </div>
         {validateBackup.isSuccess && <p className="success">{t('backups.validateSuccess')}</p>}
         {validateBackup.isError && <p className="error">{t('backups.validateFailed')}</p>}
-      </div>
+      </Card>
 
-      <div className="panel">
+      <Card className="panel">
         <div className="form-actions">
-          <button
+          <Button
             type="button"
+            variant="destructive"
             className="secondary-button"
-            onClick={restore}
+            onClick={() => setRestoreOpen(true)}
             disabled={restoreBackup.isPending}
           >
-            {restoreBackup.isPending
-              ? t('backups.restoring')
-              : restoreArmed
-                ? t('backups.restoreConfirm')
-                : t('backups.restore')}
-          </button>
-          {restoreArmed && (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => setRestoreArmed(false)}
-            >
-              {t('backups.restoreCancel')}
-            </button>
-          )}
+            {restoreBackup.isPending ? t('backups.restoring') : t('backups.restore')}
+          </Button>
         </div>
-        {restoreArmed && <p className="warning">{t('backups.restoreWarning')}</p>}
         {restoreBackup.isSuccess && <p className="success">{t('backups.restoreSuccess')}</p>}
         {restoreBackup.isError && (
           <p className="error">{errorMessage(restoreBackup.error, t('app.defaultError'))}</p>
         )}
-      </div>
+      </Card>
+      <ConfirmDialog
+        open={restoreOpen}
+        onOpenChange={setRestoreOpen}
+        title={t('backups.restore')}
+        description={t('backups.restoreWarning')}
+        confirmLabel={t('backups.restoreConfirm')}
+        cancelLabel={t('backups.restoreCancel')}
+        onConfirm={() => void restore()}
+        destructive
+      />
     </div>
   );
 }

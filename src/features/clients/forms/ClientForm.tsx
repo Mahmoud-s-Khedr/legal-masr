@@ -1,6 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Textarea } from '../../../components/ui/textarea';
 import { clientFormDefaults, ClientFormValues, clientFormSchema } from '../schemas/client.schema';
 
 export function ClientForm({
@@ -26,38 +29,38 @@ export function ClientForm({
     <form onSubmit={handleSubmit(onSubmit)}>
       <label>
         الرقم الداخلي
-        <input dir="ltr" {...register('internalNumber')} required autoFocus />
+        <Input dir="ltr" {...register('internalNumber')} required autoFocus />
       </label>
       <label>
         الاسم الكامل
-        <input {...register('fullName')} required />
+        <Input {...register('fullName')} required />
       </label>
       <label>
         {t('clients.fields.primaryPhone')}
-        <input dir="ltr" {...register('primaryPhone')} />
+        <Input dir="ltr" {...register('primaryPhone')} />
       </label>
       <label>
         {t('clients.fields.nationalId')}
-        <input {...register('nationalId')} />
+        <Input {...register('nationalId')} />
       </label>
       <label>
         {t('clients.fields.email')}
-        <input type="email" dir="ltr" {...register('email')} />
+        <Input type="email" dir="ltr" {...register('email')} />
       </label>
       <label>
         {t('clients.fields.address')}
-        <input {...register('address')} />
+        <Input {...register('address')} />
       </label>
       <label>
         {t('clients.fields.notes')}
-        <textarea {...register('notes')} />
+        <Textarea {...register('notes')} />
       </label>
       <div className="form-actions">
-        <button disabled={busy || formState.isSubmitting}>{submitLabel}</button>
+        <Button disabled={busy || formState.isSubmitting}>{submitLabel}</Button>
         {onCancel && (
-          <button type="button" className="secondary-button" onClick={onCancel}>
+          <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
             {t('clients.cancel')}
-          </button>
+          </Button>
         )}
       </div>
     </form>

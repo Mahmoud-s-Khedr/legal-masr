@@ -1,7 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { ClientSummary } from '../../../bridge/types';
+import { Button } from '../../../components/ui/button';
+import { Checkbox } from '../../../components/ui/checkbox';
 import { CaseCoreFields } from './CaseCoreFields';
 import {
   CaseCreateFormValues,
@@ -21,28 +23,45 @@ export function CaseCreateForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const { register, handleSubmit, formState } = useForm<CaseCreateFormValues>({
+  const { register, control, handleSubmit, formState } = useForm<CaseCreateFormValues>({
     resolver: zodResolver(caseCreateFormSchema),
     defaultValues: caseCreateFormDefaults,
   });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <CaseCoreFields register={register} />
+      <CaseCoreFields register={register} control={control} />
       <fieldset>
         <legend>{t('cases.fields.clients')}</legend>
         {clients.map((client) => (
-          <label key={client.id} className="checkbox-field">
-            <input type="checkbox" value={client.id} {...register('clientIds')} />
-            {client.fullName}
-          </label>
+          <Controller
+            key={client.id}
+            control={control}
+            name="clientIds"
+            render={({ field }) => (
+              <div className="checkbox-field">
+                <Checkbox
+                  checked={field.value.includes(client.id)}
+                  onCheckedChange={(checked) =>
+                    field.onChange(
+                      checked
+                        ? [...field.value, client.id]
+                        : field.value.filter((id) => id !== client.id),
+                    )
+                  }
+                  aria-label={client.fullName}
+                />
+                {client.fullName}
+              </div>
+            )}
+          />
         ))}
       </fieldset>
       <div className="form-actions">
-        <button disabled={busy || formState.isSubmitting}>{t('cases.save')}</button>
-        <button type="button" className="secondary-button" onClick={onCancel}>
+        <Button disabled={busy || formState.isSubmitting}>{t('cases.save')}</Button>
+        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
           {t('cases.cancel')}
-        </button>
+        </Button>
       </div>
     </form>
   );

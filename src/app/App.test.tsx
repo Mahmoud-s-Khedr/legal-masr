@@ -54,6 +54,16 @@ describe('application gate', () => {
     expect(screen.getByLabelText('اسم المحامي')).toBeRequired();
   });
 
+  it('shows a recoverable startup error when the native status command is unavailable', async () => {
+    vi.mocked(bridge.status).mockRejectedValueOnce(new Error('IPC unavailable'));
+    render(<App />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('تعذر بدء التطبيق');
+    fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
+    await screen.findByRole('heading', { name: 'أنشئ خزنتك' });
+    expect(bridge.status).toHaveBeenCalledTimes(2);
+  });
+
   it('displays the recovery key returned by vault initialization', async () => {
     vi.mocked(bridge.initialize).mockResolvedValue({ recoveryKey: 'test-recovery-key' });
     render(<App />);

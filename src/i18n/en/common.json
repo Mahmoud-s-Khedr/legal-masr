@@ -19,6 +19,8 @@
     "brandLogoAlt": "Legal Masr logo",
     "brandTagline": "Your local legal vault",
     "loading": "Preparing your local vault…",
+    "startupError": "The application could not start. Confirm WebKitGTK is installed, then try again.",
+    "retry": "Try again",
     "defaultError": "Could not complete the operation safely.",
     "lockButton": "Lock application",
     "openMenu": "Open navigation menu",
@@ -266,6 +268,8 @@
   "search": {
     "placeholder": "Search by name or case number…",
     "noResults": "No results.",
+    "openPalette": "Open command search",
+    "paletteTitle": "Search your records",
     "groups": {
       "client": "Clients",
       "case": "Cases",

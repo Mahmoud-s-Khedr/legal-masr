@@ -1,10 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { Icon } from '../../../components/layout/Icon';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Select } from '../../../components/ui/select';
+import { Textarea } from '../../../components/ui/textarea';
 import { BackupSettingsPanel } from '../../backups/pages/BackupsPage';
 import { developerDiagnostic } from '../../../bridge/devDiagnostics';
 import {
@@ -44,6 +48,7 @@ export function SettingsPage() {
   const [passwordError, setPasswordError] = useState('');
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -84,9 +89,9 @@ export function SettingsPage() {
             </pre>
           )}
           <div className="form-actions">
-            <button type="button" onClick={() => void refetch()}>
+            <Button type="button" onClick={() => void refetch()}>
               {t('settings.retry')}
-            </button>
+            </Button>
           </div>
         </div>
       </section>
@@ -143,7 +148,7 @@ export function SettingsPage() {
               ['about', 'حول التطبيق', 'documents'],
             ] as const
           ).map(([value, label, icon]) => (
-            <button
+            <Button
               type="button"
               key={value}
               className={selectedTab === value ? 'active' : ''}
@@ -151,7 +156,7 @@ export function SettingsPage() {
             >
               <Icon name={icon} size={19} />
               {label}
-            </button>
+            </Button>
           ))}
         </nav>
 
@@ -183,24 +188,24 @@ export function SettingsPage() {
               >
                 <label>
                   اسم المحامي
-                  <input required name="fullName" defaultValue={profile?.fullName ?? ''} />
+                  <Input required name="fullName" defaultValue={profile?.fullName ?? ''} />
                 </label>
                 <div className="settings-two-columns">
                   <label>
                     رقم القيد بالنقابة
-                    <input name="barNumber" defaultValue={profile?.barNumber ?? ''} />
+                    <Input name="barNumber" defaultValue={profile?.barNumber ?? ''} />
                   </label>
                   <label>
                     رقم الهاتف
-                    <input dir="ltr" name="phone" defaultValue={profile?.phone ?? ''} />
+                    <Input dir="ltr" name="phone" defaultValue={profile?.phone ?? ''} />
                   </label>
                 </div>
                 <label>
                   عنوان المكتب
-                  <textarea name="officeAddress" defaultValue={profile?.officeAddress ?? ''} />
+                  <Textarea name="officeAddress" defaultValue={profile?.officeAddress ?? ''} />
                 </label>
                 <div className="form-actions">
-                  <button disabled={!profile || updateProfile.isPending}>حفظ بيانات المكتب</button>
+                  <Button disabled={!profile || updateProfile.isPending}>حفظ بيانات المكتب</Button>
                 </div>
                 {updateProfile.isError && <p className="error">تعذر حفظ بيانات المكتب.</p>}
                 {saved && updateProfile.isSuccess && (
@@ -230,37 +235,76 @@ export function SettingsPage() {
                 <div className="settings-two-columns">
                   <label>
                     {t('settings.language')}
-                    <select {...register('language')}>
-                      <option value="ar">{t('gate.fields.languageAr')}</option>
-                      <option value="en">{t('gate.fields.languageEn')}</option>
-                    </select>
+                    <Controller
+                      control={control}
+                      name="language"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          items={[
+                            { value: 'ar', label: t('gate.fields.languageAr') },
+                            { value: 'en', label: t('gate.fields.languageEn') },
+                          ]}
+                        />
+                      )}
+                    />
                   </label>
                   <label>
                     {t('settings.theme')}
-                    <select {...register('theme')}>
-                      <option value="system">{t('settings.themes.system')}</option>
-                      <option value="light">{t('settings.themes.light')}</option>
-                      <option value="dark">{t('settings.themes.dark')}</option>
-                    </select>
+                    <Controller
+                      control={control}
+                      name="theme"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          items={['system', 'light', 'dark'].map((value) => ({
+                            value,
+                            label: t(`settings.themes.${value}`),
+                          }))}
+                        />
+                      )}
+                    />
                   </label>
                   <label>
                     تنسيق التاريخ
-                    <select {...register('dateFormat')}>
-                      <option value="dd/MM/yyyy">يوم / شهر / سنة</option>
-                      <option value="yyyy-MM-dd">سنة - شهر - يوم</option>
-                    </select>
+                    <Controller
+                      control={control}
+                      name="dateFormat"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          items={[
+                            { value: 'dd/MM/yyyy', label: 'يوم / شهر / سنة' },
+                            { value: 'yyyy-MM-dd', label: 'سنة - شهر - يوم' },
+                          ]}
+                        />
+                      )}
+                    />
                   </label>
                   <label>
                     بداية الأسبوع
-                    <select {...register('weekStartsOn', { valueAsNumber: true })}>
-                      <option value="6">السبت</option>
-                      <option value="0">الأحد</option>
-                      <option value="1">الاثنين</option>
-                    </select>
+                    <Controller
+                      control={control}
+                      name="weekStartsOn"
+                      render={({ field }) => (
+                        <Select
+                          value={String(field.value)}
+                          onValueChange={(value) => field.onChange(Number(value))}
+                          items={[
+                            { value: '6', label: 'السبت' },
+                            { value: '0', label: 'الأحد' },
+                            { value: '1', label: 'الاثنين' },
+                          ]}
+                        />
+                      )}
+                    />
                   </label>
                   <label>
                     التذكير الافتراضي قبل الموعد (دقيقة)
-                    <input
+                    <Input
                       type="number"
                       min="0"
                       max="10080"
@@ -272,7 +316,7 @@ export function SettingsPage() {
                   <p className="error">راجع القيم المدخلة في إعدادات العرض.</p>
                 )}
                 <div className="form-actions">
-                  <button disabled={updateSettings.isPending}>{t('settings.save')}</button>
+                  <Button disabled={updateSettings.isPending}>{t('settings.save')}</Button>
                 </div>
                 {updateSettings.isError && <p className="error">تعذر حفظ الإعدادات.</p>}
                 {saved && updateSettings.isSuccess && (
@@ -301,14 +345,14 @@ export function SettingsPage() {
                 >
                   <label>
                     {t('settings.lockTimeout')}
-                    <input
+                    <Input
                       type="number"
                       min="1"
                       {...register('lockTimeoutMinutes', { valueAsNumber: true })}
                     />
                   </label>
                   <div className="form-actions">
-                    <button>حفظ مدة القفل</button>
+                    <Button>حفظ مدة القفل</Button>
                   </div>
                 </form>
               </section>
@@ -327,23 +371,28 @@ export function SettingsPage() {
                     <strong>تشغيل ليجال مصر مع الجهاز</strong>
                     <span>يمكن تعطيله في أي وقت. لا يرسل التطبيق أي بيانات عبر الإنترنت.</span>
                   </div>
-                  <button
+                  <Button
                     type="button"
                     className={settings.autostartEnabled ? '' : 'secondary-button'}
                     disabled={setAutostart.isPending}
                     onClick={() => setAutostart.mutate(!settings.autostartEnabled)}
                   >
                     {settings.autostartEnabled ? 'مفعّل — إيقاف' : 'غير مفعّل — تشغيل'}
-                  </button>
+                  </Button>
                 </div>
                 <div className="settings-toggle-row">
                   <div>
                     <strong>إذن الإشعارات</strong>
                     <span>نص الإشعار لا يعرض أسماء الموكلين أو تفاصيل القضايا.</span>
                   </div>
-                  <button type="button" className="secondary-button" onClick={enableNotifications}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="secondary-button"
+                    onClick={enableNotifications}
+                  >
                     {notificationStatus === 'granted' ? 'تم السماح' : 'السماح بالإشعارات'}
-                  </button>
+                  </Button>
                 </div>
                 {notificationStatus === 'denied' && (
                   <p className="warning">تم رفض الإذن. يمكنك تغييره من إعدادات نظام التشغيل.</p>
@@ -366,7 +415,7 @@ export function SettingsPage() {
                 <form onSubmit={submitPassword}>
                   <label>
                     كلمة المرور الحالية
-                    <input
+                    <Input
                       type="password"
                       autoComplete="current-password"
                       value={passwords.current}
@@ -378,7 +427,7 @@ export function SettingsPage() {
                   <div className="settings-two-columns">
                     <label>
                       كلمة المرور الجديدة
-                      <input
+                      <Input
                         type="password"
                         autoComplete="new-password"
                         value={passwords.next}
@@ -389,7 +438,7 @@ export function SettingsPage() {
                     </label>
                     <label>
                       تأكيد كلمة المرور
-                      <input
+                      <Input
                         type="password"
                         autoComplete="new-password"
                         value={passwords.confirm}
@@ -405,7 +454,7 @@ export function SettingsPage() {
                   )}
                   {changePassword.isSuccess && <p className="success">تم تغيير كلمة المرور.</p>}
                   <div className="form-actions">
-                    <button disabled={changePassword.isPending}>تغيير كلمة المرور</button>
+                    <Button disabled={changePassword.isPending}>تغيير كلمة المرور</Button>
                   </div>
                 </form>
               </section>
@@ -426,14 +475,14 @@ export function SettingsPage() {
                       تسجل أعدادًا إجمالية مثل عدد القضايا أو النسخ الاحتياطية التي أُنشئت.
                     </span>
                   </div>
-                  <button
+                  <Button
                     type="button"
                     className={settings.usageCountersEnabled ? '' : 'secondary-button'}
                     disabled={setUsageCounters.isPending}
                     onClick={() => setUsageCounters.mutate(!settings.usageCountersEnabled)}
                   >
                     {settings.usageCountersEnabled ? 'مفعّلة — إيقاف' : 'غير مفعّلة — تشغيل'}
-                  </button>
+                  </Button>
                 </div>
                 {setUsageCounters.isError && (
                   <p className="error">تعذر حفظ اختيار العدادات المجمّعة.</p>

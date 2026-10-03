@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { Button } from '../../../components/ui/button';
 import { useTranslation } from 'react-i18next';
 import type { CaseDto } from '../../../bridge/types';
 import { CaseCoreFields } from './CaseCoreFields';
@@ -17,7 +18,7 @@ export function CaseEditForm({
   onCancel?: () => void;
 }) {
   const { t } = useTranslation();
-  const { register, handleSubmit, formState } = useForm<CaseCoreFormValues>({
+  const { register, control, handleSubmit, formState } = useForm<CaseCoreFormValues>({
     resolver: zodResolver(caseCoreSchema),
     defaultValues: {
       ...caseCoreFormDefaults,
@@ -38,13 +39,13 @@ export function CaseEditForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <CaseCoreFields register={register} />
+      <CaseCoreFields register={register} control={control} />
       <div className="form-actions">
-        <button disabled={busy || formState.isSubmitting}>{t('cases.save')}</button>
+        <Button disabled={busy || formState.isSubmitting}>{t('cases.save')}</Button>
         {onCancel && (
-          <button type="button" className="secondary-button" onClick={onCancel}>
+          <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
             إلغاء
-          </button>
+          </Button>
         )}
       </div>
     </form>
