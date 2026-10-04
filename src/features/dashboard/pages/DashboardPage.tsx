@@ -7,9 +7,11 @@ import { queryKeys } from '../../../lib/queryKeys';
 import { localDateOnly } from '../../../lib/dateOnly';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
+import { useTranslation } from 'react-i18next';
 
 const today = () => localDateOnly();
 export function DashboardPage() {
+  const { t } = useTranslation();
   const date = today();
   const agenda = useQuery({
     queryKey: queryKeys.today.summary(date),
@@ -22,91 +24,91 @@ export function DashboardPage() {
       <header className="today-heading">
         <div>
           <p className="today-date">{date}</p>
-          <h2>اليوم</h2>
-          <p>جلساتك ومهامك القانونية لهذا اليوم.</p>
+          <h2>{t('dashboard.today')}</h2>
+          <p>{t('dashboard.todayDescription')}</p>
         </div>
         <div className="quick-actions">
           <Button asChild className="button-link">
             <Link to="/calendar">
-            إضافة جلسة
+            {t('dashboard.addHearing')}
             </Link>
           </Button>
           <Button variant="secondary" asChild className="button-link secondary-link">
             <Link to="/tasks">
-            إضافة مهمة
+            {t('dashboard.addTask')}
             </Link>
           </Button>
         </div>
       </header>
       <div className="dashboard-day-grid">
         <Card className="register-section">
-          <h3>جلسات اليوم</h3>
+          <h3>{t('dashboard.todayEvents')}</h3>
           {agenda.data?.todayHearings.length ? (
             <ul className="agenda-timeline">
               {agenda.data.todayHearings.map((hearing) => (
                 <li key={hearing.id}>
-                  <time>{hearing.hearingTime ?? 'طوال اليوم'}</time>
+                  <time dir="ltr"><bdi>{hearing.hearingTime ?? t('dashboard.allDay')}</bdi></time>
                   <div>
                     <Link to={`/calendar?hearing=${hearing.id}`}>
-                      {hearing.hearingType ?? 'جلسة'}
+                      <bdi dir="auto">{hearing.hearingType ?? t('dashboard.legalEvent')}</bdi>
                     </Link>
-                    <span>{hearing.location ?? '—'}</span>
+                    <span dir="auto">{hearing.location ?? '—'}</span>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <p>لا توجد جلسات اليوم.</p>
+            <p>{t('dashboard.noEvents')}</p>
           )}
         </Card>
         <Card className="register-section">
-          <h3>مهام اليوم</h3>
+          <h3>{t('dashboard.todayTasks')}</h3>
           {agenda.data?.todayTasks.length ? (
             <ul className="task-preview-list">
               {agenda.data.todayTasks.map((task) => (
                 <li key={task.id}>
-                  <Link to={`/tasks?task=${task.id}`}>{task.title}</Link>
-                  <span>{task.dueDate}</span>
+                  <Link to={`/tasks?task=${task.id}`} dir="auto"><bdi>{task.title}</bdi></Link>
+                  <span dir="ltr"><bdi>{task.dueDate}</bdi></span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p>لا توجد مهام اليوم.</p>
+            <p>{t('dashboard.noTasks')}</p>
           )}
         </Card>
       </div>
       <Card className="attention-panel">
-        <h3>تحتاج إلى متابعة</h3>
+        <h3>{t('dashboard.attentionTitle')}</h3>
         {agenda.data?.overdueTasks.length ? (
           <ul>
             {agenda.data.overdueTasks.map((task) => (
               <li key={task.id}>
-                {task.title} · {task.dueDate}
+                <bdi dir="auto">{task.title}</bdi> · <bdi dir="ltr">{task.dueDate}</bdi>
               </li>
             ))}
           </ul>
         ) : (
-          <p>لا توجد مهام متأخرة.</p>
+          <p>{t('dashboard.noOverdue')}</p>
         )}
       </Card>
       <div className="dashboard-registers">
         <Card className="register-section">
-          <h3>الموكلون</h3>
+          <h3>{t('dashboard.clientsKicker')}</h3>
           <ul>
             {clients.data?.slice(0, 5).map((client) => (
               <li key={client.id}>
-                <Link to={`/clients/${client.id}`}>{client.fullName}</Link>
+                <Link to={`/clients/${client.id}`} dir="auto"><bdi>{client.fullName}</bdi></Link>
               </li>
             ))}
           </ul>
         </Card>
         <Card className="register-section">
-          <h3>القضايا</h3>
+          <h3>{t('dashboard.casesKicker')}</h3>
           <ul>
             {cases.data?.slice(0, 5).map((item) => (
               <li key={item.id}>
-                <Link to={`/cases/${item.id}`}>{item.internalNumber}</Link> ·{' '}
-                {item.clientNames.join('، ')}
+                <Link to={`/cases/${item.id}`} dir="ltr"><bdi>{item.internalNumber}</bdi></Link> ·{' '}
+                <bdi dir="auto">{item.clientNames.join(', ')}</bdi>
               </li>
             ))}
           </ul>

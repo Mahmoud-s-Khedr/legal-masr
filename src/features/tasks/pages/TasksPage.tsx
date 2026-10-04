@@ -19,19 +19,15 @@ import {
   useTaskList,
 } from '../api/tasksApi';
 import { localDateOnly } from '../../../lib/dateOnly';
+import { useTranslation } from 'react-i18next';
 
 const localDate = () => localDateOnly();
-const labels = {
-  TODAY: 'اليوم',
-  OVERDUE: 'متأخرة',
-  UPCOMING: 'قادمة',
-  COMPLETED: 'مكتملة',
-  ALL: 'الكل',
-} as const;
+const views = ['TODAY', 'OVERDUE', 'UPCOMING', 'COMPLETED', 'ALL'] as const;
 
 export function TasksPage() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
-  const [view, setView] = useState<keyof typeof labels>('TODAY');
+  const [view, setView] = useState<(typeof views)[number]>('TODAY');
   const [editing, setEditing] = useState<TaskDto | 'new' | null>(null);
   const [removing, setRemoving] = useState<TaskDto | null>(null);
   const [caseId, setCaseId] = useState(params.get('case') ?? '');
@@ -52,39 +48,39 @@ export function TasksPage() {
     <section className="work-page">
       <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="kicker">المهام</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">المهام القانونية</h1>
-          <p className="mt-1 text-muted-foreground">تُشتق الحالة من تاريخ الاستحقاق والإتمام؛ لا توجد أولوية أو وقت أو مسؤول في هذا الإصدار.</p>
+          <p className="kicker">{t('tasks.kicker')}</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">{t('tasks.title')}</h1>
+          <p className="mt-1 text-muted-foreground">{t('tasks.description')}</p>
         </div>
         <Button type="button" onClick={() => setEditing('new')}>
-          إضافة مهمة
+          {t('tasks.add')}
         </Button>
       </header>
       <Tabs
-        label="تصفية المهام"
+        label={t('tasks.filter')}
         value={view}
-        onChange={(value) => setView(value as keyof typeof labels)}
-        tabs={Object.entries(labels).map(([id, label]) => ({ id, label }))}
+        onChange={(value) => setView(value as (typeof views)[number])}
+        tabs={views.map((id) => ({ id, label: t(`tasks.views.${id}`) }))}
       />
       <div className="finance-filters">
         <label>
-          القضية
+          {t('tasks.case')}
           <Select
             value={caseId}
             onValueChange={setCaseId}
             items={[
-              { value: '', label: 'كل القضايا' },
+              { value: '', label: t('tasks.allCases') },
               ...(cases.data ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
             ]}
           />
         </label>
         <label>
-          الموكل
+          {t('tasks.client')}
           <Select
             value={clientId}
             onValueChange={setClientId}
             items={[
-              { value: '', label: 'كل الموكلين' },
+              { value: '', label: t('tasks.allClients') },
               ...(clients.data ?? []).map((item) => ({ value: item.id, label: item.fullName })),
             ]}
           />
@@ -97,18 +93,18 @@ export function TasksPage() {
             setClientId('');
           }}
         >
-          مسح التصفية
+          {t('tasks.clearFilters')}
         </Button>
       </div>
       <section className="work-register">
         <div className="card-title">
           <div>
-            <h3>{labels[view]}</h3>
-            <p className="muted">{tasks.data?.length ?? 0} مهمة</p>
+            <h3>{t(`tasks.views.${view}`)}</h3>
+            <p className="muted">{t('tasks.count', { count: tasks.data?.length ?? 0 })}</p>
           </div>
         </div>
         {!tasks.data?.length ? (
-          <p className="empty-compact">لا توجد مهام في هذا العرض.</p>
+          <p className="empty-compact">{t('tasks.empty')}</p>
         ) : (
           <ul className="record-list task-records">
             {tasks.data.map((task) => (
@@ -117,7 +113,7 @@ export function TasksPage() {
                   <Checkbox
                     checked={task.completed}
                     onCheckedChange={() => (task.completed ? reopen : complete).mutate(task.id)}
-                    aria-label={`${task.completed ? 'إعادة فتح' : 'إتمام'} ${task.title}`}
+                    aria-label={t(task.completed ? 'tasks.reopenAria' : 'tasks.completeAria', { title: task.title })}
                   />
                   <span
                     className={task.completed ? 'task-status done' : 'task-status'}
@@ -130,22 +126,22 @@ export function TasksPage() {
                     className="text-button task-title"
                     onClick={() => setEditing(task)}
                   >
-                    {task.title}
+                  <bdi dir="auto">{task.title}</bdi>
                   </Button>
                   <span>
                     <bdi>{task.dueDate}</bdi>
-                    {task.details && ` · ${task.details}`}
-                    {task.notes && ` · ${task.notes}`}
+                    {task.details && <> · <bdi dir="auto">{task.details}</bdi></>}
+                    {task.notes && <> · <bdi dir="auto">{task.notes}</bdi></>}
                   </span>
                 </div>
                 <span className={`status-chip ${task.completed ? 'completed' : ''}`}>
                   {task.completed
-                    ? 'مكتملة'
+                    ? t('tasks.completed')
                     : task.dueDate < localDate()
-                      ? 'متأخرة'
+                      ? t('tasks.overdue')
                       : task.dueDate === localDate()
-                        ? 'اليوم'
-                        : 'قادمة'}
+                        ? t('tasks.today')
+                        : t('tasks.upcoming')}
                 </span>
                 <Button
                   type="button"
@@ -153,7 +149,7 @@ export function TasksPage() {
                   className="text-button"
                   onClick={() => setEditing(task)}
                 >
-                  تفاصيل
+                  {t('tasks.details')}
                 </Button>
                 <Button
                   type="button"
@@ -161,7 +157,7 @@ export function TasksPage() {
                   className="text-button danger-button"
                   onClick={() => setRemoving(task)}
                 >
-                  حذف
+                  {t('tasks.delete')}
                 </Button>
               </li>
             ))}
@@ -171,7 +167,7 @@ export function TasksPage() {
       <Dialog
         open={Boolean(editing)}
         onOpenChange={(open) => !open && setEditing(null)}
-        title={editing === 'new' ? 'إضافة مهمة' : 'تفاصيل المهمة'}
+        title={editing === 'new' ? t('tasks.add') : t('tasks.details')}
       >
         {editing && (
           <TaskForm
@@ -200,22 +196,22 @@ export function TasksPage() {
         )}
         {save.isError && (
           <p className="error" role="alert">
-            تعذر حفظ المهمة. بقيت البيانات المدخلة للمحاولة مرة أخرى.
+            {t('tasks.saveError')}
           </p>
         )}
         {(complete.isError || reopen.isError) && (
           <p className="error" role="alert">
-            تعذر تغيير حالة المهمة. حاول مرة أخرى.
+            {t('tasks.statusError')}
           </p>
         )}
       </Dialog>
       <ConfirmDialog
         open={Boolean(removing)}
         onOpenChange={(open) => !open && setRemoving(null)}
-        title="حذف المهمة"
-        description="سيُحذف سجل المهمة نهائيًا. لا يؤثر ذلك في القضية أو الموكل المرتبط."
-        confirmLabel="حذف المهمة"
-        cancelLabel="إلغاء"
+        title={t('tasks.deleteTitle')}
+        description={t('tasks.deleteDescription')}
+        confirmLabel={t('tasks.deleteTitle')}
+        cancelLabel={t('common.cancel')}
         destructive
         onConfirm={() => {
           if (removing) remove.mutate(removing, { onSuccess: () => setRemoving(null) });
@@ -248,6 +244,7 @@ export function TaskForm({
   onSave: (input: TaskInput) => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState(initial?.title ?? '');
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? localDate());
   const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
@@ -275,7 +272,7 @@ export function TaskForm({
       }}
     >
       <label>
-        المهمة{' '}
+        {t('tasks.task')} {' '}
         <Input
           required
           autoFocus
@@ -285,7 +282,7 @@ export function TaskForm({
       </label>
       <div className="settings-two-columns">
         <label>
-          تاريخ الاستحقاق{' '}
+          {t('tasks.dueDate')} {' '}
           <DatePicker
             required
             value={dueDate}
@@ -293,52 +290,52 @@ export function TaskForm({
           />
         </label>
         <label>
-          القضية
+          {t('tasks.case')}
           <Select
             value={caseId}
             onValueChange={setCaseId}
             items={[
-              { value: '', label: 'غير مرتبطة بقضية' },
+              { value: '', label: t('tasks.noCase') },
               ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
             ]}
           />
         </label>
       </div>
       <label>
-        الموكل
+        {t('tasks.client')}
         <Select
           value={clientId}
           onValueChange={setClientId}
           items={[
-            { value: '', label: 'غير مرتبط بموكل' },
+            { value: '', label: t('tasks.noClient') },
             ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
           ]}
         />
       </label>
       <label>
-        التفاصيل <Textarea value={details} onChange={(event) => setDetails(event.target.value)} />
+        {t('tasks.fieldDetails')} <Textarea value={details} onChange={(event) => setDetails(event.target.value)} />
       </label>
       <label>
-        ملاحظات <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+        {t('common.notes')} <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       {initial && onToggleCompletion && (
         <div className="dialog-inline-action">
-          <span>الحالة: {initial.completed ? 'مكتملة' : 'مفتوحة'}</span>
+          <span>{t('tasks.status')}: {initial.completed ? t('tasks.completed') : t('tasks.open')}</span>
           <Button
             type="button"
             className="secondary-button"
             disabled={toggling}
             onClick={onToggleCompletion}
           >
-            {initial.completed ? 'إعادة فتح المهمة' : 'إتمام المهمة'}
+            {initial.completed ? t('tasks.reopen') : t('tasks.complete')}
           </Button>
         </div>
       )}
       <div className="dialog-actions">
         <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-          إلغاء
+          {t('common.cancel')}
         </Button>
-        <Button disabled={busy}>حفظ المهمة</Button>
+        <Button disabled={busy}>{t('tasks.save')}</Button>
       </div>
     </form>
   );

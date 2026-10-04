@@ -13,6 +13,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
     <Button
       type="button"
       className={['language-switcher', className].filter(Boolean).join(' ')}
+      aria-label={label}
       onClick={() => {
         void i18n.changeLanguage(next);
         if (settings) {

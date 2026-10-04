@@ -1,6 +1,5 @@
 import { Popover } from '@base-ui/react/popover';
 import { IconCalendarEvent } from '@tabler/icons-react';
-import { arSA } from 'date-fns/locale';
 import { DayPicker } from 'react-day-picker';
 import {
   forwardRef,
@@ -9,6 +8,9 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
+import '../../i18n';
+import { useLocalePresentation } from '../../i18n/LocalePresentation';
 
 type DatePickerProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -38,6 +40,8 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
   { value, defaultValue, onChange, name, required, className, ...inputProps },
   ref,
 ) {
+  const { t } = useTranslation();
+  const { direction, dateLocale, weekStartsOn } = useLocalePresentation();
   const controlled = value !== undefined;
   const [textValue, setTextValue] = useState(value ?? defaultValue ?? '');
   const [open, setOpen] = useState(false);
@@ -63,9 +67,9 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
           dir="ltr"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="YYYY-MM-DD"
+          placeholder={t('datePicker.placeholder')}
           pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
-          title="أدخل التاريخ بصيغة YYYY-MM-DD"
+          title={t('datePicker.inputTitle')}
           required={required}
           value={textValue}
           onChange={(event) => {
@@ -73,19 +77,21 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
             onChange?.(event);
           }}
         />
-        <Popover.Trigger className="date-picker-trigger" type="button" aria-label="فتح التقويم">
+        <Popover.Trigger className="date-picker-trigger" type="button" aria-label={t('datePicker.openCalendar')}>
           <IconCalendarEvent aria-hidden="true" size={18} />
         </Popover.Trigger>
       </span>
       <Popover.Portal>
         <Popover.Positioner side="bottom" align="start" sideOffset={6}>
-          <Popover.Popup className="date-picker-popover" aria-label="اختيار التاريخ">
+          <Popover.Popup className="date-picker-popover" aria-label={t('datePicker.chooseDate')} dir={direction}>
             <DayPicker
               mode="single"
-              dir="rtl"
-              locale={arSA}
-              weekStartsOn={6}
+              dir={direction}
+              locale={dateLocale}
+              weekStartsOn={weekStartsOn as 0 | 1 | 2 | 3 | 4 | 5 | 6}
               components={{
+                // Keep a concise, stable day number while the surrounding calendar
+                // headings and navigation remain localized by date-fns.
                 DayButton: ({ day, ...props }) => (
                   <button {...props} aria-label={String(day.date.getDate())} />
                 ),

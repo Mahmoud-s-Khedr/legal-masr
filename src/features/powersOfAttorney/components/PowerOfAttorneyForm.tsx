@@ -2,10 +2,18 @@ import { useState } from 'react';
 import { DatePicker } from '../../../components/ui/DatePicker';
 import { Button } from '../../../components/ui/button';
 import { Checkbox } from '../../../components/ui/checkbox';
+import { Dialog } from '../../../components/ui/Dialog';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
-import type { PowerOfAttorneyDto, PowerOfAttorneyLawyerInput } from '../../../bridge/types';
-import { useClientList } from '../../clients/api/clientsApi';
+import { asAppError, errorMessage } from '../../../bridge/errors';
+import type {
+  ClientDuplicateCandidate,
+  PowerOfAttorneyDto,
+  PowerOfAttorneyLawyerInput,
+} from '../../../bridge/types';
+import { useClientList, useCreateClient } from '../../clients/api/clientsApi';
+import { ClientForm } from '../../clients/forms/ClientForm';
+import type { ClientFormValues } from '../../clients/schemas/client.schema';
 
 export function PowerOfAttorneyForm({
   powerOfAttorney,
@@ -43,6 +51,7 @@ export function PowerOfAttorneyForm({
   const [barNumber, setBarNumber] = useState('');
   const [lawyerNotes, setLawyerNotes] = useState('');
   const [issueDate, setIssueDate] = useState(powerOfAttorney?.issueDate ?? '');
+  const [clientCreateOpen, setClientCreateOpen] = useState(false);
 
   return (
     <form
@@ -96,8 +105,16 @@ export function PowerOfAttorneyForm({
       </label>
       <fieldset>
         <legend>الموكلون</legend>
+        <Button
+          type="button"
+          variant="secondary"
+          className="secondary-button compact-button"
+          onClick={() => setClientCreateOpen(true)}
+        >
+          إضافة موكل جديد
+        </Button>
         {!clients.data?.length ? (
-          <p className="muted">أضف موكلًا أولًا لربطه بالتوكيل.</p>
+          <p className="muted">اختر موكلًا موجودًا أو أضف موكلًا جديدًا لربطه بالتوكيل.</p>
         ) : (
           clients.data.map((client) => (
             <div className="checkbox-field" key={client.id}>
@@ -115,6 +132,15 @@ export function PowerOfAttorneyForm({
           ))
         )}
       </fieldset>
+      <InlineClientCreateDialog
+        open={clientCreateOpen}
+        onOpenChange={setClientCreateOpen}
+        onCreated={(clientId) =>
+          setSelectedClientIds((current) =>
+            current.includes(clientId) ? current : [...current, clientId],
+          )
+        }
+      />
       <fieldset>
         <legend>المحامون المذكورون في التوكيل</legend>
         <div className="settings-two-columns">
@@ -194,5 +220,83 @@ export function PowerOfAttorneyForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+function InlineClientCreateDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated: (clientId: string) => void;
+}) {
+  const createClient = useCreateClient();
+  const [duplicates, setDuplicates] = useState<ClientDuplicateCandidate[] | null>(null);
+  const [pendingValues, setPendingValues] = useState<ClientFormValues | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const close = () => {
+    setDuplicates(null);
+    setPendingValues(null);
+    setCreateError(null);
+    onOpenChange(false);
+  };
+  const submit = async (values: ClientFormValues, confirmDuplicate: boolean) => {
+    setDuplicates(null);
+    setCreateError(null);
+    try {
+      const client = await createClient.mutateAsync({ ...values, confirmDuplicate });
+      onCreated(client.id);
+      close();
+    } catch (error) {
+      const appError = asAppError(error);
+      if (appError?.code === 'CLIENT_PROBABLE_DUPLICATE') {
+        setDuplicates((appError.details as ClientDuplicateCandidate[]) ?? []);
+        setPendingValues(values);
+        return;
+      }
+      setCreateError(errorMessage(error, 'تعذر حفظ الموكل.'));
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : close())}
+      title="إضافة موكل جديد"
+    >
+      <ClientForm
+        busy={createClient.isPending}
+        submitLabel="حفظ الموكل وربطه بالتوكيل"
+        onCancel={close}
+        onSubmit={(values) => submit(values, false)}
+      />
+      {createError && (
+        <p className="error" role="alert">
+          {createError}
+        </p>
+      )}
+      {duplicates && (
+        <div className="warning" role="alert">
+          <p>قد يكون هذا الموكل مسجلًا بالفعل.</p>
+          <ul>
+            {duplicates.map((candidate) => (
+              <li key={candidate.id}>
+                {candidate.fullName}
+                {candidate.primaryPhone ? ` — ${candidate.primaryPhone}` : ''}
+              </li>
+            ))}
+          </ul>
+          <Button
+            type="button"
+            disabled={createClient.isPending}
+            onClick={() => pendingValues && submit(pendingValues, true)}
+          >
+            إنشاء الموكل وربطه بالتوكيل
+          </Button>
+        </div>
+      )}
+    </Dialog>
   );
 }

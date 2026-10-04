@@ -24,10 +24,10 @@ export function ClientListPage() {
     <section className="entity-list">
       <div className="entity-list-header">
         <div>
-          <p className="kicker">سجل العملاء</p>
+          <p className="kicker">{t('clients.kicker')}</p>
           <h2>{t('clients.title')}</h2>
           <p className="page-description">
-            ابحث بسرعة، وافتح ملف الموكل بكل قضاياه ومستنداته وحسابه.
+            {t('clients.description')}
           </p>
         </div>
         <Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>
@@ -49,11 +49,11 @@ export function ClientListPage() {
         <Skeleton className="table-message h-24" aria-label={t('clients.loading')} />
       ) : !clients?.length ? (
         <Card className="empty-state-card">
-          <strong>{query ? 'لا توجد نتائج مطابقة' : t('clients.empty')}</strong>
+          <strong>{query ? t('clients.noResults') : t('clients.empty')}</strong>
           <span>
             {query
-              ? 'جرّب جزءًا من الاسم أو رقم الهاتف.'
-              : 'أضف أول موكل لبدء تنظيم القضايا والمتابعات.'}
+              ? t('clients.noResultsHint')
+              : t('clients.emptyHint')}
           </span>
           {!query && (
             <Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>
@@ -75,7 +75,7 @@ export function ClientListPage() {
               {clients.map((client) => (
                 <tr key={client.id}>
                   <th scope="row">
-                    <Link to={`/clients/${client.id}`}>{client.fullName}</Link>
+                    <Link to={`/clients/${client.id}`} dir="auto"><bdi>{client.fullName}</bdi></Link>
                   </th>
                   <td>
                     <bdi>{client.internalNumber}</bdi>

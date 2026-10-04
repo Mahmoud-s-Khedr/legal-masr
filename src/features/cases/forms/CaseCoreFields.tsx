@@ -21,6 +21,10 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
         <Input dir="ltr" {...register('internalNumber' as never)} required autoFocus />
       </label>
       <label>
+        {t('cases.fields.officialNumber')}
+        <Input dir="ltr" {...register('officialNumber' as never)} />
+      </label>
+      <label>
         {t('cases.fields.judicialYear')}
         <Input
           type="number"

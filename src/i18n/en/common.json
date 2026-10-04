@@ -34,6 +34,21 @@
     "searchLabel": "Global search",
     "searchPlaceholder": "Search your records soon…"
   },
+  "datePicker": {
+    "placeholder": "YYYY-MM-DD",
+    "inputTitle": "Enter the date in YYYY-MM-DD format",
+    "openCalendar": "Open calendar",
+    "chooseDate": "Choose date"
+  },
+  "common": { "cancel": "Cancel", "notes": "Notes" },
+  "tasks": {
+    "kicker": "Tasks", "title": "Legal tasks", "description": "Status is based on due date and completion; this version has no priority, time, or assignee.",
+    "add": "Add task", "filter": "Filter tasks", "case": "Case", "client": "Client", "allCases": "All cases", "allClients": "All clients", "clearFilters": "Clear filters",
+    "count": "{{count}} task", "empty": "No tasks in this view.", "completeAria": "Complete {{title}}", "reopenAria": "Reopen {{title}}",
+    "completed": "Completed", "overdue": "Overdue", "today": "Today", "upcoming": "Upcoming", "details": "Task details", "delete": "Delete", "saveError": "Could not save the task. Your entered data remains available to try again.", "statusError": "Could not change task status. Try again.", "deleteTitle": "Delete task", "deleteDescription": "The task record will be permanently deleted. This does not affect its linked case or client.",
+    "task": "Task", "dueDate": "Due date", "noCase": "Not linked to a case", "noClient": "Not linked to a client", "fieldDetails": "Details", "status": "Status", "open": "Open", "reopen": "Reopen task", "complete": "Complete task", "save": "Save task",
+    "views": { "TODAY": "Today", "OVERDUE": "Overdue", "UPCOMING": "Upcoming", "COMPLETED": "Completed", "ALL": "All" }
+  },
   "gate": {
     "kicker": {
       "setup": "Secure setup",
@@ -106,6 +121,7 @@
     "noEvents": "No hearings today",
     "noEventsHint": "Add a hearing or event from the calendar.",
     "noTasks": "No tasks due today",
+    "noOverdue": "No overdue tasks",
     "noTasksHint": "Add a quick follow-up whenever you need one.",
     "allDay": "All day",
     "legalEvent": "Legal event",
@@ -156,7 +172,12 @@
     "themes": { "system": "Use device setting", "light": "Light", "dark": "Dark" }
   },
   "clients": {
+    "kicker": "Client register",
     "title": "Clients",
+    "description": "Search quickly and open each client's cases, documents, and account.",
+    "noResults": "No matching results",
+    "noResultsHint": "Try part of the name or phone number.",
+    "emptyHint": "Add your first client to organize cases and follow-ups.",
     "newButton": "New client",
     "editorKicker": "Client record",
     "editorDescription": "Capture the essentials now; you can add the rest later.",
@@ -210,6 +231,7 @@
     },
     "fields": {
       "caseNumber": "Case number",
+      "officialNumber": "Official case number",
       "judicialYear": "Judicial year",
       "courtName": "Court",
       "circuitName": "Circuit",

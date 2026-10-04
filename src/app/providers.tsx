@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { queryClient } from '../lib/queryClient';
 import '../i18n';
+import { LocalePresentationProvider } from '../i18n/LocalePresentation';
 
 function RuntimeDirection({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
@@ -17,7 +18,9 @@ export function Providers({ children }: { children: ReactNode }) {
   const direction = i18n.dir(i18n.language) === 'rtl' ? 'rtl' : 'ltr';
   return (
     <QueryClientProvider client={queryClient}>
-      <RuntimeDirection>{children}</RuntimeDirection>
+      <LocalePresentationProvider>
+        <RuntimeDirection>{children}</RuntimeDirection>
+      </LocalePresentationProvider>
       <Toaster dir={direction} richColors closeButton />
     </QueryClientProvider>
   );

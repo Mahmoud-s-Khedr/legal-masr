@@ -34,6 +34,21 @@
     "searchLabel": "البحث العام",
     "searchPlaceholder": "ابحث في سجلك قريبًا…"
   },
+  "datePicker": {
+    "placeholder": "YYYY-MM-DD",
+    "inputTitle": "أدخل التاريخ بصيغة YYYY-MM-DD",
+    "openCalendar": "فتح التقويم",
+    "chooseDate": "اختيار التاريخ"
+  },
+  "common": { "cancel": "إلغاء", "notes": "ملاحظات" },
+  "tasks": {
+    "kicker": "المهام", "title": "المهام القانونية", "description": "تُشتق الحالة من تاريخ الاستحقاق والإتمام؛ لا توجد أولوية أو وقت أو مسؤول في هذا الإصدار.",
+    "add": "إضافة مهمة", "filter": "تصفية المهام", "case": "القضية", "client": "الموكل", "allCases": "كل القضايا", "allClients": "كل الموكلين", "clearFilters": "مسح التصفية",
+    "count": "{{count}} مهمة", "empty": "لا توجد مهام في هذا العرض.", "completeAria": "إتمام {{title}}", "reopenAria": "إعادة فتح {{title}}",
+    "completed": "مكتملة", "overdue": "متأخرة", "today": "اليوم", "upcoming": "قادمة", "details": "تفاصيل المهمة", "delete": "حذف", "saveError": "تعذر حفظ المهمة. بقيت البيانات المدخلة للمحاولة مرة أخرى.", "statusError": "تعذر تغيير حالة المهمة. حاول مرة أخرى.", "deleteTitle": "حذف المهمة", "deleteDescription": "سيُحذف سجل المهمة نهائيًا. لا يؤثر ذلك في القضية أو الموكل المرتبط.",
+    "task": "المهمة", "dueDate": "تاريخ الاستحقاق", "noCase": "غير مرتبطة بقضية", "noClient": "غير مرتبط بموكل", "fieldDetails": "التفاصيل", "status": "الحالة", "open": "مفتوحة", "reopen": "إعادة فتح المهمة", "complete": "إتمام المهمة", "save": "حفظ المهمة",
+    "views": { "TODAY": "اليوم", "OVERDUE": "متأخرة", "UPCOMING": "قادمة", "COMPLETED": "مكتملة", "ALL": "الكل" }
+  },
   "gate": {
     "kicker": {
       "setup": "إعداد آمن",
@@ -106,6 +121,7 @@
     "noEvents": "لا توجد جلسات اليوم",
     "noEventsHint": "يمكنك إضافة جلسة أو موعد من الجدول.",
     "noTasks": "لا توجد مهام مستحقة اليوم",
+    "noOverdue": "لا توجد مهام متأخرة",
     "noTasksHint": "أضف متابعة سريعة متى احتجت.",
     "allDay": "طوال اليوم",
     "legalEvent": "موعد قانوني",
@@ -156,7 +172,12 @@
     "themes": { "system": "حسب إعداد الجهاز", "light": "فاتح", "dark": "داكن" }
   },
   "clients": {
+    "kicker": "سجل الموكلين",
     "title": "الموكلون",
+    "description": "ابحث بسرعة، وافتح ملف الموكل بكل قضاياه ومستنداته وحسابه.",
+    "noResults": "لا توجد نتائج مطابقة",
+    "noResultsHint": "جرّب جزءًا من الاسم أو رقم الهاتف.",
+    "emptyHint": "أضف أول موكل لبدء تنظيم القضايا والمتابعات.",
     "newButton": "موكل جديد",
     "editorKicker": "سجل الموكل",
     "editorDescription": "دوّن المعلومات الأساسية فقط؛ يمكنك استكمال التفاصيل لاحقًا.",
@@ -210,6 +231,7 @@
     },
     "fields": {
       "caseNumber": "رقم القضية",
+      "officialNumber": "رقم القضية الرسمي",
       "judicialYear": "السنة القضائية",
       "courtName": "المحكمة",
       "circuitName": "الدائرة",
