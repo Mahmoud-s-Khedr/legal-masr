@@ -20,6 +20,13 @@ export default defineConfig({
       'scripts/**/*.test.mjs',
       'scripts/**/*.spec.ts',
     ],
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: './coverage',
+      reporter: ['text', 'json-summary', 'lcov'],
+      include: ['src/{app,bridge,components,features,i18n,lib}/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/dev/**', 'src/main.tsx'],
+    },
   },
   clearScreen: false,
   server: { port: 1420, strictPort: true },

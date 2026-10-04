@@ -22,6 +22,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run && node --test scripts/release-assets.test.mjs",
+    "test:coverage": "vitest run --coverage",
+    "test:rust:coverage": "cd src-tauri && mkdir -p ../coverage/rust && cargo llvm-cov --all-features --lcov --output-path ../coverage/rust/lcov.info && cargo llvm-cov report --summary-only",
     "tauri": "tauri",
     "capture:visual": "playwright test -c playwright.capture.config.ts",
     "verify:visual": "node scripts/verify-visual-manifest.mjs"
@@ -59,6 +61,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/coverage-v8": "^3.2.7",
     "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.8.0",

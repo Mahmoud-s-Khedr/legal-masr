@@ -20,17 +20,17 @@ export function BackupSettingsPanel() {
   const latestBackup = useLatestSuccessfulBackup();
   const [restoreOpen, setRestoreOpen] = useState(false);
 
-  const createNow = async () => {
-    await createBackup.mutateAsync();
+  const createNow = () => {
+    createBackup.mutate();
   };
 
-  const validate = async () => {
+  const validate = () => {
     validateBackup.mutate();
   };
 
-  const restore = async () => {
+  const restore = () => {
     setRestoreOpen(false);
-    await restoreBackup.mutateAsync();
+    restoreBackup.mutate();
   };
 
   return (
@@ -105,7 +105,7 @@ export function BackupSettingsPanel() {
         description={t('backups.restoreWarning')}
         confirmLabel={t('backups.restoreConfirm')}
         cancelLabel={t('backups.restoreCancel')}
-        onConfirm={() => void restore()}
+        onConfirm={restore}
         destructive
       />
     </div>

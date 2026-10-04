@@ -4,3 +4,4 @@ src-tauri/target/
 src-tauri/gen/
 pnpm-lock.yaml
 stitch_legal_masr_design_foundation/
+test-results/

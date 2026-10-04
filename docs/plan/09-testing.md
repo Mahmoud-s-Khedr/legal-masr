@@ -22,6 +22,14 @@ contracts, typed error mapping, canonical query invalidation including failure
 scope, forms, dialogs, task completion, payer filtering, optional expense
 links, Arabic RTL/mixed-direction rendering, and primary workflow pages.
 
+Report-only coverage is collected for production renderer code in `app`,
+`bridge`, `components`, `features`, `i18n`, and `lib`. Vitest writes a terminal
+summary, `coverage/coverage-summary.json`, and `coverage/lcov.info`. Rust
+coverage uses `cargo-llvm-cov` with all features and writes a terminal summary
+and `coverage/rust/lcov.info`. These reports are CI artifacts without a
+threshold in the current milestone; a stable baseline must be reviewed before
+any ratchet is introduced.
+
 ## Coverage map
 
 The suite is intentionally layered; no single test type proves the whole
@@ -42,10 +50,11 @@ backup disaster exercise; those remain explicit manual release gates.
 
 ## Required validation commands
 
-Run format check, lint, typecheck, frontend tests, frontend build, Rust format,
-clippy with warnings denied, full Cargo tests, and a debug Tauri Debian build.
-The Phase 7 report records the exact current run results. Failures must be
-fixed or described as an unresolved release risk; they must not be skipped.
+Run format check, lint, typecheck, frontend tests, frontend coverage,
+frontend build, Rust format, clippy with warnings denied, full Cargo tests,
+Rust coverage, and a debug Tauri Debian build. The Phase 7 report records the
+exact current run results. Failures must be fixed or described as an unresolved
+release risk; they must not be skipped.
 
 ## Manual release matrix
 
