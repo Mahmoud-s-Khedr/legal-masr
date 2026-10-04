@@ -17,7 +17,7 @@ vi.mock('../bridge/commands', () => ({
 }));
 
 import { bridge } from '../bridge/commands';
-import { seedDemoData } from './seedDemoData';
+import { demoSeedEnabledFor, seedDemoData, seedDemoDataOnce } from './seedDemoData';
 
 describe('development demo seeder', () => {
   beforeEach(() => {
@@ -66,6 +66,24 @@ describe('development demo seeder', () => {
     expect(bridge.expenseSave).toHaveBeenCalledWith(
       expect.objectContaining({ caseId: 'case-1', expenseType: 'COURT_FEE' }),
     );
+
+    const datedInputs = [
+      vi.mocked(bridge.powerOfAttorneyCreate).mock.calls[0][0].issueDate,
+      vi.mocked(bridge.caseCreate).mock.calls[0][0].filedOn,
+      ...vi.mocked(bridge.hearingCreate).mock.calls.map(([input]) => input.hearingDate),
+      ...vi.mocked(bridge.taskCreate).mock.calls.map(([input]) => input.dueDate),
+      vi.mocked(bridge.feeAgreementSave).mock.calls[0][0].agreementDate,
+      vi.mocked(bridge.paymentSave).mock.calls[0][0].paymentDate,
+      vi.mocked(bridge.expenseSave).mock.calls[0][0].expenseDate,
+    ];
+    for (const date of datedInputs) expect(date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('is impossible to enable outside an explicit development build', () => {
+    expect(demoSeedEnabledFor(false, 'true')).toBe(false);
+    expect(demoSeedEnabledFor(true, undefined)).toBe(false);
+    expect(demoSeedEnabledFor(true, 'false')).toBe(false);
+    expect(demoSeedEnabledFor(true, 'true')).toBe(true);
   });
 
   it('refuses to add demo data to a non-empty vault', async () => {
@@ -83,5 +101,24 @@ describe('development demo seeder', () => {
     await expect(seedDemoData()).rejects.toThrow('command failed');
 
     expect(bridge.powerOfAttorneyCreate).not.toHaveBeenCalled();
+  });
+
+  it('stops before dependent case data when power-of-attorney creation fails', async () => {
+    vi.mocked(bridge.powerOfAttorneyCreate).mockRejectedValueOnce(new Error('POA command failed'));
+
+    await expect(seedDemoData()).rejects.toThrow('POA command failed');
+
+    expect(bridge.caseCreate).not.toHaveBeenCalled();
+    expect(bridge.hearingCreate).not.toHaveBeenCalled();
+    expect(bridge.paymentSave).not.toHaveBeenCalled();
+  });
+
+  it('shares one in-flight seed across duplicate development mounts', async () => {
+    const first = seedDemoDataOnce();
+    const second = seedDemoDataOnce();
+
+    expect(second).toBe(first);
+    await expect(first).resolves.toBe('seeded');
+    expect(bridge.clientCreate).toHaveBeenCalledTimes(3);
   });
 });

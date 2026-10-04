@@ -15,6 +15,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:seed": "node scripts/tauri-dev-seeded.mjs",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --max-warnings 0",

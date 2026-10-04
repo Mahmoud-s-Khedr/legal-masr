@@ -10,7 +10,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { OnboardingPage, OnboardingSubGate } from '../features/onboarding/pages/OnboardingPage';
 import { useAppStatus, useLockVault } from '../features/onboarding/api/onboardingApi';
 import { useSettings } from '../features/settings/api/settingsApi';
-import { seedDemoDataOnce } from '../dev/seedDemoData';
+import { demoSeedEnabled, seedDemoDataOnce } from '../dev/seedDemoData';
 import { captureModeEnabled } from '../dev/captureBridge';
 import { queryKeys } from '../lib/queryKeys';
 import { Providers } from './providers';
@@ -69,8 +69,7 @@ function DemoDataSeeder() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!import.meta.env.DEV || import.meta.env.VITE_SEED_DEMO_DATA !== 'true' || !status?.unlocked)
-      return;
+    if (!demoSeedEnabled() || !status?.unlocked) return;
     void seedDemoDataOnce()
       .then(async (result) => {
         if (result !== 'seeded') return;

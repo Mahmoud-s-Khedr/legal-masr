@@ -2,6 +2,17 @@ import { bridge } from '../bridge/commands';
 
 export type DemoSeedResult = 'seeded' | 'skipped_nonempty_vault';
 
+/**
+ * Keep the opt-in guard separate from the seeding work so it can be verified
+ * without a running Tauri vault. This must remain false for production builds
+ * even if a caller accidentally supplies the environment variable.
+ */
+export const demoSeedEnabledFor = (development: boolean, requested: string | undefined) =>
+  development && requested === 'true';
+
+export const demoSeedEnabled = () =>
+  demoSeedEnabledFor(import.meta.env.DEV, import.meta.env.VITE_SEED_DEMO_DATA);
+
 function localDate(offsetDays = 0) {
   const value = new Date();
   value.setDate(value.getDate() + offsetDays);
