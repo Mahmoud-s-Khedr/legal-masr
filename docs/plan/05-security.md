@@ -60,6 +60,8 @@ Actual Argon2 parameters must be benchmarked on lower-end Windows hardware. They
 - Lock after configurable inactivity.
 - Lock when the device resumes from sleep.
 - Clear sensitive in-memory state where practical.
+- On a successful lock, clear renderer caches containing legal records and
+  pending native file-picker source tokens as well as the Rust master key.
 - Do not place passwords or keys in frontend state.
 - Password processing occurs only in Rust.
 - Never write secrets to logs.

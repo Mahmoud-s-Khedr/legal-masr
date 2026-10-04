@@ -29,9 +29,12 @@ checksum. It contains no destination path.
    completion time, size when available, and a stable error code only.
 
 Validation authenticates the envelope, checks the manifest version/encryption
-flag/schema value, requires checksum entries, and verifies the checksum of each
-declared archive file. Malformed archives, missing entries, wrong keys, and
-mismatches fail safely.
+flag/schema value, and requires one exact archive inventory: exactly one
+database, manifest, and checksum file, plus flat attachment entries only. It
+rejects duplicate or unexpected ZIP names and requires the checksum map to
+cover every database/attachment entry with no extras. It then verifies every
+checksum. Malformed archives, missing entries, wrong keys, and mismatches fail
+safely.
 
 ## Restore
 

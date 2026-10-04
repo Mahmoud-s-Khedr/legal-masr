@@ -70,9 +70,12 @@ preview, an external-reference mode, or arbitrary paths.
 
 Global search indexes Clients, Cases, and POAs using normalized Arabic/digit
 prefix/exact lookup and opens the matching deep link. The shared RTL shell
-contains Today, Agenda, Clients, Powers of Attorney, Cases, Tasks, Finance,
-Settings, and Lock Application. Values whose direction must not flip (dates,
-identifiers, money, phones, filenames, versions) use `<bdi>`.
+contains Today, Agenda, Clients, Powers of Attorney, Cases, Tasks, Documents,
+Finance, Backups, Settings, and Lock Application. The global Documents view is
+read-only: new attachments must be added from their client, case, POA, or
+expense owner so every attachment has exactly one owner. Values whose direction
+must not flip (dates, identifiers, money, phones, filenames, versions) use
+`<bdi>`.
 
 ## Current gaps and release risks
 

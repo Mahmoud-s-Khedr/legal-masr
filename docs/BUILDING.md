@@ -32,6 +32,20 @@ Start the application in development mode:
 pnpm tauri dev
 ```
 
+Start with fictional demo records for visual and workflow testing:
+
+```bash
+pnpm dev:seed
+```
+
+The seeded mode is deliberately opt-in and works only in a Vite development
+build. Create and unlock a fresh local vault first; it seeds only an empty
+vault, never adds attachments, and will leave an existing vault untouched.
+The demo records use plainly fictional names and `.test` email addresses.
+If a seed command fails part way through, discard that development vault and
+start with a new empty one before trying again; the normal domain commands do
+not expose a cross-record rollback operation to React.
+
 Run the normal local checks:
 
 ```bash
