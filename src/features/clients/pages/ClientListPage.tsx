@@ -26,9 +26,7 @@ export function ClientListPage() {
         <div>
           <p className="kicker">{t('clients.kicker')}</p>
           <h2>{t('clients.title')}</h2>
-          <p className="page-description">
-            {t('clients.description')}
-          </p>
+          <p className="page-description">{t('clients.description')}</p>
         </div>
         <Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>
       </div>
@@ -50,11 +48,7 @@ export function ClientListPage() {
       ) : !clients?.length ? (
         <Card className="empty-state-card">
           <strong>{query ? t('clients.noResults') : t('clients.empty')}</strong>
-          <span>
-            {query
-              ? t('clients.noResultsHint')
-              : t('clients.emptyHint')}
-          </span>
+          <span>{query ? t('clients.noResultsHint') : t('clients.emptyHint')}</span>
           {!query && (
             <Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>
           )}
@@ -75,7 +69,9 @@ export function ClientListPage() {
               {clients.map((client) => (
                 <tr key={client.id}>
                   <th scope="row">
-                    <Link to={`/clients/${client.id}`} dir="auto"><bdi>{client.fullName}</bdi></Link>
+                    <Link to={`/clients/${client.id}`} dir="auto">
+                      <bdi>{client.fullName}</bdi>
+                    </Link>
                   </th>
                   <td>
                     <bdi>{client.internalNumber}</bdi>

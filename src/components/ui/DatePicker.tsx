@@ -1,13 +1,7 @@
 import { Popover } from '@base-ui/react/popover';
 import { IconCalendarEvent } from '@tabler/icons-react';
 import { DayPicker } from 'react-day-picker';
-import {
-  forwardRef,
-  type ChangeEvent,
-  type InputHTMLAttributes,
-  useEffect,
-  useState,
-} from 'react';
+import { forwardRef, type ChangeEvent, type InputHTMLAttributes, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../../i18n';
 import { useLocalePresentation } from '../../i18n/LocalePresentation';
@@ -52,7 +46,10 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
 
   const emitChange = (next: string) => {
     if (!controlled) setTextValue(next);
-    onChange?.({ target: { name, value: next }, currentTarget: { name, value: next } } as ChangeEvent<HTMLInputElement>);
+    onChange?.({
+      target: { name, value: next },
+      currentTarget: { name, value: next },
+    } as ChangeEvent<HTMLInputElement>);
   };
   const selected = parseDateOnly(textValue);
 
@@ -77,13 +74,21 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
             onChange?.(event);
           }}
         />
-        <Popover.Trigger className="date-picker-trigger" type="button" aria-label={t('datePicker.openCalendar')}>
+        <Popover.Trigger
+          className="date-picker-trigger"
+          type="button"
+          aria-label={t('datePicker.openCalendar')}
+        >
           <IconCalendarEvent aria-hidden="true" size={18} />
         </Popover.Trigger>
       </span>
       <Popover.Portal>
         <Popover.Positioner side="bottom" align="start" sideOffset={6}>
-          <Popover.Popup className="date-picker-popover" aria-label={t('datePicker.chooseDate')} dir={direction}>
+          <Popover.Popup
+            className="date-picker-popover"
+            aria-label={t('datePicker.chooseDate')}
+            dir={direction}
+          >
             <DayPicker
               mode="single"
               dir={direction}

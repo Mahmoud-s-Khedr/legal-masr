@@ -146,6 +146,7 @@ pub fn select_source<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
 ) -> Result<AttachmentSourceSelection, Error> {
+    state.unlocked()?;
     let path = app
         .dialog()
         .file()

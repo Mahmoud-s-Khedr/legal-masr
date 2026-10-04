@@ -29,14 +29,10 @@ export function DashboardPage() {
         </div>
         <div className="quick-actions">
           <Button asChild className="button-link">
-            <Link to="/calendar">
-            {t('dashboard.addHearing')}
-            </Link>
+            <Link to="/calendar">{t('dashboard.addHearing')}</Link>
           </Button>
           <Button variant="secondary" asChild className="button-link secondary-link">
-            <Link to="/tasks">
-            {t('dashboard.addTask')}
-            </Link>
+            <Link to="/tasks">{t('dashboard.addTask')}</Link>
           </Button>
         </div>
       </header>
@@ -47,7 +43,9 @@ export function DashboardPage() {
             <ul className="agenda-timeline">
               {agenda.data.todayHearings.map((hearing) => (
                 <li key={hearing.id}>
-                  <time dir="ltr"><bdi>{hearing.hearingTime ?? t('dashboard.allDay')}</bdi></time>
+                  <time dir="ltr">
+                    <bdi>{hearing.hearingTime ?? t('dashboard.allDay')}</bdi>
+                  </time>
                   <div>
                     <Link to={`/calendar?hearing=${hearing.id}`}>
                       <bdi dir="auto">{hearing.hearingType ?? t('dashboard.legalEvent')}</bdi>
@@ -67,8 +65,12 @@ export function DashboardPage() {
             <ul className="task-preview-list">
               {agenda.data.todayTasks.map((task) => (
                 <li key={task.id}>
-                  <Link to={`/tasks?task=${task.id}`} dir="auto"><bdi>{task.title}</bdi></Link>
-                  <span dir="ltr"><bdi>{task.dueDate}</bdi></span>
+                  <Link to={`/tasks?task=${task.id}`} dir="auto">
+                    <bdi>{task.title}</bdi>
+                  </Link>
+                  <span dir="ltr">
+                    <bdi>{task.dueDate}</bdi>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -97,7 +99,9 @@ export function DashboardPage() {
           <ul>
             {clients.data?.slice(0, 5).map((client) => (
               <li key={client.id}>
-                <Link to={`/clients/${client.id}`} dir="auto"><bdi>{client.fullName}</bdi></Link>
+                <Link to={`/clients/${client.id}`} dir="auto">
+                  <bdi>{client.fullName}</bdi>
+                </Link>
               </li>
             ))}
           </ul>
@@ -107,8 +111,10 @@ export function DashboardPage() {
           <ul>
             {cases.data?.slice(0, 5).map((item) => (
               <li key={item.id}>
-                <Link to={`/cases/${item.id}`} dir="ltr"><bdi>{item.internalNumber}</bdi></Link> ·{' '}
-                <bdi dir="auto">{item.clientNames.join(', ')}</bdi>
+                <Link to={`/cases/${item.id}`} dir="ltr">
+                  <bdi>{item.internalNumber}</bdi>
+                </Link>{' '}
+                · <bdi dir="auto">{item.clientNames.join(', ')}</bdi>
               </li>
             ))}
           </ul>

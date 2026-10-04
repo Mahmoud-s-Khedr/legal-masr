@@ -9,8 +9,9 @@ import { Sheet } from '../ui/sheet';
 import { useSettings } from '../../features/settings/api/settingsApi';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Icon } from './Icon';
+import { shouldLockForLifecycleGap } from '../../lib/lifecycleLock';
 
-export function Shell({ onLock }: { onLock: () => void }) {
+export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const lockTimeoutMinutes = settings?.lockTimeoutMinutes;
@@ -21,22 +22,31 @@ export function Shell({ onLock }: { onLock: () => void }) {
   useEffect(() => {
     if (!lockTimeoutMinutes) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let lifecycleCheckAt = Date.now();
+    let lockingForLifecycleGap = false;
     const reset = () => {
       clearTimeout(timer);
       timer = setTimeout(onLock, lockTimeoutMinutes * 60_000);
     };
+    const detectLifecycleGap = () => {
+      const now = Date.now();
+      const shouldLock = shouldLockForLifecycleGap(lifecycleCheckAt, now);
+      lifecycleCheckAt = now;
+      if (!shouldLock || lockingForLifecycleGap) return;
+      lockingForLifecycleGap = true;
+      void Promise.resolve(onLock()).finally(() => {
+        lockingForLifecycleGap = false;
+      });
+    };
     reset();
     window.addEventListener('pointerdown', reset);
     window.addEventListener('keydown', reset);
-    const lockOnResume = () => {
-      if (document.visibilityState === 'visible') void onLock();
-    };
-    document.addEventListener('visibilitychange', lockOnResume);
+    const lifecycleInterval = window.setInterval(detectLifecycleGap, 1_000);
     return () => {
       clearTimeout(timer);
+      window.clearInterval(lifecycleInterval);
       window.removeEventListener('pointerdown', reset);
       window.removeEventListener('keydown', reset);
-      document.removeEventListener('visibilitychange', lockOnResume);
     };
   }, [lockTimeoutMinutes, onLock]);
 

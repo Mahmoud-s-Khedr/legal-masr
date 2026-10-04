@@ -113,7 +113,9 @@ export function TasksPage() {
                   <Checkbox
                     checked={task.completed}
                     onCheckedChange={() => (task.completed ? reopen : complete).mutate(task.id)}
-                    aria-label={t(task.completed ? 'tasks.reopenAria' : 'tasks.completeAria', { title: task.title })}
+                    aria-label={t(task.completed ? 'tasks.reopenAria' : 'tasks.completeAria', {
+                      title: task.title,
+                    })}
                   />
                   <span
                     className={task.completed ? 'task-status done' : 'task-status'}
@@ -126,12 +128,22 @@ export function TasksPage() {
                     className="text-button task-title"
                     onClick={() => setEditing(task)}
                   >
-                  <bdi dir="auto">{task.title}</bdi>
+                    <bdi dir="auto">{task.title}</bdi>
                   </Button>
                   <span>
                     <bdi>{task.dueDate}</bdi>
-                    {task.details && <> · <bdi dir="auto">{task.details}</bdi></>}
-                    {task.notes && <> · <bdi dir="auto">{task.notes}</bdi></>}
+                    {task.details && (
+                      <>
+                        {' '}
+                        · <bdi dir="auto">{task.details}</bdi>
+                      </>
+                    )}
+                    {task.notes && (
+                      <>
+                        {' '}
+                        · <bdi dir="auto">{task.notes}</bdi>
+                      </>
+                    )}
                   </span>
                 </div>
                 <span className={`status-chip ${task.completed ? 'completed' : ''}`}>
@@ -272,7 +284,7 @@ export function TaskForm({
       }}
     >
       <label>
-        {t('tasks.task')} {' '}
+        {t('tasks.task')}{' '}
         <Input
           required
           autoFocus
@@ -282,7 +294,7 @@ export function TaskForm({
       </label>
       <div className="settings-two-columns">
         <label>
-          {t('tasks.dueDate')} {' '}
+          {t('tasks.dueDate')}{' '}
           <DatePicker
             required
             value={dueDate}
@@ -313,14 +325,18 @@ export function TaskForm({
         />
       </label>
       <label>
-        {t('tasks.fieldDetails')} <Textarea value={details} onChange={(event) => setDetails(event.target.value)} />
+        {t('tasks.fieldDetails')}{' '}
+        <Textarea value={details} onChange={(event) => setDetails(event.target.value)} />
       </label>
       <label>
-        {t('common.notes')} <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+        {t('common.notes')}{' '}
+        <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       {initial && onToggleCompletion && (
         <div className="dialog-inline-action">
-          <span>{t('tasks.status')}: {initial.completed ? t('tasks.completed') : t('tasks.open')}</span>
+          <span>
+            {t('tasks.status')}: {initial.completed ? t('tasks.completed') : t('tasks.open')}
+          </span>
           <Button
             type="button"
             className="secondary-button"

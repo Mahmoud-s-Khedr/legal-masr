@@ -6,7 +6,7 @@ use chacha20poly1305::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::{
     fs,
     io::{Cursor, Read, Write},
@@ -149,9 +149,67 @@ fn decrypt(path: &str, master: &[u8; 32]) -> Result<Vec<u8>, Error> {
         .map_err(|_| Error::BackupInvalid)
 }
 
+fn declared_zip_entry_count(bytes: &[u8]) -> Result<usize, Error> {
+    const END_OF_CENTRAL_DIRECTORY: [u8; 4] = [0x50, 0x4b, 0x05, 0x06];
+    const END_OF_CENTRAL_DIRECTORY_SIZE: usize = 22;
+    let offset = bytes
+        .windows(END_OF_CENTRAL_DIRECTORY.len())
+        .rposition(|window| window == END_OF_CENTRAL_DIRECTORY)
+        .ok_or(Error::BackupInvalid)?;
+    if offset + END_OF_CENTRAL_DIRECTORY_SIZE > bytes.len() {
+        return Err(Error::BackupInvalid);
+    }
+    let read_u16 = |start: usize| u16::from_le_bytes([bytes[start], bytes[start + 1]]);
+    let disk = read_u16(offset + 4);
+    let central_directory_disk = read_u16(offset + 6);
+    let entries_on_disk = read_u16(offset + 8);
+    let total_entries = read_u16(offset + 10);
+    let comment_length = read_u16(offset + 20) as usize;
+    if disk != 0
+        || central_directory_disk != 0
+        || entries_on_disk != total_entries
+        || offset + END_OF_CENTRAL_DIRECTORY_SIZE + comment_length != bytes.len()
+    {
+        return Err(Error::BackupInvalid);
+    }
+    Ok(total_entries as usize)
+}
+
 pub fn validate(path: &str, master: &[u8; 32]) -> Result<(), Error> {
     let bytes = decrypt(path, master)?;
-    let mut archive = ZipArchive::new(Cursor::new(bytes))?;
+    let declared_entry_count = declared_zip_entry_count(&bytes)?;
+    let mut archive = ZipArchive::new(Cursor::new(bytes)).map_err(|_| Error::BackupInvalid)?;
+    if archive.len() != declared_entry_count {
+        return Err(Error::BackupInvalid);
+    }
+    let mut data_entries = BTreeSet::new();
+    let mut archive_entries = BTreeSet::new();
+    let mut attachment_count = 0usize;
+    for index in 0..archive.len() {
+        let entry = archive.by_index(index).map_err(|_| Error::BackupInvalid)?;
+        let name = entry.name().to_owned();
+        if !archive_entries.insert(name.clone()) || entry.is_dir() {
+            return Err(Error::BackupInvalid);
+        }
+        if name == "database.sqlite" {
+            data_entries.insert(name);
+        } else if let Some(filename) = name.strip_prefix("attachments/") {
+            let path = Path::new(filename);
+            if filename.is_empty() || path.components().count() != 1 {
+                return Err(Error::BackupInvalid);
+            }
+            data_entries.insert(name);
+            attachment_count += 1;
+        } else if name != "manifest.json" && name != "checksums.json" {
+            return Err(Error::BackupInvalid);
+        }
+    }
+    if !archive_entries.contains("database.sqlite")
+        || !archive_entries.contains("manifest.json")
+        || !archive_entries.contains("checksums.json")
+    {
+        return Err(Error::BackupInvalid);
+    }
     let mut manifest = String::new();
     archive
         .by_name("manifest.json")
@@ -163,6 +221,9 @@ pub fn validate(path: &str, master: &[u8; 32]) -> Result<(), Error> {
     {
         return Err(Error::BackupInvalid);
     }
+    if manifest.managed_document_count != attachment_count {
+        return Err(Error::BackupInvalid);
+    }
     let mut checksums_json = String::new();
     archive
         .by_name("checksums.json")
@@ -170,6 +231,9 @@ pub fn validate(path: &str, master: &[u8; 32]) -> Result<(), Error> {
         .read_to_string(&mut checksums_json)?;
     let checksums: BTreeMap<String, String> =
         serde_json::from_str(&checksums_json).map_err(|_| Error::BackupInvalid)?;
+    if checksums.keys().cloned().collect::<BTreeSet<_>>() != data_entries {
+        return Err(Error::BackupInvalid);
+    }
     for (name, expected) in checksums {
         let mut bytes = Vec::new();
         archive
@@ -349,6 +413,118 @@ mod tests {
         fs::write(path, serde_json::to_vec(&envelope).unwrap()).unwrap();
     }
 
+    fn archive_with_raw_entries(path: &Path, master: &[u8; 32], entries: &[(&str, &[u8])]) {
+        let mut archive = ZipWriter::new(Cursor::new(Vec::new()));
+        for (name, content) in entries {
+            archive
+                .start_file(*name, SimpleFileOptions::default())
+                .unwrap();
+            archive.write_all(content).unwrap();
+        }
+        let plaintext = archive.finish().unwrap().into_inner();
+        let nonce = security::random_32();
+        let key = security::backup_key(master);
+        let ciphertext = XChaCha20Poly1305::new_from_slice(&key)
+            .unwrap()
+            .encrypt(XNonce::from_slice(&nonce[..24]), plaintext.as_ref())
+            .unwrap();
+        let envelope = BackupEnvelope {
+            version: 1,
+            nonce: STANDARD.encode(&nonce[..24]),
+            ciphertext: STANDARD.encode(ciphertext),
+        };
+        fs::write(path, serde_json::to_vec(&envelope).unwrap()).unwrap();
+    }
+
+    fn duplicate_name_archive(path: &Path, master: &[u8; 32]) {
+        let mut archive = Vec::new();
+        let mut offsets = Vec::new();
+        for (name, contents) in [
+            ("database.sqlite", b"first database".as_slice()),
+            ("database.sqlite", b"second database".as_slice()),
+            ("manifest.json", b"{}".as_slice()),
+            ("checksums.json", b"{}".as_slice()),
+        ] {
+            offsets.push(archive.len() as u32);
+            archive.extend_from_slice(&0x0403_4b50_u32.to_le_bytes());
+            archive.extend_from_slice(&20_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u32.to_le_bytes());
+            archive.extend_from_slice(&(contents.len() as u32).to_le_bytes());
+            archive.extend_from_slice(&(contents.len() as u32).to_le_bytes());
+            archive.extend_from_slice(&(name.len() as u16).to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(name.as_bytes());
+            archive.extend_from_slice(contents);
+        }
+        let central_start = archive.len() as u32;
+        for ((name, contents), offset) in [
+            ("database.sqlite", b"first database".as_slice()),
+            ("database.sqlite", b"second database".as_slice()),
+            ("manifest.json", b"{}".as_slice()),
+            ("checksums.json", b"{}".as_slice()),
+        ]
+        .into_iter()
+        .zip(offsets)
+        {
+            archive.extend_from_slice(&0x0201_4b50_u32.to_le_bytes());
+            archive.extend_from_slice(&20_u16.to_le_bytes());
+            archive.extend_from_slice(&20_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u32.to_le_bytes());
+            archive.extend_from_slice(&(contents.len() as u32).to_le_bytes());
+            archive.extend_from_slice(&(contents.len() as u32).to_le_bytes());
+            archive.extend_from_slice(&(name.len() as u16).to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u16.to_le_bytes());
+            archive.extend_from_slice(&0_u32.to_le_bytes());
+            archive.extend_from_slice(&offset.to_le_bytes());
+            archive.extend_from_slice(name.as_bytes());
+        }
+        let central_size = archive.len() as u32 - central_start;
+        archive.extend_from_slice(&0x0605_4b50_u32.to_le_bytes());
+        archive.extend_from_slice(&0_u16.to_le_bytes());
+        archive.extend_from_slice(&0_u16.to_le_bytes());
+        archive.extend_from_slice(&4_u16.to_le_bytes());
+        archive.extend_from_slice(&4_u16.to_le_bytes());
+        archive.extend_from_slice(&central_size.to_le_bytes());
+        archive.extend_from_slice(&central_start.to_le_bytes());
+        archive.extend_from_slice(&0_u16.to_le_bytes());
+
+        let nonce = security::random_32();
+        let key = security::backup_key(master);
+        let ciphertext = XChaCha20Poly1305::new_from_slice(&key)
+            .unwrap()
+            .encrypt(XNonce::from_slice(&nonce[..24]), archive.as_ref())
+            .unwrap();
+        let envelope = BackupEnvelope {
+            version: 1,
+            nonce: STANDARD.encode(&nonce[..24]),
+            ciphertext: STANDARD.encode(ciphertext),
+        };
+        fs::write(path, serde_json::to_vec(&envelope).unwrap()).unwrap();
+    }
+
+    fn manifest_with_document_count(document_count: usize) -> Vec<u8> {
+        serde_json::to_vec(&BackupManifest {
+            format_version: 1,
+            application_version: "test".into(),
+            schema_version: db::latest_schema_version(),
+            created_at: db::now(),
+            database_encrypted: true,
+            managed_document_count: document_count,
+        })
+        .unwrap()
+    }
+
     #[test]
     fn backup_contains_database_attachments_manifest_and_restores_them() {
         let temp = tempfile::tempdir().unwrap();
@@ -442,5 +618,64 @@ mod tests {
             validate(&path.to_string_lossy(), &security::random_32()),
             Err(Error::BackupInvalid)
         ));
+    }
+
+    #[test]
+    fn validation_rejects_incomplete_or_ambiguous_archive_inventory() {
+        let temp = tempfile::tempdir().unwrap();
+        let master = security::random_32();
+        let database = b"encrypted database";
+        let attachment = b"managed attachment";
+        let manifest = manifest_with_document_count(1);
+
+        let missing_database_checksum = temp.path().join("missing-database-checksum.lmsbackup");
+        let checksums = serde_json::to_vec(&BTreeMap::from([(
+            "attachments/file.pdf".to_owned(),
+            checksum(attachment),
+        )]))
+        .unwrap();
+        archive_with_raw_entries(
+            &missing_database_checksum,
+            &master,
+            &[
+                ("database.sqlite", database),
+                ("attachments/file.pdf", attachment),
+                ("manifest.json", &manifest),
+                ("checksums.json", &checksums),
+            ],
+        );
+        assert!(matches!(
+            validate(&missing_database_checksum.to_string_lossy(), &master),
+            Err(Error::BackupInvalid)
+        ));
+
+        let unlisted_attachment = temp.path().join("unlisted-attachment.lmsbackup");
+        let checksums = serde_json::to_vec(&BTreeMap::from([(
+            "database.sqlite".to_owned(),
+            checksum(database),
+        )]))
+        .unwrap();
+        archive_with_raw_entries(
+            &unlisted_attachment,
+            &master,
+            &[
+                ("database.sqlite", database),
+                ("attachments/file.pdf", attachment),
+                ("manifest.json", &manifest),
+                ("checksums.json", &checksums),
+            ],
+        );
+        assert!(matches!(
+            validate(&unlisted_attachment.to_string_lossy(), &master),
+            Err(Error::BackupInvalid)
+        ));
+
+        let duplicate_database = temp.path().join("duplicate-database.lmsbackup");
+        duplicate_name_archive(&duplicate_database, &master);
+        let duplicate_result = validate(&duplicate_database.to_string_lossy(), &master);
+        assert!(
+            matches!(duplicate_result, Err(Error::BackupInvalid)),
+            "unexpected duplicate-archive result: {duplicate_result:?}"
+        );
     }
 }

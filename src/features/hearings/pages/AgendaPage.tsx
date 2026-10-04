@@ -60,7 +60,9 @@ export function AgendaPage() {
         <div>
           <p className="kicker">الأجندة</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">الجلسات والمهام</h1>
-          <p className="mt-1 text-muted-foreground">التواريخ القانونية تُعرض كيوم فقط ولا تتحول بين المناطق الزمنية.</p>
+          <p className="mt-1 text-muted-foreground">
+            التواريخ القانونية تُعرض كيوم فقط ولا تتحول بين المناطق الزمنية.
+          </p>
         </div>
         <Button type="button" onClick={() => setEditing('new')}>
           إضافة جلسة

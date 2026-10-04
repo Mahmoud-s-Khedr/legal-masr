@@ -33,10 +33,12 @@ export function AttachmentPanel({
   owner,
   title = 'المرفقات',
   description = 'يُنسخ كل ملف إلى مساحة التطبيق المحلية ويُضمّن في النسخ الاحتياطية.',
+  allowAdd = true,
 }: {
   owner: AttachmentListInput;
   title?: string;
   description?: string;
+  allowAdd?: boolean;
 }) {
   const attachments = useAttachments(owner);
   const add = useAddAttachment();
@@ -97,9 +99,11 @@ export function AttachmentPanel({
           <h3>{title}</h3>
           <p className="muted">{description}</p>
         </div>
-        <Button type="button" className="compact-button" onClick={() => setDialogOpen(true)}>
-          إضافة مرفق
-        </Button>
+        {allowAdd && (
+          <Button type="button" className="compact-button" onClick={() => setDialogOpen(true)}>
+            إضافة مرفق
+          </Button>
+        )}
       </div>
       {attachments.isLoading ? (
         <p className="table-message">جارٍ تحميل المرفقات…</p>

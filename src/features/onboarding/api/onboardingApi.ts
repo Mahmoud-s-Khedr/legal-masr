@@ -37,6 +37,11 @@ export function useLockVault() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => bridge.lock(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: APP_STATUS_QUERY_KEY }),
+    onSuccess: async () => {
+      // A lock must also remove record data that was already delivered to the
+      // renderer. Status is fetched again as the only permitted post-lock data.
+      queryClient.clear();
+      await queryClient.fetchQuery({ queryKey: APP_STATUS_QUERY_KEY, queryFn: bridge.status });
+    },
   });
 }

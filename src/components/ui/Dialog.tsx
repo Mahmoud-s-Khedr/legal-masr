@@ -18,7 +18,8 @@ export function Dialog({ open, onOpenChange, title, children, labelledBy }: Dial
 
   useEffect(() => {
     if (open) {
-      returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      returnFocusRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
       return;
     }
     returnFocusRef.current?.focus();
@@ -32,18 +33,18 @@ export function Dialog({ open, onOpenChange, title, children, labelledBy }: Dial
           <BaseDialog.Popup
             ref={(node) => {
               if (open) {
-                node?.querySelector<HTMLElement>(
-                  'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-                )?.focus();
+                node
+                  ?.querySelector<HTMLElement>(
+                    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                  )
+                  ?.focus();
               }
             }}
             className="dialog-surface"
             aria-labelledby={titleId}
             initialFocus={false}
           >
-            <BaseDialog.Title id={titleId}>
-              {title}
-            </BaseDialog.Title>
+            <BaseDialog.Title id={titleId}>{title}</BaseDialog.Title>
             {children}
           </BaseDialog.Popup>
         </BaseDialog.Viewport>
@@ -75,7 +76,12 @@ export function ConfirmDialog({
     <Dialog open={open} onOpenChange={onOpenChange} title={title}>
       <p className="dialog-description">{description}</p>
       <div className="dialog-actions">
-        <Button type="button" variant="secondary" className="secondary-button" onClick={() => onOpenChange(false)}>
+        <Button
+          type="button"
+          variant="secondary"
+          className="secondary-button"
+          onClick={() => onOpenChange(false)}
+        >
           {cancelLabel}
         </Button>
         <Button

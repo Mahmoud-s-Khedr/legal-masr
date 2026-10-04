@@ -60,9 +60,9 @@ describe('GlobalSearch', () => {
 
   it('shows the empty state and dismisses a command-palette search with Escape', async () => {
     const onNavigate = vi.fn();
-    vi.mocked(useGlobalSearch).mockReturnValue(
-      { data: [] } as unknown as ReturnType<typeof useGlobalSearch>,
-    );
+    vi.mocked(useGlobalSearch).mockReturnValue({ data: [] } as unknown as ReturnType<
+      typeof useGlobalSearch
+    >);
     render(
       <MemoryRouter>
         <GlobalSearch

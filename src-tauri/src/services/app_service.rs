@@ -131,6 +131,7 @@ pub fn lock(state: &AppState) -> Result<(), Error> {
     if let Some(mut key) = state.master_key.lock().map_err(|_| Error::Locked)?.take() {
         key.zeroize();
     }
+    state.clear_document_sources()?;
     Ok(())
 }
 
@@ -206,4 +207,27 @@ pub fn recover_access<R: Runtime>(
     security::write_security_atomically(&security_path, &security_file)?;
     *state.master_key.lock().map_err(|_| Error::Locked)? = Some(master);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn lock_clears_the_master_key_and_pending_document_sources() {
+        let state = AppState::default();
+        *state.master_key.lock().unwrap() = Some([7; 32]);
+        let token = state
+            .store_document_source(PathBuf::from("/selected-by-native-dialog.pdf"))
+            .unwrap();
+
+        lock(&state).unwrap();
+
+        assert!(matches!(state.unlocked(), Err(Error::Locked)));
+        assert!(matches!(
+            state.take_document_source(&token),
+            Err(Error::AttachmentSourceMissing)
+        ));
+    }
 }

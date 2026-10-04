@@ -23,7 +23,9 @@ export const NAV_ITEMS = [
   { to: '/powers-of-attorney', key: 'nav.powersOfAttorney', icon: 'poa' },
   { to: '/cases', key: 'nav.cases', icon: 'cases' },
   { to: '/tasks', key: 'nav.tasks', icon: 'tasks' },
+  { to: '/attachments', key: 'nav.documents', icon: 'documents' },
   { to: '/finances', key: 'nav.finances', icon: 'finances' },
+  { to: '/backups', key: 'nav.backups', icon: 'backup' },
   { to: '/settings', key: 'nav.settings', icon: 'settings' },
 ] as const satisfies ReadonlyArray<{ to: string; key: string; icon: IconName }>;
 

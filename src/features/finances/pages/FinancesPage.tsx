@@ -78,7 +78,9 @@ export function FinancesPage() {
         <div>
           <p className="kicker">المالية</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">الدفعات والمصروفات</h1>
-          <p className="mt-1 text-muted-foreground">متابعة نقدية بسيطة بالجنيه المصري؛ لا يحول التطبيق هذا السجل إلى دفتر محاسبي.</p>
+          <p className="mt-1 text-muted-foreground">
+            متابعة نقدية بسيطة بالجنيه المصري؛ لا يحول التطبيق هذا السجل إلى دفتر محاسبي.
+          </p>
         </div>
         <Button type="button" onClick={() => setEntry({ type: tab, mode: 'edit' })}>
           إضافة {tab === 'payment' ? 'دفعة' : 'مصروف'}

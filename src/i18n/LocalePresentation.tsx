@@ -33,7 +33,11 @@ export function LocalePresentationProvider({ children }: { children: ReactNode }
     }),
     [language, settings?.weekStartsOn],
   );
-  return <LocalePresentationContext.Provider value={value}>{children}</LocalePresentationContext.Provider>;
+  return (
+    <LocalePresentationContext.Provider value={value}>
+      {children}
+    </LocalePresentationContext.Provider>
+  );
 }
 
 export const useLocalePresentation = () => useContext(LocalePresentationContext);

@@ -21,6 +21,7 @@ vi.mock('../bridge/commands', () => ({
 }));
 import { bridge } from '../bridge/commands';
 import { queryClient } from '../lib/queryClient';
+import { queryKeys } from '../lib/queryKeys';
 import { App } from './App';
 import i18n, { applyDocumentDirection } from '../i18n';
 
@@ -101,7 +102,51 @@ describe('application gate', () => {
     expect(await screen.findByRole('heading', { name: 'اليوم' })).toBeInTheDocument();
     expect(screen.getByText('ليجال مصر')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'اليوم' })).toHaveClass('active');
+    expect(screen.getByRole('link', { name: 'المستندات' })).toHaveAttribute('href', '/attachments');
+    expect(screen.getByRole('link', { name: 'النسخ الاحتياطي' })).toHaveAttribute(
+      'href',
+      '/backups',
+    );
     expect(document.documentElement).toHaveAttribute('data-theme', 'system');
+  });
+
+  it('removes cached legal records from the renderer when the vault locks', async () => {
+    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+    vi.mocked(bridge.settings).mockResolvedValue({
+      language: 'ar',
+      theme: 'system',
+      dateFormat: 'dd/MM/yyyy',
+      weekStartsOn: 6,
+      defaultReminderMinutes: 60,
+      autostartEnabled: false,
+      lockTimeoutMinutes: 15,
+      usageCountersEnabled: false,
+    });
+    vi.mocked(bridge.clientList).mockResolvedValue([
+      {
+        id: 'client-1',
+        internalNumber: 'C-1',
+        fullName: 'أحمد',
+        primaryPhone: '01000000000',
+        archivedAt: null,
+      },
+    ]);
+    vi.mocked(bridge.lock).mockImplementation(async () => {
+      vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: false });
+    });
+
+    render(<App />);
+    await screen.findByRole('link', { name: 'أحمد' });
+    expect(
+      queryClient.getQueryCache().findAll({ queryKey: queryKeys.clients.all }),
+    ).not.toHaveLength(0);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'قفل التطبيق' })[0]);
+
+    expect(await screen.findByRole('heading', { name: 'افتح خزنتك' })).toBeInTheDocument();
+    expect(queryClient.getQueryCache().findAll({ queryKey: queryKeys.clients.all })).toHaveLength(
+      0,
+    );
   });
 
   it('renders compact local record tables when summaries are available', async () => {

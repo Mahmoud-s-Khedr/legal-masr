@@ -34,7 +34,8 @@ export function useUpdateSettings() {
       }));
       return { previous };
     },
-    onError: (_error, _next, context) => queryClient.setQueryData(SETTINGS_QUERY_KEY, context?.previous),
+    onError: (_error, _next, context) =>
+      queryClient.setQueryData(SETTINGS_QUERY_KEY, context?.previous),
     onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
   });
 }

@@ -33,7 +33,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     const child = children as ReactElement<{ className?: string }>;
     return cloneElement(child, { className: cn(classes, child.props.className) });
   }
-  return <button ref={ref} className={classes} {...props}>{children}</button>;
+  return (
+    <button ref={ref} className={classes} {...props}>
+      {children}
+    </button>
+  );
 });
 
 export { buttonVariants };

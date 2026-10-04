@@ -40,6 +40,16 @@ impl AppState {
             .ok_or(Error::AttachmentSourceMissing)
     }
 
+    /// Native-picker source paths are transient capabilities. They must not
+    /// survive a vault lock, even though they are not persisted in the vault.
+    pub fn clear_document_sources(&self) -> Result<(), Error> {
+        self.selected_document_sources
+            .lock()
+            .map_err(|_| Error::Operation)?
+            .clear();
+        Ok(())
+    }
+
     /// Serializes managed attachment mutations with snapshot and restore work so
     /// a backup never contains a database/file-system split view.
     pub fn lock_attachment_operations(&self) -> Result<MutexGuard<'_, ()>, Error> {
@@ -70,6 +80,18 @@ mod tests {
         assert_eq!(state.take_document_source(&token).unwrap(), path);
         assert!(state.take_document_source(&token).is_err());
         assert!(state.take_document_source("fabricated-token").is_err());
+    }
+
+    #[test]
+    fn clearing_removes_unconsumed_document_source_tokens() {
+        let state = AppState::default();
+        let token = state
+            .store_document_source(PathBuf::from("/selected-by-native-dialog.pdf"))
+            .unwrap();
+
+        state.clear_document_sources().unwrap();
+
+        assert!(state.take_document_source(&token).is_err());
     }
 
     #[test]
