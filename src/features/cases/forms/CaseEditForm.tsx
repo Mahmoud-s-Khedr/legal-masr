@@ -38,7 +38,7 @@ export function CaseEditForm({
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
       <CaseCoreFields register={register} control={control} />
       <div className="form-actions">
         <Button disabled={busy || formState.isSubmitting}>{t('cases.save')}</Button>

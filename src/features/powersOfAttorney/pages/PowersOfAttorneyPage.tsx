@@ -45,6 +45,8 @@ export function PowersOfAttorneyPage() {
       </div>
       {powers.isLoading ? (
         <Skeleton className="table-message h-24" aria-label="جارٍ تحميل التوكيلات…" />
+      ) : powers.isError ? (
+        <p role="alert">تعذر تحميل التوكيلات. حاول مرة أخرى.</p>
       ) : !powers.data?.length ? (
         <Card className="empty-state-card">
           <strong>{query ? 'لا توجد توكيلات مطابقة' : 'لا توجد توكيلات بعد'}</strong>

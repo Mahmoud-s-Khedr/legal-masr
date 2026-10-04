@@ -1,63 +1,51 @@
 import { expect, test } from '@playwright/test';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { routes, languages, viewports, fixtureTime } from './visual-matrix.mjs';
 
-const output = 'docs/visual-baseline/shadcn-migration';
-const routes = [
-  ['onboarding', '/?captureOnboarding=1'],
-  ['dashboard', '/'],
-  ['clients', '/clients'],
-  ['client-detail', '/clients/demo-client-adel'],
-  ['new-client', '/clients/new'],
-  ['powers-of-attorney', '/powers-of-attorney'],
-  ['poa-detail', '/powers-of-attorney/demo-poa-1'],
-  ['cases', '/cases'],
-  ['case-detail', '/cases/demo-case-14'],
-  ['new-case', '/cases/new'],
-  ['agenda', '/calendar'],
-  ['tasks', '/tasks'],
-  ['attachments', '/attachments?case=demo-case-14'],
-  ['finances', '/finances?case=demo-case-14'],
-  ['backups', '/backups'],
-  ['settings', '/settings'],
-] as const;
-const viewports = [
-  { width: 1366, height: 768 },
-  { width: 1440, height: 900 },
-] as const;
-const languages = ['ar', 'en'] as const;
+for (const language of languages)
+  for (const viewport of viewports)
+    for (const [name, path, ready] of routes) {
+      test(`${name}-${language}-${viewport.width}x${viewport.height}`, async ({ page }) => {
+        await page.setViewportSize(viewport);
+        await page.clock.setFixedTime(new Date(fixtureTime));
+        await page.goto(`${path}${path.includes('?') ? '&' : '?'}captureLocale=${language}`);
+        await expect(page.locator(ready).first()).toBeVisible();
+        await expect(page.locator('html')).toHaveAttribute(
+          'dir',
+          language === 'ar' ? 'rtl' : 'ltr',
+        );
+        await page.evaluate(() => document.fonts.ready);
+        await page.evaluate(() =>
+          Promise.all(Array.from(document.images, (image) => image.decode())),
+        );
+        await expect(page.getByRole('alert')).toHaveCount(0);
+        if (process.env.VISUAL_LAYOUT_PROBE === '1' && name === 'dashboard')
+          await page.addStyleTag({ content: '.today-heading { padding-top: 120px !important; }' });
+        await expect(page).toHaveScreenshot(
+          `${name}-${language}-${viewport.width}x${viewport.height}.png`,
+          {
+            fullPage: true,
+            animations: 'disabled',
+            caret: 'hide',
+            threshold: 0.2,
+            maxDiffPixelRatio: 0.001,
+          },
+        );
+      });
+    }
 
-test('capture deterministic, redacted shadcn migration evidence', async ({ browser, baseURL }) => {
-  await mkdir(output, { recursive: true });
-  const manifest: Array<{ route: string; language: string; viewport: string; file: string }> = [];
-  for (const language of languages)
-    for (const viewport of viewports)
-      for (const [name, path] of routes) {
-        const page = await browser.newPage({
-          viewport,
-          locale: language === 'ar' ? 'ar-EG' : 'en-US',
-        });
-        const separator = path.includes('?') ? '&' : '?';
-        await page.goto(`${baseURL}${path}${separator}captureLocale=${language}`, {
-          waitUntil: 'networkidle',
-        });
-        await expect(page.locator('#root')).not.toBeEmpty();
-        const file = `${name}.${language}.${viewport.width}x${viewport.height}.png`;
-        await page.screenshot({ path: join(output, file), fullPage: true });
-        manifest.push({
-          route: path,
-          language,
-          viewport: `${viewport.width}x${viewport.height}`,
-          file,
-        });
-        await page.close();
-      }
-  await writeFile(
-    join(output, 'manifest.json'),
-    `${JSON.stringify({ fixture: 'fictional-capture-bridge-v1', captures: manifest }, null, 2)}\n`,
-  );
-  const saved = await readFile(join(output, 'manifest.json'), 'utf8');
-  expect(JSON.parse(saved).captures).toHaveLength(
-    routes.length * viewports.length * languages.length,
-  );
+test('keyboard route navigation and dialog focus return', async ({ page }) => {
+  await page.clock.setFixedTime(new Date(fixtureTime));
+  await page.goto('/?captureLocale=ar');
+  const clients = page.locator('nav a[href="/clients"]');
+  await clients.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/clients$/);
+  await expect(clients).toHaveClass(/active/);
+  await page.goto('/attachments?case=demo-case-14&captureLocale=ar');
+  const add = page.getByRole('button', { name: 'إضافة مرفق', exact: true });
+  await add.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(add).toBeFocused();
 });

@@ -1,0 +1,41 @@
+name: Visual regression
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: ''
+      require-approval:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    container: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22.21.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify:visual
+      - run: pnpm capture:visual
+      - name: Require approved baseline for release
+        if: inputs.require-approval
+        run: node scripts/verify-visual-manifest.mjs tests/visual/baseline --approved
+      - name: Retain visual failure evidence
+        if: failure()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: visual-failure-evidence
+          path: |
+            test-results/visual/
+            playwright-report/
+          retention-days: 7

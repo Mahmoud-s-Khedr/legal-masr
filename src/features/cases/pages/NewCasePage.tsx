@@ -8,7 +8,7 @@ import { CaseCreateForm } from '../forms/CaseCreateForm';
 export function NewCasePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: clients } = useClientList({ includeArchived: false });
+  const { data: clients, isLoading, isError } = useClientList({ includeArchived: false });
   const createCase = useCreateCase();
   return (
     <section className="record-editor">
@@ -20,9 +20,11 @@ export function NewCasePage() {
         </div>
       </div>
       <div className="editor-surface">
+        {isLoading && <p role="status">جارٍ تحميل الموكلين…</p>}
+        {isError && <p role="alert">تعذر تحميل الموكلين. حاول فتح النموذج مرة أخرى.</p>}
         <CaseCreateForm
           clients={clients ?? []}
-          busy={createCase.isPending}
+          busy={createCase.isPending || isLoading || isError}
           onCancel={() => navigate('/cases')}
           onSubmit={async (values) => {
             await createCase.mutateAsync({

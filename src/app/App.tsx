@@ -123,10 +123,15 @@ function AppContent() {
         <LocaleSync />
         <ReminderSync />
         <DemoDataSeeder />
+        {lockVault.isError && <p role="alert">{t('app.defaultError')}</p>}
         <Shell
           onLock={async () => {
-            await lockVault.mutateAsync();
-            setManualGate(null);
+            try {
+              await lockVault.mutateAsync();
+              setManualGate(null);
+            } catch {
+              // Keep the current gate and cache when the native lock is refused.
+            }
           }}
         />
       </>

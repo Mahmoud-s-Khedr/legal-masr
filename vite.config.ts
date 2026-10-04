@@ -12,6 +12,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    maxWorkers: 2,
     setupFiles: ['./src/test/setup.ts'],
     exclude: [
       '**/node_modules/**',
@@ -22,7 +23,7 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      reportsDirectory: './coverage',
+      reportsDirectory: './coverage/renderer',
       reporter: ['text', 'json-summary', 'lcov'],
       include: ['src/{app,bridge,components,features,i18n,lib}/**/*.{ts,tsx}'],
       exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/dev/**', 'src/main.tsx'],

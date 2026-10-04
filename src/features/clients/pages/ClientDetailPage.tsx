@@ -28,6 +28,7 @@ export function ClientDetailPage() {
   const archive = useArchiveClient();
   const restore = useRestoreClient();
   if (client.isLoading) return <p className="table-message">جارٍ التحميل…</p>;
+  if (client.isError) return <p role="alert">تعذر تحميل السجل. حاول مرة أخرى.</p>;
   if (!client.data) return <p className="table-message">الموكل غير موجود.</p>;
   const item = client.data;
   const linkedPowers =
@@ -35,6 +36,9 @@ export function ClientDetailPage() {
 
   return (
     <section className="entity-detail detail-workspace">
+      {(restore.isError || (archive.isError && !confirmArchive)) && (
+        <p role="alert">تعذر تغيير حالة السجل. حاول مرة أخرى.</p>
+      )}
       <header className="detail-hero">
         <div className="detail-avatar" aria-hidden="true">
           {item.fullName.trim().slice(0, 1)}
@@ -57,7 +61,7 @@ export function ClientDetailPage() {
         </div>
         <div className="detail-actions">
           {item.archivedAt ? (
-            <Button type="button" onClick={() => restore.mutate(id)}>
+            <Button type="button" disabled={restore.isPending} onClick={() => restore.mutate(id)}>
               استعادة
             </Button>
           ) : (
@@ -260,6 +264,8 @@ export function ClientDetailPage() {
         description="ستُخفى بيانات الموكل من القوائم الاعتيادية مع بقاء القضايا والسجلات محفوظة. يمكنك استعادته لاحقًا."
         confirmLabel="أرشفة الموكل"
         cancelLabel="إلغاء"
+        pending={archive.isPending}
+        error={archive.isError ? 'تعذر أرشفة السجل.' : undefined}
         onConfirm={() => archive.mutate(id, { onSuccess: () => setConfirmArchive(false) })}
       />
     </section>

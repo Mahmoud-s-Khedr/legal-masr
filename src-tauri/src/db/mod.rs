@@ -4,7 +4,9 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-use tauri::{AppHandle, Manager, Runtime};
+#[cfg(not(feature = "desktop-e2e"))]
+use tauri::Manager;
+use tauri::{AppHandle, Runtime};
 
 const SECURITY_FILE: &str = "security.json";
 const DB_FILE: &str = "legalmaster.sqlite";
@@ -15,6 +17,12 @@ const MIGRATIONS: &[(i64, &str)] = &[(
 )];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
+    #[cfg(feature = "desktop-e2e")]
+    let path = {
+        let _ = app;
+        crate::desktop_e2e::root()?.join("vault")
+    };
+    #[cfg(not(feature = "desktop-e2e"))]
     let path = app
         .path()
         .app_data_dir()

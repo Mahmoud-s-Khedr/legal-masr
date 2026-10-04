@@ -71,20 +71,36 @@ jobs:
           cargo test --all-features
       - name: Rust coverage
         run: pnpm test:rust:coverage
+      - name: Coverage floors
+        run: pnpm check:coverage
       - name: Upload coverage reports
+        if: always()
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: release-validation-coverage-reports
           path: |
-            coverage/coverage-summary.json
-            coverage/lcov.info
+            coverage/renderer/coverage-summary.json
+            coverage/renderer/lcov.info
             coverage/rust/lcov.info
+            coverage/rust/coverage.json
           if-no-files-found: error
           retention-days: 7
 
+  visual:
+    uses: ./.github/workflows/visual.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+      require-approval: true
+
+  desktop:
+    uses: ./.github/workflows/desktop.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+      full-matrix: true
+
   build:
     name: Build ${{ matrix.id }}
-    needs: validate
+    needs: [validate, visual, desktop]
     permissions:
       contents: read
     strategy:
@@ -156,6 +172,9 @@ jobs:
         with:
           tauriScript: pnpm tauri
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundle }}
+      - name: Verify production harness boundary
+        shell: bash
+        run: node scripts/verify-release-boundary.mjs "src-tauri/target/${{ matrix.target }}/release/legalmaster-solo${{ runner.os == 'Windows' && '.exe' || '' }}"
       - name: Verify Windows NSIS installer
         if: matrix.id == 'windows-x64'
         shell: pwsh

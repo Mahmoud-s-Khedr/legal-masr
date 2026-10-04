@@ -1,0 +1,254 @@
+import { remote } from 'webdriverio';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
+import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, access } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { resolve, join } from 'node:path';
+import { randomUUID, createHash } from 'node:crypto';
+import assert from 'node:assert/strict';
+const password = 'fictional desktop password 2026';
+const bytes = Buffer.from('%PDF-1.4\nFictional attachment for desktop validation only.\n');
+const binary = resolve(
+  process.env.LEGALMASTER_E2E_BINARY ||
+    `src-tauri/target/desktop-e2e/debug/legalmaster-solo${process.platform === 'win32' ? '.exe' : ''}`,
+);
+await access(binary);
+const unmarkedEnvironment = { ...process.env };
+delete unmarkedEnvironment.LEGALMASTER_E2E_ROOT;
+delete unmarkedEnvironment.LEGALMASTER_E2E_NONCE;
+const refused = spawnSync(binary, [], {
+  env: unmarkedEnvironment,
+  stdio: 'ignore',
+  timeout: 15000,
+});
+assert.equal(refused.status, 2, 'Desktop harness must refuse unmarked launches');
+const results = [];
+async function scenario(name, exercise) {
+  const root = await mkdtemp(join(tmpdir(), 'legalmaster-desktop-e2e-'));
+  const nonce = randomUUID();
+  await writeFile(join(root, 'runner-marker'), nonce);
+  await mkdir(join(root, 'fixtures'));
+  await writeFile(join(root, 'fixtures/fictional.pdf'), bytes);
+  await writeFile(join(root, 'fixtures/corrupt.lmsbackup'), 'fictional corrupt archive');
+  const selection = (value) => writeFile(join(root, 'dialog-selection'), value);
+  await selection('attachment');
+  const driver = spawn('tauri-driver', [], {
+    env: { ...process.env, LEGALMASTER_E2E_ROOT: root, LEGALMASTER_E2E_NONCE: nonce },
+    stdio: 'ignore',
+  });
+  let driverError = false;
+  driver.on('error', () => {
+    driverError = true;
+  });
+  let browser;
+  let stage = 'driver-start';
+  const launch = async () => {
+    stage = 'launch';
+    browser = await remote({
+      hostname: '127.0.0.1',
+      port: 4444,
+      logLevel: 'silent',
+      connectionRetryCount: 0,
+      capabilities: { 'tauri:options': { application: binary } },
+    });
+    await browser.setTimeout({ implicit: 0 });
+    return browser;
+  };
+  const close = async () => {
+    if (browser) {
+      await browser.deleteSession();
+      browser = undefined;
+    }
+  };
+  const click = async (text) => {
+    stage = `click:${text}`;
+    const element = await browser.$(`//button[normalize-space(.)=${JSON.stringify(text)}]`);
+    await element.waitForDisplayed({ timeout: 15000 });
+    await element.scrollIntoView();
+    await element.waitForClickable({ timeout: 15000 });
+    await element.click();
+  };
+  const nav = async (href) => {
+    stage = 'navigation';
+    const link = await browser.$(`nav a[href="${href}"]`);
+    await link.waitForClickable({ timeout: 15000 });
+    await link.click();
+  };
+  const input = async (name, value) => {
+    stage = `input:${name}`;
+    const element = await browser.$(`input[name="${name}"]`);
+    await element.waitForDisplayed({ timeout: 15000 });
+    await element.setValue(value);
+  };
+  const waitText = async (text) => {
+    await browser
+      .$(`//*[normalize-space(text())=${JSON.stringify(text)}]`)
+      .waitForDisplayed({ timeout: 15000 });
+  };
+  const initialize = async () => {
+    await input('fullName', 'محامٍ خيالي');
+    await input('password', password);
+    await click('إنشاء الخزنة');
+    await click('حفظته في مكان آمن');
+    await browser.$('nav').waitForDisplayed({ timeout: 15000 });
+  };
+  const unlock = async () => {
+    await input('password', password);
+    await click('فتح الخزنة');
+    await browser.$('nav').waitForDisplayed({ timeout: 15000 });
+  };
+  const client = async (number) => {
+    await nav('/clients');
+    await click('موكل جديد');
+    await input('internalNumber', number);
+    await input('fullName', `موكل خيالي ${number}`);
+    await click('حفظ');
+    await browser.$(`a*=${`موكل خيالي ${number}`}`).waitForDisplayed({ timeout: 15000 });
+  };
+  try {
+    for (let attempt = 0; attempt < 100; attempt++) {
+      if (driverError || driver.exitCode !== null) throw new Error('DESKTOP_DRIVER_UNAVAILABLE');
+      try {
+        if ((await fetch('http://127.0.0.1:4444/status')).ok) break;
+      } catch {
+        /* driver is starting */
+      }
+      await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+    }
+    await launch();
+    await exercise({
+      root,
+      selection,
+      launch,
+      close,
+      click,
+      nav,
+      input,
+      waitText,
+      initialize,
+      unlock,
+      client,
+      get browser() {
+        return browser;
+      },
+    });
+    await close();
+    results.push({ scenario: name, result: 'passed' });
+  } catch {
+    const message = browser
+      ? await browser
+          .$('.error')
+          .getText()
+          .catch(() => '')
+      : '';
+    const diagnostic =
+      {
+        'ملف النسخة الاحتياطية غير صالح.': 'BACKUP_CORRUPTED',
+        'تعذر إتمام العملية بأمان.': 'OPERATION_FAILED',
+      }[message] || 'NO_ALLOWLISTED_DIAGNOSTIC';
+    results.push({
+      scenario: name,
+      result: 'failed',
+      code: 'DESKTOP_SCENARIO_FAILED',
+      stage,
+      diagnostic,
+    });
+    // WebDriver exceptions may include secret input, paths, or DOM. Never print them.
+  } finally {
+    await close().catch(() => undefined);
+    if (driver.exitCode === null && !driverError) {
+      const exited = once(driver, 'exit');
+      driver.kill();
+      await Promise.race([exited, new Promise((r) => setTimeout(r, 5000))]);
+    }
+    await rm(root, { recursive: true, force: true });
+  }
+}
+await scenario('initialize-client-case-attachment-backup-restore', async (h) => {
+  await h.initialize();
+  await h.client('E2E-ORIGINAL');
+  await h.nav('/cases');
+  await h.click('قضية جديدة');
+  await h.input('internalNumber', 'E2E-CASE');
+  await h.browser.$('[role="checkbox"]').waitForDisplayed();
+  await h.browser.$('[role="checkbox"]').click();
+  await h.click('حفظ');
+  const caseLink = await h.browser.$('a*=E2E-CASE');
+  await caseLink.waitForDisplayed({ timeout: 15000 });
+  await caseLink.click();
+  await h.click('المرفقات');
+  await h.click('إضافة مرفق');
+  await h.click('اختيار ملف');
+  await h.waitText('fictional.pdf');
+  await h.click('إضافة المرفق');
+  await h.browser.$('.attachment-rows').waitForDisplayed({ timeout: 15000 });
+  await h.nav('/backups');
+  await h.click('إنشاء نسخة احتياطية الآن');
+  await h.waitText('تم إنشاء النسخة الاحتياطية بنجاح.');
+  await h.client('E2E-AFTER');
+  await h.selection('backup');
+  await h.nav('/backups');
+  await h.click('استعادة من نسخة احتياطية');
+  await h.click('تأكيد الاستعادة');
+  await h.browser.$('.gate').waitForDisplayed({ timeout: 15000 });
+  await h.unlock();
+  await h.nav('/clients');
+  await h.browser.$('a*=E2E-ORIGINAL').waitForDisplayed();
+  assert.equal(await h.browser.$('a*=E2E-AFTER').isExisting(), false);
+  await h.nav('/cases');
+  await h.browser.$('a*=E2E-CASE').click();
+  await h.click('المرفقات');
+  await h.waitText('fictional.pdf');
+  await h.close();
+  const managed = await readdir(join(h.root, 'vault/attachments'));
+  assert.equal(managed.length, 1);
+  assert.deepEqual(await readFile(join(h.root, 'vault/attachments', managed[0])), bytes);
+  assert.deepEqual(await readFile(join(h.root, 'fixtures/fictional.pdf')), bytes);
+});
+await scenario('wrong-password-refusal', async (h) => {
+  await h.initialize();
+  await h.click('قفل التطبيق');
+  await h.input('password', 'fictional incorrect password');
+  await h.click('فتح الخزنة');
+  await h.browser.$('[role="alert"]').waitForDisplayed();
+  assert.equal(await h.browser.$('nav').isExisting(), false);
+  await h.unlock();
+});
+for (const choice of ['cancel', 'corrupt'])
+  await scenario(`${choice}-restore-preserves-active-data`, async (h) => {
+    await h.initialize();
+    await h.client('E2E-PRESERVED');
+    await h.selection(choice);
+    await h.nav('/backups');
+    await h.click('استعادة من نسخة احتياطية');
+    await h.click('تأكيد الاستعادة');
+    await h.browser.$('.error').waitForDisplayed({ timeout: 15000 });
+    await h.nav('/clients');
+    await h.browser.$('a*=E2E-PRESERVED').waitForDisplayed();
+  });
+await scenario('restart-persistence', async (h) => {
+  await h.initialize();
+  await h.client('E2E-PERSISTENT');
+  await h.close();
+  await h.launch();
+  await h.unlock();
+  await h.nav('/clients');
+  await h.browser.$('a*=E2E-PERSISTENT').waitForDisplayed();
+});
+await mkdir('test-results/desktop', { recursive: true });
+await writeFile(
+  'test-results/desktop/results.json',
+  JSON.stringify(
+    {
+      platform: process.platform,
+      binarySha256: createHash('sha256')
+        .update(await readFile(binary))
+        .digest('hex'),
+      results,
+    },
+    null,
+    2,
+  ),
+);
+for (const result of results) console.log(`${result.scenario}: ${result.result}`);
+if (results.some((result) => result.result !== 'passed')) process.exitCode = 1;

@@ -1,0 +1,585 @@
+{
+  "status": "candidate",
+  "fixture": "fictional-capture-bridge-v2",
+  "fixtureTime": "2026-10-03T09:00:00Z",
+  "environment": "Ubuntu 24.04 / Playwright 1.63.0 Chromium / Africa/Cairo / light",
+  "imageDigest": "sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27",
+  "captures": [
+    {
+      "route": "/?captureOnboarding=1",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "onboarding-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "d5cd7e47184858f09e95064c1a593472dc30997e26a8be57eeb5d24e39aaca58"
+    },
+    {
+      "route": "/?captureOnboarding=1",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "onboarding-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "b3dbe013cbf2316bbdbbd5835067c33bb7db59e2b0d5e710d921a80546f33797"
+    },
+    {
+      "route": "/?captureOnboarding=1",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "onboarding-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "a1740a916266a07096cfdedefd9cd09581f3de109c3fffaef6b4a9e21a3e8d47"
+    },
+    {
+      "route": "/?captureOnboarding=1",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "onboarding-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5e262095f8d6ecd6401d7b3adcaf99282c0cbb9437b59bcf4b7148ac1c502a44"
+    },
+    {
+      "route": "/",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "dashboard-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "81d7d522cec81cbdaf5695ff751e56ee8df3b74737fa7a4f12c8e29ec6a31232"
+    },
+    {
+      "route": "/",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "dashboard-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "954c3030a409f911be88f4ca4fa6a9f437113dcafc6528307536debee20c38fa"
+    },
+    {
+      "route": "/",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "dashboard-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "448ad713dcc54bbc37cde3245d482541c2f6842086aa3859873908c776ed3566"
+    },
+    {
+      "route": "/",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "dashboard-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e1c57095daebac70032852e0d791b4a3a764f58428aa1787698e8694dbd58d03"
+    },
+    {
+      "route": "/clients",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "clients-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "db02a05737834d3621279c46cac516c032c19afbcee6582909e117867a48dfa5"
+    },
+    {
+      "route": "/clients",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "clients-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5db88735a9965edfa59d04ab993c43b128b6ea6969b29b0078fad52cd76d9351"
+    },
+    {
+      "route": "/clients",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "clients-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "9cd10f5d30be16f9a8f25d7d4abb9c91eb67cb49c6a542602276d859efa0ae18"
+    },
+    {
+      "route": "/clients",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "clients-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "43314004b01b8e200861967a98b1d6703226d2d8c01813bd3d19a658fc883a36"
+    },
+    {
+      "route": "/clients/demo-client-adel",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "client-detail-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "8b6e6da0600edd4478ae1058856f8a4e21b1d184d9e38d8bbe442d9aff39479b"
+    },
+    {
+      "route": "/clients/demo-client-adel",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "client-detail-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4bc08c55e39312eb1564b21d8b3facab395083792bfe320439bbfda2ba0c3e19"
+    },
+    {
+      "route": "/clients/demo-client-adel",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "client-detail-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "2fee764f45a50f44801c55d892c2694818265150c068f3847bdf2796c415ebd4"
+    },
+    {
+      "route": "/clients/demo-client-adel",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "client-detail-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "aa0c9695e75ce9fcfd79b6b9a17c61394d2aa4ba1e13291f069a158ac46433a8"
+    },
+    {
+      "route": "/clients/new",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "new-client-ar-1366x768.png",
+      "width": 1366,
+      "height": 1223,
+      "sha256": "615c8f4e28fde190b4d8c4a79520191ac25a02827e03f633b23bf9dfb33d35b4"
+    },
+    {
+      "route": "/clients/new",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "new-client-ar-1440x900.png",
+      "width": 1440,
+      "height": 1224,
+      "sha256": "2b7b185196f98be881fd6d73534afe6964b338dc68ab371834562bf424b989dd"
+    },
+    {
+      "route": "/clients/new",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "new-client-en-1366x768.png",
+      "width": 1366,
+      "height": 1223,
+      "sha256": "339997c774a48d873b4446708a7c9570439e0a31ac85e788dd939b70881ebe29"
+    },
+    {
+      "route": "/clients/new",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "new-client-en-1440x900.png",
+      "width": 1440,
+      "height": 1224,
+      "sha256": "624d981c152ac1ebdede1b221808a39c801d30be5f235488b8ecee030c512aed"
+    },
+    {
+      "route": "/powers-of-attorney",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "powers-of-attorney-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "e421d28304e0abeb5341a000f2e53ec17ef0ee121fd7a78d92e45d0474b627ce"
+    },
+    {
+      "route": "/powers-of-attorney",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "powers-of-attorney-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "aabf8e0427a4683325771542c84f3ad35bd617c3b5453b4a26d88af9a9338ea1"
+    },
+    {
+      "route": "/powers-of-attorney",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "powers-of-attorney-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "dccbd074e8ee3ce7d26036860787f632461600168d434d71d1453e18bad53cfe"
+    },
+    {
+      "route": "/powers-of-attorney",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "powers-of-attorney-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "79d2cff12dbd48b9c602d563346b4a3bf54d72a87a25da49849ff43655bc4d3e"
+    },
+    {
+      "route": "/powers-of-attorney/demo-poa-1",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "poa-detail-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "d50750afedcff494436dc07349eba68609ceed2cab0789c34519dbd2a92c0e60"
+    },
+    {
+      "route": "/powers-of-attorney/demo-poa-1",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "poa-detail-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "aa54b8eea655b3be3540808eadc4e4800a35f3eee15ad3970fbca2bca2a108cc"
+    },
+    {
+      "route": "/powers-of-attorney/demo-poa-1",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "poa-detail-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "e6916ebdf9bfb2ff6d1219e52018c8871da254a0b8c18af59f7b9c8994852521"
+    },
+    {
+      "route": "/powers-of-attorney/demo-poa-1",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "poa-detail-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "b2d2b266b950ec5c87920ddc3bc3023ed2f0be056af29ceaa73b9e5eef639ba5"
+    },
+    {
+      "route": "/cases",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "cases-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "08fffdf5fbc4c31ea157911abe40e9bc1ecc0b8feb97869f374c89c7665804c3"
+    },
+    {
+      "route": "/cases",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "cases-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "489b3259d6809058fbbf6b6b4f9d123d1b08b20a8ee79e5a99641512389f02c8"
+    },
+    {
+      "route": "/cases",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "cases-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "d17224e270a001362ec5d06211fdc07830d020f578a069c66bd14c7c38fb09b3"
+    },
+    {
+      "route": "/cases",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "cases-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "b216a74a435953a6fa874deffa233282390bfdc5d2b59a905a7e85d9e3e153f1"
+    },
+    {
+      "route": "/cases/demo-case-14",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "case-detail-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "a7aaf6332d5a13dd22f71b095373456dec1a47c13170d180d69e359c86f8f51a"
+    },
+    {
+      "route": "/cases/demo-case-14",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "case-detail-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "aacca055cf910c9f0ba2494ae7b0e8ad4aa0fca8cc6feb24f0e0f173ea537310"
+    },
+    {
+      "route": "/cases/demo-case-14",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "case-detail-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "48a23b5d96853ae5055f654c14bcf796d6605a55611d7431dce0f0c95b768e15"
+    },
+    {
+      "route": "/cases/demo-case-14",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "case-detail-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9fca21b2575e7a66a9f09281f52fb7a031858d3d70a7dca1d13e0a93b6ba0756"
+    },
+    {
+      "route": "/cases/new",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "new-case-ar-1366x768.png",
+      "width": 1366,
+      "height": 1868,
+      "sha256": "faaa319b4806d2f5bc532a6c33f2896f08be24a01410dfeaa86d96807d94a0de"
+    },
+    {
+      "route": "/cases/new",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "new-case-ar-1440x900.png",
+      "width": 1440,
+      "height": 1869,
+      "sha256": "97970b1e5f734bb7789eedb0b26ae2e6331ebdef8b46430603740f93bc00a23c"
+    },
+    {
+      "route": "/cases/new",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "new-case-en-1366x768.png",
+      "width": 1366,
+      "height": 1868,
+      "sha256": "8b593747ba0b5373c7dff4d82df05821140b6b2d464f59941e485768b6b7a561"
+    },
+    {
+      "route": "/cases/new",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "new-case-en-1440x900.png",
+      "width": 1440,
+      "height": 1869,
+      "sha256": "0563362ebc5e2e3b11bb108f696e435016493def0191f85bea8c105aa3b381be"
+    },
+    {
+      "route": "/calendar",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "agenda-ar-1366x768.png",
+      "width": 1366,
+      "height": 1086,
+      "sha256": "96893836500846570f65809c2a59f1cc20f2f4ca5aafe5715819d18ec66a30f8"
+    },
+    {
+      "route": "/calendar",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "agenda-ar-1440x900.png",
+      "width": 1440,
+      "height": 1086,
+      "sha256": "c5ba254e790587b3ddea81266d1659692fce5c1f32bd8acde27717298f66195e"
+    },
+    {
+      "route": "/calendar",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "agenda-en-1366x768.png",
+      "width": 1366,
+      "height": 1086,
+      "sha256": "5917553456a61ffedf337636fd4b308b8e970327036a3c68ee6cd06251683496"
+    },
+    {
+      "route": "/calendar",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "agenda-en-1440x900.png",
+      "width": 1440,
+      "height": 1086,
+      "sha256": "4e2fcf38e8912aef161e64bae59e9c8953e84a66993d4c12e8eda9a960879390"
+    },
+    {
+      "route": "/tasks",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "tasks-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "fccdcd703692fed6e8fada8a09f66d231d4aa23b0bb3797dd115092edf44802a"
+    },
+    {
+      "route": "/tasks",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "tasks-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "1f66a7b89cd629fa5776589cdc234d7c627416f671dbd73c775a07618d657e50"
+    },
+    {
+      "route": "/tasks",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "tasks-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "43e222f343fe236547039b6e46812279fd9156a99e337324a9c7d8916b5598aa"
+    },
+    {
+      "route": "/tasks",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "tasks-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "c70981679b43f6e744e2f1e5bd4d6b7dbe9590b8d262c2285c802578998e7367"
+    },
+    {
+      "route": "/attachments?case=demo-case-14",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "attachments-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "0731dab9a84ecdf24c7d38e1f4fd2d52fe9a2e8d9963d711d9e6f9854293a6c0"
+    },
+    {
+      "route": "/attachments?case=demo-case-14",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "attachments-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "173324cebdb8a2de0ad61e961fc516c3fc66051853f7df63c8d41c200e1c81dd"
+    },
+    {
+      "route": "/attachments?case=demo-case-14",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "attachments-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "1aa50b512113f237e5059c4b5ac878e4dfa63bdd5c296bf09443e8734a81a899"
+    },
+    {
+      "route": "/attachments?case=demo-case-14",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "attachments-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "236448ef1cc31adae045942147e1ba36f3ea4ecbc69ce3e436c5d2dfb01084d3"
+    },
+    {
+      "route": "/finances?case=demo-case-14",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "finances-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "5232b251cac59cc119b17f5f27950072f819d2db7e4f6658358793e1878b0503"
+    },
+    {
+      "route": "/finances?case=demo-case-14",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "finances-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "1aa93a213d581bf036fa7a0b39e553df1cf50b32da3e732a242307c0fdc1c191"
+    },
+    {
+      "route": "/finances?case=demo-case-14",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "finances-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "8a6eaf3928d40fecd69f76ca220c17df48db87cdbe7c44c7d143059fd021ec50"
+    },
+    {
+      "route": "/finances?case=demo-case-14",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "finances-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "538d8323fcfc831e620b777d70362a0d3c7fee796252ac2990020133c1c99088"
+    },
+    {
+      "route": "/backups",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "backups-ar-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "18a57f3c6a19c1c9b7de24d569a546cf971eb87ea040942e1b89adb19b614dcd"
+    },
+    {
+      "route": "/backups",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "backups-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4ca8e21f242e7c10389b931bf154fb0e851c6d607f2bd1455c113d2f8ba54146"
+    },
+    {
+      "route": "/backups",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "backups-en-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "6733fff09d1796ca013bd47f31fc6ab7db3126de992bf4c21a75275c306578dd"
+    },
+    {
+      "route": "/backups",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "backups-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "14425ae3a3a9365c2dc12f67e0b7a5fc42dbfa3418fe5b084d9479fb5c756198"
+    },
+    {
+      "route": "/settings",
+      "language": "ar",
+      "viewport": "1366x768",
+      "file": "settings-ar-1366x768.png",
+      "width": 1366,
+      "height": 773,
+      "sha256": "e3600fbd4f36ff7d95fac640748a85916a8a2682da3bc40f761db07080996428"
+    },
+    {
+      "route": "/settings",
+      "language": "ar",
+      "viewport": "1440x900",
+      "file": "settings-ar-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "3aae221421c6278f8f3e90e4a8ccb466d5a5db65cb6a0609e6e88e6c68a89b2d"
+    },
+    {
+      "route": "/settings",
+      "language": "en",
+      "viewport": "1366x768",
+      "file": "settings-en-1366x768.png",
+      "width": 1366,
+      "height": 773,
+      "sha256": "1d83a6522836a818da9e9e929a81999d5024a3b59471698c8da4cc1728d48a95"
+    },
+    {
+      "route": "/settings",
+      "language": "en",
+      "viewport": "1440x900",
+      "file": "settings-en-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "7f1c774102d2e1b8471450d4d4647841c3fdd31596a0f5baf0751cd53634f890"
+    }
+  ]
+}

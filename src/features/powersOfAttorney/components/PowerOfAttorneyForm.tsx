@@ -59,17 +59,22 @@ export function PowerOfAttorneyForm({
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const date = String(data.get('issueDate') ?? '').trim();
-        await onSubmit({
-          internalSequence: String(data.get('internalSequence') ?? '').trim(),
-          officialNumber: String(data.get('officialNumber') ?? '').trim() || undefined,
-          // Keep the legacy summary year in sync without asking the user for the same fact twice.
-          issueYear: date ? Number(date.slice(0, 4)) : undefined,
-          issueDate: date || undefined,
-          notaryOffice: String(data.get('notaryOffice') ?? '').trim() || undefined,
-          notes: String(data.get('notes') ?? '').trim() || undefined,
-          clientIds: selectedClientIds,
-          lawyers,
-        });
+        if (busy) return;
+        try {
+          await onSubmit({
+            internalSequence: String(data.get('internalSequence') ?? '').trim(),
+            officialNumber: String(data.get('officialNumber') ?? '').trim() || undefined,
+            // Keep the legacy summary year in sync without asking the user for the same fact twice.
+            issueYear: date ? Number(date.slice(0, 4)) : undefined,
+            issueDate: date || undefined,
+            notaryOffice: String(data.get('notaryOffice') ?? '').trim() || undefined,
+            notes: String(data.get('notes') ?? '').trim() || undefined,
+            clientIds: selectedClientIds,
+            lawyers,
+          });
+        } catch {
+          // The parent mutation displays the failure; keep all entered values.
+        }
       }}
     >
       <div className="settings-two-columns">

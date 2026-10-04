@@ -3,6 +3,7 @@ use crate::{
     services::app_service, state::AppState,
 };
 use tauri::{AppHandle, Runtime};
+#[cfg(not(feature = "desktop-e2e"))]
 use tauri_plugin_dialog::DialogExt;
 
 pub fn create<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<String, Error> {
@@ -53,6 +54,12 @@ pub fn latest_successful<R: Runtime>(
 }
 
 fn choose_backup<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, Error> {
+    #[cfg(feature = "desktop-e2e")]
+    {
+        let _ = app;
+        crate::desktop_e2e::selection("backup")
+    }
+    #[cfg(not(feature = "desktop-e2e"))]
     app.dialog()
         .file()
         .add_filter("LegalMaster backup", &["lmsbackup"])

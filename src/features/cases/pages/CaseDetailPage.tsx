@@ -1,3 +1,4 @@
+import { localDateOnly } from '../../../lib/dateOnly';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { ExpenseDto, HearingDto, PaymentDto, TaskDto } from '../../../bridge/types';
@@ -67,11 +68,15 @@ export function CaseDetailPage() {
   const saveHearing = useSaveHearing();
   const recordDecision = useRecordHearingDecision();
   if (item.isLoading) return <p>جارٍ التحميل…</p>;
+  if (item.isError) return <p role="alert">تعذر تحميل السجل. حاول مرة أخرى.</p>;
   if (!item.data) return <p>القضية غير موجودة.</p>;
   const caseDto = item.data;
   const nextHearing = hearings.data?.find((hearing) => hearing.status === 'SCHEDULED');
   return (
     <section className="entity-detail">
+      {(archive.isError || restore.isError) && (
+        <p role="alert">تعذر تغيير حالة السجل. حاول مرة أخرى.</p>
+      )}
       <header className="detail-hero">
         <div>
           <p className="kicker">قضية</p>
@@ -91,11 +96,14 @@ export function CaseDetailPage() {
             تعديل
           </Button>
           {caseDto.archivedAt ? (
-            <Button onClick={() => restore.mutate(id)}>استعادة</Button>
+            <Button disabled={restore.isPending} onClick={() => restore.mutate(id)}>
+              استعادة
+            </Button>
           ) : (
             <Button
               variant="secondary"
               className="secondary-button"
+              disabled={archive.isPending}
               onClick={() => archive.mutate(id)}
             >
               أرشفة
@@ -378,11 +386,7 @@ export function CaseDetailPage() {
           <HearingForm
             initial={hearingEditor === 'new' ? undefined : hearingEditor}
             initialCaseId={id}
-            initialDate={
-              hearingEditor === 'new'
-                ? new Date().toISOString().slice(0, 10)
-                : hearingEditor.hearingDate
-            }
+            initialDate={hearingEditor === 'new' ? localDateOnly() : hearingEditor.hearingDate}
             busy={saveHearing.isPending}
             onCancel={() => setHearingEditor(null)}
             onSave={async (input) => {

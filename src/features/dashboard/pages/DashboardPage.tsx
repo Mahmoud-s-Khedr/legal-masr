@@ -19,6 +19,10 @@ export function DashboardPage() {
   });
   const clients = useClientList({});
   const cases = useCaseList({});
+  if (agenda.isLoading || clients.isLoading || cases.isLoading)
+    return <p role="status">جارٍ تحميل لوحة اليوم…</p>;
+  if (agenda.isError || clients.isError || cases.isError)
+    return <p role="alert">تعذر تحميل لوحة اليوم. حاول مرة أخرى.</p>;
   return (
     <section className="dashboard-ledger">
       <header className="today-heading">
@@ -91,6 +95,23 @@ export function DashboardPage() {
           </ul>
         ) : (
           <p>{t('dashboard.noOverdue')}</p>
+        )}
+      </Card>
+      <Card className="register-section">
+        <h3>{t('dashboard.upcomingHearings')}</h3>
+        {agenda.data?.upcomingHearings.length ? (
+          <ul>
+            {agenda.data.upcomingHearings.map((hearing) => (
+              <li key={hearing.id}>
+                <Link to={`/calendar?hearing=${hearing.id}`}>
+                  <bdi>{hearing.hearingDate}</bdi> ·{' '}
+                  {hearing.hearingType ?? t('dashboard.legalEvent')}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>{t('dashboard.noUpcomingHearings')}</p>
         )}
       </Card>
       <div className="dashboard-registers">

@@ -246,3 +246,32 @@ describe('application gate', () => {
     expect(bridge.settings).not.toHaveBeenCalled();
   });
 });
+
+it('keeps the unlocked gate and records when the native lock fails', async () => {
+  vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+  vi.mocked(bridge.settings).mockResolvedValue({
+    language: 'ar',
+    theme: 'light',
+    dateFormat: 'yyyy-MM-dd',
+    weekStartsOn: 6,
+    defaultReminderMinutes: 60,
+    autostartEnabled: false,
+    lockTimeoutMinutes: 15,
+    usageCountersEnabled: false,
+  });
+  vi.mocked(bridge.lock).mockRejectedValueOnce({
+    code: 'OPERATION_FAILED',
+    message: 'تعذر إتمام العملية.',
+    details: null,
+  });
+  queryClient.clear();
+  render(<App />);
+  await screen.findByRole('heading', { name: 'اليوم' });
+  queryClient.setQueryData(queryKeys.clients.list({}), [
+    { id: 'fictional-client', fullName: 'موكل خيالي' },
+  ]);
+  fireEvent.click(screen.getAllByRole('button', { name: 'قفل التطبيق' })[0]);
+  expect(await screen.findByRole('alert')).toBeVisible();
+  expect(screen.getByRole('heading', { name: 'اليوم' })).toBeVisible();
+  expect(queryClient.getQueryData(queryKeys.clients.list({}))).toBeDefined();
+});

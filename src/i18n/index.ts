@@ -1,5 +1,6 @@
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { captureModeEnabled } from '../dev/captureBridge';
 import ar from './ar/common.json';
 import en from './en/common.json';
 
@@ -12,7 +13,11 @@ export function applyDocumentDirection(language: string) {
 
 void i18next.use(initReactI18next).init({
   resources: { ar: { common: ar }, en: { common: en } },
-  lng: 'ar',
+  lng:
+    captureModeEnabled() &&
+    new URLSearchParams(window.location.search).get('captureLocale') === 'en'
+      ? 'en'
+      : 'ar',
   fallbackLng: 'ar',
   defaultNS: 'common',
   interpolation: { escapeValue: false },

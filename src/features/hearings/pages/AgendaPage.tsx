@@ -3,14 +3,19 @@ import { useSearchParams } from 'react-router-dom';
 import type { HearingDto, HearingInput } from '../../../bridge/types';
 import { DatePicker } from '../../../components/ui/DatePicker';
 import { Button } from '../../../components/ui/button';
-import { Dialog } from '../../../components/ui/Dialog';
+import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
 import { Input } from '../../../components/ui/input';
 import { Tabs } from '../../../components/ui/Tabs';
 import { Select } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
 import { useCaseList } from '../../cases/api/casesApi';
 import { useTaskList } from '../../tasks/api/tasksApi';
-import { useHearings, useRecordHearingDecision, useSaveHearing } from '../api/hearingsApi';
+import {
+  useDeleteHearing,
+  useHearings,
+  useRecordHearingDecision,
+  useSaveHearing,
+} from '../api/hearingsApi';
 
 const pad = (value: number) => String(value).padStart(2, '0');
 const localDate = (date = new Date()) =>
@@ -27,6 +32,8 @@ export function AgendaPage() {
   const [editing, setEditing] = useState<HearingDto | 'new' | null>(
     params.get('case') ? 'new' : null,
   );
+  const [removing, setRemoving] = useState<HearingDto | null>(null);
+  const remove = useDeleteHearing();
   const [deciding, setDeciding] = useState<HearingDto | null>(null);
   const hearings = useHearings({});
   const tasks = useTaskList({ view: 'ALL', referenceDate: '9999-12-31' });
@@ -54,6 +61,8 @@ export function AgendaPage() {
         ? new Date(current.getFullYear(), current.getMonth() + direction, 1)
         : plusDays(current, direction * 7),
     );
+  if (hearings.isLoading || tasks.isLoading) return <p role="status">جارٍ تحميل الأجندة…</p>;
+  if (hearings.isError || tasks.isError) return <p role="alert">تعذر تحميل الأجندة.</p>;
   return (
     <section className="calendar-page">
       <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
@@ -136,6 +145,12 @@ export function AgendaPage() {
                 {hearing.hearingTime ? <bdi>{hearing.hearingTime}</bdi> : 'طوال اليوم'} ·{' '}
                 {hearing.location ?? 'دون مكان'}
               </span>
+              <Button type="button" variant="ghost" onClick={() => setEditing(hearing)}>
+                تعديل الجلسة
+              </Button>
+              <Button type="button" variant="destructive" onClick={() => setRemoving(hearing)}>
+                حذف الجلسة
+              </Button>
               {hearing.status === 'SCHEDULED' ? (
                 <Button
                   type="button"
@@ -158,6 +173,21 @@ export function AgendaPage() {
           ))}
         </aside>
       </div>
+      <ConfirmDialog
+        open={Boolean(removing)}
+        onOpenChange={(open) => !open && setRemoving(null)}
+        title="حذف الجلسة"
+        description="سيُحذف سجل هذه الجلسة. راجع التاريخ والقضية قبل التأكيد."
+        confirmLabel="تأكيد الحذف"
+        cancelLabel="إلغاء"
+        destructive
+        pending={remove.isPending}
+        error={remove.isError ? 'تعذر حذف الجلسة.' : undefined}
+        onConfirm={() => {
+          if (removing && !remove.isPending)
+            remove.mutate(removing, { onSuccess: () => setRemoving(null) });
+        }}
+      />
       <Dialog
         open={Boolean(editing)}
         onOpenChange={(open) => !open && setEditing(null)}
@@ -180,7 +210,11 @@ export function AgendaPage() {
             }}
           />
         )}
-        {save.isError && <p className="error">تعذر حفظ الجلسة.</p>}
+        {save.isError && (
+          <p className="error" role="alert">
+            تعذر حفظ الجلسة.
+          </p>
+        )}
       </Dialog>
       <Dialog
         open={Boolean(deciding)}
@@ -202,7 +236,11 @@ export function AgendaPage() {
             }}
           />
         )}
-        {decide.isError && <p className="error">تعذر تسجيل القرار أو الجلسة التالية.</p>}
+        {decide.isError && (
+          <p className="error" role="alert">
+            تعذر تسجيل القرار أو الجلسة التالية.
+          </p>
+        )}
       </Dialog>
     </section>
   );

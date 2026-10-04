@@ -24,6 +24,10 @@ impl AppState {
     }
 
     pub fn store_document_source(&self, path: PathBuf) -> Result<String, Error> {
+        let key = self.master_key.lock().map_err(|_| Error::Locked)?;
+        if key.is_none() {
+            return Err(Error::Locked);
+        }
         let token = uuid::Uuid::new_v4().to_string();
         self.selected_document_sources
             .lock()
@@ -33,6 +37,10 @@ impl AppState {
     }
 
     pub fn take_document_source(&self, token: &str) -> Result<PathBuf, Error> {
+        let key = self.master_key.lock().map_err(|_| Error::Locked)?;
+        if key.is_none() {
+            return Err(Error::Locked);
+        }
         self.selected_document_sources
             .lock()
             .map_err(|_| Error::Operation)?
@@ -75,6 +83,7 @@ mod tests {
     #[test]
     fn document_source_tokens_are_one_time_capabilities() {
         let state = AppState::default();
+        *state.master_key.lock().unwrap() = Some([7; 32]);
         let path = PathBuf::from("/selected-by-native-dialog.pdf");
         let token = state.store_document_source(path.clone()).unwrap();
         assert_eq!(state.take_document_source(&token).unwrap(), path);
@@ -85,6 +94,7 @@ mod tests {
     #[test]
     fn clearing_removes_unconsumed_document_source_tokens() {
         let state = AppState::default();
+        *state.master_key.lock().unwrap() = Some([7; 32]);
         let token = state
             .store_document_source(PathBuf::from("/selected-by-native-dialog.pdf"))
             .unwrap();
@@ -99,5 +109,20 @@ mod tests {
         let state = AppState::default();
         let _guard = state.lock_security_operations().unwrap();
         assert!(state.security_operations.try_lock().is_err());
+    }
+    #[test]
+    fn locking_rejects_existing_tokens_and_late_picker_results() {
+        let state = AppState::default();
+        *state.master_key.lock().unwrap() = Some([7; 32]);
+        let token = state
+            .store_document_source(PathBuf::from("fictional.pdf"))
+            .unwrap();
+        crate::services::app_service::lock(&state).unwrap();
+        assert!(state.take_document_source(&token).is_err());
+        assert!(state
+            .store_document_source(PathBuf::from("fictional.pdf"))
+            .is_err());
+        *state.master_key.lock().unwrap() = Some([7; 32]);
+        assert!(state.take_document_source(&token).is_err());
     }
 }

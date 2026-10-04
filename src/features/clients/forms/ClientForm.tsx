@@ -26,7 +26,7 @@ export function ClientForm({
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
       <label>
         الرقم الداخلي
         <Input dir="ltr" {...register('internalNumber')} required autoFocus />

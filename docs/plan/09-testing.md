@@ -22,13 +22,49 @@ contracts, typed error mapping, canonical query invalidation including failure
 scope, forms, dialogs, task completion, payer filtering, optional expense
 links, Arabic RTL/mixed-direction rendering, and primary workflow pages.
 
-Report-only coverage is collected for production renderer code in `app`,
-`bridge`, `components`, `features`, `i18n`, and `lib`. Vitest writes a terminal
-summary, `coverage/coverage-summary.json`, and `coverage/lcov.info`. Rust
-coverage uses `cargo-llvm-cov` with all features and writes a terminal summary
-and `coverage/rust/lcov.info`. These reports are CI artifacts without a
-threshold in the current milestone; a stable baseline must be reviewed before
-any ratchet is introduced.
+Renderer coverage keeps the production scope in `app`, `bridge`, `components`,
+`features`, `i18n`, and `lib`, excluding tests and fixtures. Vitest writes
+`coverage/renderer/coverage-summary.json` and `coverage/renderer/lcov.info`.
+Rust coverage builds without desktop harness features, retains raw LLVM export
+and LCOV under `coverage/rust/`, and produces a production summary and LCOV.
+The scoped summary excludes integration files, inline test modules and the
+native harness, merging generic instantiations by source coordinates.
+
+`tests/coverage-policy.json` contains proposed floors derived from three clean
+runs of the same source tree. `pnpm check:coverage` enforces all seven metrics
+and fails on missing/malformed reports. Floors require explicit source review;
+CI never rewrites them. The dated evidence distinguishes the uncommitted tree
+measurements from validation on a final committed revision. Renderer cleanup
+cannot remove Rust reports because their output directories are separate.
+
+Playwright asserts 64 full-page screenshots across 16 routes, Arabic/English and
+1366×768/1440×900. It uses pinned Ubuntu 24.04 Chromium, a fixed fixture clock,
+Africa/Cairo, light theme, disabled animations, loaded fonts/images and route
+readiness checks. Threshold is 0.2; maximum differing-pixel ratio is 0.001.
+Tracked candidates and their checksummed manifest are in `tests/visual/baseline`;
+actuals, diffs, traces and HTML reports are ignored. `pnpm verify:visual` checks
+all combinations, safe filenames, PNG structure/dimensions and hashes. Use
+`pnpm update:visual:canonical` to propose a baseline and
+`pnpm capture:visual:canonical` to compare. CI only compares. Initial visual
+approval is pending; release validation requires an approved manifest. Original
+Stitch reference assets are absent from this checkout, so design parity remains
+unverified. Review the [candidate gallery](../../tests/visual/review.html).
+
+Native WebdriverIO journeys use `tauri-driver` on Linux/Windows, real IPC,
+SQLCipher and encryption. The compile-time `desktop-e2e` feature is disabled by
+default; `pnpm build:desktop:e2e` builds in a separate target directory. It
+refuses unmarked launches and uses a unique runner-created temporary vault and
+allowlisted dialog fixtures. `pnpm test:desktop` exercises initialization,
+records, attachments, backup/restore, locked gate, wrong passwords, cancelled
+and corrupt restore, and restart persistence. Reports contain sanitized outcomes
+and binary checksums only. No vaults, backups, secrets or security-screen captures
+are uploaded. Packaging binaries are scanned for harness markers.
+
+PRs run Linux smoke plus all visual comparisons. Nightly and release validation
+run Linux/Windows desktop suites three times; Windows matches its driver to the
+installed WebView2 version. macOS remains in the physical-device matrix.
+Failure evidence and coverage reports are retained for seven days, including
+when a coverage floor fails.
 
 ## Coverage map
 
@@ -44,15 +80,18 @@ application.
 | Build/package checks               | Type compatibility, lint/static rules, formatter conformance, and desktop packaging                                                          | compilation or bundle regressions; package creation is not a substitute for target-device testing                                                              |
 | Manual target-device matrix        | Native dialogs, OS notifications/autostart, sleep/resume locking, installer behavior, encrypted restore, and visual/accessibility quality    | OS-specific permission, lifecycle, rendering, install, and recovery failures that mocks cannot establish                                                       |
 
-The automated suite establishes contract and regression confidence. It does
-not claim physical Windows/macOS behavior, screenshot parity, or a real-world
-backup disaster exercise; those remain explicit manual release gates.
+The automated suite establishes contract and regression confidence. Candidate
+screenshot repeatability does not establish design approval, and disposable
+desktop journeys do not pass physical Windows/macOS or portable disaster-restore
+gates.
 
 ## Required validation commands
 
 Run format check, lint, typecheck, frontend tests, frontend coverage,
 frontend build, Rust format, clippy with warnings denied, full Cargo tests,
-Rust coverage, and a debug Tauri Debian build. The Phase 7 report records the
+Rust coverage, coverage-floor verification, baseline manifest verification,
+canonical visual comparisons, native desktop journeys, and a normal debug Tauri
+Debian build with a harness-boundary scan. The dated hardening report records the
 exact current run results. Failures must be fixed or described as an unresolved
 release risk; they must not be skipped.
 
@@ -69,5 +108,20 @@ release risk; they must not be skipped.
 | 1440×900 and 1366×768 visual comparison   |  Required | Required |    Required |            Required |
 
 No visual, notification, autostart, installer, or device claim is satisfied by
-unit tests alone. The current correction-plan closeout still needs fresh seeded
-viewport captures and physical Windows/macOS validation.
+unit tests alone. The current correction-plan closeout still needs approval of
+the seeded viewport baseline and physical Windows/macOS validation.
+
+## Physical-device handoff
+
+Use [the device runbook](../device-validation-runbook.md) and
+[the evidence template](../device-validation-template.md) on Windows 10,
+Windows 11, macOS Intel and Apple Silicon. All physical execution remains
+pending. Run three same-vault restore iterations per device. Windows↔macOS
+portable restore remains separately blocked: the current archive key requires
+the original random master key, not only the password. A copied security
+envelope must not be counted as a portability pass.
+
+See [the hardening evidence](../testing-hardening-report-2026-10-05.md) for actual
+counts, coverage, defects, artifacts and pending acceptance gates.
+Use [the continuation handoff](../test-hardening-handoff-2026-10-05.md) to resume
+the remaining approval, platform, coverage and engineering work.

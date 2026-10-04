@@ -26,7 +26,7 @@ export function NewClientPage() {
         setPendingValues(values);
         return;
       }
-      throw error;
+      // The mutation error is displayed below and the entered values remain.
     }
   };
 
@@ -62,7 +62,10 @@ export function NewClientPage() {
                 </li>
               ))}
             </ul>
-            <Button onClick={() => pendingValues && submit(pendingValues, true)}>
+            <Button
+              disabled={createClient.isPending}
+              onClick={() => pendingValues && void submit(pendingValues, true)}
+            >
               {t('clients.confirmCreate')}
             </Button>
           </div>

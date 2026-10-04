@@ -227,6 +227,11 @@ mod tests {
         assert!(matches!(state.unlocked(), Err(Error::Locked)));
         assert!(matches!(
             state.take_document_source(&token),
+            Err(Error::Locked)
+        ));
+        *state.master_key.lock().unwrap() = Some([7; 32]);
+        assert!(matches!(
+            state.take_document_source(&token),
             Err(Error::AttachmentSourceMissing)
         ));
     }

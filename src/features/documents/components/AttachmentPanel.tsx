@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { asAppError } from '../../../bridge/errors';
 import { bridge } from '../../../bridge/commands';
 import type { AttachmentCategory, AttachmentDto, AttachmentListInput } from '../../../bridge/types';
 import { DatePicker } from '../../../components/ui/DatePicker';
@@ -54,6 +55,13 @@ export function AttachmentPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [removing, setRemoving] = useState<AttachmentDto | null>(null);
 
+  const [pickerPending, setPickerPending] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const saving = useRef(false);
+  const picking = useRef(false);
+  const deleting = useRef(false);
+  const dialogGeneration = useRef(0);
+
   const reset = () => {
     setSource(null);
     setCategory('OTHER');
@@ -62,34 +70,70 @@ export function AttachmentPanel({
     setEditingId(null);
   };
   const close = () => {
+    if (saving.current) return;
+    dialogGeneration.current++;
     reset();
     setDialogOpen(false);
   };
   const selectSource = async () => {
-    const selection = await bridge.attachmentSelectSource();
-    setSource({ token: selection.sourceToken, filename: selection.filename });
+    if (picking.current || saving.current) return;
+    picking.current = true;
+    setPickerPending(true);
+    setActionError(null);
+    const generation = dialogGeneration.current;
+    try {
+      const selection = await bridge.attachmentSelectSource();
+      if (generation === dialogGeneration.current)
+        setSource({ token: selection.sourceToken, filename: selection.filename });
+    } catch (error) {
+      if (
+        generation === dialogGeneration.current &&
+        asAppError(error)?.code !== 'OPERATION_CANCELLED'
+      )
+        setActionError('تعذر اختيار الملف. حاول الاختيار مرة أخرى.');
+    } finally {
+      picking.current = false;
+      setPickerPending(false);
+    }
   };
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (editingId) {
-      await update.mutateAsync({
-        id: editingId,
-        category,
-        description: descriptionValue || undefined,
-        documentDate: documentDate || undefined,
-      });
+    if (saving.current || picking.current || (!editingId && !source)) return;
+    saving.current = true;
+    setActionError(null);
+    try {
+      if (editingId) {
+        await update.mutateAsync({
+          id: editingId,
+          category,
+          description: descriptionValue || undefined,
+          documentDate: documentDate || undefined,
+        });
+      } else if (source) {
+        const token = source.token;
+        // Rust consumes picker capabilities even when the copy fails.
+        setSource(null);
+        await add.mutateAsync({
+          ...owner,
+          sourceToken: token,
+          category,
+          description: descriptionValue || undefined,
+          documentDate: documentDate || undefined,
+        });
+      }
+      saving.current = false;
       close();
-      return;
+    } catch (error) {
+      setActionError(
+        editingId
+          ? 'تعذر حفظ بيانات المرفق. بيانات النموذج محفوظة للمحاولة مرة أخرى.'
+          : asAppError(error)?.code === 'ATTACHMENT_SOURCE_MISSING'
+            ? 'الملف المختار غير متاح. اختر الملف مرة أخرى؛ بيانات النموذج محفوظة.'
+            : 'تعذر نسخ المرفق. اختر الملف مرة أخرى؛ بيانات النموذج محفوظة.',
+      );
+    } finally {
+      saving.current = false;
     }
-    if (!source) return;
-    await add.mutateAsync({
-      ...owner,
-      sourceToken: source.token,
-      category,
-      description: descriptionValue || undefined,
-      documentDate: documentDate || undefined,
-    });
-    close();
   };
 
   return (
@@ -100,13 +144,24 @@ export function AttachmentPanel({
           <p className="muted">{description}</p>
         </div>
         {allowAdd && (
-          <Button type="button" className="compact-button" onClick={() => setDialogOpen(true)}>
+          <Button
+            type="button"
+            className="compact-button"
+            onClick={() => {
+              setActionError(null);
+              setDialogOpen(true);
+            }}
+          >
             إضافة مرفق
           </Button>
         )}
       </div>
       {attachments.isLoading ? (
         <p className="table-message">جارٍ تحميل المرفقات…</p>
+      ) : attachments.isError ? (
+        <p className="error" role="alert">
+          تعذر تحميل المرفقات. حاول فتح السجل مرة أخرى.
+        </p>
       ) : !attachments.data?.length ? (
         <p className="empty-compact">لا توجد مرفقات بعد.</p>
       ) : (
@@ -135,14 +190,30 @@ export function AttachmentPanel({
                 <Button
                   type="button"
                   className="text-button"
-                  onClick={() => open.mutate(attachment.id)}
+                  disabled={open.isPending}
+                  onClick={() => {
+                    setActionError(null);
+                    open.mutate(attachment.id, {
+                      onError: () =>
+                        setActionError(
+                          'تعذر فتح المرفق. تأكد من توفر النسخة المُدارة والتطبيق المناسب.',
+                        ),
+                    });
+                  }}
                 >
                   فتح
                 </Button>
                 <Button
                   type="button"
                   className="text-button"
-                  onClick={() => reveal.mutate(attachment.id)}
+                  disabled={reveal.isPending}
+                  onClick={() => {
+                    setActionError(null);
+                    reveal.mutate(attachment.id, {
+                      onError: () =>
+                        setActionError('تعذر إظهار المرفق. تأكد من توفر النسخة المُدارة.'),
+                    });
+                  }}
                 >
                   إظهار
                 </Button>
@@ -150,6 +221,7 @@ export function AttachmentPanel({
                   type="button"
                   className="text-button"
                   onClick={() => {
+                    setActionError(null);
                     setEditingId(attachment.id);
                     setCategory(attachment.category);
                     setDescriptionValue(attachment.description ?? '');
@@ -172,17 +244,17 @@ export function AttachmentPanel({
           ))}
         </ul>
       )}
-      {(add.isError || update.isError || remove.isError || open.isError || reveal.isError) && (
-        <p className="error" role="alert">
-          تعذر إتمام عملية المرفق. لم تُفقد بيانات النموذج.
-        </p>
-      )}
       <Dialog
         open={dialogOpen}
         onOpenChange={(openValue) => (openValue ? setDialogOpen(true) : close())}
         title={editingId ? 'تعديل بيانات المرفق' : 'إضافة مرفق'}
       >
-        <form className="dialog-form" onSubmit={save}>
+        <form className="dialog-form" onSubmit={(event) => void save(event)}>
+          {actionError && (
+            <p className="error" role="alert">
+              {actionError}
+            </p>
+          )}
           {!editingId && (
             <div className="document-pick">
               <span className="document-glyph" aria-hidden="true">
@@ -198,6 +270,7 @@ export function AttachmentPanel({
                 variant="secondary"
                 type="button"
                 className="secondary-button"
+                disabled={pickerPending || add.isPending || update.isPending}
                 onClick={() => void selectSource()}
               >
                 اختيار ملف
@@ -227,15 +300,30 @@ export function AttachmentPanel({
             />
           </label>
           <div className="dialog-actions">
-            <Button type="button" variant="secondary" className="secondary-button" onClick={close}>
+            <Button
+              type="button"
+              variant="secondary"
+              className="secondary-button"
+              disabled={add.isPending || update.isPending}
+              onClick={close}
+            >
               إلغاء
             </Button>
-            <Button disabled={add.isPending || update.isPending || (!editingId && !source)}>
+            <Button
+              disabled={
+                pickerPending || add.isPending || update.isPending || (!editingId && !source)
+              }
+            >
               {editingId ? 'حفظ البيانات' : 'إضافة المرفق'}
             </Button>
           </div>
         </form>
       </Dialog>
+      {!dialogOpen && !removing && actionError && (
+        <p className="error" role="alert">
+          {actionError}
+        </p>
+      )}
       <ConfirmDialog
         open={Boolean(removing)}
         onOpenChange={(openValue) => !openValue && setRemoving(null)}
@@ -244,9 +332,20 @@ export function AttachmentPanel({
         confirmLabel="إزالة المرفق"
         cancelLabel="إلغاء"
         destructive
+        pending={remove.isPending}
+        error={actionError ?? undefined}
         onConfirm={() => {
-          if (!removing) return;
-          remove.mutate(removing, { onSuccess: () => setRemoving(null) });
+          if (!removing || deleting.current) return;
+          deleting.current = true;
+          setActionError(null);
+          remove.mutate(removing, {
+            onSuccess: () => setRemoving(null),
+            onError: () =>
+              setActionError('تعذر إزالة المرفق. تحقق من السجل قبل المحاولة مرة أخرى.'),
+            onSettled: () => {
+              deleting.current = false;
+            },
+          });
         }}
       />
     </section>

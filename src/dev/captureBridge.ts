@@ -147,7 +147,7 @@ const poa: PowerOfAttorneyDto = {
 };
 const attachment: AttachmentDto = {
   id: 'demo-attachment-1',
-  clientId: client.id,
+  clientId: null,
   caseId: caseItem.id,
   powerOfAttorneyId: null,
   expenseId: null,
@@ -203,13 +203,24 @@ const profile: LawyerProfile = {
   defaultCurrency: 'EGP',
 };
 
+export const captureFixtures = {
+  client,
+  clientSummary,
+  caseItem,
+  caseSummary,
+  poa,
+  hearing,
+  task,
+  attachment,
+};
+
 /** Returns DTO-shaped data for every read command used by a representative route. */
 export async function captureInvoke<T>(command: string): Promise<T> {
   const dashboard: DashboardSummary = {
     todayHearings: [hearing],
     todayTasks: [task],
     overdueTasks: [],
-    upcomingHearings: [hearing],
+    upcomingHearings: [{ ...hearing, id: 'demo-upcoming-hearing', hearingDate: '2026-10-10' }],
   };
   const values: Record<string, unknown> = {
     app_get_status: { initialized: true, unlocked: true } satisfies AppStatus,

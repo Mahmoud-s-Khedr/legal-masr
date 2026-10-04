@@ -17,8 +17,16 @@ export const caseCoreSchema = z.object({
   caseType: z.string().trim().optional(),
   litigationDegree: z.enum(LITIGATION_DEGREES).optional(),
   status: z.enum(CASE_STATUSES),
-  filedOn: z.string().trim().optional(),
-  closedOn: z.string().trim().optional(),
+  filedOn: z
+    .string()
+    .trim()
+    .transform((value) => value || undefined)
+    .optional(),
+  closedOn: z
+    .string()
+    .trim()
+    .transform((value) => value || undefined)
+    .optional(),
   subject: z.string().trim().optional(),
   notes: z.string().trim().optional(),
 });

@@ -24,10 +24,14 @@ export function PowerOfAttorneyDetailPage() {
   const archive = useArchivePowerOfAttorney();
   const restore = useRestorePowerOfAttorney();
   if (power.isLoading) return <p className="table-message">جارٍ التحميل…</p>;
+  if (power.isError) return <p role="alert">تعذر تحميل السجل. حاول مرة أخرى.</p>;
   if (!power.data) return <p className="table-message">التوكيل غير موجود.</p>;
   const item = power.data;
   return (
     <section className="entity-detail detail-workspace">
+      {(restore.isError || (archive.isError && !archiveOpen)) && (
+        <p role="alert">تعذر تغيير حالة السجل. حاول مرة أخرى.</p>
+      )}
       <header className="detail-hero">
         <div className="case-symbol" aria-hidden="true">
           ت
@@ -44,7 +48,7 @@ export function PowerOfAttorneyDetailPage() {
         </div>
         <div className="detail-actions">
           {item.archivedAt ? (
-            <Button type="button" onClick={() => restore.mutate(id)}>
+            <Button type="button" disabled={restore.isPending} onClick={() => restore.mutate(id)}>
               استعادة
             </Button>
           ) : (
@@ -203,6 +207,8 @@ export function PowerOfAttorneyDetailPage() {
         description="سيبقى التوكيل وسجل علاقاته محفوظين، لكنه لن يظهر في القوائم الاعتيادية."
         confirmLabel="أرشفة"
         cancelLabel="إلغاء"
+        pending={archive.isPending}
+        error={archive.isError ? 'تعذر أرشفة السجل.' : undefined}
         onConfirm={() => archive.mutate(id, { onSuccess: () => setArchiveOpen(false) })}
       />
     </section>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
+import { clearVaultCache } from '../../../lib/vaultCache';
 import { queryKeys } from '../../../lib/queryKeys';
 
 export const useLatestSuccessfulBackup = () =>
@@ -26,8 +27,7 @@ export const useRestoreBackup = () => {
     onSuccess: async () => {
       // Restore replaces the entire vault. Drop every record derived from the
       // previous vault before the locked gate can render again.
-      queryClient.clear();
-      await queryClient.fetchQuery({ queryKey: queryKeys.appStatus, queryFn: bridge.status });
+      await clearVaultCache(queryClient);
     },
   });
 };

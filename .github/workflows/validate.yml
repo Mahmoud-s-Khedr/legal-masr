@@ -57,14 +57,18 @@ jobs:
           cargo test --all-features
       - name: Rust coverage
         run: pnpm test:rust:coverage
+      - name: Coverage floors
+        run: pnpm check:coverage
       - name: Upload coverage reports
+        if: always()
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: validation-coverage-reports
           path: |
-            coverage/coverage-summary.json
-            coverage/lcov.info
+            coverage/renderer/coverage-summary.json
+            coverage/renderer/lcov.info
             coverage/rust/lcov.info
+            coverage/rust/coverage.json
           if-no-files-found: error
           retention-days: 7
       - name: Dependency vulnerability checks
@@ -73,9 +77,15 @@ jobs:
           cargo install cargo-audit --locked
           cd src-tauri && cargo audit
 
+  visual:
+    uses: ./.github/workflows/visual.yml
+
+  desktop:
+    uses: ./.github/workflows/desktop.yml
+
   linux-packages:
     name: Build Linux debug packages
-    needs: validate
+    needs: [validate, visual, desktop]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -103,6 +113,8 @@ jobs:
           key: ubuntu-24.04-x86_64-debug-${{ hashFiles('src-tauri/Cargo.lock') }}
       - name: Build debug Linux bundles
         run: pnpm tauri build --debug --bundles deb,rpm,appimage
+      - name: Verify production harness boundary
+        run: node scripts/verify-release-boundary.mjs src-tauri/target/debug/legalmaster-solo
       - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: legalmaster-solo-linux-debug-deb
@@ -124,7 +136,7 @@ jobs:
 
   windows-packages:
     name: Build Windows debug packages
-    needs: validate
+    needs: [validate, visual, desktop]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -149,6 +161,8 @@ jobs:
         with:
           tauriScript: pnpm tauri
           args: --target x86_64-pc-windows-msvc --debug --bundles nsis
+      - name: Verify production harness boundary
+        run: node scripts/verify-release-boundary.mjs src-tauri/target/x86_64-pc-windows-msvc/debug/legalmaster-solo.exe
       - name: Create and verify Windows debug artifacts
         shell: pwsh
         run: |

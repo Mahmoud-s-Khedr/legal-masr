@@ -40,7 +40,10 @@
     "openCalendar": "Open calendar",
     "chooseDate": "Choose date"
   },
-  "common": { "cancel": "Cancel", "notes": "Notes" },
+  "common": {
+    "cancel": "Cancel",
+    "notes": "Notes"
+  },
   "tasks": {
     "kicker": "Tasks",
     "title": "Legal tasks",
@@ -178,7 +181,9 @@
     "casesTitle": "Current cases",
     "viewAll": "View all",
     "addClient": "Add client",
-    "addCase": "Open a case"
+    "addCase": "Open a case",
+    "upcomingHearings": "Upcoming hearings",
+    "noUpcomingHearings": "No upcoming hearings."
   },
   "placeholder": {
     "tag": "Coming soon",
@@ -203,8 +208,16 @@
     "loadError": "The local settings could not be loaded. Please try again.",
     "developerDiagnostic": "Developer diagnostic",
     "retry": "Try again",
-    "tabs": { "general": "General", "security": "Security", "backups": "Backups" },
-    "themes": { "system": "Use device setting", "light": "Light", "dark": "Dark" }
+    "tabs": {
+      "general": "General",
+      "security": "Security",
+      "backups": "Backups"
+    },
+    "themes": {
+      "system": "Use device setting",
+      "light": "Light",
+      "dark": "Dark"
+    }
   },
   "clients": {
     "kicker": "Client register",
@@ -223,7 +236,12 @@
     "archivedBadge": "Archived",
     "active": "Active",
     "tableCaption": "Client register",
-    "columns": { "name": "Name", "type": "Type", "phone": "Phone", "status": "Status" },
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "phone": "Phone",
+      "status": "Status"
+    },
     "fields": {
       "clientType": "Client type",
       "individual": "Individual",
@@ -294,7 +312,9 @@
     "cancel": "Cancel",
     "archive": "Archive",
     "restore": "Restore",
-    "detail": { "notFound": "Case not found." },
+    "detail": {
+      "notFound": "Case not found."
+    },
     "clientsPanel": {
       "title": "Clients on this case",
       "attach": "Add client",

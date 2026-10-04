@@ -17,7 +17,11 @@ export function CaseListPage() {
   const [status, setStatus] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
   const navigate = useNavigate();
-  const { data: cases, isLoading } = useCaseList({
+  const {
+    data: cases,
+    isLoading,
+    isError,
+  } = useCaseList({
     query: query || undefined,
     status: status ? (status as Parameters<typeof useCaseList>[0]['status']) : undefined,
     includeArchived,
@@ -65,6 +69,8 @@ export function CaseListPage() {
 
       {isLoading ? (
         <Skeleton className="table-message h-24" aria-label={t('cases.loading')} />
+      ) : isError ? (
+        <p role="alert">تعذر تحميل السجلات. حاول مرة أخرى.</p>
       ) : !cases?.length ? (
         <Card className="empty-state-card">
           <strong>{query || status ? 'لا توجد قضايا مطابقة' : t('cases.empty')}</strong>

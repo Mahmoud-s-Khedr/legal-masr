@@ -118,7 +118,7 @@ function SetupForm({
     defaultValues: { fullName: '', password: '' },
   });
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
       <label>
         {t('gate.fields.fullName')}
         <Input {...register('fullName')} required autoFocus />
@@ -147,7 +147,7 @@ function UnlockForm({
     defaultValues: { password: '' },
   });
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
       <label>
         {t('gate.fields.password')}
         <Input type="password" {...register('password')} minLength={12} required autoFocus />
@@ -172,7 +172,7 @@ function RecoveryForm({
     defaultValues: { recoveryKey: '', password: '' },
   });
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
       <label>
         {t('gate.fields.recoveryKey')}
         <Input dir="ltr" {...register('recoveryKey')} required autoFocus />

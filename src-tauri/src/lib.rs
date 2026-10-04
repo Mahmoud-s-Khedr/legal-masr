@@ -1,6 +1,8 @@
 pub mod backup;
 mod commands;
 pub mod db;
+#[cfg(feature = "desktop-e2e")]
+mod desktop_e2e;
 pub mod dto;
 pub mod errors;
 mod logging;
@@ -14,7 +16,13 @@ use state::AppState;
 use tauri::Manager;
 
 pub fn run() {
-    tauri::Builder::default()
+    #[cfg(feature = "desktop-e2e")]
+    if desktop_e2e::root().is_err() {
+        // Do not fall back to the user's ordinary vault on harness errors.
+        eprintln!("DESKTOP_E2E_ISOLATION_REQUIRED");
+        std::process::exit(2);
+    }
+    let builder = tauri::Builder::default()
         .manage(AppState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
@@ -22,9 +30,12 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
         ))
-        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_opener::init());
+    #[cfg(not(feature = "desktop-e2e"))]
+    let builder = builder
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        .plugin(tauri_plugin_single_instance::init(|_, _, _| {}))
+        .plugin(tauri_plugin_single_instance::init(|_, _, _| {}));
+    builder
         .setup(|app| {
             let data_dir = db::app_dir(app.handle())?;
             let guard = logging::init(&data_dir);

@@ -40,7 +40,10 @@
     "openCalendar": "فتح التقويم",
     "chooseDate": "اختيار التاريخ"
   },
-  "common": { "cancel": "إلغاء", "notes": "ملاحظات" },
+  "common": {
+    "cancel": "إلغاء",
+    "notes": "ملاحظات"
+  },
   "tasks": {
     "kicker": "المهام",
     "title": "المهام القانونية",
@@ -178,7 +181,9 @@
     "casesTitle": "القضايا الحالية",
     "viewAll": "عرض الكل",
     "addClient": "إضافة موكل",
-    "addCase": "فتح قضية"
+    "addCase": "فتح قضية",
+    "upcomingHearings": "الجلسات القادمة",
+    "noUpcomingHearings": "لا توجد جلسات قادمة."
   },
   "placeholder": {
     "tag": "قريبًا",
@@ -203,8 +208,16 @@
     "loadError": "تعذر تحميل الإعدادات المحلية. أعد المحاولة.",
     "developerDiagnostic": "تشخيص المطوّر",
     "retry": "إعادة المحاولة",
-    "tabs": { "general": "عام", "security": "الأمان", "backups": "النسخ الاحتياطي" },
-    "themes": { "system": "حسب إعداد الجهاز", "light": "فاتح", "dark": "داكن" }
+    "tabs": {
+      "general": "عام",
+      "security": "الأمان",
+      "backups": "النسخ الاحتياطي"
+    },
+    "themes": {
+      "system": "حسب إعداد الجهاز",
+      "light": "فاتح",
+      "dark": "داكن"
+    }
   },
   "clients": {
     "kicker": "سجل الموكلين",
@@ -223,7 +236,12 @@
     "archivedBadge": "مؤرشف",
     "active": "نشط",
     "tableCaption": "سجل الموكلين",
-    "columns": { "name": "الاسم", "type": "النوع", "phone": "الهاتف", "status": "الحالة" },
+    "columns": {
+      "name": "الاسم",
+      "type": "النوع",
+      "phone": "الهاتف",
+      "status": "الحالة"
+    },
     "fields": {
       "clientType": "نوع الموكل",
       "individual": "فرد",
@@ -294,7 +312,9 @@
     "cancel": "إلغاء",
     "archive": "أرشفة",
     "restore": "استعادة",
-    "detail": { "notFound": "لم يتم العثور على القضية." },
+    "detail": {
+      "notFound": "لم يتم العثور على القضية."
+    },
     "clientsPanel": {
       "title": "الموكلون في القضية",
       "attach": "إضافة موكل",
@@ -314,7 +334,12 @@
       "notes": "ملاحظات",
       "remove": "حذف",
       "empty": "لا توجد أطراف أخرى مسجّلة.",
-      "roles": { "OPPONENT": "خصم", "WITNESS": "شاهد", "EXPERT": "خبير", "OTHER": "أخرى" }
+      "roles": {
+        "OPPONENT": "خصم",
+        "WITNESS": "شاهد",
+        "EXPERT": "خبير",
+        "OTHER": "أخرى"
+      }
     }
   },
   "search": {

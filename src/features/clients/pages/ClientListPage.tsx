@@ -15,7 +15,11 @@ export function ClientListPage() {
   const [query, setQuery] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
   const navigate = useNavigate();
-  const { data: clients, isLoading } = useClientList({
+  const {
+    data: clients,
+    isLoading,
+    isError,
+  } = useClientList({
     query: query || undefined,
     includeArchived,
   });
@@ -45,6 +49,8 @@ export function ClientListPage() {
 
       {isLoading ? (
         <Skeleton className="table-message h-24" aria-label={t('clients.loading')} />
+      ) : isError ? (
+        <p role="alert">تعذر تحميل السجلات. حاول مرة أخرى.</p>
       ) : !clients?.length ? (
         <Card className="empty-state-card">
           <strong>{query ? t('clients.noResults') : t('clients.empty')}</strong>

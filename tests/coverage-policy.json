@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "reviewStatus": "proposed",
+  "measuredAt": "2026-10-05",
+  "baseCommit": "33c7f15ce6bb54bc70ad9740ba8a1b96631e9a3c",
+  "sourceTreeSha256": "14025af6131fa586fba034bb1bf86a42669217e025c05983a25c5331c53d1871",
+  "sourceTreeNote": "Three clean runs on an identical uncommitted source tree; repeat on the final committed revision before accepting release evidence.",
+  "rule": "lowest of three runs, rounded down to one decimal, minus one percentage point",
+  "scope": {
+    "renderer": "Existing production renderer scope; harnesses/fixtures excluded.",
+    "rust": "Production source only, inline test modules and native harness excluded; generic regions/functions merged by source coordinates."
+  },
+  "measurements": [
+    {
+      "renderer": {
+        "statements": 83.88,
+        "branches": 79.49,
+        "functions": 74.02,
+        "lines": 83.88
+      },
+      "rust": {
+        "regions": 33.39009287925697,
+        "functions": 34.16289592760181,
+        "lines": 34.945112388917934
+      }
+    },
+    {
+      "renderer": {
+        "statements": 83.96,
+        "branches": 79.4,
+        "functions": 74.19,
+        "lines": 83.96
+      },
+      "rust": {
+        "regions": 33.39009287925697,
+        "functions": 34.16289592760181,
+        "lines": 34.945112388917934
+      }
+    },
+    {
+      "renderer": {
+        "statements": 83.86,
+        "branches": 79.55,
+        "functions": 74.02,
+        "lines": 83.86
+      },
+      "rust": {
+        "regions": 33.39009287925697,
+        "functions": 34.16289592760181,
+        "lines": 34.945112388917934
+      }
+    }
+  ],
+  "floors": {
+    "renderer": {
+      "statements": 82.8,
+      "branches": 78.4,
+      "functions": 73.0,
+      "lines": 82.8
+    },
+    "rust": {
+      "regions": 32.3,
+      "functions": 33.1,
+      "lines": 33.9
+    }
+  }
+}

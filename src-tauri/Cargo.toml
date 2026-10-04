@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "Offline-first legal practice organizer"
 edition = "2021"
 
+[features]
+default = []
+desktop-e2e = []
+
 [lib]
 name = "legalmaster_lib"
 crate-type = ["lib", "cdylib", "staticlib"]

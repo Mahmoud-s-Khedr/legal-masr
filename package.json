@@ -21,12 +21,19 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run && node --test scripts/release-assets.test.mjs",
+    "test": "vitest run && node --test scripts/*.test.mjs",
     "test:coverage": "vitest run --coverage",
-    "test:rust:coverage": "cd src-tauri && mkdir -p ../coverage/rust && cargo llvm-cov --all-features --lcov --output-path ../coverage/rust/lcov.info && cargo llvm-cov report --summary-only",
+    "test:rust:coverage": "node scripts/rust-coverage.mjs",
     "tauri": "tauri",
     "capture:visual": "playwright test -c playwright.capture.config.ts",
-    "verify:visual": "node scripts/verify-visual-manifest.mjs"
+    "verify:visual": "node scripts/verify-visual-manifest.mjs",
+    "update:visual": "node scripts/update-visual-baseline.mjs",
+    "test:desktop": "node scripts/desktop-e2e.mjs",
+    "build:desktop:e2e": "node scripts/build-desktop-e2e.mjs",
+    "check:coverage": "node scripts/check-coverage.mjs",
+    "capture:visual:canonical": "node scripts/visual-container.mjs compare",
+    "update:visual:canonical": "node scripts/visual-container.mjs update",
+    "probe:visual:canonical": "node scripts/visual-container.mjs probe"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -52,7 +59,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/cli": "^2.8.0",
     "@testing-library/jest-dom": "^6.9.1",
@@ -71,6 +78,7 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.65.0",
     "vite": "^7.1.0",
-    "vitest": "^3.2.0"
+    "vitest": "^3.2.0",
+    "webdriverio": "9.32.0"
   }
 }

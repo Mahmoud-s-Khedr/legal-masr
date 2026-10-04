@@ -29,7 +29,7 @@ export function CaseCreateForm({
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
       <CaseCoreFields register={register} control={control} />
       <fieldset>
         <legend>{t('cases.fields.clients')}</legend>

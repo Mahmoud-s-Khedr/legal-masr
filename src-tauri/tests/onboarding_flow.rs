@@ -72,6 +72,21 @@ fn lawyer_profile_updates_locally_and_rejects_invalid_identity_data() {
 }
 
 fn fresh_mock_app() -> tauri::App<tauri::test::MockRuntime> {
+    #[cfg(feature = "desktop-e2e")]
+    {
+        static ISOLATED: std::sync::OnceLock<tempfile::TempDir> = std::sync::OnceLock::new();
+        ISOLATED.get_or_init(|| {
+            let directory = tempfile::Builder::new()
+                .prefix("legalmaster-desktop-e2e-")
+                .tempdir()
+                .unwrap();
+            let nonce = uuid::Uuid::new_v4().to_string();
+            std::fs::write(directory.path().join("runner-marker"), &nonce).unwrap();
+            std::env::set_var("LEGALMASTER_E2E_ROOT", directory.path());
+            std::env::set_var("LEGALMASTER_E2E_NONCE", nonce);
+            directory
+        });
+    }
     let app = tauri::test::mock_app();
     // `tauri::test::mock_app` resolves app_data_dir to a fixed, real, on-disk
     // path (not a per-test temp dir) - previous test runs on this machine

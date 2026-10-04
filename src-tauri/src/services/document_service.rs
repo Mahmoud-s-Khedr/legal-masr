@@ -14,6 +14,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use tauri::{AppHandle, Runtime};
+#[cfg(not(feature = "desktop-e2e"))]
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 use time::{format_description::BorrowedFormatItem, macros::format_description, Date};
@@ -99,7 +100,44 @@ fn validate_owners(conn: &rusqlite::Connection, input: &AttachmentInput) -> Resu
     Ok(())
 }
 
-fn persist_managed_copy(
+// Injectable operations keep failure tests deterministic without global hooks.
+trait ManagedFiles {
+    fn copy(&self, source: &Path, target: &Path) -> std::io::Result<u64>;
+    fn read(&self, path: &Path) -> std::io::Result<Vec<u8>>;
+    fn rename(&self, source: &Path, target: &Path) -> std::io::Result<()>;
+    fn remove(&self, path: &Path) -> std::io::Result<()>;
+}
+struct NativeFiles;
+impl ManagedFiles for NativeFiles {
+    fn copy(&self, source: &Path, target: &Path) -> std::io::Result<u64> {
+        fs::copy(source, target)
+    }
+    fn read(&self, path: &Path) -> std::io::Result<Vec<u8>> {
+        fs::read(path)
+    }
+    fn rename(&self, source: &Path, target: &Path) -> std::io::Result<()> {
+        fs::rename(source, target)
+    }
+    fn remove(&self, path: &Path) -> std::io::Result<()> {
+        fs::remove_file(path)
+    }
+}
+fn copy_bytes(
+    files: &impl ManagedFiles,
+    source: &Path,
+    temporary: &Path,
+) -> Result<Vec<u8>, Error> {
+    let result = files
+        .copy(source, temporary)
+        .and_then(|_| files.read(temporary));
+    if result.is_err() {
+        let _ = files.remove(temporary);
+    }
+    result.map_err(Into::into)
+}
+
+fn persist_managed_copy_with(
+    files: &impl ManagedFiles,
     conn: &rusqlite::Connection,
     temporary: &Path,
     target: &Path,
@@ -108,18 +146,19 @@ fn persist_managed_copy(
     let result = (|| -> Result<(), Error> {
         let tx = conn.unchecked_transaction()?;
         document_repository::insert(&tx, attachment)?;
-        fs::rename(temporary, target)?;
+        files.rename(temporary, target)?;
         tx.commit()?;
         Ok(())
     })();
     if result.is_err() {
-        let _ = fs::remove_file(temporary);
-        let _ = fs::remove_file(target);
+        let _ = files.remove(temporary);
+        let _ = files.remove(target);
     }
     result
 }
 
-fn remove_managed_attachment(
+fn remove_managed_attachment_with(
+    files: &impl ManagedFiles,
     conn: &rusqlite::Connection,
     attachments_root: &Path,
     id: &str,
@@ -128,17 +167,17 @@ fn remove_managed_attachment(
     let live = attachments_root.join(&attachment.relative_path);
     let staged = live.with_extension("deleting");
     if live.exists() {
-        fs::rename(&live, &staged)?;
+        files.rename(&live, &staged)?;
     }
     let result = document_repository::delete(conn, id);
     if let Err(error) = result {
         if staged.exists() {
-            let _ = fs::rename(staged, live);
+            files.rename(&staged, &live)?;
         }
         return Err(error);
     }
     if staged.exists() {
-        fs::remove_file(staged)?;
+        files.remove(&staged)?;
     }
     Ok(())
 }
@@ -147,6 +186,12 @@ pub fn select_source<R: Runtime>(
     state: &AppState,
 ) -> Result<AttachmentSourceSelection, Error> {
     state.unlocked()?;
+    #[cfg(feature = "desktop-e2e")]
+    let path = {
+        let _ = app;
+        crate::desktop_e2e::selection("attachment")?
+    };
+    #[cfg(not(feature = "desktop-e2e"))]
     let path = app
         .dialog()
         .file()
@@ -192,20 +237,13 @@ pub fn add<R: Runtime>(
     let stored_filename = format!("{id}{extension}");
     let temporary = root.join(format!(".{stored_filename}.partial"));
     let target = root.join(&stored_filename);
-    fs::copy(&source, &temporary)?;
-    let bytes = match fs::read(&temporary) {
-        Ok(bytes) => bytes,
-        Err(error) => {
-            let _ = fs::remove_file(&temporary);
-            return Err(error.into());
-        }
-    };
-    let now = db::now();
     let original_filename = source
         .file_name()
         .and_then(|name| name.to_str())
         .ok_or(Error::Validation)?
         .to_owned();
+    let bytes = copy_bytes(&NativeFiles, &source, &temporary)?;
+    let now = db::now();
     let attachment = AttachmentDto {
         id,
         client_id: input.client_id,
@@ -224,7 +262,7 @@ pub fn add<R: Runtime>(
         created_at: now.clone(),
         updated_at: now.clone(),
     };
-    persist_managed_copy(&conn, &temporary, &target, &attachment)?;
+    persist_managed_copy_with(&NativeFiles, &conn, &temporary, &target, &attachment)?;
     Ok(attachment)
 }
 pub fn list<R: Runtime>(
@@ -262,44 +300,48 @@ pub fn update<R: Runtime>(
     document_repository::update(&conn, &attachment)?;
     Ok(attachment)
 }
-fn path<R: Runtime>(
-    app: &AppHandle<R>,
-    conn: &rusqlite::Connection,
-    id: &str,
-) -> Result<PathBuf, Error> {
+fn managed_path(root: &Path, conn: &rusqlite::Connection, id: &str) -> Result<PathBuf, Error> {
     let attachment = document_repository::get(conn, id)?;
-    let path = root(app)?.join(attachment.relative_path);
+    let path = root.join(attachment.relative_path);
     if path.is_file() {
         Ok(path)
     } else {
         Err(Error::AttachmentSourceMissing)
     }
 }
+fn dispatch_managed(
+    root: &Path,
+    conn: &rusqlite::Connection,
+    id: &str,
+    opener: impl FnOnce(PathBuf) -> Result<(), Error>,
+) -> Result<(), Error> {
+    opener(managed_path(root, conn, id)?)
+}
 pub fn open<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
-    app.opener()
-        .open_path(
-            path(app, &db::open_db(&db_path, &master)?, id)?
-                .to_string_lossy()
-                .into_owned(),
-            None::<&str>,
-        )
-        .map_err(|_| Error::Operation)
+    dispatch_managed(&root(app)?, &db::open_db(&db_path, &master)?, id, |path| {
+        app.opener()
+            .open_path(path.to_string_lossy().into_owned(), None::<&str>)
+            .map_err(|_| Error::Operation)
+    })
 }
 pub fn reveal<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
-    app.opener()
-        .reveal_item_in_dir(path(app, &db::open_db(&db_path, &master)?, id)?)
-        .map_err(|_| Error::Operation)
+    dispatch_managed(&root(app)?, &db::open_db(&db_path, &master)?, id, |path| {
+        app.opener()
+            .reveal_item_in_dir(path)
+            .map_err(|_| Error::Operation)
+    })
 }
+
 pub fn remove<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
     let _attachment_guard = state.lock_attachment_operations()?;
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
-    remove_managed_attachment(&conn, &root(app)?, id)
+    remove_managed_attachment_with(&NativeFiles, &conn, &root(app)?, id)
 }
 #[cfg(test)]
 mod tests {
@@ -366,7 +408,7 @@ mod tests {
         let temporary = root.join(".first.partial");
         let target = root.join("first.pdf");
         fs::write(&temporary, b"durable").unwrap();
-        persist_managed_copy(&connection, &temporary, &target, &first).unwrap();
+        persist_managed_copy_with(&NativeFiles, &connection, &temporary, &target, &first).unwrap();
         assert_eq!(fs::read(&target).unwrap(), b"durable");
         assert_eq!(
             document_repository::get(&connection, &first.id).unwrap().id,
@@ -377,7 +419,8 @@ mod tests {
         let duplicate_temporary = root.join(".duplicate.partial");
         let duplicate_target = root.join("duplicate.pdf");
         fs::write(&duplicate_temporary, b"discard").unwrap();
-        assert!(persist_managed_copy(
+        assert!(persist_managed_copy_with(
+            &NativeFiles,
             &connection,
             &duplicate_temporary,
             &duplicate_target,
@@ -397,8 +440,186 @@ mod tests {
         document_repository::insert(&connection, &item).unwrap();
         fs::write(root.join("remove.pdf"), b"remove me").unwrap();
 
-        remove_managed_attachment(&connection, &root, &item.id).unwrap();
+        remove_managed_attachment_with(&NativeFiles, &connection, &root, &item.id).unwrap();
         assert!(!root.join("remove.pdf").exists());
+        assert!(document_repository::get(&connection, &item.id).is_err());
+    }
+    struct FailingFiles {
+        operation: &'static str,
+    }
+    impl ManagedFiles for FailingFiles {
+        fn copy(&self, source: &Path, target: &Path) -> std::io::Result<u64> {
+            if self.operation == "copy" {
+                fs::write(target, b"partial")?;
+                return Err(std::io::Error::other("injected"));
+            }
+            fs::copy(source, target)
+        }
+        fn read(&self, path: &Path) -> std::io::Result<Vec<u8>> {
+            if self.operation == "read" {
+                return Err(std::io::Error::other("injected"));
+            }
+            fs::read(path)
+        }
+        fn rename(&self, source: &Path, target: &Path) -> std::io::Result<()> {
+            if self.operation == "rename" {
+                return Err(std::io::Error::other("injected"));
+            }
+            fs::rename(source, target)
+        }
+        fn remove(&self, path: &Path) -> std::io::Result<()> {
+            if self.operation == "remove" {
+                return Err(std::io::Error::other("injected"));
+            }
+            fs::remove_file(path)
+        }
+    }
+
+    #[test]
+    fn partial_copy_and_read_failures_clean_up_without_changing_source() {
+        for operation in ["copy", "read"] {
+            let directory = tempfile::tempdir().unwrap();
+            let source = directory.path().join("original.pdf");
+            let partial = directory.path().join(".managed.partial");
+            fs::write(&source, b"fictional original").unwrap();
+            assert!(copy_bytes(&FailingFiles { operation }, &source, &partial).is_err());
+            assert!(!partial.exists());
+            assert_eq!(fs::read(&source).unwrap(), b"fictional original");
+        }
+    }
+
+    #[test]
+    fn rename_failure_rolls_back_database_and_removes_partial() {
+        let (directory, connection, client_id) = test_connection();
+        let item = attachment(Uuid::new_v4().to_string(), client_id, "managed.pdf");
+        let partial = directory.path().join(".managed.partial");
+        let target = directory.path().join("managed.pdf");
+        fs::write(&partial, b"fictional").unwrap();
+        assert!(persist_managed_copy_with(
+            &FailingFiles {
+                operation: "rename"
+            },
+            &connection,
+            &partial,
+            &target,
+            &item
+        )
+        .is_err());
+        assert!(!partial.exists());
+        assert!(!target.exists());
+        assert!(document_repository::get(&connection, &item.id).is_err());
+    }
+
+    #[test]
+    fn commit_failure_removes_renamed_copy_and_rolls_back_metadata() {
+        let (directory, connection, client_id) = test_connection();
+        connection.execute_batch("CREATE TABLE deferred_failure (id TEXT REFERENCES clients(id) DEFERRABLE INITIALLY DEFERRED); CREATE TRIGGER reject_commit AFTER INSERT ON attachments BEGIN INSERT INTO deferred_failure VALUES ('missing'); END;").unwrap();
+        let item = attachment(Uuid::new_v4().to_string(), client_id, "managed.pdf");
+        let partial = directory.path().join(".managed.partial");
+        let target = directory.path().join("managed.pdf");
+        fs::write(&partial, b"fictional").unwrap();
+        assert!(
+            persist_managed_copy_with(&NativeFiles, &connection, &partial, &target, &item).is_err()
+        );
+        assert!(!partial.exists());
+        assert!(!target.exists());
+        assert!(document_repository::get(&connection, &item.id).is_err());
+    }
+
+    #[test]
+    fn deletion_staging_failure_preserves_live_file_and_metadata() {
+        let (directory, connection, client_id) = test_connection();
+        let item = attachment(Uuid::new_v4().to_string(), client_id, "managed.pdf");
+        document_repository::insert(&connection, &item).unwrap();
+        fs::write(directory.path().join("managed.pdf"), b"fictional").unwrap();
+        assert!(remove_managed_attachment_with(
+            &FailingFiles {
+                operation: "rename"
+            },
+            &connection,
+            directory.path(),
+            &item.id
+        )
+        .is_err());
+        assert!(document_repository::get(&connection, &item.id).is_ok());
+        assert_eq!(
+            fs::read(directory.path().join("managed.pdf")).unwrap(),
+            b"fictional"
+        );
+        assert!(!directory.path().join("managed.deleting").exists());
+    }
+
+    #[test]
+    fn rejected_deletion_restores_staged_copy_and_metadata() {
+        let (directory, connection, client_id) = test_connection();
+        let item = attachment(Uuid::new_v4().to_string(), client_id, "managed.pdf");
+        document_repository::insert(&connection, &item).unwrap();
+        fs::write(directory.path().join("managed.pdf"), b"fictional").unwrap();
+        connection.execute_batch("CREATE TRIGGER reject_delete BEFORE DELETE ON attachments BEGIN SELECT RAISE(ABORT, 'injected'); END;").unwrap();
+        assert!(remove_managed_attachment_with(
+            &NativeFiles,
+            &connection,
+            directory.path(),
+            &item.id
+        )
+        .is_err());
+        assert!(document_repository::get(&connection, &item.id).is_ok());
+        assert_eq!(
+            fs::read(directory.path().join("managed.pdf")).unwrap(),
+            b"fictional"
+        );
+        assert!(!directory.path().join("managed.deleting").exists());
+    }
+
+    #[test]
+    fn post_commit_cleanup_failure_is_reported_with_metadata_already_removed() {
+        let (directory, connection, client_id) = test_connection();
+        let item = attachment(Uuid::new_v4().to_string(), client_id, "managed.pdf");
+        document_repository::insert(&connection, &item).unwrap();
+        fs::write(directory.path().join("managed.pdf"), b"fictional").unwrap();
+        assert!(remove_managed_attachment_with(
+            &FailingFiles {
+                operation: "remove"
+            },
+            &connection,
+            directory.path(),
+            &item.id
+        )
+        .is_err());
+        assert!(document_repository::get(&connection, &item.id).is_err());
+        assert!(!directory.path().join("managed.pdf").exists());
+        assert_eq!(
+            fs::read(directory.path().join("managed.deleting")).unwrap(),
+            b"fictional"
+        );
+    }
+
+    #[test]
+    fn missing_managed_file_can_be_removed_but_cannot_be_opened_or_revealed() {
+        let (directory, connection, client_id) = test_connection();
+        let item = attachment(Uuid::new_v4().to_string(), client_id, "managed.pdf");
+        document_repository::insert(&connection, &item).unwrap();
+        for _ in 0..2 {
+            assert!(matches!(
+                dispatch_managed(directory.path(), &connection, &item.id, |_| panic!(
+                    "opener must not run"
+                )),
+                Err(Error::AttachmentSourceMissing)
+            ));
+        }
+        fs::write(directory.path().join("managed.pdf"), b"fictional").unwrap();
+        for _ in 0..2 {
+            assert!(matches!(
+                dispatch_managed(directory.path(), &connection, &item.id, |_| Err(
+                    Error::Operation
+                )),
+                Err(Error::Operation)
+            ));
+            assert!(document_repository::get(&connection, &item.id).is_ok());
+        }
+        fs::remove_file(directory.path().join("managed.pdf")).unwrap();
+        remove_managed_attachment_with(&NativeFiles, &connection, directory.path(), &item.id)
+            .unwrap();
         assert!(document_repository::get(&connection, &item.id).is_err());
     }
 }

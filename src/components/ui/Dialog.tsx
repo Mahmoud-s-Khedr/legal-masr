@@ -62,6 +62,8 @@ export function ConfirmDialog({
   cancelLabel,
   onConfirm,
   destructive = false,
+  pending = false,
+  error,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -71,15 +73,23 @@ export function ConfirmDialog({
   cancelLabel: string;
   onConfirm: () => void;
   destructive?: boolean;
+  pending?: boolean;
+  error?: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange} title={title}>
       <p className="dialog-description">{description}</p>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
       <div className="dialog-actions">
         <Button
           type="button"
           variant="secondary"
           className="secondary-button"
+          disabled={pending}
           onClick={() => onOpenChange(false)}
         >
           {cancelLabel}
@@ -88,6 +98,7 @@ export function ConfirmDialog({
           type="button"
           variant={destructive ? 'destructive' : 'default'}
           className={destructive ? 'danger-button-solid' : undefined}
+          disabled={pending}
           onClick={onConfirm}
         >
           {confirmLabel}

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
 import type { InitializeInput } from '../../../bridge/types';
+import { clearVaultCache } from '../../../lib/vaultCache';
 import { queryKeys } from '../../../lib/queryKeys';
 
 export const APP_STATUS_QUERY_KEY = queryKeys.appStatus;
@@ -40,8 +41,7 @@ export function useLockVault() {
     onSuccess: async () => {
       // A lock must also remove record data that was already delivered to the
       // renderer. Status is fetched again as the only permitted post-lock data.
-      queryClient.clear();
-      await queryClient.fetchQuery({ queryKey: APP_STATUS_QUERY_KEY, queryFn: bridge.status });
+      await clearVaultCache(queryClient);
     },
   });
 }
