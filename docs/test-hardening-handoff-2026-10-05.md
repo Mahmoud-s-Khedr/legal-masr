@@ -2,7 +2,7 @@
 
 ## Resume here
 
-The automated hardening implementation is in the working tree. Release
+The automated hardening implementation is committed. Release
 acceptance is still open. This handoff records work to resume later; it does not
 approve the visual baseline, coverage floors or a release.
 
@@ -13,10 +13,13 @@ The project-plan overview is dated August 24 and still describes capture setup
 as unavailable; the October 5 evidence describes the current test infrastructure.
 Check the working tree and current commit before relying on any recorded result.
 
-The implementation and candidate assets are **uncommitted**, based on
-`33c7f15ce6bb54bc70ad9740ba8a1b96631e9a3c`. Preserve existing changes; do not reset,
-clean or regenerate baselines merely to start a new session. No remote CI run,
-Windows execution or physical-device pass has been recorded.
+The implementation and candidate assets are in commit
+`e0f34416514a3ad64bab7769cda84bddd39079d2`, based on
+`33c7f15ce6bb54bc70ad9740ba8a1b96631e9a3c`. Measurements below were taken before
+that commit; committing does not replace the pending committed-revision runs.
+Preserve any later changes; do not reset, clean or regenerate baselines merely
+to start a new session. No remote CI run, Windows execution or physical-device
+pass has been recorded.
 
 ## Completed and verified
 
@@ -95,8 +98,8 @@ Review `tests/coverage-policy.json`, `scripts/check-coverage.mjs`,
 renderer and Rust output directories. Raw LLVM percentages include inline tests;
 use the scoped production Rust report for policy decisions.
 
-Next actions: settle and commit the implementation through the normal review
-process, collect three clean measurements of that same revision, preserve each
+Next actions: review the implementation commit and settle any further changes,
+collect three clean measurements of the same final revision, preserve each
 pair of reports, and review the floors and provenance explicitly. The initial
 rule remains minimum of three runs, rounded down to one decimal, minus one
 percentage point. Do not lower floors automatically to make a failure pass.

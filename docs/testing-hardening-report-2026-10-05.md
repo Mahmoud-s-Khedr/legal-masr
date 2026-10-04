@@ -1,9 +1,11 @@
 # Test hardening evidence — 2026-10-05
 
 This report records the remaining test hardening programme, using fictional
-records and disposable vaults. Work is based on commit
-`33c7f15ce6bb54bc70ad9740ba8a1b96631e9a3c` plus the current uncommitted changes.
-No commit, remote CI run, Windows execution or physical-device pass is claimed.
+records and disposable vaults. Measurements were collected from an uncommitted
+tree based on `33c7f15ce6bb54bc70ad9740ba8a1b96631e9a3c`. That implementation
+was subsequently committed as `e0f34416514a3ad64bab7769cda84bddd39079d2`.
+Committing does not establish fresh committed-revision coverage evidence.
+No remote CI run, Windows execution or physical-device pass is claimed.
 The source fingerprint and three coverage measurements are recorded in
 [the proposed coverage policy](../tests/coverage-policy.json).
 
