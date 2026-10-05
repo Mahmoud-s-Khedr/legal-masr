@@ -100,7 +100,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes \
             libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
-            libfuse2 patchelf rpm
+            libfuse2 patchelf rpm xvfb
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
@@ -111,10 +111,23 @@ jobs:
         with:
           workspaces: src-tauri -> target
           key: ubuntu-24.04-x86_64-debug-${{ hashFiles('src-tauri/Cargo.lock') }}
-      - name: Build debug Linux bundles
-        run: pnpm tauri build --debug --bundles deb,rpm,appimage
+      - name: Build and normalize debug Linux bundles
+        run: pnpm build:linux:debug
       - name: Verify production harness boundary
         run: node scripts/verify-release-boundary.mjs src-tauri/target/debug/legalmaster-solo
+      - name: Smoke-test normalized AppImage
+        shell: bash
+        run: |
+          shopt -s nullglob
+          appimages=(src-tauri/target/debug/bundle/appimage/*.AppImage)
+          test "${#appimages[@]}" -eq 1
+          set +e
+          env -u GDK_BACKEND APPIMAGE_EXTRACT_AND_RUN=1 timeout --signal=TERM 15s xvfb-run --auto-servernum "${appimages[0]}" > appimage-smoke.log 2>&1
+          status=$?
+          set -e
+          cat appimage-smoke.log
+          test "$status" -eq 124
+          ! grep --fixed-strings "Could not create default EGL display" appimage-smoke.log
       - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: legalmaster-solo-linux-debug-deb

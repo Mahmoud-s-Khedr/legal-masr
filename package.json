@@ -17,6 +17,8 @@
     "dev": "vite",
     "dev:seed": "node scripts/tauri-dev-seeded.mjs",
     "build": "tsc -b && vite build",
+    "build:linux": "pnpm tauri build --bundles deb,rpm,appimage && node scripts/normalize-appimage-runtime.mjs src-tauri/target/release/bundle/appimage && node scripts/verify-appimage-runtime.mjs src-tauri/target/release/bundle/appimage",
+    "build:linux:debug": "pnpm tauri build --debug --bundles deb,rpm,appimage && node scripts/normalize-appimage-runtime.mjs src-tauri/target/debug/bundle/appimage && node scripts/verify-appimage-runtime.mjs src-tauri/target/debug/bundle/appimage",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",

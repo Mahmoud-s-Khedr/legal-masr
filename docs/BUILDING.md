@@ -59,8 +59,15 @@ pnpm build
 Create unsigned Linux x86-64 Debian, RPM, and AppImage packages:
 
 ```bash
-pnpm tauri build --bundles deb,rpm,appimage
+pnpm build:linux
 ```
+
+Both `pnpm build:linux` and `pnpm build:linux:debug` normalize the AppImage
+after Tauri packages it: it uses the
+host Wayland/XKB client libraries and prefers Wayland with an X11 fallback.
+This avoids mixing Ubuntu's bundled compositor ABI with the graphics driver on
+newer Linux distributions. The release workflow applies and verifies the same
+normalization.
 
 Expected release output is under `src-tauri/target/release/bundle/`, in the `deb/`, `rpm/`, and `appimage/` directories. Debug builds use `src-tauri/target/debug/bundle/` instead. Linux CI uses Ubuntu 24.04 because the vendored OpenSSL selected by SQLCipher requires its current glibc ABI during linking.
 

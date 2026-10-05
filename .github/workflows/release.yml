@@ -156,7 +156,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes \
             libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
-            libfuse2 patchelf rpm
+            libfuse2 patchelf rpm xvfb
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
@@ -175,6 +175,21 @@ jobs:
       - name: Verify production harness boundary
         shell: bash
         run: node scripts/verify-release-boundary.mjs "src-tauri/target/${{ matrix.target }}/release/legalmaster-solo${{ runner.os == 'Windows' && '.exe' || '' }}"
+      - name: Normalize and verify Linux AppImage runtime
+        if: matrix.id == 'linux-x64'
+        shell: bash
+        run: |
+          appimages=(src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage)
+          test "${#appimages[@]}" -eq 1
+          node scripts/normalize-appimage-runtime.mjs "${appimages[0]}"
+          node scripts/verify-appimage-runtime.mjs "${appimages[0]}"
+          set +e
+          env -u GDK_BACKEND APPIMAGE_EXTRACT_AND_RUN=1 timeout --signal=TERM 15s xvfb-run --auto-servernum "${appimages[0]}" > appimage-smoke.log 2>&1
+          status=$?
+          set -e
+          cat appimage-smoke.log
+          test "$status" -eq 124
+          ! grep --fixed-strings "Could not create default EGL display" appimage-smoke.log
       - name: Verify Windows NSIS installer
         if: matrix.id == 'windows-x64'
         shell: pwsh
