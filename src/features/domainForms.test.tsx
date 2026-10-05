@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('./clients/api/clientsApi', () => ({
   useClientList: vi.fn(),
@@ -47,10 +48,11 @@ describe('canonical domain forms', () => {
         onCancel={vi.fn()}
         onSubmit={submit}
       />,
+      { wrapper: MemoryRouter },
     );
 
-    fireEvent.change(screen.getByLabelText('رقم القضية'), { target: { value: 'CA-5' } });
-    const officialNumber = screen.getByLabelText('رقم القضية الرسمي');
+    fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), { target: { value: 'CA-5' } });
+    const officialNumber = screen.getByLabelText('رقم الدعوى بالمحكمة');
     expect(officialNumber).toHaveAttribute('dir', 'ltr');
     fireEvent.change(officialNumber, { target: { value: '2026/45' } });
     fireEvent.click(screen.getByRole('checkbox', { name: 'أحمد' }));
@@ -61,6 +63,78 @@ describe('canonical domain forms', () => {
       officialNumber: '2026/45',
       clientIds: ['client-1'],
     });
+  });
+
+  it('explains a missing client and blank required fields instead of failing silently', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    render(
+      <CaseCreateForm
+        busy={false}
+        clients={[
+          {
+            id: 'client-1',
+            internalNumber: 'CL-1',
+            fullName: 'أحمد',
+            primaryPhone: null,
+            archivedAt: null,
+          },
+        ]}
+        onCancel={vi.fn()}
+        onSubmit={submit}
+      />,
+      { wrapper: MemoryRouter },
+    );
+    fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+    expect(await screen.findByText('اختر موكلًا واحدًا على الأقل لحفظ القضية.')).toBeVisible();
+    expect(screen.getByText('هذا الحقل مطلوب.')).toBeVisible();
+    expect(screen.getByLabelText('رقم الملف الداخلي')).toHaveAttribute('aria-invalid', 'true');
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('offers to add a client when none exist yet', () => {
+    render(<CaseCreateForm busy={false} clients={[]} onCancel={vi.fn()} onSubmit={vi.fn()} />, {
+      wrapper: MemoryRouter,
+    });
+    expect(screen.getByText('لا يوجد موكلون بعد')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'موكل جديد' })).toHaveAttribute('href', '/clients/new');
+  });
+
+  it('preselects the client a case is opened from', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    render(
+      <CaseCreateForm
+        busy={false}
+        initialClientIds={['client-1']}
+        clients={[
+          {
+            id: 'client-1',
+            internalNumber: 'CL-1',
+            fullName: 'أحمد',
+            primaryPhone: null,
+            archivedAt: null,
+          },
+        ]}
+        onCancel={vi.fn()}
+        onSubmit={submit}
+      />,
+      { wrapper: MemoryRouter },
+    );
+    expect(screen.getByRole('checkbox', { name: 'أحمد' })).toBeChecked();
+    fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), { target: { value: 'CA-9' } });
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+    await waitFor(() => expect(submit).toHaveBeenCalled());
+    expect(submit.mock.calls[0][0]).toMatchObject({ clientIds: ['client-1'] });
+  });
+
+  it('rejects a whitespace-only client name with a visible message', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    render(<ClientForm busy={false} submitLabel="حفظ" onSubmit={submit} />);
+    fireEvent.change(screen.getByLabelText('الرقم الداخلي'), { target: { value: 'CL-7' } });
+    fireEvent.change(screen.getByLabelText('الاسم الكامل'), { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+    expect(await screen.findByText('هذا الحقل مطلوب.')).toBeVisible();
+    expect(submit).not.toHaveBeenCalled();
   });
 
   it('adds selected clients and descriptive lawyers to a power of attorney', async () => {

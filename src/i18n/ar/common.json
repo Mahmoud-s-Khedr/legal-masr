@@ -12,7 +12,12 @@
     "finances": "المالية",
     "backups": "النسخ الاحتياطي",
     "settings": "الإعدادات",
-    "lock": "قفل التطبيق"
+    "lock": "قفل التطبيق",
+    "groups": {
+      "daily": "العمل اليومي",
+      "records": "الملفات",
+      "office": "المكتب"
+    }
   },
   "app": {
     "brandName": "ليجال مصر",
@@ -32,11 +37,12 @@
     "addHearing": "إضافة جلسة",
     "addTask": "إضافة مهمة",
     "searchLabel": "البحث العام",
-    "searchPlaceholder": "ابحث في سجلك قريبًا…"
+    "searchPlaceholder": "ابحث في سجلك قريبًا…",
+    "loadError": "تعذر تحميل السجلات. حاول مرة أخرى."
   },
   "datePicker": {
-    "placeholder": "YYYY-MM-DD",
-    "inputTitle": "أدخل التاريخ بصيغة YYYY-MM-DD",
+    "placeholder": "مثال: 3/10/2026",
+    "inputTitle": "اكتب التاريخ يومًا/شهرًا/سنة أو اختره من التقويم",
     "openCalendar": "فتح التقويم",
     "chooseDate": "اختيار التاريخ"
   },
@@ -99,7 +105,11 @@
     "previousPeriod": "الفترة السابقة",
     "nextPeriod": "الفترة التالية",
     "viewLabel": "طريقة عرض الأجندة",
-    "views": { "month": "شهر", "week": "أسبوع", "list": "قائمة" },
+    "views": {
+      "month": "شهر",
+      "week": "أسبوع",
+      "list": "قائمة"
+    },
     "dayDetails": "تفاصيل اليوم",
     "emptyDay": "لا توجد جلسات أو مهام في هذا التاريخ.",
     "empty": "لا توجد جلسات أو مهام بعد.",
@@ -208,10 +218,10 @@
     "agendaKicker": "برنامج اليوم",
     "todayEvents": "جلسات ومواعيد اليوم",
     "todayTasks": "مهام اليوم",
-    "viewCalendar": "عرض الجدول",
+    "viewCalendar": "فتح الأجندة",
     "loadingAgenda": "جارٍ تحضير برنامج اليوم…",
     "noEvents": "لا توجد جلسات اليوم",
-    "noEventsHint": "يمكنك إضافة جلسة أو موعد من الجدول.",
+    "noEventsHint": "يومك خالٍ من الجلسات. يمكنك إضافة جلسة من الأجندة.",
     "noTasks": "لا توجد مهام مستحقة اليوم",
     "noOverdue": "لا توجد مهام متأخرة",
     "noTasksHint": "أضف متابعة سريعة متى احتجت.",
@@ -219,7 +229,7 @@
     "legalEvent": "موعد قانوني",
     "followUpKicker": "المتابعة",
     "attentionKicker": "تحتاج تدخلك",
-    "attentionTitle": "متابعات متأخرة أو غير مكتملة",
+    "attentionTitle": "مهام متأخرة تحتاج تدخلك",
     "overdueSince": "متأخرة منذ {{date}}",
     "missingOutcome": "لم تُسجل النتيجة — {{date}}",
     "addHearing": "إضافة جلسة",
@@ -230,9 +240,9 @@
     "heading": "سجل العمل",
     "description": "عرض سريع لملفاتك الحالية، محفوظ محليًا على جهازك.",
     "clientsKicker": "الموكلون",
-    "clientsTitle": "أحدث الموكلين",
+    "clientsTitle": "الموكلون",
     "casesKicker": "القضايا",
-    "casesTitle": "القضايا الحالية",
+    "casesTitle": "القضايا",
     "viewAll": "عرض الكل",
     "addClient": "إضافة موكل",
     "addCase": "فتح قضية",
@@ -243,7 +253,28 @@
     "caseContextUnavailable": "تفاصيل القضية غير متاحة",
     "taskCaseContext": "القضية {{caseNumber}}",
     "taskClientContext": "الموكل {{clientName}}",
-    "taskNoContext": "لا توجد قضية أو موكل مرتبط"
+    "taskNoContext": "لا توجد قضية أو موكل مرتبط",
+    "loading": "جارٍ تحضير برنامج اليوم…",
+    "loadError": "تعذر تحميل برنامج اليوم. لم تتغير بياناتك؛ حاول مرة أخرى.",
+    "stats": {
+      "hearingsToday": "جلسات اليوم",
+      "tasksToday": "مهام اليوم",
+      "overdue": "مهام متأخرة",
+      "weekAhead": "جلسات خلال 7 أيام"
+    },
+    "overdueDays_zero": "مستحقة اليوم",
+    "overdueDays_one": "متأخرة يومًا واحدًا",
+    "overdueDays_two": "متأخرة يومين",
+    "overdueDays_few": "متأخرة {{count}} أيام",
+    "overdueDays_many": "متأخرة {{count}} يومًا",
+    "overdueDays_other": "متأخرة {{count}} يوم",
+    "tomorrow": "غدًا",
+    "inDays_zero": "اليوم",
+    "inDays_one": "بعد يوم",
+    "inDays_two": "بعد يومين",
+    "inDays_few": "بعد {{count}} أيام",
+    "inDays_many": "بعد {{count}} يومًا",
+    "inDays_other": "بعد {{count}} يوم"
   },
   "placeholder": {
     "tag": "قريبًا",
@@ -298,7 +329,7 @@
     "tableCaption": "سجل الموكلين",
     "columns": {
       "name": "الاسم",
-      "type": "النوع",
+      "type": "الرقم الداخلي",
       "phone": "الهاتف",
       "status": "الحالة"
     },
@@ -312,7 +343,9 @@
       "primaryPhone": "رقم الهاتف",
       "email": "البريد الإلكتروني",
       "address": "العنوان",
-      "notes": "ملاحظات"
+      "notes": "ملاحظات",
+      "fullName": "الاسم الكامل",
+      "internalNumber": "الرقم الداخلي"
     },
     "save": "حفظ",
     "cancel": "إلغاء",
@@ -324,6 +357,12 @@
       "casesTitle": "القضايا",
       "noCases": "لا توجد قضايا مرتبطة بهذا الموكل.",
       "notFound": "لم يتم العثور على الموكل."
+    },
+    "form": {
+      "identitySection": "بيانات الموكل",
+      "contactSection": "التواصل والعنوان",
+      "internalNumberHint": "رقم ملف الموكل في مكتبك.",
+      "nationalIdHint": "14 رقمًا كما في بطاقة الرقم القومي."
     }
   },
   "cases": {
@@ -337,14 +376,15 @@
     "archivedBadge": "مؤرشفة",
     "tableCaption": "سجل القضايا",
     "columns": {
-      "number": "رقم القضية",
+      "number": "رقم الملف",
       "year": "السنة",
-      "client": "الموكل الأساسي",
-      "status": "الحالة"
+      "client": "الموكلون",
+      "status": "الحالة",
+      "official": "رقم الدعوى"
     },
     "fields": {
-      "caseNumber": "رقم القضية",
-      "officialNumber": "رقم القضية الرسمي",
+      "caseNumber": "رقم الملف الداخلي",
+      "officialNumber": "رقم الدعوى بالمحكمة",
       "judicialYear": "السنة القضائية",
       "courtName": "المحكمة",
       "circuitName": "الدائرة",
@@ -356,7 +396,8 @@
       "summary": "ملخص",
       "notes": "ملاحظات",
       "clients": "الموكلون",
-      "primaryClient": "الموكل الأساسي"
+      "primaryClient": "الموكل الأساسي",
+      "litigationDegree": "الدرجة القضائية"
     },
     "status": {
       "DRAFT": "مسودة",
@@ -400,7 +441,41 @@
         "EXPERT": "خبير",
         "OTHER": "أخرى"
       }
-    }
+    },
+    "degrees": {
+      "FIRST_INSTANCE": "أول درجة",
+      "APPEAL": "استئناف",
+      "CASSATION": "نقض",
+      "OTHER": "أخرى"
+    },
+    "form": {
+      "identitySection": "بيانات الدعوى",
+      "courtSection": "المحكمة والتواريخ",
+      "subjectSection": "الموضوع والملاحظات",
+      "internalNumberHint": "رقم تختاره لترتيب ملفات مكتبك.",
+      "officialNumberHint": "كما يظهر في صحيفة الدعوى.",
+      "caseTypeHint": "مثال: مدني كلي، أسرة، جنح مستأنف.",
+      "courtPlaceholder": "مثال: محكمة شمال القاهرة الابتدائية",
+      "clientsHint": "اختر موكلًا واحدًا على الأقل لهذه القضية.",
+      "clientsRequired": "اختر موكلًا واحدًا على الأقل لحفظ القضية.",
+      "noClientsTitle": "لا يوجد موكلون بعد",
+      "noClientsHint": "أضف الموكل أولًا، ثم ارجع لفتح القضية.",
+      "clientSearch": "ابحث عن موكل بالاسم أو الرقم",
+      "selectedClients": "عدد الموكلين المحددين: {{count}}",
+      "addClientLink": "إضافة موكل جديد",
+      "loadingClients": "جارٍ تحميل الموكلين…",
+      "clientsLoadError": "تعذر تحميل الموكلين. حاول فتح النموذج مرة أخرى."
+    },
+    "kicker": "ملفات العمل",
+    "description": "كل قضية مع موكليها وجلساتها ومهامها وحسابها.",
+    "searchPlaceholder": "ابحث برقم القضية أو المحكمة أو الموكل",
+    "statusFilter": "تصفية حسب الحالة",
+    "allStatuses": "كل الحالات",
+    "noResults": "لا توجد قضايا مطابقة",
+    "noResultsHint": "غيّر كلمات البحث أو حالة القضية.",
+    "emptyHint": "أنشئ أول قضية واربطها بموكل واحد على الأقل.",
+    "officialReference": "رقم {{number}} لسنة {{year}}",
+    "officialNumberOnly": "رقم {{number}}"
   },
   "search": {
     "placeholder": "ابحث بالاسم أو رقم القضية…",
@@ -412,5 +487,10 @@
       "case": "القضايا",
       "power_of_attorney": "التوكيلات"
     }
+  },
+  "forms": {
+    "required": "هذا الحقل مطلوب.",
+    "invalid": "تحقق من القيمة المدخلة.",
+    "notSpecified": "غير محدد"
   }
 }

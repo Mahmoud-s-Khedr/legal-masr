@@ -12,7 +12,12 @@
     "finances": "Finances",
     "backups": "Backups",
     "settings": "Settings",
-    "lock": "Lock application"
+    "lock": "Lock application",
+    "groups": {
+      "daily": "Daily work",
+      "records": "Records",
+      "office": "Office"
+    }
   },
   "app": {
     "brandName": "Legal Masr",
@@ -32,11 +37,12 @@
     "addHearing": "Add hearing",
     "addTask": "Add task",
     "searchLabel": "Global search",
-    "searchPlaceholder": "Search your records soon…"
+    "searchPlaceholder": "Search your records soon…",
+    "loadError": "Could not load the records. Please try again."
   },
   "datePicker": {
     "placeholder": "YYYY-MM-DD",
-    "inputTitle": "Enter the date in YYYY-MM-DD format",
+    "inputTitle": "Enter a date as DD/MM/YYYY or YYYY-MM-DD",
     "openCalendar": "Open calendar",
     "chooseDate": "Choose date"
   },
@@ -99,7 +105,11 @@
     "previousPeriod": "Previous period",
     "nextPeriod": "Next period",
     "viewLabel": "Agenda view",
-    "views": { "month": "Month", "week": "Week", "list": "List" },
+    "views": {
+      "month": "Month",
+      "week": "Week",
+      "list": "List"
+    },
     "dayDetails": "Day details",
     "emptyDay": "No hearings or tasks on this date.",
     "empty": "There are no hearings or tasks yet.",
@@ -208,10 +218,10 @@
     "agendaKicker": "Today's agenda",
     "todayEvents": "Today's hearings and events",
     "todayTasks": "Today's tasks",
-    "viewCalendar": "View calendar",
+    "viewCalendar": "Open agenda",
     "loadingAgenda": "Preparing today's agenda…",
     "noEvents": "No hearings today",
-    "noEventsHint": "Add a hearing or event from the calendar.",
+    "noEventsHint": "No hearings today. You can add one from the agenda.",
     "noTasks": "No tasks due today",
     "noOverdue": "No overdue tasks",
     "noTasksHint": "Add a quick follow-up whenever you need one.",
@@ -219,7 +229,7 @@
     "legalEvent": "Legal event",
     "followUpKicker": "Follow-up",
     "attentionKicker": "Needs your attention",
-    "attentionTitle": "Overdue or incomplete follow-ups",
+    "attentionTitle": "Overdue tasks that need you",
     "overdueSince": "Overdue since {{date}}",
     "missingOutcome": "Outcome not recorded — {{date}}",
     "addHearing": "Add hearing",
@@ -230,9 +240,9 @@
     "heading": "Work register",
     "description": "A quick view of your active local records.",
     "clientsKicker": "Clients",
-    "clientsTitle": "Recent clients",
+    "clientsTitle": "Clients",
     "casesKicker": "Cases",
-    "casesTitle": "Current cases",
+    "casesTitle": "Cases",
     "viewAll": "View all",
     "addClient": "Add client",
     "addCase": "Open a case",
@@ -243,7 +253,28 @@
     "caseContextUnavailable": "Case details unavailable",
     "taskCaseContext": "Case {{caseNumber}}",
     "taskClientContext": "Client {{clientName}}",
-    "taskNoContext": "No linked case or client"
+    "taskNoContext": "No linked case or client",
+    "loading": "Preparing today's schedule…",
+    "loadError": "Could not load today's schedule. Your data is unchanged; please try again.",
+    "stats": {
+      "hearingsToday": "Hearings today",
+      "tasksToday": "Tasks today",
+      "overdue": "Overdue tasks",
+      "weekAhead": "Hearings in 7 days"
+    },
+    "overdueDays_zero": "Due today",
+    "overdueDays_one": "1 day overdue",
+    "overdueDays_two": "{{count}} days overdue",
+    "overdueDays_few": "{{count}} days overdue",
+    "overdueDays_many": "{{count}} days overdue",
+    "overdueDays_other": "{{count}} days overdue",
+    "tomorrow": "Tomorrow",
+    "inDays_zero": "Today",
+    "inDays_one": "In 1 day",
+    "inDays_two": "In {{count}} days",
+    "inDays_few": "In {{count}} days",
+    "inDays_many": "In {{count}} days",
+    "inDays_other": "In {{count}} days"
   },
   "placeholder": {
     "tag": "Coming soon",
@@ -298,7 +329,7 @@
     "tableCaption": "Client register",
     "columns": {
       "name": "Name",
-      "type": "Type",
+      "type": "Internal number",
       "phone": "Phone",
       "status": "Status"
     },
@@ -312,7 +343,9 @@
       "primaryPhone": "Phone number",
       "email": "Email",
       "address": "Address",
-      "notes": "Notes"
+      "notes": "Notes",
+      "fullName": "Full name",
+      "internalNumber": "Internal number"
     },
     "save": "Save",
     "cancel": "Cancel",
@@ -324,6 +357,12 @@
       "casesTitle": "Cases",
       "noCases": "No cases linked to this client.",
       "notFound": "Client not found."
+    },
+    "form": {
+      "identitySection": "Client details",
+      "contactSection": "Contact and address",
+      "internalNumberHint": "The client's file number in your office.",
+      "nationalIdHint": "14 digits, as on the national ID card."
     }
   },
   "cases": {
@@ -337,14 +376,15 @@
     "archivedBadge": "Archived",
     "tableCaption": "Case register",
     "columns": {
-      "number": "Case number",
+      "number": "File number",
       "year": "Year",
-      "client": "Primary client",
-      "status": "Status"
+      "client": "Clients",
+      "status": "Status",
+      "official": "Court case number"
     },
     "fields": {
-      "caseNumber": "Case number",
-      "officialNumber": "Official case number",
+      "caseNumber": "Internal file number",
+      "officialNumber": "Court case number",
       "judicialYear": "Judicial year",
       "courtName": "Court",
       "circuitName": "Circuit",
@@ -356,7 +396,8 @@
       "summary": "Summary",
       "notes": "Notes",
       "clients": "Clients",
-      "primaryClient": "Primary client"
+      "primaryClient": "Primary client",
+      "litigationDegree": "Litigation degree"
     },
     "status": {
       "DRAFT": "Draft",
@@ -400,7 +441,41 @@
         "EXPERT": "Expert",
         "OTHER": "Other"
       }
-    }
+    },
+    "degrees": {
+      "FIRST_INSTANCE": "First instance",
+      "APPEAL": "Appeal",
+      "CASSATION": "Cassation",
+      "OTHER": "Other"
+    },
+    "form": {
+      "identitySection": "Case details",
+      "courtSection": "Court and dates",
+      "subjectSection": "Subject and notes",
+      "internalNumberHint": "A number you choose to organise your office files.",
+      "officialNumberHint": "As shown on the statement of claim.",
+      "caseTypeHint": "For example: civil, family, misdemeanour appeal.",
+      "courtPlaceholder": "For example: North Cairo Court of First Instance",
+      "clientsHint": "Choose at least one client for this case.",
+      "clientsRequired": "Choose at least one client to save the case.",
+      "noClientsTitle": "No clients yet",
+      "noClientsHint": "Add the client first, then come back to open the case.",
+      "clientSearch": "Search clients by name or number",
+      "selectedClients": "Selected clients: {{count}}",
+      "addClientLink": "Add a new client",
+      "loadingClients": "Loading clients…",
+      "clientsLoadError": "Could not load clients. Try opening the form again."
+    },
+    "kicker": "Case files",
+    "description": "Every case with its clients, hearings, tasks and account.",
+    "searchPlaceholder": "Search by case number, court or client",
+    "statusFilter": "Filter by status",
+    "allStatuses": "All statuses",
+    "noResults": "No matching cases",
+    "noResultsHint": "Change the search words or the case status.",
+    "emptyHint": "Create your first case and link it to at least one client.",
+    "officialReference": "No. {{number}} of {{year}}",
+    "officialNumberOnly": "No. {{number}}"
   },
   "search": {
     "placeholder": "Search by name or case number…",
@@ -412,5 +487,10 @@
       "case": "Cases",
       "power_of_attorney": "Powers of attorney"
     }
+  },
+  "forms": {
+    "required": "This field is required.",
+    "invalid": "Check the value you entered.",
+    "notSpecified": "Not specified"
   }
 }

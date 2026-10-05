@@ -75,10 +75,12 @@ describe('TasksPage', () => {
     await waitFor(() => expect(bridge.taskComplete).toHaveBeenCalled());
     expect(vi.mocked(bridge.taskComplete).mock.calls[0][0]).toBe('task-1');
 
+    const today = screen.getByRole('tab', { name: 'اليوم' });
+    today.focus();
+    fireEvent.keyDown(today, { key: 'ArrowRight' });
     const overdue = screen.getByRole('tab', { name: 'متأخرة' });
-    overdue.focus();
-    fireEvent.keyDown(overdue, { key: 'ArrowRight' });
-    expect(screen.getByRole('tab', { name: 'متأخرة' })).toHaveAttribute('aria-selected', 'true');
+    await waitFor(() => expect(overdue).toHaveAttribute('aria-selected', 'true'));
+    expect(overdue).toHaveFocus();
 
     fireEvent.click(screen.getByRole('button', { name: 'إضافة مهمة' }));
     expect(await screen.findByRole('dialog', { name: 'إضافة مهمة' })).toBeInTheDocument();

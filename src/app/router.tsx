@@ -16,18 +16,39 @@ import { PowersOfAttorneyPage } from '../features/powersOfAttorney/pages/PowersO
 import { PowerOfAttorneyDetailPage } from '../features/powersOfAttorney/pages/PowerOfAttorneyDetailPage';
 import type { IconName } from '../components/layout/Icon';
 
-export const NAV_ITEMS = [
-  { to: '/', key: 'nav.today', icon: 'home' },
-  { to: '/calendar', key: 'nav.agenda', icon: 'calendar' },
-  { to: '/clients', key: 'nav.clients', icon: 'clients' },
-  { to: '/powers-of-attorney', key: 'nav.powersOfAttorney', icon: 'poa' },
-  { to: '/cases', key: 'nav.cases', icon: 'cases' },
-  { to: '/tasks', key: 'nav.tasks', icon: 'tasks' },
-  { to: '/attachments', key: 'nav.documents', icon: 'documents' },
-  { to: '/finances', key: 'nav.finances', icon: 'finances' },
-  { to: '/backups', key: 'nav.backups', icon: 'backup' },
-  { to: '/settings', key: 'nav.settings', icon: 'settings' },
-] as const satisfies ReadonlyArray<{ to: string; key: string; icon: IconName }>;
+export const NAV_GROUPS = [
+  {
+    key: 'nav.groups.daily',
+    items: [
+      { to: '/', key: 'nav.today', icon: 'home' },
+      { to: '/calendar', key: 'nav.agenda', icon: 'calendar' },
+      { to: '/tasks', key: 'nav.tasks', icon: 'tasks' },
+    ],
+  },
+  {
+    key: 'nav.groups.records',
+    items: [
+      { to: '/clients', key: 'nav.clients', icon: 'clients' },
+      { to: '/cases', key: 'nav.cases', icon: 'cases' },
+      { to: '/powers-of-attorney', key: 'nav.powersOfAttorney', icon: 'poa' },
+      { to: '/attachments', key: 'nav.documents', icon: 'documents' },
+    ],
+  },
+  {
+    key: 'nav.groups.office',
+    items: [
+      { to: '/finances', key: 'nav.finances', icon: 'finances' },
+      { to: '/backups', key: 'nav.backups', icon: 'backup' },
+      { to: '/settings', key: 'nav.settings', icon: 'settings' },
+    ],
+  },
+] as const satisfies ReadonlyArray<{
+  key: string;
+  items: ReadonlyArray<{ to: string; key: string; icon: IconName }>;
+}>;
+
+export const NAV_ITEMS: ReadonlyArray<{ to: string; key: string; icon: IconName }> =
+  NAV_GROUPS.flatMap((group) => [...group.items]);
 
 export function AppRoutes() {
   return (

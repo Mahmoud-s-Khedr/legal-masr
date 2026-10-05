@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
-import { Badge } from '../../../components/ui/badge';
+import { PageHeader } from '../../../components/layout/PageHeader';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Input } from '../../../components/ui/input';
@@ -26,20 +26,20 @@ export function ClientListPage() {
 
   return (
     <section className="entity-list">
-      <div className="entity-list-header">
-        <div>
-          <p className="kicker">{t('clients.kicker')}</p>
-          <h2>{t('clients.title')}</h2>
-          <p className="page-description">{t('clients.description')}</p>
-        </div>
-        <Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>
-      </div>
+      <PageHeader
+        kicker={t('clients.kicker')}
+        title={t('clients.title')}
+        description={t('clients.description')}
+        actions={<Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>}
+      />
 
       <div className="entity-list-toolbar">
         <Input
+          type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('clients.searchPlaceholder')}
+          aria-label={t('clients.searchPlaceholder')}
         />
         <label className="checkbox-field">
           <Checkbox checked={includeArchived} onCheckedChange={setIncludeArchived} />
@@ -50,7 +50,9 @@ export function ClientListPage() {
       {isLoading ? (
         <Skeleton className="table-message h-24" aria-label={t('clients.loading')} />
       ) : isError ? (
-        <p role="alert">تعذر تحميل السجلات. حاول مرة أخرى.</p>
+        <p className="error" role="alert">
+          {t('app.loadError')}
+        </p>
       ) : !clients?.length ? (
         <Card className="empty-state-card">
           <strong>{query ? t('clients.noResults') : t('clients.empty')}</strong>
@@ -79,16 +81,22 @@ export function ClientListPage() {
                       <bdi>{client.fullName}</bdi>
                     </Link>
                   </th>
-                  <td>
+                  <td className="mono">
                     <bdi>{client.internalNumber}</bdi>
                   </td>
-                  <td>{client.primaryPhone ? <bdi>{client.primaryPhone}</bdi> : '—'}</td>
-                  <td>
-                    {client.archivedAt ? (
-                      <Badge className="badge">{t('clients.archivedBadge')}</Badge>
+                  <td className="mono">
+                    {client.primaryPhone ? (
+                      <bdi>{client.primaryPhone}</bdi>
                     ) : (
-                      <span className="status-dot">{t('clients.active')}</span>
+                      <span className="cell-muted">—</span>
                     )}
+                  </td>
+                  <td>
+                    <span
+                      className={`status-badge ${client.archivedAt ? 'tone-muted' : 'tone-active'}`}
+                    >
+                      {client.archivedAt ? t('clients.archivedBadge') : t('clients.active')}
+                    </span>
                   </td>
                 </tr>
               ))}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Link, NavLink } from 'react-router-dom';
-import { AppRoutes, NAV_ITEMS } from '../../app/router';
+import { AppRoutes, NAV_GROUPS } from '../../app/router';
 import { GlobalSearch } from '../../features/search/components/GlobalSearch';
 import { DropdownMenu } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
@@ -63,12 +63,16 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
 
   const navigation = (onNavigate?: () => void) => (
     <nav aria-label={t('app.workspaceKicker')}>
-      <p className="sidebar-section-label">{t('app.workspaceKicker')}</p>
-      {NAV_ITEMS.map(({ to, key, icon }) => (
-        <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate}>
-          <Icon name={icon} />
-          <span>{t(key)}</span>
-        </NavLink>
+      {NAV_GROUPS.map((group) => (
+        <div className="nav-group" key={group.key}>
+          <p className="sidebar-section-label">{t(group.key)}</p>
+          {group.items.map(({ to, key, icon }) => (
+            <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate}>
+              <Icon name={icon} />
+              <span>{t(key)}</span>
+            </NavLink>
+          ))}
+        </div>
       ))}
     </nav>
   );
@@ -103,6 +107,9 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
                 <div className="search-wrap">
                   <Icon name="search" size={19} />
                   <GlobalSearch query={searchQuery} onQueryChange={setSearchQuery} />
+                  <kbd className="search-shortcut" aria-hidden="true">
+                    Ctrl K
+                  </kbd>
                 </div>
                 <Sheet.Trigger
                   className="search-palette-trigger icon-button"
@@ -116,7 +123,7 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
                   <DropdownMenu.Trigger className="create-button">
                     <Icon name="plus" size={18} />
                     <span>{t('app.add')}</span>
-                    <Icon name="chevron-down" size={15} />
+                    <Icon name="chevron-down" size={16} />
                   </DropdownMenu.Trigger>
                   <DropdownMenu.Portal>
                     <DropdownMenu.Positioner side="bottom" align="end" sideOffset={8}>
@@ -147,7 +154,7 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
                     </DropdownMenu.Positioner>
                   </DropdownMenu.Portal>
                 </DropdownMenu.Root>
-                <LanguageSwitcher />
+                <LanguageSwitcher className="topbar-language" />
                 <Button
                   className="lock-button icon-button"
                   variant="ghost"

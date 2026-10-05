@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { errorMessage } from '../../../bridge/errors';
 import type { AppError, ClientDuplicateCandidate } from '../../../bridge/types';
 import { useCreateClient } from '../api/clientsApi';
 import { ClientForm } from '../forms/ClientForm';
 import { Button } from '../../../components/ui/button';
+import { PageHeader } from '../../../components/layout/PageHeader';
 import type { ClientFormValues } from '../schemas/client.schema';
 
 export function NewClientPage() {
@@ -17,8 +18,8 @@ export function NewClientPage() {
   const submit = async (values: ClientFormValues, confirmDuplicate: boolean) => {
     setDuplicates(null);
     try {
-      await createClient.mutateAsync({ ...values, confirmDuplicate });
-      navigate('/clients');
+      const created = await createClient.mutateAsync({ ...values, confirmDuplicate });
+      navigate(created?.id ? `/clients/${created.id}` : '/clients');
     } catch (error) {
       const apiError = error as AppError;
       if (apiError?.code === 'CLIENT_PROBABLE_DUPLICATE') {
@@ -32,13 +33,11 @@ export function NewClientPage() {
 
   return (
     <section className="record-editor">
-      <div className="page-heading">
-        <div>
-          <p className="kicker">{t('clients.editorKicker')}</p>
-          <h2>{t('clients.newButton')}</h2>
-          <p>{t('clients.editorDescription')}</p>
-        </div>
-      </div>
+      <PageHeader
+        kicker={t('clients.editorKicker')}
+        title={t('clients.newButton')}
+        description={t('clients.editorDescription')}
+      />
       <div className="editor-surface">
         <ClientForm
           busy={createClient.isPending}
@@ -52,13 +51,19 @@ export function NewClientPage() {
           </p>
         )}
         {duplicates && (
-          <div className="warning" role="alert">
+          <div className="warning duplicate-warning" role="alert">
             <p>{t('clients.duplicateWarning')}</p>
             <ul>
               {duplicates.map((candidate) => (
                 <li key={candidate.id}>
-                  {candidate.fullName}
-                  {candidate.primaryPhone ? ` — ${candidate.primaryPhone}` : ''}
+                  <Link to={`/clients/${candidate.id}`} target="_self">
+                    <bdi>{candidate.fullName}</bdi>
+                  </Link>
+                  {candidate.primaryPhone && (
+                    <span className="mono" dir="ltr">
+                      {candidate.primaryPhone}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

@@ -38,13 +38,17 @@ export function CaseEditForm({
   });
 
   return (
-    <form onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
-      <CaseCoreFields register={register} control={control} />
+    <form
+      noValidate
+      className="dialog-wide-form"
+      onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}
+    >
+      <CaseCoreFields register={register} control={control} errors={formState.errors} />
       <div className="form-actions">
         <Button disabled={busy || formState.isSubmitting}>{t('cases.save')}</Button>
         {onCancel && (
           <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-            إلغاء
+            {t('cases.cancel')}
           </Button>
         )}
       </div>

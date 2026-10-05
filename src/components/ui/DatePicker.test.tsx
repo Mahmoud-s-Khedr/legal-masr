@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { DatePicker } from './DatePicker';
+import { DatePicker, normalizeTypedDate } from './DatePicker';
 import i18n from '../../i18n';
 import { LocalePresentationContext } from '../../i18n/LocalePresentation';
 import { enUS } from 'date-fns/locale';
@@ -37,7 +37,13 @@ describe('DatePicker', () => {
     const onChange = vi.fn();
     render(
       <LocalePresentationContext.Provider
-        value={{ language: 'en', direction: 'ltr', dateLocale: enUS, weekStartsOn: 0 }}
+        value={{
+          language: 'en',
+          direction: 'ltr',
+          dateLocale: enUS,
+          weekStartsOn: 0,
+          dateFormat: 'yyyy-MM-dd',
+        }}
       >
         <DatePicker aria-label="Date" value="2026-10-22" onChange={onChange} />
       </LocalePresentationContext.Provider>,
@@ -50,5 +56,25 @@ describe('DatePicker', () => {
       expect.objectContaining({ target: expect.objectContaining({ value: '2026-10-23' }) }),
     );
     await i18n.changeLanguage('ar');
+  });
+
+  it('normalizes day-first and Arabic-Indic typed dates on blur', () => {
+    const onChange = vi.fn();
+    render(<DatePicker aria-label="التاريخ" onChange={onChange} />);
+    const input = screen.getByLabelText('التاريخ');
+    fireEvent.change(input, { target: { value: '٣/١٠/٢٠٢٦' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ target: expect.objectContaining({ value: '2026-10-03' }) }),
+    );
+  });
+
+  it('accepts only real calendar dates when normalizing', () => {
+    expect(normalizeTypedDate('3/10/2026')).toBe('2026-10-03');
+    expect(normalizeTypedDate('03-10-2026')).toBe('2026-10-03');
+    expect(normalizeTypedDate('2026-10-03')).toBe('2026-10-03');
+    expect(normalizeTypedDate('31/02/2026')).toBeNull();
+    expect(normalizeTypedDate('10/2026')).toBeNull();
+    expect(normalizeTypedDate('')).toBeNull();
   });
 });

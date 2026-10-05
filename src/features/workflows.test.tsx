@@ -137,11 +137,13 @@ it('creates a case with its client relationship and retains a rejected draft', a
     .mockRejectedValueOnce(fictionalFailure)
     .mockResolvedValue(fixtures.caseItem);
   const { invalidate } = renderWorkflow(<NewCasePage />, '/cases/new', '/cases/new');
-  fireEvent.change(screen.getByLabelText('رقم القضية'), { target: { value: 'FICTIONAL-CASE' } });
+  fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), {
+    target: { value: 'FICTIONAL-CASE' },
+  });
   fireEvent.click(await screen.findByRole('checkbox', { name: fixtures.client.fullName }));
   fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
   await screen.findByRole('alert');
-  expect(screen.getByLabelText('رقم القضية')).toHaveValue('FICTIONAL-CASE');
+  expect(screen.getByLabelText('رقم الملف الداخلي')).toHaveValue('FICTIONAL-CASE');
   expect(invalidate).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
   await screen.findByText('تم الانتقال');
@@ -293,14 +295,31 @@ describe('dashboard and agenda', () => {
       'href',
       '/tasks?task=overdue',
     );
-    expect(screen.getByRole('link', { name: /2026-10-10/ })).toHaveAttribute(
+    const upcomingDate = document.querySelector('time[datetime="2026-10-10"]');
+    expect(upcomingDate).toHaveTextContent('أكتوبر');
+    expect(within(upcomingDate!.closest('li')!).getByRole('link')).toHaveAttribute(
       'href',
       '/calendar?hearing=upcoming',
     );
+    expect(screen.getByText('متأخرة 4 أيام')).toBeVisible();
     expect(screen.getByRole('link', { name: fixtures.client.fullName })).toHaveAttribute(
       'href',
       `/clients/${fixtures.client.id}`,
     );
+  });
+  it('completes a task from Today and reports a rejected completion', async () => {
+    vi.mocked(bridge.taskComplete)
+      .mockRejectedValueOnce(fictionalFailure)
+      .mockResolvedValue({ ...fixtures.task, completed: true });
+    renderWorkflow(<DashboardPage />);
+    const checkbox = await screen.findByRole('checkbox', {
+      name: `إتمام ${fixtures.task.title}`,
+    });
+    fireEvent.click(checkbox);
+    expect(await screen.findByRole('alert')).toHaveTextContent('تعذر تغيير حالة المهمة');
+    fireEvent.click(checkbox);
+    await waitFor(() => expect(bridge.taskComplete).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(bridge.taskComplete).mock.calls[1][0]).toBe(fixtures.task.id);
   });
   it('shows loading and rejected reads', async () => {
     let reject!: (error: unknown) => void;
@@ -424,10 +443,12 @@ it('edits a case while preserving its client and POA relationships', async () =>
     .mockResolvedValue(fixtures.caseItem);
   renderWorkflow(<CaseDetailPage />, `/cases/${fixtures.caseItem.id}`, '/cases/:id');
   fireEvent.click(await screen.findByRole('button', { name: 'تعديل' }));
-  fireEvent.change(screen.getByLabelText('رقم القضية'), { target: { value: 'CASE-EDITED' } });
+  fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), {
+    target: { value: 'CASE-EDITED' },
+  });
   fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
   await screen.findByRole('alert');
-  expect(screen.getByLabelText('رقم القضية')).toHaveValue('CASE-EDITED');
+  expect(screen.getByLabelText('رقم الملف الداخلي')).toHaveValue('CASE-EDITED');
   fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(vi.mocked(bridge.caseUpdate).mock.calls.at(-1)?.[0]).toMatchObject({
@@ -507,9 +528,11 @@ it('confirms hearing deletion, preserves refusals and refreshes after success', 
 it('does not submit a case when client choices fail to load', async () => {
   vi.mocked(bridge.clientList).mockRejectedValue(fictionalFailure);
   renderWorkflow(<NewCasePage />);
-  fireEvent.change(screen.getByLabelText('رقم القضية'), { target: { value: 'PRESERVED-CASE' } });
+  fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), {
+    target: { value: 'PRESERVED-CASE' },
+  });
   expect(await screen.findByRole('alert')).toHaveTextContent('تعذر تحميل الموكلين');
-  expect(screen.getByLabelText('رقم القضية')).toHaveValue('PRESERVED-CASE');
+  expect(screen.getByLabelText('رقم الملف الداخلي')).toHaveValue('PRESERVED-CASE');
   expect(screen.getByRole('button', { name: 'حفظ' })).toBeDisabled();
   expect(bridge.caseCreate).not.toHaveBeenCalled();
 });
