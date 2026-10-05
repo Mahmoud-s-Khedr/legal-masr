@@ -48,7 +48,7 @@
       "file": "dashboard-ar-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "81d7d522cec81cbdaf5695ff751e56ee8df3b74737fa7a4f12c8e29ec6a31232"
+      "sha256": "49b53f9ecd9596e91ce93c94dbf91981294f2198814e25197a68d0576f946365"
     },
     {
       "route": "/",
@@ -57,7 +57,7 @@
       "file": "dashboard-ar-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "954c3030a409f911be88f4ca4fa6a9f437113dcafc6528307536debee20c38fa"
+      "sha256": "30adc22ddda504cf91272fbcb752fe50207df0462e39d880db659fd476b9c233"
     },
     {
       "route": "/",
@@ -66,7 +66,7 @@
       "file": "dashboard-en-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "448ad713dcc54bbc37cde3245d482541c2f6842086aa3859873908c776ed3566"
+      "sha256": "22154c4f467bf772b6364a420979305c212a59387f11df8331b584fa6211cc46"
     },
     {
       "route": "/",
@@ -75,7 +75,7 @@
       "file": "dashboard-en-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "e1c57095daebac70032852e0d791b4a3a764f58428aa1787698e8694dbd58d03"
+      "sha256": "72e487d0c6540530e96343b2e397a1c7202c14aa92906022b9f62995c3955082"
     },
     {
       "route": "/clients",
@@ -372,7 +372,7 @@
       "file": "agenda-ar-1366x768.png",
       "width": 1366,
       "height": 1086,
-      "sha256": "96893836500846570f65809c2a59f1cc20f2f4ca5aafe5715819d18ec66a30f8"
+      "sha256": "398c597a246ad07e09657f9f1016641fa0d36a03dfe485174244bbfb8e6c23e4"
     },
     {
       "route": "/calendar",
@@ -381,7 +381,7 @@
       "file": "agenda-ar-1440x900.png",
       "width": 1440,
       "height": 1086,
-      "sha256": "c5ba254e790587b3ddea81266d1659692fce5c1f32bd8acde27717298f66195e"
+      "sha256": "7a63c8330b29fab806c1fe527064b5cd2dc0d379e5cd0bf26f5519777dab5a94"
     },
     {
       "route": "/calendar",
@@ -390,7 +390,7 @@
       "file": "agenda-en-1366x768.png",
       "width": 1366,
       "height": 1086,
-      "sha256": "5917553456a61ffedf337636fd4b308b8e970327036a3c68ee6cd06251683496"
+      "sha256": "69bcb780578e3ca317566eece796ea20ed81097fc8370d91f9f87c91f61cc39c"
     },
     {
       "route": "/calendar",
@@ -399,7 +399,7 @@
       "file": "agenda-en-1440x900.png",
       "width": 1440,
       "height": 1086,
-      "sha256": "4e2fcf38e8912aef161e64bae59e9c8953e84a66993d4c12e8eda9a960879390"
+      "sha256": "0da1aeaa162ccd216d779d36bc7e6c88ac1aea872b7bde3d6c05135370577252"
     },
     {
       "route": "/tasks",
