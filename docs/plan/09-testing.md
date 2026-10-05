@@ -60,6 +60,13 @@ and corrupt restore, and restart persistence. Reports contain sanitized outcomes
 and binary checksums only. No vaults, backups, secrets or security-screen captures
 are uploaded. Packaging binaries are scanned for harness markers.
 
+The driver must return a successful local `/status` response before a journey
+launches; startup polls every 250 ms for up to 30 seconds and records only a
+fixed startup/session/scenario error code. It never retains raw WebDriver
+errors, DOM, paths, passwords, or vault data. Windows runs all three attempts
+even after a failure and keeps each available sanitized per-run JSON outcome;
+the job fails after the final attempt if any attempt failed.
+
 PRs run Linux smoke plus all visual comparisons. Nightly and release validation
 run Linux/Windows desktop suites three times; Windows matches its driver to the
 installed WebView2 version. macOS remains in the physical-device matrix.

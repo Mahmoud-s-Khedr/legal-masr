@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
+import { failedDesktopOutcome, waitForDriver } from './desktop-e2e-driver.mjs';
 const password = 'fictional desktop password 2026';
 const bytes = Buffer.from('%PDF-1.4\nFictional attachment for desktop validation only.\n');
 const binary = resolve(
@@ -43,7 +44,7 @@ async function scenario(name, exercise) {
   let browser;
   let stage = 'driver-start';
   const launch = async () => {
-    stage = 'launch';
+    stage = 'webdriver-session';
     browser = await remote({
       hostname: '127.0.0.1',
       port: 4444,
@@ -61,7 +62,6 @@ async function scenario(name, exercise) {
     }
   };
   const click = async (text) => {
-    stage = `click:${text}`;
     const element = await browser.$(`//button[normalize-space(.)=${JSON.stringify(text)}]`);
     await element.waitForDisplayed({ timeout: 15000 });
     await element.scrollIntoView();
@@ -69,13 +69,11 @@ async function scenario(name, exercise) {
     await element.click();
   };
   const nav = async (href) => {
-    stage = 'navigation';
     const link = await browser.$(`nav a[href="${href}"]`);
     await link.waitForClickable({ timeout: 15000 });
     await link.click();
   };
   const input = async (name, value) => {
-    stage = `input:${name}`;
     const element = await browser.$(`input[name="${name}"]`);
     await element.waitForDisplayed({ timeout: 15000 });
     await element.setValue(value);
@@ -106,16 +104,9 @@ async function scenario(name, exercise) {
     await browser.$(`a*=${`موكل خيالي ${number}`}`).waitForDisplayed({ timeout: 15000 });
   };
   try {
-    for (let attempt = 0; attempt < 100; attempt++) {
-      if (driverError || driver.exitCode !== null) throw new Error('DESKTOP_DRIVER_UNAVAILABLE');
-      try {
-        if ((await fetch('http://127.0.0.1:4444/status')).ok) break;
-      } catch {
-        /* driver is starting */
-      }
-      await new Promise((resolveWait) => setTimeout(resolveWait, 100));
-    }
+    await waitForDriver(driver);
     await launch();
+    stage = 'scenario';
     await exercise({
       root,
       selection,
@@ -134,25 +125,22 @@ async function scenario(name, exercise) {
     });
     await close();
     results.push({ scenario: name, result: 'passed' });
-  } catch {
-    const message = browser
-      ? await browser
-          .$('.error')
-          .getText()
-          .catch(() => '')
-      : '';
-    const diagnostic =
-      {
-        'ملف النسخة الاحتياطية غير صالح.': 'BACKUP_CORRUPTED',
-        'تعذر إتمام العملية بأمان.': 'OPERATION_FAILED',
-      }[message] || 'NO_ALLOWLISTED_DIAGNOSTIC';
-    results.push({
-      scenario: name,
-      result: 'failed',
-      code: 'DESKTOP_SCENARIO_FAILED',
-      stage,
-      diagnostic,
-    });
+  } catch (error) {
+    const diagnosticMessage =
+      stage === 'scenario' && browser
+        ? await browser
+            .$('.error')
+            .getText()
+            .catch(() => '')
+        : '';
+    results.push(
+      failedDesktopOutcome({
+        scenario: name,
+        stage,
+        error,
+        diagnosticMessage,
+      }),
+    );
     // WebDriver exceptions may include secret input, paths, or DOM. Never print them.
   } finally {
     await close().catch(() => undefined);

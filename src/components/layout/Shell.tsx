@@ -129,11 +129,17 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
                           <Icon name="cases" size={18} />
                           {t('dashboard.addCase')}
                         </DropdownMenu.LinkItem>
-                        <DropdownMenu.LinkItem render={<Link to="/calendar" />} closeOnClick>
+                        <DropdownMenu.LinkItem
+                          render={<Link to="/calendar?create=hearing" />}
+                          closeOnClick
+                        >
                           <Icon name="calendar" size={18} />
                           {t('app.addHearing')}
                         </DropdownMenu.LinkItem>
-                        <DropdownMenu.LinkItem render={<Link to="/tasks" />} closeOnClick>
+                        <DropdownMenu.LinkItem
+                          render={<Link to="/tasks?create=task" />}
+                          closeOnClick
+                        >
                           <Icon name="tasks" size={18} />
                           {t('app.addTask')}
                         </DropdownMenu.LinkItem>

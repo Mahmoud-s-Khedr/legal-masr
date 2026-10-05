@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { TaskDto, TaskInput } from '../../../bridge/types';
 import { DatePicker } from '../../../components/ui/DatePicker';
@@ -27,9 +27,14 @@ const views = ['TODAY', 'OVERDUE', 'UPCOMING', 'COMPLETED', 'ALL'] as const;
 export function TasksPage() {
   const { t } = useTranslation();
   const [params] = useSearchParams();
-  const [view, setView] = useState<(typeof views)[number]>('TODAY');
-  const [editing, setEditing] = useState<TaskDto | 'new' | null>(null);
+  const requestedTaskId = params.get('task');
+  const createIntent = params.get('create') === 'task';
+  const requestedDate = params.get('date') ?? localDate();
+  const [view, setView] = useState<(typeof views)[number]>(requestedTaskId ? 'ALL' : 'TODAY');
+  const [editing, setEditing] = useState<TaskDto | 'new' | null>(createIntent ? 'new' : null);
   const [removing, setRemoving] = useState<TaskDto | null>(null);
+  const [dismissedUnavailableId, setDismissedUnavailableId] = useState<string | null>(null);
+  const handledTaskId = useRef<string | null>(null);
   const [caseId, setCaseId] = useState(params.get('case') ?? '');
   const [clientId, setClientId] = useState(params.get('client') ?? '');
   const tasks = useTaskList({
@@ -44,6 +49,30 @@ export function TasksPage() {
   const complete = useCompleteTask();
   const reopen = useReopenTask();
   const remove = useDeleteTask();
+
+  useEffect(() => {
+    if (!requestedTaskId || !tasks.data || handledTaskId.current === requestedTaskId) return;
+    const task = tasks.data.find((item) => item.id === requestedTaskId);
+    if (task) {
+      let cancelled = false;
+      queueMicrotask(() => {
+        if (cancelled) return;
+        handledTaskId.current = requestedTaskId;
+        setEditing(task);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [requestedTaskId, tasks.data]);
+
+  const unavailable = Boolean(
+    requestedTaskId &&
+    tasks.data &&
+    !tasks.data.some((task) => task.id === requestedTaskId) &&
+    dismissedUnavailableId !== requestedTaskId,
+  );
+
   return (
     <section className="work-page">
       <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
@@ -62,6 +91,18 @@ export function TasksPage() {
         onChange={(value) => setView(value as (typeof views)[number])}
         tabs={views.map((id) => ({ id, label: t(`tasks.views.${id}`) }))}
       />
+      {unavailable && (
+        <div className="record-unavailable" role="alert">
+          <p>{t('tasks.recordUnavailable')}</p>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setDismissedUnavailableId(requestedTaskId)}
+          >
+            {t('tasks.dismissUnavailable')}
+          </Button>
+        </div>
+      )}
       <div className="finance-filters">
         <label>
           {t('tasks.case')}
@@ -186,6 +227,7 @@ export function TasksPage() {
             initial={editing === 'new' ? undefined : editing}
             initialCaseId={editing === 'new' ? caseId : undefined}
             initialClientId={editing === 'new' ? clientId : undefined}
+            initialDate={editing === 'new' ? requestedDate : undefined}
             cases={cases.data ?? []}
             clients={clients.data ?? []}
             busy={save.isPending}
@@ -237,6 +279,7 @@ export function TaskForm({
   initial,
   initialCaseId,
   initialClientId,
+  initialDate,
   cases,
   clients,
   busy,
@@ -248,6 +291,7 @@ export function TaskForm({
   initial?: TaskDto;
   initialCaseId?: string;
   initialClientId?: string;
+  initialDate?: string;
   cases: ReturnType<typeof useCaseList>['data'];
   clients: ReturnType<typeof useClientList>['data'];
   busy: boolean;
@@ -258,7 +302,7 @@ export function TaskForm({
 }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState(initial?.title ?? '');
-  const [dueDate, setDueDate] = useState(initial?.dueDate ?? localDate());
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? initialDate ?? localDate());
   const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
   const [clientId, setClientId] = useState(initial?.clientId ?? initialClientId ?? '');
   const [details, setDetails] = useState(initial?.details ?? '');

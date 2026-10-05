@@ -17,6 +17,7 @@ import { PowersOfAttorneyPage } from './powersOfAttorney/pages/PowersOfAttorneyP
 import { PowerOfAttorneyDetailPage } from './powersOfAttorney/pages/PowerOfAttorneyDetailPage';
 import { DashboardPage } from './dashboard/pages/DashboardPage';
 import { AgendaPage } from './hearings/pages/AgendaPage';
+import { TasksPage } from './tasks/pages/TasksPage';
 import { CasePartiesPanel } from './cases/components/CasePartiesPanel';
 import { AttachmentsPage } from './documents/pages/DocumentsPage';
 
@@ -280,6 +281,18 @@ describe('dashboard and agenda', () => {
     });
     renderWorkflow(<DashboardPage />);
     expect(await screen.findByText('مهمة متأخرة خيالية')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'إضافة جلسة' })).toHaveAttribute(
+      'href',
+      '/calendar?create=hearing&date=2026-10-05',
+    );
+    expect(screen.getByRole('link', { name: 'إضافة مهمة' })).toHaveAttribute(
+      'href',
+      '/tasks?create=task&date=2026-10-05',
+    );
+    expect(screen.getByRole('link', { name: 'مهمة متأخرة خيالية' })).toHaveAttribute(
+      'href',
+      '/tasks?task=overdue',
+    );
     expect(screen.getByRole('link', { name: /2026-10-10/ })).toHaveAttribute(
       'href',
       '/calendar?hearing=upcoming',
@@ -314,6 +327,18 @@ describe('dashboard and agenda', () => {
   it('filters the agenda by selected date', async () => {
     renderWorkflow(<AgendaPage />, '/calendar?date=2026-10-03');
     expect(await screen.findByRole('button', { name: 'تسجيل القرار' })).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: '2026-10-03: 1 جلسة، 1 مهمة مفتوحة، 0 مهمة مكتملة' }),
+    ).toBeVisible();
+  });
+  it('opens the exact hearing requested by a deep link', async () => {
+    renderWorkflow(<AgendaPage />, `/calendar?hearing=${fixtures.hearing.id}`);
+    expect(await screen.findByRole('dialog', { name: 'تعديل الجلسة' })).toBeVisible();
+  });
+  it('reports an unavailable hearing deep link without opening another record', async () => {
+    renderWorkflow(<AgendaPage />, '/calendar?hearing=deleted-hearing');
+    expect(await screen.findByRole('alert')).toHaveTextContent('هذه الجلسة لم تعد متاحة');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
   it('handles rejected agenda reads', async () => {
     vi.mocked(bridge.hearingList).mockRejectedValue(fictionalFailure);
@@ -423,13 +448,13 @@ it('creates/edits hearings and records a decision with a next hearing', async ()
   });
   const { invalidate } = renderWorkflow(
     <AgendaPage />,
-    `/calendar?case=${fixtures.caseItem.id}&date=2026-10-03`,
+    `/calendar?create=hearing&case=${fixtures.caseItem.id}&date=2026-10-03`,
   );
   fireEvent.change(await screen.findByLabelText('نوع الجلسة'), {
     target: { value: 'جلسة خيالية' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'حفظ الجلسة' }));
-  await screen.findByText('تعذر حفظ الجلسة.');
+  expect(await screen.findByRole('alert')).toHaveTextContent('تعذر حفظ الجلسة.');
   expect(screen.getByLabelText('نوع الجلسة')).toHaveValue('جلسة خيالية');
   expect(invalidate).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'حفظ الجلسة' }));
@@ -450,6 +475,18 @@ it('creates/edits hearings and records a decision with a next hearing', async ()
     decisionText: 'قرار خيالي',
     nextHearing: { caseId: fixtures.caseItem.id, hearingDate: '2026-10-10' },
   });
+});
+it('opens an exact task from a deep link and accepts create context', async () => {
+  renderWorkflow(
+    <TasksPage />,
+    `/tasks?task=${fixtures.task.id}&case=${fixtures.caseItem.id}&client=${fixtures.client.id}`,
+  );
+  expect(await screen.findByRole('dialog', { name: 'تفاصيل المهمة' })).toBeVisible();
+});
+it('reports an unavailable task deep link without opening another task', async () => {
+  renderWorkflow(<TasksPage />, '/tasks?task=deleted-task');
+  expect(await screen.findByRole('alert')).toHaveTextContent('هذه المهمة لم تعد متاحة');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 it('confirms hearing deletion, preserves refusals and refreshes after success', async () => {
   vi.mocked(bridge.hearingDelete)

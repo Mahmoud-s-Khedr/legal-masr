@@ -41,6 +41,13 @@ Arabic content remains in some English workflow pages, and a long fictional
 email wraps in the narrow contact card. The gallery exposes these details for
 review; repeatable screenshots do not establish translation or design quality.
 
+Subsequent user feedback on October 5 questioned whether most images are broken
+or outdated. The number affected has not been established: only representative
+captures were visually reviewed. Presenting this candidate for approval preceded
+a full visual audit. Historical comparison passes remain repeatability evidence
+only. Visual acceptance is blocked on a complete 64-image audit, correction of
+identified defects and explicit approval; fixes are deferred to a later session.
+
 ### Attachment failure handling
 
 Twelve component tests use typed bridge mocks with real query hooks and isolated

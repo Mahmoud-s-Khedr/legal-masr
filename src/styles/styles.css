@@ -2642,9 +2642,42 @@ html[dir='rtl'] .drawer-panel {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.calendar-task-indicator,
+.calendar-completed-task-indicator {
+  overflow: hidden;
+  border-radius: 0.35rem;
+  padding: 0.16rem 0.28rem;
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calendar-task-indicator {
+  background: color-mix(in srgb, #4e7c63 18%, var(--paper));
+  color: var(--accent);
+}
+.calendar-completed-task-indicator {
+  background: color-mix(in srgb, var(--line) 55%, var(--paper));
+  color: var(--muted);
+  text-decoration: line-through;
+}
 .calendar-more {
   color: var(--muted);
   font-size: 0.66rem;
+}
+.record-unavailable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  background: color-mix(in srgb, var(--danger) 8%, var(--paper));
+}
+.record-unavailable p {
+  margin: 0;
 }
 .calendar-detail h3 {
   margin: 0.2rem 0 1rem;

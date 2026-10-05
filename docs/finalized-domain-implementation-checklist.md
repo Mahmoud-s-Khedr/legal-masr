@@ -128,11 +128,10 @@ removed columns rather than providing readiness evidence.
 - `types.ts` and `commands.ts` expose canonical client, case, POA, hearing,
   task, attachment, payment, expense, Today, and settings contracts. Agenda
   combines hearing and task query views; the legacy event bridge is removed.
-- Phase 4 now has the approved frozen shell navigation: Today, Agenda,
-  Clients, Powers of Attorney, Cases, Tasks, Finance, Settings, and Lock
-  Application. Legacy Documents and Backups routes remain direct destinations
-  until their Phase 5 replacement screens are implemented, but are no longer
-  shell navigation destinations.
+- The product navigation is Today, Agenda, Clients, Powers of Attorney, Cases,
+  Tasks, Documents, Finance, Backups, Settings, and Lock Application. Powers
+  of Attorney remains a primary destination; Documents is a read-only ownership
+  index and attachments are still created from their owner record.
 - Shared accessible `Dialog`, `ConfirmDialog`, `Tabs`, `PageHeader`, and
   `Toast` primitives plus canonical query-key/invalidation helpers are present.
   The invalidation helper covers payment, hearing, task completion, and

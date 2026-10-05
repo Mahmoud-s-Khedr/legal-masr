@@ -19,6 +19,8 @@ export function DashboardPage() {
   });
   const clients = useClientList({});
   const cases = useCaseList({});
+  const upcomingHearings =
+    agenda.data?.upcomingHearings.filter((hearing) => hearing.hearingDate > date) ?? [];
   if (agenda.isLoading || clients.isLoading || cases.isLoading)
     return <p role="status">جارٍ تحميل لوحة اليوم…</p>;
   if (agenda.isError || clients.isError || cases.isError)
@@ -33,10 +35,10 @@ export function DashboardPage() {
         </div>
         <div className="quick-actions">
           <Button asChild className="button-link">
-            <Link to="/calendar">{t('dashboard.addHearing')}</Link>
+            <Link to={`/calendar?create=hearing&date=${date}`}>{t('dashboard.addHearing')}</Link>
           </Button>
           <Button variant="secondary" asChild className="button-link secondary-link">
-            <Link to="/tasks">{t('dashboard.addTask')}</Link>
+            <Link to={`/tasks?create=task&date=${date}`}>{t('dashboard.addTask')}</Link>
           </Button>
         </div>
       </header>
@@ -54,7 +56,16 @@ export function DashboardPage() {
                     <Link to={`/calendar?hearing=${hearing.id}`}>
                       <bdi dir="auto">{hearing.hearingType ?? t('dashboard.legalEvent')}</bdi>
                     </Link>
-                    <span dir="auto">{hearing.location ?? '—'}</span>
+                    <span dir="auto">
+                      {caseContext(hearing.caseId, cases.data, t)}
+                      {hearing.circuitName && ` · ${hearing.circuitName}`}
+                      {hearing.location && ` · ${hearing.location}`}
+                    </span>
+                    {hearing.requiredDocuments && (
+                      <span className="preparation-context" dir="auto">
+                        {t('dashboard.preparation')}: {hearing.requiredDocuments}
+                      </span>
+                    )}
                   </div>
                 </li>
               ))}
@@ -75,6 +86,9 @@ export function DashboardPage() {
                   <span dir="ltr">
                     <bdi>{task.dueDate}</bdi>
                   </span>
+                  <span dir="auto">
+                    {taskContext(task.caseId, task.clientId, cases.data, clients.data, t)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -89,7 +103,10 @@ export function DashboardPage() {
           <ul>
             {agenda.data.overdueTasks.map((task) => (
               <li key={task.id}>
-                <bdi dir="auto">{task.title}</bdi> · <bdi dir="ltr">{task.dueDate}</bdi>
+                <Link to={`/tasks?task=${task.id}`} dir="auto">
+                  <bdi>{task.title}</bdi>
+                </Link>{' '}
+                · <bdi dir="ltr">{task.dueDate}</bdi>
               </li>
             ))}
           </ul>
@@ -99,9 +116,9 @@ export function DashboardPage() {
       </Card>
       <Card className="register-section">
         <h3>{t('dashboard.upcomingHearings')}</h3>
-        {agenda.data?.upcomingHearings.length ? (
+        {upcomingHearings.length ? (
           <ul>
-            {agenda.data.upcomingHearings.map((hearing) => (
+            {upcomingHearings.map((hearing) => (
               <li key={hearing.id}>
                 <Link to={`/calendar?hearing=${hearing.id}`}>
                   <bdi>{hearing.hearingDate}</bdi> ·{' '}
@@ -143,4 +160,32 @@ export function DashboardPage() {
       </div>
     </section>
   );
+}
+
+function caseContext(
+  caseId: string,
+  cases: ReturnType<typeof useCaseList>['data'],
+  t: (key: string, options?: Record<string, unknown>) => string,
+) {
+  const item = cases?.find((candidate) => candidate.id === caseId);
+  return item
+    ? t('dashboard.caseContext', {
+        caseNumber: item.internalNumber,
+        clients: item.clientNames.join(', '),
+      })
+    : t('dashboard.caseContextUnavailable');
+}
+
+function taskContext(
+  caseId: string | null,
+  clientId: string | null,
+  cases: ReturnType<typeof useCaseList>['data'],
+  clients: ReturnType<typeof useClientList>['data'],
+  t: (key: string, options?: Record<string, unknown>) => string,
+) {
+  const caseItem = caseId ? cases?.find((candidate) => candidate.id === caseId) : undefined;
+  const client = clientId ? clients?.find((candidate) => candidate.id === clientId) : undefined;
+  if (caseItem) return t('dashboard.taskCaseContext', { caseNumber: caseItem.internalNumber });
+  if (client) return t('dashboard.taskClientContext', { clientName: client.fullName });
+  return t('dashboard.taskNoContext');
 }

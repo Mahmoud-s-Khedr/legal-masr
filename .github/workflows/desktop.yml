@@ -57,6 +57,15 @@ jobs:
           $driverVersion = & "$env:RUNNER_TEMP/edgedriver/msedgedriver.exe" --version
           if (!$driverVersion.Contains($version)) { throw "WebView2/driver version mismatch" }
           "$env:RUNNER_TEMP/edgedriver" | Out-File $env:GITHUB_PATH -Append
+      - name: Windows desktop-driver preflight
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $tauriDriver = Get-Command tauri-driver -CommandType Application -ErrorAction Stop
+          $edgeDriver = Get-Command msedgedriver -CommandType Application -ErrorAction Stop
+          if (!$tauriDriver.Path -or !$edgeDriver.Path) { throw "Desktop driver command is not resolved from PATH" }
+          tauri-driver --version
+          msedgedriver --version
       - run: pnpm build:desktop:e2e
       - name: Linux journeys
         if: runner.os == 'Linux'
@@ -72,11 +81,29 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          $anyFailed = $false
           1..3 | ForEach-Object {
-            pnpm test:desktop
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            Copy-Item test-results/desktop/results.json "test-results/desktop/run-$_.json"
+            $run = $_
+            $runFailed = $false
+            Remove-Item test-results/desktop/results.json -Force -ErrorAction SilentlyContinue
+            try {
+              pnpm test:desktop
+              if ($LASTEXITCODE -ne 0) { $runFailed = $true }
+            } catch {
+              $runFailed = $true
+            }
+            if (Test-Path test-results/desktop/results.json) {
+              try {
+                Copy-Item test-results/desktop/results.json "test-results/desktop/run-$run.json" -ErrorAction Stop
+              } catch {
+                $runFailed = $true
+              }
+            } else {
+              $runFailed = $true
+            }
+            if ($runFailed) { $anyFailed = $true }
           }
+          if ($anyFailed) { exit 1 }
       - name: Retain sanitized outcomes only
         if: always()
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08

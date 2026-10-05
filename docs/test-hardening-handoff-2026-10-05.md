@@ -44,27 +44,47 @@ checksums describe the measured tree; rerun relevant checks after new changes.
 
 ### H1 — First visual baseline approval
 
-**Status:** awaiting user approval and design-reference review.
+**Status:** blocked on a full visual audit and corrections before user approval.
 
 Start with [the 64-image gallery](../tests/visual/review.html) and
 [baseline instructions](../tests/visual/README.md). The manifest at
 `tests/visual/baseline/manifest.json` is `candidate`. Original Stitch reference
 assets are missing, so pixel/design parity is unverified. Some English workflow
 pages retain Arabic content, and a long fictional email wraps in a narrow
-contact card; decide whether these need correction before approval.
+contact card.
+
+On October 5 the user raised concern that most images may be broken or outdated.
+Only representative captures had been visually inspected; the extent of the
+problem has not been established across all 64 images. The candidate was
+presented for approval too early. Passing comparisons and PNG integrity checks
+establish repeatability and file validity, not correct layouts, translations,
+fixture content or agreement with the intended design. The snapshots were
+freshly generated with a fixed fictional date; this does not establish that
+their content or design is current.
+
+Keep the existing baseline unapproved and treat it as diagnostic review
+material. Do not use it as the accepted design reference or regenerate it simply
+to turn comparisons green. The fixes are deferred to a later session.
 
 Next actions:
 
-1. Recover the original design references if available and review the complete
-   route/language/viewport matrix. Record unavailable references explicitly.
-2. If changes are required, fix them with relevant regression coverage, use the
-   separate canonical update command, and present the new candidate for review.
+1. Recover the original design references if available and audit every image in
+   the complete route/language/viewport matrix against current intended screens.
+   Record unavailable references explicitly. For each image, record its filename,
+   route, locale, viewport, observed problem, expected result and audit outcome;
+   distinguish application defects, fixture problems and capture defects.
+2. Check localization, RTL/LTR direction, clipping, wrapping, spacing, missing
+   content/assets and stale fixture content. Fix identified defects with relevant
+   regression coverage, then use the separate canonical update command and
+   review every regenerated candidate before presenting it for approval.
 3. Obtain explicit user approval for the exact candidate. Record approver, date,
    reviewed revision and reference limitations before setting status to approved.
 4. Run manifest verification and two consecutive canonical comparisons after
    approval. Confirm the deliberate layout probe still fails.
 
-**Done when:** the exact baseline has recorded approval, all 64 comparisons pass
+**Done when:** all 64 images have recorded audit outcomes, identified defects are
+resolved or explicitly accepted by the user, the exact baseline has recorded
+approval, all 64 comparisons pass
 on two consecutive runs, integrity failure tests pass, and release validation's
 approved-manifest check succeeds. CI must never update screenshots.
 
