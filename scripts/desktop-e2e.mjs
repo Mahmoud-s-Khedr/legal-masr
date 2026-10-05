@@ -65,7 +65,13 @@ async function scenario(name, exercise) {
   const click = async (text) => {
     const element = await browser.$(`//button[normalize-space(.)=${JSON.stringify(text)}]`);
     await element.waitForDisplayed({ timeout: 15000 });
-    await element.scrollIntoView();
+    // WebDriver's wheel/animation-frame scrolling can stall in headless WebKit.
+    // Scroll synchronously so native clicks cannot race the app's smooth scrolling.
+    await browser.execute(
+      (target) =>
+        target.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' }),
+      element,
+    );
     await element.waitForClickable({ timeout: 15000 });
     await element.click();
   };
