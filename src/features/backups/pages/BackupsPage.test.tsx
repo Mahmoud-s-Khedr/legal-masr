@@ -46,7 +46,7 @@ describe('BackupSettingsPanel', () => {
 
     renderPanel();
 
-    expect(screen.getByLabelText('جارٍ تحميل السجل المحلي…')).toBeInTheDocument();
+    expect(screen.getByLabelText('جارٍ تحميل آخر نسخة…')).toBeInTheDocument();
   });
 
   it('shows the latest successful backup metadata', async () => {
@@ -57,14 +57,16 @@ describe('BackupSettingsPanel', () => {
 
     renderPanel();
 
-    expect(await screen.findByText('2026-10-04 09:30')).toBeInTheDocument();
-    expect(screen.getByText('12345')).toBeInTheDocument();
+    expect(await screen.findByText(/4 أكتوبر 2026/)).toBeInTheDocument();
+    expect(screen.getByText(/12 ك\.ب/)).toBeInTheDocument();
   });
 
   it('explains when no successful backup exists', async () => {
     renderPanel();
 
     expect(await screen.findByText('لا توجد نسخة احتياطية ناجحة بعد.')).toBeInTheDocument();
+    expect(screen.getByText('لم تُنشئ أي نسخة احتياطية بعد. أنشئ أول نسخة الآن.')).toBeVisible();
+    expect(screen.getByText(/فلاشة أو قرص خارجي/)).toBeVisible();
   });
 
   it('reports successful and failed backup creation', async () => {
@@ -89,8 +91,8 @@ describe('BackupSettingsPanel', () => {
   it('reports successful and failed backup validation', async () => {
     const { rerender } = renderPanel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'التحقق من ملف نسخة احتياطية' }));
-    expect(await screen.findByText('الملف صالح ويمكن استعادته.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف للفحص' }));
+    expect(await screen.findByText('الملف سليم ويمكن الاستعادة منه.')).toBeInTheDocument();
 
     vi.mocked(bridge.validateBackup).mockRejectedValueOnce(new Error('corrupted'));
     rerender(
@@ -100,16 +102,18 @@ describe('BackupSettingsPanel', () => {
         <BackupSettingsPanel />
       </QueryClientProvider>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'التحقق من ملف نسخة احتياطية' }));
+    fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف للفحص' }));
 
-    expect(await screen.findByText('الملف غير صالح أو تالف.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('الملف تالف، أو ليس نسخة احتياطية من ليجال مصر.'),
+    ).toBeInTheDocument();
   });
 
   it('does not restore when the confirmation dialog is cancelled', async () => {
     renderPanel();
 
     fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
-    expect(await screen.findByText(/ستستبدل الاستعادة البيانات الحالية/)).toBeInTheDocument();
+    expect(await screen.findByText(/تستبدل الاستعادة بياناتك الحالية/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
 
     expect(bridge.restoreBackup).not.toHaveBeenCalled();
@@ -142,7 +146,7 @@ describe('BackupSettingsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
     fireEvent.click(await screen.findByRole('button', { name: 'تأكيد الاستعادة' }));
 
-    expect(await screen.findByText('ملف النسخة الاحتياطية تالف.')).toBeInTheDocument();
+    expect(await screen.findByText(/ملف النسخة الاحتياطية تالف/)).toBeInTheDocument();
     expect(bridge.status).not.toHaveBeenCalled();
   });
 });

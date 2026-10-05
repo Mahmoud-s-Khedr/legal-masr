@@ -1,62 +1,49 @@
-type Tab = { id: string; label: string; disabled?: boolean };
+import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 
+type Tab = { id: string; label: string; disabled?: boolean; count?: number };
+
+/**
+ * One accessible tab pattern for the whole app. Base UI moves focus and
+ * selection together with the arrow keys (mirrored in RTL), Home and End.
+ * `segmented` switches a view of the same records; `underline` switches the
+ * sections of a record file.
+ */
 export function Tabs({
   label,
   tabs,
   value,
   onChange,
+  variant = 'segmented',
 }: {
   label: string;
   tabs: readonly Tab[];
   value: string;
   onChange: (id: string) => void;
+  variant?: 'segmented' | 'underline';
 }) {
-  const activeIndex = Math.max(
-    0,
-    tabs.findIndex((tab) => tab.id === value),
-  );
-  const move = (direction: 1 | -1) => {
-    for (let offset = 1; offset <= tabs.length; offset += 1) {
-      const next = tabs[(activeIndex + direction * offset + tabs.length) % tabs.length];
-      if (!next.disabled) {
-        onChange(next.id);
-        return;
-      }
-    }
-  };
   return (
-    <BaseTabs.Root value={value} onValueChange={onChange}>
-      <BaseTabs.List className="shared-tabs" aria-label={label}>
+    <BaseTabs.Root value={value} onValueChange={(next) => onChange(String(next))}>
+      <BaseTabs.List
+        className={variant === 'underline' ? 'section-tabs' : 'shared-tabs'}
+        aria-label={label}
+        activateOnFocus
+      >
         {tabs.map((tab) => (
           <BaseTabs.Tab
             key={tab.id}
             value={tab.id}
             disabled={tab.disabled}
             className={tab.id === value ? 'active' : ''}
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-                event.preventDefault();
-                move(1);
-              }
-              if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-                event.preventDefault();
-                move(-1);
-              }
-              if (event.key === 'Home') {
-                event.preventDefault();
-                onChange(tabs.find((item) => !item.disabled)?.id ?? value);
-              }
-              if (event.key === 'End') {
-                event.preventDefault();
-                onChange([...tabs].reverse().find((item) => !item.disabled)?.id ?? value);
-              }
-            }}
           >
             {tab.label}
+            {tab.count !== undefined && (
+              <span className="tab-count" aria-hidden="true">
+                {tab.count}
+              </span>
+            )}
           </BaseTabs.Tab>
         ))}
       </BaseTabs.List>
     </BaseTabs.Root>
   );
 }
-import { Tabs as BaseTabs } from '@base-ui/react/tabs';

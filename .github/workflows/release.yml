@@ -203,8 +203,8 @@ jobs:
           $executables = Get-ChildItem "src-tauri/target/${{ matrix.target }}/release/*.exe" -File
           if ($executables.Count -ne 1) { throw "Expected exactly one portable application executable; found $($executables.Count)." }
           New-Item -ItemType Directory -Force -Path "release-portable" | Out-Null
-          Compress-Archive -LiteralPath $executables[0].FullName -DestinationPath "release-portable/LegalMaster-Solo-windows-x64-portable.zip" -CompressionLevel Optimal
-          if (-not (Test-Path "release-portable/LegalMaster-Solo-windows-x64-portable.zip" -PathType Leaf)) { throw "Windows portable archive was not created." }
+          Compress-Archive -LiteralPath $executables[0].FullName -DestinationPath "release-portable/Legal-Masr-windows-x64-portable.zip" -CompressionLevel Optimal
+          if (-not (Test-Path "release-portable/Legal-Masr-windows-x64-portable.zip" -PathType Leaf)) { throw "Windows portable archive was not created." }
       - name: Verify Linux packages
         if: matrix.id == 'linux-x64'
         shell: bash
@@ -277,17 +277,17 @@ jobs:
       - name: Write release notes
         run: |
           cat > release-notes.md <<EOF
-          ## LegalMaster Solo ${RELEASE_TAG}
+          ## Legal Masr ${RELEASE_TAG}
 
           Downloads included in this draft prerelease:
 
-          - Windows x86-64: `LegalMaster-Solo_${RELEASE_TAG#v}_windows_x64-setup.exe`
-          - Windows x86-64 portable: `LegalMaster-Solo_${RELEASE_TAG#v}_windows_x64-portable.zip`
-          - Linux x86-64 Debian: `LegalMaster-Solo_${RELEASE_TAG#v}_linux_x64.deb`
-          - Linux x86-64 RPM: `LegalMaster-Solo_${RELEASE_TAG#v}_linux_x64.rpm`
-          - Linux x86-64 AppImage: `LegalMaster-Solo_${RELEASE_TAG#v}_linux_x64.AppImage`
-          - macOS Intel: `LegalMaster-Solo_${RELEASE_TAG#v}_macos_x64.dmg`
-          - macOS Apple Silicon: `LegalMaster-Solo_${RELEASE_TAG#v}_macos_arm64.dmg`
+          - Windows x86-64: `Legal-Masr_${RELEASE_TAG#v}_windows_x64-setup.exe`
+          - Windows x86-64 portable: `Legal-Masr_${RELEASE_TAG#v}_windows_x64-portable.zip`
+          - Linux x86-64 Debian: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.deb`
+          - Linux x86-64 RPM: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.rpm`
+          - Linux x86-64 AppImage: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.AppImage`
+          - macOS Intel: `Legal-Masr_${RELEASE_TAG#v}_macos_x64.dmg`
+          - macOS Apple Silicon: `Legal-Masr_${RELEASE_TAG#v}_macos_arm64.dmg`
 
           The Windows installer is currently unsigned. Windows may show a publisher or SmartScreen warning.
           The portable archive contains the unsigned Windows executable; it does not make the application's local data directory portable.
@@ -303,8 +303,8 @@ jobs:
       - name: Create or update draft prerelease
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release edit "$RELEASE_TAG" --draft --prerelease --title "LegalMaster Solo $RELEASE_TAG" --notes-file release-notes.md
+            gh release edit "$RELEASE_TAG" --draft --prerelease --title "Legal Masr $RELEASE_TAG" --notes-file release-notes.md
             gh release upload "$RELEASE_TAG" release-assets/* --clobber
           else
-            gh release create "$RELEASE_TAG" release-assets/* --draft --prerelease --title "LegalMaster Solo $RELEASE_TAG" --notes-file release-notes.md
+            gh release create "$RELEASE_TAG" release-assets/* --draft --prerelease --title "Legal Masr $RELEASE_TAG" --notes-file release-notes.md
           fi

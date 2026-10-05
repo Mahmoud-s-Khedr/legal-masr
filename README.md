@@ -1,8 +1,44 @@
-# LegalMaster Solo
+<div dir="rtl">
 
-Arabic-first, offline-first desktop practice organizer for individual Egyptian
-lawyers. Legal records, encryption material, managed attachments, search, and
-backup history remain on the lawyer's device.
+# ليجال مصر
+
+**مكتبك القانوني على جهازك.**
+
+تطبيق مكتبي للمحامي المصري الفردي، يجمع الموكلين والقضايا والجلسات والمهام والأتعاب والمستندات في مكان واحد. كل شيء محفوظ على جهازك ومشفّر بكلمة مرورك، دون حساب ودون إنترنت.
+
+- **يومك في شاشة واحدة:** جلسات اليوم بموعدها ومحكمتها وما تحتاج تحضيره، ومهامك المستحقة والمتأخرة، وجلسات الأيام القادمة.
+- **ملف كامل لكل قضية:** رقم ملفك الداخلي ورقم الدعوى بالمحكمة («رقم 447 لسنة 2026»)، والموكلون والخصوم، والجلسات وقراراتها، والمستندات، والأتعاب.
+- **من القرار إلى الجلسة القادمة في خطوة واحدة:** سجّل قرار الجلسة وتاريخ التأجيل معًا، فتظهر الجلسة الجديدة في الأجندة وملف القضية.
+- **أتعابك واضحة:** المتفق عليه والمحصل والمتبقي لكل قضية، مع الدفعات والمصروفات بالجنيه المصري.
+- **التوكيلات في مكانها:** رقم التوكيل ومكتب التوثيق والموكلون والمحامون المذكورون، والقضايا المرتبطة بكل توكيل.
+- **خصوصية حقيقية:** قاعدة البيانات مشفّرة بكلمة مرورك، ولا تُرسل بيانات موكليك إلى أي جهة، والنسخ الاحتياطية مشفّرة وتحت تصرفك.
+- **عربي أولًا:** واجهة عربية كاملة من اليمين إلى اليسار، وتواريخ ميلادية بأسماء الشهور المصرية، مع واجهة إنجليزية اختيارية.
+
+ليجال مصر مصمم لأجهزة ويندوز وماك، وهو الآن في مرحلة ما قبل الإصدار التجريبي.
+
+</div>
+
+# Legal Masr
+
+**Your law office, on your computer.**
+
+A desktop app for the Egyptian solo lawyer that brings clients, cases, hearings, tasks, fees and documents together in one place. Everything stays on your computer, encrypted with your password, with no account and no internet required.
+
+- **Your day on one screen:** today's hearings with time, court and what to prepare; tasks due and overdue; and the hearings coming up.
+- **A complete file for every case:** your internal file number and the court case number ("No. 447 of 2026"), clients and opponents, hearings and their decisions, documents and fees.
+- **From decision to next hearing in one step:** record the hearing decision and the postponement date together, and the new hearing appears in the agenda and the case file.
+- **Clear fees:** agreed, received and outstanding for each case, with payments and expenses in Egyptian pounds.
+- **Powers of attorney where you need them:** number, notary office, clients, named lawyers and the cases that use each one.
+- **Real privacy:** the database is encrypted with your password, client data is never sent anywhere, and backups are encrypted and under your control.
+- **Arabic first:** a full right-to-left Arabic interface with Gregorian dates and Egyptian month names, plus an optional English interface.
+
+Legal Masr is designed for Windows and macOS and is currently pre-beta.
+
+---
+
+The sections below are for developers. The repository, crate and data-folder
+names keep the original `legalmaster` identifiers so existing installations and
+backups keep working.
 
 ## Current implementation
 

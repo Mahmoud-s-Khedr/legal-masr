@@ -1,7 +1,7 @@
 [package]
 name = "legalmaster-solo"
 version = "0.1.0"
-description = "Offline-first legal practice organizer"
+description = "Legal Masr (ليجال مصر): an offline practice organizer for Egyptian solo lawyers"
 edition = "2021"
 
 [features]

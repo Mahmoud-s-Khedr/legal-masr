@@ -1,5 +1,9 @@
 import { useState } from 'react';
+import { minorToInput, parseMoneyToMinor } from '../../../lib/money';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
+import { PageHeader } from '../../../components/layout/PageHeader';
+import { useFormat } from '../../../i18n/LocalePresentation';
 import type { ExpenseDto, ExpenseType, PaymentDto, PaymentMethod } from '../../../bridge/types';
 import { DatePicker } from '../../../components/ui/DatePicker';
 import { Button } from '../../../components/ui/button';
@@ -11,33 +15,31 @@ import { Table } from '../../../components/ui/table';
 import { Textarea } from '../../../components/ui/textarea';
 import { useCase, useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
-import { useExpenses, usePayments, useSaveExpense, useSavePayment } from '../api/financesApi';
+import {
+  useCaseFinanceSummary,
+  useExpenses,
+  usePayments,
+  useSaveExpense,
+  useSavePayment,
+} from '../api/financesApi';
 import { localDateOnly } from '../../../lib/dateOnly';
 
-const methods: ReadonlyArray<[PaymentMethod, string]> = [
-  ['CASH', 'نقدي'],
-  ['BANK_TRANSFER', 'تحويل بنكي'],
-  ['CHEQUE', 'شيك'],
-  ['ELECTRONIC', 'دفع إلكتروني'],
-  ['OTHER', 'أخرى'],
+const methods: readonly PaymentMethod[] = [
+  'CASH',
+  'BANK_TRANSFER',
+  'CHEQUE',
+  'ELECTRONIC',
+  'OTHER',
 ];
-const expenseTypes: ReadonlyArray<[ExpenseType, string]> = [
-  ['COURT_FEE', 'رسوم قضائية'],
-  ['TRANSPORT', 'انتقالات'],
-  ['OFFICE_SUPPLIES', 'مستلزمات مكتب'],
-  ['EXPERT_FEE', 'أتعاب خبير'],
-  ['OTHER', 'أخرى'],
+const expenseTypes: readonly ExpenseType[] = [
+  'COURT_FEE',
+  'TRANSPORT',
+  'OFFICE_SUPPLIES',
+  'EXPERT_FEE',
+  'OTHER',
 ];
 const today = () => localDateOnly();
-export const parseMoneyToMinor = (value: string): number | null => {
-  const match = value
-    .trim()
-    .replace(',', '.')
-    .match(/^(\d+)(?:\.(\d{1,2}))?$/);
-  if (!match) return null;
-  const amount = Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
-  return Number.isSafeInteger(amount) && amount > 0 ? amount : null;
-};
+export { parseMoneyToMinor };
 const money = (amount: number) =>
   new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount / 100);
 export const paymentPayerOptions = (
@@ -50,6 +52,7 @@ type Entry =
   | null;
 
 export function FinancesPage() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const [tab, setTab] = useState<'payment' | 'expense'>('payment');
   const [filterCaseId, setFilterCaseId] = useState(params.get('case') ?? '');
@@ -58,6 +61,8 @@ export function FinancesPage() {
   const cases = useCaseList({});
   const clients = useClientList({});
   const selectedCase = useCase(filterCaseId);
+  const caseAccount = useCaseFinanceSummary(filterCaseId);
+  const format = useFormat();
   const payments = usePayments({
     caseId: filterCaseId || undefined,
     payerClientId: filterClientId || undefined,
@@ -74,49 +79,54 @@ export function FinancesPage() {
   const closeEntry = () => setEntry(null);
   return (
     <section className="work-page finance-page">
-      <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="kicker">المالية</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">الدفعات والمصروفات</h1>
-          <p className="mt-1 text-muted-foreground">
-            متابعة نقدية بسيطة بالجنيه المصري؛ لا يحول التطبيق هذا السجل إلى دفتر محاسبي.
-          </p>
-        </div>
-        <Button type="button" onClick={() => setEntry({ type: tab, mode: 'edit' })}>
-          إضافة {tab === 'payment' ? 'دفعة' : 'مصروف'}
-        </Button>
-      </header>
+      <PageHeader
+        kicker={t('finances.kicker')}
+        title={t('finances.title')}
+        description={t('finances.description')}
+        actions={
+          <Button type="button" onClick={() => setEntry({ type: tab, mode: 'edit' })}>
+            {t(`finances.add.${tab}`)}
+          </Button>
+        }
+      />
       <Tabs
-        label="سجل المالية"
+        label={t('finances.tabsLabel')}
         value={tab}
         onChange={(value) => setTab(value as typeof tab)}
         tabs={[
-          { id: 'payment', label: 'الدفعات' },
-          { id: 'expense', label: 'المصروفات' },
+          { id: 'payment', label: t('finances.payments') },
+          { id: 'expense', label: t('finances.expenses') },
         ]}
       />
       <div className="finance-filters">
         <label>
-          القضية
+          {t('finances.case')}
           <Select
             value={filterCaseId}
+            placeholder={t('tasks.allCases')}
             onValueChange={(value) => {
               setFilterCaseId(value);
               setFilterClientId('');
             }}
             items={[
-              { value: '', label: 'كل القضايا' },
-              ...(cases.data ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
+              { value: '', label: t('tasks.allCases') },
+              ...(cases.data ?? []).map((item) => ({
+                value: item.id,
+                label: item.clientNames.length
+                  ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
+                  : item.internalNumber,
+              })),
             ]}
           />
         </label>
         <label>
-          الموكل
+          {t('finances.client')}
           <Select
             value={filterClientId}
             onValueChange={setFilterClientId}
+            placeholder={t('tasks.allClients')}
             items={[
-              { value: '', label: 'كل الموكلين' },
+              { value: '', label: t('tasks.allClients') },
               ...(tab === 'payment' && filterCaseId ? payerOptions : (clients.data ?? [])).map(
                 (item) => ({ value: item.id, label: item.fullName }),
               ),
@@ -131,29 +141,68 @@ export function FinancesPage() {
             setFilterClientId('');
           }}
         >
-          مسح التصفية
+          {t('tasks.clearFilters')}
         </Button>
       </div>
+      {filterCaseId && caseAccount.data && (
+        <div className="finance-summary" aria-label={t('finances.caseAccount')}>
+          <article>
+            <span>{t('cases.detail.agreed')}</span>
+            <strong>
+              <bdi>{format.money(caseAccount.data.agreedFeeMinor)}</bdi>
+            </strong>
+          </article>
+          <article>
+            <span>{t('cases.detail.received')}</span>
+            <strong>
+              <bdi>{format.money(caseAccount.data.receivedMinor)}</bdi>
+            </strong>
+          </article>
+          <article className="finance-net">
+            <span>{t('cases.detail.outstanding')}</span>
+            <strong>
+              <bdi>{format.money(caseAccount.data.outstandingMinor)}</bdi>
+            </strong>
+          </article>
+          <article>
+            <span>{t('cases.detail.expenses')}</span>
+            <strong>
+              <bdi>{format.money(caseAccount.data.expensesMinor)}</bdi>
+            </strong>
+          </article>
+        </div>
+      )}
       <section className="work-register">
         <div className="card-title">
           <div>
-            <h3>{tab === 'payment' ? 'سجل الدفعات' : 'سجل المصروفات'}</h3>
-            <p className="muted">{records.length} سجل</p>
+            <h3>{t(`finances.register.${tab}`)}</h3>
+            <p className="muted">
+              {t('finances.totalLine', {
+                count: records.length,
+                total: format.money(records.reduce((sum, record) => sum + record.amountMinor, 0)),
+              })}
+            </p>
           </div>
         </div>
-        {!records.length ? (
-          <p className="empty-compact">لا توجد {tab === 'payment' ? 'دفعات' : 'مصروفات'} مطابقة.</p>
+        {(tab === 'payment' ? payments.isError : expenses.isError) ? (
+          <p className="error" role="alert">
+            {t('finances.loadError')}
+          </p>
+        ) : !records.length ? (
+          <p className="empty-compact">{t(`finances.empty.${tab}`)}</p>
         ) : (
           <div className="data-table-scroll">
             <Table className="data-table finance-table">
-              <caption>السجل المالي</caption>
+              <caption>{t('finances.caption')}</caption>
               <thead>
                 <tr>
-                  <th>التاريخ</th>
-                  <th>البيان</th>
-                  <th>الارتباط</th>
-                  <th>المبلغ</th>
-                  <th>إجراء</th>
+                  <th scope="col">{t('finances.columns.date')}</th>
+                  <th scope="col">{t('finances.columns.type')}</th>
+                  <th scope="col">{t('finances.columns.link')}</th>
+                  <th scope="col">{t('finances.columns.amount')}</th>
+                  <th scope="col">
+                    <span className="sr-only">{t('finances.columns.actions')}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -173,7 +222,11 @@ export function FinancesPage() {
                           variant="ghost"
                           type="button"
                           className="text-button"
-                          aria-label={`عرض ${payment ? 'الدفعة' : 'المصروف'} بتاريخ ${payment?.paymentDate ?? expense?.expenseDate}`}
+                          aria-label={t(`finances.viewAria.${payment ? 'payment' : 'expense'}`, {
+                            date: format.dateLong(
+                              payment?.paymentDate ?? expense?.expenseDate ?? '',
+                            ),
+                          })}
                           onClick={() =>
                             setEntry(
                               payment
@@ -182,25 +235,27 @@ export function FinancesPage() {
                             )
                           }
                         >
-                          <bdi>{payment?.paymentDate ?? expense?.expenseDate}</bdi>
+                          <bdi>
+                            {format.date(payment?.paymentDate ?? expense?.expenseDate ?? '')}
+                          </bdi>
                         </Button>
                       </td>
                       <td>
                         <span className={`transaction-badge ${payment ? 'income' : 'expense'}`}>
                           {payment
                             ? payment.paymentMethod
-                              ? methods.find(([value]) => value === payment.paymentMethod)?.[1]
-                              : 'دفعة'
-                            : expenseTypes.find(([value]) => value === expense!.expenseType)?.[1]}
+                              ? t(`finances.methods.${payment.paymentMethod}`)
+                              : t('finances.paymentFallback')
+                            : t(`finances.expenseTypes.${expense!.expenseType}`)}
                         </span>
-                        {record.notes && <small>{record.notes}</small>}
+                        {record.notes && <small dir="auto">{record.notes}</small>}
                       </td>
-                      <td>
-                        {caseName ?? '—'}
-                        {clientName && ` · ${clientName}`}
+                      <td className="cell-wrap">
+                        <bdi>{caseName ?? '—'}</bdi>
+                        {clientName && <span className="cell-muted"> · {clientName}</span>}
                       </td>
                       <td className={payment ? 'money-positive' : 'money-negative'}>
-                        <bdi>{money(record.amountMinor)}</bdi>
+                        <bdi>{format.money(record.amountMinor)}</bdi>
                       </td>
                       <td>
                         <Button
@@ -215,7 +270,7 @@ export function FinancesPage() {
                             );
                           }}
                         >
-                          تعديل
+                          {t('records.edit')}
                         </Button>
                       </td>
                     </tr>
@@ -231,8 +286,10 @@ export function FinancesPage() {
         onOpenChange={(open) => !open && closeEntry()}
         title={
           entry?.mode === 'inspect'
-            ? `تفاصيل ${entry.type === 'payment' ? 'الدفعة' : 'المصروف'}`
-            : `${entry?.value ? 'تعديل' : 'إضافة'} ${entry?.type === 'payment' ? 'دفعة' : 'مصروف'}`
+            ? t(`cases.detail.inspect.${entry.type}`)
+            : t(
+                `cases.detail.${entry?.value ? 'editEntry' : 'newEntry'}.${entry?.type ?? 'payment'}`,
+              )
         }
       >
         {entry?.mode === 'inspect' && entry.value ? (
@@ -256,6 +313,7 @@ export function FinancesPage() {
         ) : entry?.type === 'payment' ? (
           <PaymentForm
             initial={entry.value}
+            initialCaseId={filterCaseId || undefined}
             cases={cases.data ?? []}
             onCancel={closeEntry}
             busy={savePayment.isPending}
@@ -267,6 +325,7 @@ export function FinancesPage() {
         ) : entry?.type === 'expense' ? (
           <ExpenseForm
             initial={entry.value}
+            initialCaseId={filterCaseId || undefined}
             cases={cases.data ?? []}
             clients={clients.data ?? []}
             onCancel={closeEntry}
@@ -279,7 +338,7 @@ export function FinancesPage() {
         ) : null}
         {(savePayment.isError || saveExpense.isError) && (
           <p className="error" role="alert">
-            تعذر حفظ السجل. بقيت بيانات النموذج للمحاولة مرة أخرى.
+            {t('cases.detail.entrySaveError')}
           </p>
         )}
       </Dialog>
@@ -300,6 +359,7 @@ function TransactionInspection({
   onEdit: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const isPayment = entry.type === 'payment';
   const record = entry.value;
   const date = isPayment ? (record as PaymentDto).paymentDate : (record as ExpenseDto).expenseDate;
@@ -307,38 +367,38 @@ function TransactionInspection({
     <div className="dialog-form transaction-inspection">
       <dl className="detail-definition-grid">
         <div>
-          <dt>التاريخ</dt>
+          <dt>{t('cases.detail.entryDate')}</dt>
           <dd>
             <bdi>{date}</bdi>
           </dd>
         </div>
         <div>
-          <dt>القضية</dt>
+          <dt>{t('finances.case')}</dt>
           <dd>
             <bdi>{caseName ?? '—'}</bdi>
           </dd>
         </div>
         <div>
-          <dt>الموكل</dt>
+          <dt>{t('finances.client')}</dt>
           <dd>{clientName ?? '—'}</dd>
         </div>
         <div>
-          <dt>المبلغ</dt>
+          <dt>{t('cases.detail.entryAmount')}</dt>
           <dd>
             <bdi>{money(record.amountMinor)}</bdi>
           </dd>
         </div>
       </dl>
       <div>
-        <strong>ملاحظات</strong>
+        <strong>{t('common.notes')}</strong>
         <p>{record.notes ?? '—'}</p>
       </div>
       <div className="dialog-actions">
         <Button type="button" variant="secondary" className="secondary-button" onClick={onClose}>
-          إغلاق
+          {t('records.close')}
         </Button>
         <Button type="button" onClick={onEdit}>
-          تعديل السجل
+          {t('cases.detail.editEntryButton')}
         </Button>
       </div>
     </div>
@@ -360,10 +420,11 @@ export function PaymentForm({
   onSave: (input: Parameters<ReturnType<typeof useSavePayment>['mutateAsync']>[0]) => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
   const caseDetail = useCase(caseId);
   const [payerClientId, setPayerClientId] = useState(initial?.payerClientId ?? '');
-  const [amount, setAmount] = useState(initial ? String(initial.amountMinor / 100) : '');
+  const [amount, setAmount] = useState(initial ? minorToInput(initial.amountMinor) : '');
   const [date, setDate] = useState(initial?.paymentDate ?? today());
   const [method, setMethod] = useState<PaymentMethod | ''>(initial?.paymentMethod ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
@@ -375,7 +436,7 @@ export function PaymentForm({
         event.preventDefault();
         const amountMinor = parseMoneyToMinor(amount);
         if (!amountMinor || !caseId || !payerClientId)
-          return setError('اختر قضية وموكلًا من موكلي القضية وأدخل مبلغًا صحيحًا.');
+          return setError(t('finances.paymentInvalid'));
         try {
           await onSave({
             id: initial?.id,
@@ -392,7 +453,7 @@ export function PaymentForm({
       }}
     >
       <label>
-        القضية
+        {t('finances.case')}
         <Select
           required
           value={caseId}
@@ -400,18 +461,18 @@ export function PaymentForm({
             setCaseId(value);
             setPayerClientId('');
           }}
-          placeholder="اختر القضية"
+          placeholder={t('agenda.fields.casePlaceholder')}
           items={(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber }))}
         />
       </label>
       <label>
-        الموكل الدافع
+        {t('finances.payer')}
         <Select
           required
           disabled={!caseId}
           value={payerClientId}
           onValueChange={setPayerClientId}
-          placeholder="اختر موكل القضية"
+          placeholder={t('finances.payerPlaceholder')}
           items={(caseDetail.data?.clients ?? []).map((item) => ({
             value: item.clientId,
             label: item.fullName,
@@ -420,7 +481,7 @@ export function PaymentForm({
       </label>
       <div className="settings-two-columns">
         <label>
-          المبلغ (ج.م)
+          {t('finances.amount')}
           <Input
             required
             inputMode="decimal"
@@ -429,30 +490,31 @@ export function PaymentForm({
           />
         </label>
         <label>
-          تاريخ الدفعة
+          {t('finances.paymentDate')}
           <DatePicker required value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
       </div>
       <label>
-        طريقة الدفع (اختيارية)
+        {t('finances.method')}
         <Select
           value={method}
           onValueChange={(value) => setMethod(value as PaymentMethod | '')}
           items={[
-            { value: '', label: 'غير محددة' },
-            ...methods.map(([value, label]) => ({ value, label })),
+            { value: '', label: t('forms.notSpecified') },
+            ...methods.map((value) => ({ value, label: t(`finances.methods.${value}`) })),
           ]}
         />
       </label>
       <label>
-        ملاحظات <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+        {t('common.notes')}{' '}
+        <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       {error && <p className="error">{error}</p>}
       <div className="dialog-actions">
         <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-          إلغاء
+          {t('common.cancel')}
         </Button>
-        <Button disabled={busy}>حفظ الدفعة</Button>
+        <Button disabled={busy}>{t('finances.savePayment')}</Button>
       </div>
     </form>
   );
@@ -475,9 +537,10 @@ export function ExpenseForm({
   onSave: (input: Parameters<ReturnType<typeof useSaveExpense>['mutateAsync']>[0]) => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
   const [clientId, setClientId] = useState(initial?.clientId ?? '');
-  const [amount, setAmount] = useState(initial ? String(initial.amountMinor / 100) : '');
+  const [amount, setAmount] = useState(initial ? minorToInput(initial.amountMinor) : '');
   const [date, setDate] = useState(initial?.expenseDate ?? today());
   const [type, setType] = useState<ExpenseType>(initial?.expenseType ?? 'COURT_FEE');
   const [notes, setNotes] = useState(initial?.notes ?? '');
@@ -488,7 +551,7 @@ export function ExpenseForm({
       onSubmit={async (event) => {
         event.preventDefault();
         const amountMinor = parseMoneyToMinor(amount);
-        if (!amountMinor) return setError('أدخل مبلغًا صحيحًا أكبر من صفر.');
+        if (!amountMinor) return setError(t('finances.amountInvalid'));
         try {
           await onSave({
             id: initial?.id,
@@ -504,26 +567,26 @@ export function ExpenseForm({
         }
       }}
     >
-      <p className="muted">يمكن ربط المصروف بقضية أو موكل، أو ترك كلا الرابطين فارغين.</p>
+      <p className="muted">{t('finances.expenseHint')}</p>
       <div className="settings-two-columns">
         <label>
-          القضية
+          {t('finances.case')}
           <Select
             value={caseId}
             onValueChange={setCaseId}
             items={[
-              { value: '', label: 'غير مرتبطة بقضية' },
+              { value: '', label: t('tasks.noCase') },
               ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
             ]}
           />
         </label>
         <label>
-          الموكل
+          {t('finances.client')}
           <Select
             value={clientId}
             onValueChange={setClientId}
             items={[
-              { value: '', label: 'غير مرتبط بموكل' },
+              { value: '', label: t('tasks.noClient') },
               ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
             ]}
           />
@@ -531,7 +594,7 @@ export function ExpenseForm({
       </div>
       <div className="settings-two-columns">
         <label>
-          المبلغ (ج.م)
+          {t('finances.amount')}
           <Input
             required
             inputMode="decimal"
@@ -540,27 +603,31 @@ export function ExpenseForm({
           />
         </label>
         <label>
-          التاريخ
+          {t('finances.expenseDate')}
           <DatePicker required value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
       </div>
       <label>
-        نوع المصروف
+        {t('finances.expenseType')}
         <Select
           value={type}
           onValueChange={(value) => setType(value as ExpenseType)}
-          items={expenseTypes.map(([value, label]) => ({ value, label }))}
+          items={expenseTypes.map((value) => ({
+            value,
+            label: t(`finances.expenseTypes.${value}`),
+          }))}
         />
       </label>
       <label>
-        ملاحظات <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+        {t('common.notes')}{' '}
+        <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       {error && <p className="error">{error}</p>}
       <div className="dialog-actions">
         <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-          إلغاء
+          {t('common.cancel')}
         </Button>
-        <Button disabled={busy}>حفظ المصروف</Button>
+        <Button disabled={busy}>{t('finances.saveExpense')}</Button>
       </div>
     </form>
   );

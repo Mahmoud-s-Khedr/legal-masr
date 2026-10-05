@@ -1,20 +1,35 @@
-import { arSA, enUS, type Locale } from 'date-fns/locale';
+import { arEG, enUS, type Locale } from 'date-fns/locale';
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../features/settings/api/settingsApi';
+import {
+  type DateFormatPreference,
+  formatBytes,
+  formatDateCompact,
+  formatDateLong,
+  formatDateShort,
+  formatDateTime,
+  formatMoney,
+  formatMonthYear,
+  formatNumber,
+  formatTime,
+  formatWeekday,
+} from '../lib/format';
 
 type LocalePresentation = {
   language: 'ar' | 'en';
   direction: 'rtl' | 'ltr';
   dateLocale: Locale;
   weekStartsOn: number;
+  dateFormat: DateFormatPreference;
 };
 
 export const LocalePresentationContext = createContext<LocalePresentation>({
   language: 'ar',
   direction: 'rtl',
-  dateLocale: arSA,
+  dateLocale: arEG,
   weekStartsOn: 6,
+  dateFormat: 'dd/MM/yyyy',
 });
 
 /** Presentation preferences only. Stored date-only values remain ISO strings. */
@@ -28,10 +43,11 @@ export function LocalePresentationProvider({ children }: { children: ReactNode }
     () => ({
       language,
       direction: language === 'ar' ? 'rtl' : 'ltr',
-      dateLocale: language === 'ar' ? arSA : enUS,
+      dateLocale: language === 'ar' ? arEG : enUS,
       weekStartsOn: settings?.weekStartsOn ?? (language === 'ar' ? 6 : 0),
+      dateFormat: settings?.dateFormat ?? 'dd/MM/yyyy',
     }),
-    [language, settings?.weekStartsOn],
+    [language, settings?.weekStartsOn, settings?.dateFormat],
   );
   return (
     <LocalePresentationContext.Provider value={value}>
@@ -41,3 +57,25 @@ export function LocalePresentationProvider({ children }: { children: ReactNode }
 }
 
 export const useLocalePresentation = () => useContext(LocalePresentationContext);
+
+/** Formatters bound to the active interface language and date preference. */
+export function useFormat() {
+  const { language, dateFormat } = useLocalePresentation();
+  return useMemo(
+    () => ({
+      language,
+      date: (value: string) => formatDateShort(value, dateFormat),
+      dateLong: (value: string) => formatDateLong(value, language),
+      dateCompact: (value: string) => formatDateCompact(value, language),
+      dateTime: (value: string) => formatDateTime(value, language),
+      monthYear: (date: Date) => formatMonthYear(date, language),
+      weekday: (date: Date, width: 'long' | 'short' = 'short') =>
+        formatWeekday(date, language, width),
+      time: (value: string) => formatTime(value, language),
+      money: (amountMinor: number) => formatMoney(amountMinor, language),
+      number: (value: number) => formatNumber(value, language),
+      bytes: (value: number) => formatBytes(value, language),
+    }),
+    [language, dateFormat],
+  );
+}

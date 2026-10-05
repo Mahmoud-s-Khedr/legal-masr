@@ -20,9 +20,17 @@ import {
 } from '../api/tasksApi';
 import { localDateOnly } from '../../../lib/dateOnly';
 import { useTranslation } from 'react-i18next';
+import { PageHeader } from '../../../components/layout/PageHeader';
+import { useFormat } from '../../../i18n/LocalePresentation';
 
 const localDate = () => localDateOnly();
 const views = ['TODAY', 'OVERDUE', 'UPCOMING', 'COMPLETED', 'ALL'] as const;
+const TASK_TONE = {
+  completed: 'tone-muted',
+  overdue: 'tone-danger',
+  today: 'tone-warning',
+  upcoming: 'tone-active',
+} as const;
 
 export function TasksPage() {
   const { t } = useTranslation();
@@ -30,13 +38,18 @@ export function TasksPage() {
   const requestedTaskId = params.get('task');
   const createIntent = params.get('create') === 'task';
   const requestedDate = params.get('date') ?? localDate();
-  const [view, setView] = useState<(typeof views)[number]>(requestedTaskId ? 'ALL' : 'TODAY');
+  const requestedView = views.find((candidate) => candidate === params.get('view'));
+  const [view, setView] = useState<(typeof views)[number]>(
+    requestedTaskId ? 'ALL' : (requestedView ?? 'TODAY'),
+  );
+  const format = useFormat();
   const [editing, setEditing] = useState<TaskDto | 'new' | null>(createIntent ? 'new' : null);
   const [removing, setRemoving] = useState<TaskDto | null>(null);
   const [dismissedUnavailableId, setDismissedUnavailableId] = useState<string | null>(null);
   const handledTaskId = useRef<string | null>(null);
   const [caseId, setCaseId] = useState(params.get('case') ?? '');
   const [clientId, setClientId] = useState(params.get('client') ?? '');
+  const today = localDate();
   const tasks = useTaskList({
     view,
     referenceDate: localDate(),
@@ -75,16 +88,16 @@ export function TasksPage() {
 
   return (
     <section className="work-page">
-      <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="kicker">{t('tasks.kicker')}</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">{t('tasks.title')}</h1>
-          <p className="mt-1 text-muted-foreground">{t('tasks.description')}</p>
-        </div>
-        <Button type="button" onClick={() => setEditing('new')}>
-          {t('tasks.add')}
-        </Button>
-      </header>
+      <PageHeader
+        kicker={t('tasks.kicker')}
+        title={t('tasks.title')}
+        description={t('tasks.description')}
+        actions={
+          <Button type="button" onClick={() => setEditing('new')}>
+            {t('tasks.add')}
+          </Button>
+        }
+      />
       <Tabs
         label={t('tasks.filter')}
         value={view}
@@ -109,9 +122,15 @@ export function TasksPage() {
           <Select
             value={caseId}
             onValueChange={setCaseId}
+            placeholder={t('tasks.allCases')}
             items={[
               { value: '', label: t('tasks.allCases') },
-              ...(cases.data ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
+              ...(cases.data ?? []).map((item) => ({
+                value: item.id,
+                label: item.clientNames.length
+                  ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
+                  : item.internalNumber,
+              })),
             ]}
           />
         </label>
@@ -120,6 +139,7 @@ export function TasksPage() {
           <Select
             value={clientId}
             onValueChange={setClientId}
+            placeholder={t('tasks.allClients')}
             items={[
               { value: '', label: t('tasks.allClients') },
               ...(clients.data ?? []).map((item) => ({ value: item.id, label: item.fullName })),
@@ -144,77 +164,87 @@ export function TasksPage() {
             <p className="muted">{t('tasks.count', { count: tasks.data?.length ?? 0 })}</p>
           </div>
         </div>
-        {!tasks.data?.length ? (
-          <p className="empty-compact">{t('tasks.empty')}</p>
+        {tasks.isError ? (
+          <p className="error" role="alert">
+            {t('app.loadError')}
+          </p>
+        ) : !tasks.data?.length ? (
+          <p className="empty-compact">{t(`tasks.emptyViews.${view}`)}</p>
         ) : (
-          <ul className="record-list task-records">
-            {tasks.data.map((task) => (
-              <li key={task.id}>
-                <label className="task-check">
+          <ul className="work-rows task-records">
+            {tasks.data.map((task) => {
+              const state = task.completed
+                ? 'completed'
+                : task.dueDate < today
+                  ? 'overdue'
+                  : task.dueDate === today
+                    ? 'today'
+                    : 'upcoming';
+              const linkedCase = task.caseId
+                ? cases.data?.find((item) => item.id === task.caseId)
+                : undefined;
+              const linkedClient = task.clientId
+                ? clients.data?.find((item) => item.id === task.clientId)
+                : undefined;
+              return (
+                <li key={task.id} className={task.completed ? 'is-done' : undefined}>
                   <Checkbox
                     checked={task.completed}
+                    disabled={complete.isPending || reopen.isPending}
                     onCheckedChange={() => (task.completed ? reopen : complete).mutate(task.id)}
                     aria-label={t(task.completed ? 'tasks.reopenAria' : 'tasks.completeAria', {
                       title: task.title,
                     })}
                   />
-                  <span
-                    className={task.completed ? 'task-status done' : 'task-status'}
-                    aria-hidden="true"
-                  />
-                </label>
-                <div className="record-copy">
+                  <div>
+                    <button
+                      type="button"
+                      className="link-button task-title"
+                      onClick={() => setEditing(task)}
+                    >
+                      <bdi dir="auto">{task.title}</bdi>
+                    </button>
+                    <span>
+                      <time dateTime={task.dueDate}>{format.date(task.dueDate)}</time>
+                      {linkedCase && (
+                        <>
+                          {' · '}
+                          <bdi>{linkedCase.internalNumber}</bdi>
+                        </>
+                      )}
+                      {!linkedCase && linkedClient && (
+                        <>
+                          {' · '}
+                          <bdi>{linkedClient.fullName}</bdi>
+                        </>
+                      )}
+                      {task.details && (
+                        <>
+                          {' · '}
+                          <bdi dir="auto">{task.details}</bdi>
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  <span className={`status-badge ${TASK_TONE[state]}`}>{t(`tasks.${state}`)}</span>
                   <Button
                     type="button"
-                    className="text-button task-title"
-                    onClick={() => setEditing(task)}
+                    variant="ghost"
+                    className="text-button quiet-button"
+                    aria-label={t('tasks.deleteAria', { title: task.title })}
+                    onClick={() => setRemoving(task)}
                   >
-                    <bdi dir="auto">{task.title}</bdi>
+                    {t('tasks.delete')}
                   </Button>
-                  <span>
-                    <bdi>{task.dueDate}</bdi>
-                    {task.details && (
-                      <>
-                        {' '}
-                        · <bdi dir="auto">{task.details}</bdi>
-                      </>
-                    )}
-                    {task.notes && (
-                      <>
-                        {' '}
-                        · <bdi dir="auto">{task.notes}</bdi>
-                      </>
-                    )}
-                  </span>
-                </div>
-                <span className={`status-chip ${task.completed ? 'completed' : ''}`}>
-                  {task.completed
-                    ? t('tasks.completed')
-                    : task.dueDate < localDate()
-                      ? t('tasks.overdue')
-                      : task.dueDate === localDate()
-                        ? t('tasks.today')
-                        : t('tasks.upcoming')}
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-button"
-                  onClick={() => setEditing(task)}
-                >
-                  {t('tasks.details')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-button danger-button"
-                  onClick={() => setRemoving(task)}
-                >
-                  {t('tasks.delete')}
-                </Button>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
+        )}
+        {(complete.isError || reopen.isError) && !editing && (
+          <p className="error" role="alert">
+            {t('tasks.statusError')}
+          </p>
         )}
       </section>
       <Dialog

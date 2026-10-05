@@ -11,6 +11,7 @@ import { OnboardingPage, type OnboardingSubGate } from './OnboardingPage';
 function mount(subGate: OnboardingSubGate) {
   const callbacks = {
     onSwitchToRecovery: vi.fn(),
+    onBackToUnlock: vi.fn(),
     onSetupSucceeded: vi.fn(),
     onUnlocked: vi.fn(),
     onRecovered: vi.fn(),
@@ -53,35 +54,35 @@ describe('vault forms', () => {
           target: { value: 'fictional-recovery' },
         });
       fireEvent.change(
-        screen.getByLabelText(gate === 'recovery' ? 'كلمة مرور جديدة' : 'كلمة المرور'),
+        screen.getByLabelText(gate === 'recovery' ? 'كلمة المرور الجديدة' : 'كلمة المرور'),
         { target: { value: 'fictional password 2026' } },
       );
+      if (gate !== 'unlock')
+        fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), {
+          target: { value: 'fictional password 2026' },
+        });
       fireEvent.submit(
         screen
           .getByRole('button', {
-            name:
-              gate === 'setup'
-                ? 'إنشاء الخزنة'
-                : gate === 'unlock'
-                  ? 'فتح الخزنة'
-                  : 'استعادة الوصول',
+            name: gate === 'setup' ? 'بدء الاستخدام' : gate === 'unlock' ? 'فتح' : 'استعادة الوصول',
           })
           .closest('form')!,
       );
-      expect(await screen.findByRole('alert')).toHaveTextContent('تعذر فتح');
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        gate === 'unlock'
+          ? 'كلمة المرور غير صحيحة'
+          : gate === 'recovery'
+            ? 'مفتاح الاسترداد غير صحيح'
+            : 'تعذر إتمام العملية',
+      );
       expect(invalidate).not.toHaveBeenCalled();
       expect(
-        screen.getByLabelText(gate === 'recovery' ? 'كلمة مرور جديدة' : 'كلمة المرور'),
+        screen.getByLabelText(gate === 'recovery' ? 'كلمة المرور الجديدة' : 'كلمة المرور'),
       ).toHaveValue('fictional password 2026');
       fireEvent.submit(
         screen
           .getByRole('button', {
-            name:
-              gate === 'setup'
-                ? 'إنشاء الخزنة'
-                : gate === 'unlock'
-                  ? 'فتح الخزنة'
-                  : 'استعادة الوصول',
+            name: gate === 'setup' ? 'بدء الاستخدام' : gate === 'unlock' ? 'فتح' : 'استعادة الوصول',
           })
           .closest('form')!,
       );
@@ -99,5 +100,36 @@ describe('vault forms', () => {
     const { callbacks } = mount('unlock');
     fireEvent.click(screen.getByRole('button', { name: 'لدي مفتاح الاسترداد' }));
     expect(callbacks.onSwitchToRecovery).toHaveBeenCalledOnce();
+  });
+  it('explains a short or mismatched new password before contacting the vault', async () => {
+    mount('setup');
+    fireEvent.change(screen.getByLabelText('اسم المحامي'), { target: { value: 'محامٍ خيالي' } });
+    fireEvent.change(screen.getByLabelText('كلمة المرور'), { target: { value: 'short' } });
+    fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), { target: { value: 'other' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'بدء الاستخدام' }).closest('form')!);
+    expect(await screen.findByText(/كلمة المرور قصيرة/)).toBeVisible();
+    expect(screen.getByText('كلمتا المرور غير متطابقتين.')).toBeVisible();
+    expect(bridge.initialize).not.toHaveBeenCalled();
+  });
+  it('lets the lawyer reveal a password deliberately', () => {
+    mount('unlock');
+    const password = screen.getByLabelText('كلمة المرور');
+    expect(password).toHaveAttribute('type', 'password');
+    fireEvent.click(screen.getByRole('button', { name: 'إظهار كلمة المرور' }));
+    expect(password).toHaveAttribute('type', 'text');
+  });
+  it('requires acknowledging the recovery key before continuing', () => {
+    const { callbacks } = mount('recovery-key');
+    expect(screen.getByText('fictional-recovery')).toBeVisible();
+    const proceed = screen.getByRole('button', { name: 'متابعة إلى مساحة العمل' });
+    expect(proceed).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(proceed);
+    expect(callbacks.onRecoveryKeySaved).toHaveBeenCalledOnce();
+  });
+  it('returns from recovery to the unlock gate', () => {
+    const { callbacks } = mount('recovery');
+    fireEvent.click(screen.getByRole('button', { name: 'رجوع إلى الدخول بكلمة المرور' }));
+    expect(callbacks.onBackToUnlock).toHaveBeenCalledOnce();
   });
 });

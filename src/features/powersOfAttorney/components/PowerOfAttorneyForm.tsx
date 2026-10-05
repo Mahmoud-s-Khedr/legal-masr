@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { DatePicker } from '../../../components/ui/DatePicker';
 import { Button } from '../../../components/ui/button';
@@ -35,6 +36,7 @@ export function PowerOfAttorneyForm({
   }) => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const clients = useClientList({});
   const [selectedClientIds, setSelectedClientIds] = useState(
     powerOfAttorney?.clients.map((client) => client.id) ?? [],
@@ -79,7 +81,7 @@ export function PowerOfAttorneyForm({
     >
       <div className="settings-two-columns">
         <label>
-          الرقم الداخلي{' '}
+          {t('poa.fields.internalSequence')}
           <Input
             required
             dir="ltr"
@@ -88,7 +90,7 @@ export function PowerOfAttorneyForm({
           />
         </label>
         <label>
-          رقم التوكيل{' '}
+          {t('poa.fields.officialNumber')}
           <Input
             dir="ltr"
             name="officialNumber"
@@ -96,7 +98,7 @@ export function PowerOfAttorneyForm({
           />
         </label>
         <label>
-          تاريخ الإصدار{' '}
+          {t('poa.fields.issueDate')}
           <DatePicker
             name="issueDate"
             value={issueDate}
@@ -105,21 +107,21 @@ export function PowerOfAttorneyForm({
         </label>
       </div>
       <label>
-        مكتب التوثيق{' '}
+        {t('poa.fields.notaryOffice')}
         <Input name="notaryOffice" defaultValue={powerOfAttorney?.notaryOffice ?? ''} />
       </label>
       <fieldset>
-        <legend>الموكلون</legend>
+        <legend>{t('poa.tabs.clients')}</legend>
         <Button
           type="button"
           variant="secondary"
           className="secondary-button compact-button"
           onClick={() => setClientCreateOpen(true)}
         >
-          إضافة موكل جديد
+          {t('cases.form.addClientLink')}
         </Button>
         {!clients.data?.length ? (
-          <p className="muted">اختر موكلًا موجودًا أو أضف موكلًا جديدًا لربطه بالتوكيل.</p>
+          <p className="muted">{t('poa.clientsHint')}</p>
         ) : (
           clients.data.map((client) => (
             <div className="checkbox-field" key={client.id}>
@@ -147,14 +149,14 @@ export function PowerOfAttorneyForm({
         }
       />
       <fieldset>
-        <legend>المحامون المذكورون في التوكيل</legend>
+        <legend>{t('poa.lawyersTitle')}</legend>
         <div className="settings-two-columns">
           <label>
-            الاسم{' '}
+            {t('poa.fields.lawyerName')}
             <Input value={lawyerName} onChange={(event) => setLawyerName(event.target.value)} />
           </label>
           <label>
-            رقم القيد{' '}
+            {t('poa.fields.barNumber')}
             <Input
               dir="ltr"
               value={barNumber}
@@ -163,7 +165,7 @@ export function PowerOfAttorneyForm({
           </label>
         </div>
         <label>
-          ملاحظات{' '}
+          {t('common.notes')}
           <Input value={lawyerNotes} onChange={(event) => setLawyerNotes(event.target.value)} />
         </label>
         <Button
@@ -185,7 +187,7 @@ export function PowerOfAttorneyForm({
             setLawyerNotes('');
           }}
         >
-          إضافة محامٍ
+          {t('poa.addLawyer')}
         </Button>
         {lawyers.length > 0 && (
           <ul className="compact-records">
@@ -194,7 +196,7 @@ export function PowerOfAttorneyForm({
                 <div className="record-copy">
                   <strong>{lawyer.fullName}</strong>
                   <span>
-                    {lawyer.barNumber ? <bdi>{lawyer.barNumber}</bdi> : 'دون رقم قيد'}
+                    {lawyer.barNumber ? <bdi>{lawyer.barNumber}</bdi> : t('poa.noBarNumber')}
                     {lawyer.notes && ` · ${lawyer.notes}`}
                   </span>
                 </div>
@@ -208,7 +210,7 @@ export function PowerOfAttorneyForm({
                     )
                   }
                 >
-                  إزالة
+                  {t('documents.remove')}
                 </Button>
               </li>
             ))}
@@ -216,12 +218,12 @@ export function PowerOfAttorneyForm({
         )}
       </fieldset>
       <label>
-        ملاحظات <Textarea name="notes" defaultValue={powerOfAttorney?.notes ?? ''} />
+        {t('common.notes')} <Textarea name="notes" defaultValue={powerOfAttorney?.notes ?? ''} />
       </label>
       <div className="form-actions">
-        <Button disabled={busy}>حفظ التوكيل</Button>
+        <Button disabled={busy}>{t('poa.save')}</Button>
         <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-          إلغاء
+          {t('common.cancel')}
         </Button>
       </div>
     </form>
@@ -237,6 +239,7 @@ function InlineClientCreateDialog({
   onOpenChange: (open: boolean) => void;
   onCreated: (clientId: string) => void;
 }) {
+  const { t } = useTranslation();
   const createClient = useCreateClient();
   const [duplicates, setDuplicates] = useState<ClientDuplicateCandidate[] | null>(null);
   const [pendingValues, setPendingValues] = useState<ClientFormValues | null>(null);
@@ -261,7 +264,7 @@ function InlineClientCreateDialog({
         setPendingValues(values);
         return;
       }
-      setCreateError(errorMessage(error, 'تعذر حفظ الموكل.'));
+      setCreateError(errorMessage(error, t('poa.clientSaveError')));
     }
   };
 
@@ -269,11 +272,11 @@ function InlineClientCreateDialog({
     <Dialog
       open={open}
       onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : close())}
-      title="إضافة موكل جديد"
+      title={t('cases.form.addClientLink')}
     >
       <ClientForm
         busy={createClient.isPending}
-        submitLabel="حفظ الموكل وربطه بالتوكيل"
+        submitLabel={t('poa.saveClientAndLink')}
         onCancel={close}
         onSubmit={(values) => submit(values, false)}
       />
@@ -284,7 +287,7 @@ function InlineClientCreateDialog({
       )}
       {duplicates && (
         <div className="warning" role="alert">
-          <p>قد يكون هذا الموكل مسجلًا بالفعل.</p>
+          <p>{t('clients.duplicateWarning')}</p>
           <ul>
             {duplicates.map((candidate) => (
               <li key={candidate.id}>
@@ -298,7 +301,7 @@ function InlineClientCreateDialog({
             disabled={createClient.isPending}
             onClick={() => pendingValues && submit(pendingValues, true)}
           >
-            إنشاء الموكل وربطه بالتوكيل
+            {t('poa.createClientAnyway')}
           </Button>
         </div>
       )}

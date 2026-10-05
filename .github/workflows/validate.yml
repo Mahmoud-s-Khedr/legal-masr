@@ -184,8 +184,8 @@ jobs:
           $executables = Get-ChildItem "src-tauri/target/x86_64-pc-windows-msvc/debug/*.exe" -File
           if ($executables.Count -ne 1) { throw "Expected exactly one portable application executable; found $($executables.Count)." }
           New-Item -ItemType Directory -Force -Path "windows-debug-portable" | Out-Null
-          Compress-Archive -LiteralPath $executables[0].FullName -DestinationPath "windows-debug-portable/LegalMaster-Solo-windows-x64-portable.zip" -CompressionLevel Optimal
-          if (-not (Test-Path "windows-debug-portable/LegalMaster-Solo-windows-x64-portable.zip" -PathType Leaf)) { throw "Windows portable archive was not created." }
+          Compress-Archive -LiteralPath $executables[0].FullName -DestinationPath "windows-debug-portable/Legal-Masr-windows-x64-portable.zip" -CompressionLevel Optimal
+          if (-not (Test-Path "windows-debug-portable/Legal-Masr-windows-x64-portable.zip" -PathType Leaf)) { throw "Windows portable archive was not created." }
       - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: legalmaster-solo-windows-debug-installer

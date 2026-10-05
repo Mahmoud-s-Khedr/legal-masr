@@ -19,12 +19,12 @@ vi.mock('../../../bridge/commands', () => ({
 import { bridge } from '../../../bridge/commands';
 import { TasksPage } from './TasksPage';
 
-function renderPage() {
+function renderPage(path = '/tasks') {
   return render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <TasksPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -75,10 +75,12 @@ describe('TasksPage', () => {
     await waitFor(() => expect(bridge.taskComplete).toHaveBeenCalled());
     expect(vi.mocked(bridge.taskComplete).mock.calls[0][0]).toBe('task-1');
 
+    const today = screen.getByRole('tab', { name: 'اليوم' });
+    today.focus();
+    fireEvent.keyDown(today, { key: 'ArrowRight' });
     const overdue = screen.getByRole('tab', { name: 'متأخرة' });
-    overdue.focus();
-    fireEvent.keyDown(overdue, { key: 'ArrowRight' });
-    expect(screen.getByRole('tab', { name: 'متأخرة' })).toHaveAttribute('aria-selected', 'true');
+    await waitFor(() => expect(overdue).toHaveAttribute('aria-selected', 'true'));
+    expect(overdue).toHaveFocus();
 
     fireEvent.click(screen.getByRole('button', { name: 'إضافة مهمة' }));
     expect(await screen.findByRole('dialog', { name: 'إضافة مهمة' })).toBeInTheDocument();
@@ -90,5 +92,36 @@ describe('TasksPage', () => {
     fireEvent.click(title);
     const dialog = await screen.findByRole('dialog', { name: 'تفاصيل المهمة' });
     expect(within(dialog).getByRole('button', { name: 'إتمام المهمة' })).toBeInTheDocument();
+  });
+
+  it('opens the view requested by the Today dashboard', async () => {
+    renderPage('/tasks?view=OVERDUE');
+    expect(await screen.findByRole('tab', { name: 'متأخرة' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await waitFor(() =>
+      expect(vi.mocked(bridge.taskList).mock.calls.at(-1)?.[0]).toMatchObject({ view: 'OVERDUE' }),
+    );
+  });
+
+  it('falls back to today for an unknown view', async () => {
+    renderPage('/tasks?view=SOMEDAY');
+    expect(await screen.findByRole('tab', { name: 'اليوم' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+
+  it('reports a failed completion from the list without opening a dialog', async () => {
+    vi.mocked(bridge.taskComplete).mockRejectedValue({
+      code: 'OPERATION_FAILED',
+      message: 'x',
+      details: null,
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'إتمام مراجعة عقد ABC-42' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('تعذر تغيير حالة المهمة');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

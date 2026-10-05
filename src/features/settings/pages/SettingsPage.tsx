@@ -6,6 +6,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
+import { Switch } from '../../../components/ui/Switch';
+import { PageHeader } from '../../../components/layout/PageHeader';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
@@ -110,9 +112,8 @@ export function SettingsPage() {
   const submitPassword = async (event: React.FormEvent) => {
     event.preventDefault();
     if (passwords.next.length < 12)
-      return setPasswordError('يجب ألا تقل كلمة المرور الجديدة عن 12 حرفًا.');
-    if (passwords.next !== passwords.confirm)
-      return setPasswordError('تأكيد كلمة المرور غير مطابق.');
+      return setPasswordError(t('gate.passwordTooShort', { count: 12 }));
+    if (passwords.next !== passwords.confirm) return setPasswordError(t('gate.passwordMismatch'));
     setPasswordError('');
     await changePassword.mutateAsync({
       currentPassword: passwords.current,
@@ -129,25 +130,23 @@ export function SettingsPage() {
 
   return (
     <section className="settings settings-workspace">
-      <header className="page-heading settings-heading">
-        <div>
-          <p className="kicker">{t('settings.kicker')}</p>
-          <h2>الإعدادات</h2>
-          <p>بيانات مكتبك، حماية الخزنة، وتفضيلات العمل اليومية.</p>
-        </div>
-      </header>
+      <PageHeader
+        kicker={t('settings.kicker')}
+        title={t('settings.title')}
+        description={t('settings.description')}
+      />
       <div className="settings-layout">
-        <nav className="settings-nav" aria-label="أقسام الإعدادات">
+        <nav className="settings-nav" aria-label={t('settings.sectionsLabel')}>
           {(
             [
-              ['profile', 'الملف الشخصي', 'clients'],
-              ['general', 'العرض والتقويم', 'settings'],
-              ['security', 'الأمان والقفل', 'shield'],
-              ['backups', 'النسخ الاحتياطي', 'backup'],
-              ['privacy', 'الخصوصية والبيانات', 'backup'],
-              ['about', 'حول التطبيق', 'documents'],
+              ['profile', 'clients'],
+              ['general', 'settings'],
+              ['security', 'shield'],
+              ['backups', 'backup'],
+              ['privacy', 'lock'],
+              ['about', 'documents'],
             ] as const
-          ).map(([value, label, icon]) => (
+          ).map(([value, icon]) => (
             <Button
               type="button"
               key={value}
@@ -155,7 +154,7 @@ export function SettingsPage() {
               onClick={() => chooseTab(value)}
             >
               <Icon name={icon} size={19} />
-              {label}
+              {t(`settings.tabs.${value}`)}
             </Button>
           ))}
         </nav>
@@ -165,8 +164,8 @@ export function SettingsPage() {
             <section className="settings-section">
               <div className="card-title">
                 <div>
-                  <h3>بيانات المحامي</h3>
-                  <p>تُستخدم هذه البيانات في العناوين والتقارير المطبوعة فقط.</p>
+                  <h3>{t('settings.profile.title')}</h3>
+                  <p>{t('settings.profile.hint')}</p>
                 </div>
               </div>
               <form
@@ -187,29 +186,37 @@ export function SettingsPage() {
                 }}
               >
                 <label>
-                  اسم المحامي
+                  {t('settings.profile.fullName')}
                   <Input required name="fullName" defaultValue={profile?.fullName ?? ''} />
                 </label>
                 <div className="settings-two-columns">
                   <label>
-                    رقم القيد بالنقابة
+                    {t('settings.profile.barNumber')}
                     <Input name="barNumber" defaultValue={profile?.barNumber ?? ''} />
                   </label>
                   <label>
-                    رقم الهاتف
+                    {t('settings.profile.phone')}
                     <Input dir="ltr" name="phone" defaultValue={profile?.phone ?? ''} />
                   </label>
                 </div>
                 <label>
-                  عنوان المكتب
+                  {t('settings.profile.officeAddress')}
                   <Textarea name="officeAddress" defaultValue={profile?.officeAddress ?? ''} />
                 </label>
                 <div className="form-actions">
-                  <Button disabled={!profile || updateProfile.isPending}>حفظ بيانات المكتب</Button>
+                  <Button disabled={!profile || updateProfile.isPending}>
+                    {t('settings.profile.save')}
+                  </Button>
                 </div>
-                {updateProfile.isError && <p className="error">تعذر حفظ بيانات المكتب.</p>}
+                {updateProfile.isError && (
+                  <p className="error" role="alert">
+                    {t('settings.profile.saveError')}
+                  </p>
+                )}
                 {saved && updateProfile.isSuccess && (
-                  <p className="success">تم حفظ بيانات المكتب محليًا.</p>
+                  <p className="success" role="status">
+                    {t('settings.profile.saved')}
+                  </p>
                 )}
               </form>
             </section>
@@ -219,8 +226,8 @@ export function SettingsPage() {
             <section className="settings-section">
               <div className="card-title">
                 <div>
-                  <h3>العرض والتقويم</h3>
-                  <p>تُطبّق اللغة والواجهة فور الحفظ، مع بقاء التواريخ القانونية بلا تحويل زمني.</p>
+                  <h3>{t('settings.display.title')}</h3>
+                  <p>{t('settings.display.hint')}</p>
                 </div>
               </div>
               <form
@@ -268,7 +275,7 @@ export function SettingsPage() {
                     />
                   </label>
                   <label>
-                    تنسيق التاريخ
+                    {t('settings.display.dateFormat')}
                     <Controller
                       control={control}
                       name="dateFormat"
@@ -277,15 +284,15 @@ export function SettingsPage() {
                           value={field.value}
                           onValueChange={field.onChange}
                           items={[
-                            { value: 'dd/MM/yyyy', label: 'يوم / شهر / سنة' },
-                            { value: 'yyyy-MM-dd', label: 'سنة - شهر - يوم' },
+                            { value: 'dd/MM/yyyy', label: t('settings.display.dayFirst') },
+                            { value: 'yyyy-MM-dd', label: t('settings.display.yearFirst') },
                           ]}
                         />
                       )}
                     />
                   </label>
                   <label>
-                    بداية الأسبوع
+                    {t('settings.display.weekStart')}
                     <Controller
                       control={control}
                       name="weekStartsOn"
@@ -294,16 +301,16 @@ export function SettingsPage() {
                           value={String(field.value)}
                           onValueChange={(value) => field.onChange(Number(value))}
                           items={[
-                            { value: '6', label: 'السبت' },
-                            { value: '0', label: 'الأحد' },
-                            { value: '1', label: 'الاثنين' },
+                            { value: '6', label: t('settings.display.saturday') },
+                            { value: '0', label: t('settings.display.sunday') },
+                            { value: '1', label: t('settings.display.monday') },
                           ]}
                         />
                       )}
                     />
                   </label>
                   <label>
-                    التذكير الافتراضي قبل الموعد (دقيقة)
+                    {t('settings.display.reminder')}
                     <Input
                       type="number"
                       min="0"
@@ -313,12 +320,18 @@ export function SettingsPage() {
                   </label>
                 </div>
                 {Object.keys(errors).length > 0 && (
-                  <p className="error">راجع القيم المدخلة في إعدادات العرض.</p>
+                  <p className="error" role="alert">
+                    {t('settings.display.invalid')}
+                  </p>
                 )}
                 <div className="form-actions">
                   <Button disabled={updateSettings.isPending}>{t('settings.save')}</Button>
                 </div>
-                {updateSettings.isError && <p className="error">تعذر حفظ الإعدادات.</p>}
+                {updateSettings.isError && (
+                  <p className="error" role="alert">
+                    {t('settings.saveError')}
+                  </p>
+                )}
                 {saved && updateSettings.isSuccess && (
                   <p className="success">{t('settings.saved')}</p>
                 )}
@@ -331,8 +344,8 @@ export function SettingsPage() {
               <section className="settings-section">
                 <div className="card-title">
                   <div>
-                    <h3>القفل التلقائي</h3>
-                    <p>يقفل التطبيق بعد عدم الاستخدام لحماية بيانات الموكلين.</p>
+                    <h3>{t('settings.security.lockTitle')}</h3>
+                    <p>{t('settings.security.lockHint')}</p>
                   </div>
                 </div>
                 <form
@@ -352,38 +365,33 @@ export function SettingsPage() {
                     />
                   </label>
                   <div className="form-actions">
-                    <Button>حفظ مدة القفل</Button>
+                    <Button>{t('settings.security.lockSave')}</Button>
                   </div>
                 </form>
               </section>
               <section className="settings-section">
                 <div className="card-title">
                   <div>
-                    <h3>التذكيرات عند تشغيل الجهاز</h3>
-                    <p>
-                      اسمح بإشعارات عامة وآمنة، وشغّل التطبيق مع تسجيل الدخول حتى تظهر التذكيرات من
-                      دون فتحه يدويًا.
-                    </p>
+                    <h3>{t('settings.security.remindersTitle')}</h3>
+                    <p>{t('settings.security.remindersHint')}</p>
                   </div>
                 </div>
                 <div className="settings-toggle-row">
                   <div>
-                    <strong>تشغيل ليجال مصر مع الجهاز</strong>
-                    <span>يمكن تعطيله في أي وقت. لا يرسل التطبيق أي بيانات عبر الإنترنت.</span>
+                    <strong>{t('settings.security.autostart')}</strong>
+                    <span>{t('settings.security.autostartHint')}</span>
                   </div>
-                  <Button
-                    type="button"
-                    className={settings.autostartEnabled ? '' : 'secondary-button'}
+                  <Switch
+                    label={t('settings.security.autostart')}
+                    checked={settings.autostartEnabled}
                     disabled={setAutostart.isPending}
-                    onClick={() => setAutostart.mutate(!settings.autostartEnabled)}
-                  >
-                    {settings.autostartEnabled ? 'مفعّل — إيقاف' : 'غير مفعّل — تشغيل'}
-                  </Button>
+                    onCheckedChange={(checked) => setAutostart.mutate(checked)}
+                  />
                 </div>
                 <div className="settings-toggle-row">
                   <div>
-                    <strong>إذن الإشعارات</strong>
-                    <span>نص الإشعار لا يعرض أسماء الموكلين أو تفاصيل القضايا.</span>
+                    <strong>{t('settings.security.notifications')}</strong>
+                    <span>{t('settings.security.notificationsHint')}</span>
                   </div>
                   <Button
                     type="button"
@@ -391,30 +399,33 @@ export function SettingsPage() {
                     className="secondary-button"
                     onClick={enableNotifications}
                   >
-                    {notificationStatus === 'granted' ? 'تم السماح' : 'السماح بالإشعارات'}
+                    {notificationStatus === 'granted'
+                      ? t('settings.security.notificationsGranted')
+                      : t('settings.security.notificationsAllow')}
                   </Button>
                 </div>
                 {notificationStatus === 'denied' && (
-                  <p className="warning">تم رفض الإذن. يمكنك تغييره من إعدادات نظام التشغيل.</p>
+                  <p className="warning">{t('settings.security.notificationsDenied')}</p>
                 )}
                 {setAutostart.isError && (
-                  <p className="error">تعذر تغيير التشغيل التلقائي على هذا الجهاز.</p>
+                  <p className="error" role="alert">
+                    {t('settings.security.autostartError')}
+                  </p>
                 )}
                 <p className="muted reminder-disclosure">
-                  لا تظهر التذكيرات إذا كان التطبيق مغلقًا بالكامل، إلا عند تفعيل التشغيل مع الجهاز
-                  وترك التطبيق يعمل.
+                  {t('settings.security.remindersDisclosure')}
                 </p>
               </section>
               <section className="settings-section">
                 <div className="card-title">
                   <div>
-                    <h3>تغيير كلمة المرور</h3>
-                    <p>يُعاد تغليف مفتاح الخزنة؛ لا تُعاد كتابة قاعدة البيانات بالكامل.</p>
+                    <h3>{t('settings.security.passwordTitle')}</h3>
+                    <p>{t('settings.security.passwordHint')}</p>
                   </div>
                 </div>
                 <form onSubmit={submitPassword}>
                   <label>
-                    كلمة المرور الحالية
+                    {t('settings.security.currentPassword')}
                     <Input
                       type="password"
                       autoComplete="current-password"
@@ -426,7 +437,7 @@ export function SettingsPage() {
                   </label>
                   <div className="settings-two-columns">
                     <label>
-                      كلمة المرور الجديدة
+                      {t('gate.fields.newPassword')}
                       <Input
                         type="password"
                         autoComplete="new-password"
@@ -437,7 +448,7 @@ export function SettingsPage() {
                       />
                     </label>
                     <label>
-                      تأكيد كلمة المرور
+                      {t('gate.fields.confirmPassword')}
                       <Input
                         type="password"
                         autoComplete="new-password"
@@ -448,54 +459,58 @@ export function SettingsPage() {
                       />
                     </label>
                   </div>
-                  {passwordError && <p className="error">{passwordError}</p>}
-                  {changePassword.isError && (
-                    <p className="error">كلمة المرور الحالية غير صحيحة أو تعذر حفظ التغيير.</p>
+                  {passwordError && (
+                    <p className="error" role="alert">
+                      {passwordError}
+                    </p>
                   )}
-                  {changePassword.isSuccess && <p className="success">تم تغيير كلمة المرور.</p>}
+                  {changePassword.isError && (
+                    <p className="error" role="alert">
+                      {t('settings.security.passwordError')}
+                    </p>
+                  )}
+                  {changePassword.isSuccess && (
+                    <p className="success" role="status">
+                      {t('settings.security.passwordChanged')}
+                    </p>
+                  )}
                   <div className="form-actions">
-                    <Button disabled={changePassword.isPending}>تغيير كلمة المرور</Button>
+                    <Button disabled={changePassword.isPending}>
+                      {t('settings.security.passwordTitle')}
+                    </Button>
                   </div>
                 </form>
               </section>
               <section className="settings-section">
                 <div className="card-title">
                   <div>
-                    <h3>عدادات استخدام مجمّعة</h3>
-                    <p>
-                      اختيارية ومحلية فقط؛ لا تتضمن أسماء أو أرقامًا أو أي بيانات قانونية ولا تُرسل
-                      عبر الشبكة.
-                    </p>
+                    <h3>{t('settings.security.countersTitle')}</h3>
+                    <p>{t('settings.security.countersHint')}</p>
                   </div>
                 </div>
                 <div className="settings-toggle-row">
                   <div>
-                    <strong>تفعيل العدادات المجمّعة</strong>
-                    <span>
-                      تسجل أعدادًا إجمالية مثل عدد القضايا أو النسخ الاحتياطية التي أُنشئت.
-                    </span>
+                    <strong>{t('settings.security.counters')}</strong>
+                    <span>{t('settings.security.countersDetail')}</span>
                   </div>
-                  <Button
-                    type="button"
-                    className={settings.usageCountersEnabled ? '' : 'secondary-button'}
+                  <Switch
+                    label={t('settings.security.counters')}
+                    checked={settings.usageCountersEnabled}
                     disabled={setUsageCounters.isPending}
-                    onClick={() => setUsageCounters.mutate(!settings.usageCountersEnabled)}
-                  >
-                    {settings.usageCountersEnabled ? 'مفعّلة — إيقاف' : 'غير مفعّلة — تشغيل'}
-                  </Button>
+                    onCheckedChange={(checked) => setUsageCounters.mutate(checked)}
+                  />
                 </div>
                 {setUsageCounters.isError && (
-                  <p className="error">تعذر حفظ اختيار العدادات المجمّعة.</p>
+                  <p className="error" role="alert">
+                    {t('settings.security.countersError')}
+                  </p>
                 )}
               </section>
               <section className="security-note">
                 <Icon name="shield" size={22} />
                 <div>
-                  <strong>مفتاح الاسترداد مسؤوليتك</strong>
-                  <p>
-                    احتفظ بالمفتاح الذي ظهر أثناء الإعداد في مكان منفصل وآمن. لا يستطيع الدعم
-                    استعادة بياناتك بدونه.
-                  </p>
+                  <strong>{t('settings.security.recoveryTitle')}</strong>
+                  <p>{t('settings.security.recoveryHint')}</p>
                 </div>
               </section>
             </div>
@@ -506,40 +521,35 @@ export function SettingsPage() {
               <section className="settings-section">
                 <div className="card-title">
                   <div>
-                    <h3>مكان البيانات</h3>
-                    <p>كل سجلات الموكلين والقضايا تبقى على هذا الجهاز.</p>
+                    <h3>{t('settings.privacy.title')}</h3>
+                    <p>{t('settings.privacy.hint')}</p>
                   </div>
                 </div>
                 <dl className="privacy-list">
                   <div>
-                    <dt>مجلد المستندات المُدارة</dt>
-                    <dd dir="ltr">داخل مجلد بيانات التطبيق</dd>
+                    <dt>{t('settings.privacy.documents')}</dt>
+                    <dd>{t('settings.privacy.documentsValue')}</dd>
                   </div>
                   <div>
-                    <dt>مجلد النسخ الاحتياطي</dt>
-                    <dd dir="ltr">داخل مجلد بيانات التطبيق/Backups</dd>
+                    <dt>{t('settings.privacy.backups')}</dt>
+                    <dd>{t('settings.privacy.backupsValue')}</dd>
                   </div>
                   <div>
-                    <dt>الاتصال بالشبكة</dt>
-                    <dd>
-                      لا تُرسل بيانات القضايا أو الموكلين. لا توجد تحليلات استخدام أو مزامنة سحابية.
-                    </dd>
+                    <dt>{t('settings.privacy.network')}</dt>
+                    <dd>{t('settings.privacy.networkValue')}</dd>
                   </div>
                 </dl>
                 <div className="form-actions">
                   <Link className="button-link" to="/backups">
-                    إدارة النسخ الاحتياطي
+                    {t('settings.privacy.manageBackups')}
                   </Link>
                 </div>
               </section>
               <section className="security-note">
                 <Icon name="lock" size={22} />
                 <div>
-                  <strong>المستندات المُدارة ليست خزنة ملفات مشفّرة مستقلة</strong>
-                  <p>
-                    قاعدة البيانات مشفّرة، أما المرفقات فتستفيد من حماية حساب الجهاز وBitLocker أو
-                    FileVault. النسخة الاحتياطية الكاملة مشفّرة.
-                  </p>
+                  <strong>{t('settings.privacy.documentsNoteTitle')}</strong>
+                  <p>{t('settings.privacy.documentsNote')}</p>
                 </div>
               </section>
             </div>
@@ -550,11 +560,8 @@ export function SettingsPage() {
               <section className="settings-section">
                 <div className="card-title">
                   <div>
-                    <h3>نسخة احتياطية يدوية</h3>
-                    <p>
-                      تتضمن النسخة قاعدة البيانات المشفرة وكل المرفقات المُدارة. تحقّق منها قبل
-                      الاستعادة.
-                    </p>
+                    <h3>{t('settings.backups.title')}</h3>
+                    <p>{t('settings.backups.hint')}</p>
                   </div>
                 </div>
                 <BackupSettingsPanel />
@@ -562,11 +569,8 @@ export function SettingsPage() {
               <section className="security-note">
                 <Icon name="backup" size={22} />
                 <div>
-                  <strong>الاستعادة تستبدل الخزنة الحالية بعد التحقق</strong>
-                  <p>
-                    احتفظ بنسخة مستقلة قبل الاستعادة. سيُرفض أي أرشيف تالف قبل تغيير البيانات
-                    الحالية.
-                  </p>
+                  <strong>{t('settings.backups.restoreTitle')}</strong>
+                  <p>{t('settings.backups.restoreHint')}</p>
                 </div>
               </section>
             </div>
@@ -576,13 +580,11 @@ export function SettingsPage() {
             <section className="settings-section about-section">
               <img src="/logo.png" alt="" />
               <div>
-                <h3>ليجال مصر — LegalMaster Solo</h3>
-                <p>الإصدار 0.1.0</p>
-                <p>
-                  تطبيق مكتبي مجاني يعمل دون اتصال لمساعدة المحامي الفردي في مصر على تنظيم القضايا
-                  والجلسات والمهام والأتعاب.
-                </p>
-                <span className="local-status">محفوظ محليًا</span>
+                <h3>{t('app.brandName')}</h3>
+                <p className="about-tagline">{t('app.brandTagline')}</p>
+                <p>{t('settings.about.version', { version: '0.1.0' })}</p>
+                <p>{t('settings.about.description')}</p>
+                <span className="local-status">{t('app.localOnly')}</span>
               </div>
             </section>
           )}

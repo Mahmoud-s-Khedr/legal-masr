@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
-import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Input } from '../../../components/ui/input';
@@ -10,6 +9,9 @@ import { Select } from '../../../components/ui/select';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { Table } from '../../../components/ui/table';
 import { useCaseList } from '../api/casesApi';
+import { PageHeader } from '../../../components/layout/PageHeader';
+import { CASE_STATUSES } from '../schemas/case.schema';
+import { CaseStatusBadge, OfficialReference } from '../components/CaseIdentity';
 
 export function CaseListPage() {
   const { t } = useTranslation();
@@ -27,38 +29,33 @@ export function CaseListPage() {
     includeArchived,
   });
 
+  const filtered = Boolean(query || status);
   return (
     <section className="entity-list">
-      <div className="entity-list-header">
-        <div>
-          <p className="kicker">ملفات العمل</p>
-          <h2>{t('cases.title')}</h2>
-          <p className="page-description">كل قضية مع موكليها وجلساتها ومهامها وحركتها المالية.</p>
-        </div>
-        <Button onClick={() => navigate('/cases/new')}>{t('cases.newButton')}</Button>
-      </div>
+      <PageHeader
+        kicker={t('cases.kicker')}
+        title={t('cases.title')}
+        description={t('cases.description')}
+        actions={<Button onClick={() => navigate('/cases/new')}>{t('cases.newButton')}</Button>}
+      />
 
       <div className="entity-list-toolbar">
         <Input
+          type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="ابحث برقم القضية أو المحكمة أو الموكل"
+          placeholder={t('cases.searchPlaceholder')}
+          aria-label={t('cases.searchPlaceholder')}
         />
         <Select
+          className="toolbar-select"
           value={status}
           onValueChange={setStatus}
-          aria-label="تصفية حسب الحالة"
+          aria-label={t('cases.statusFilter')}
+          placeholder={t('cases.allStatuses')}
           items={[
-            { value: '', label: 'كل الحالات' },
-            ...[
-              'DRAFT',
-              'ACTIVE',
-              'SUSPENDED',
-              'JUDGMENT_ISSUED',
-              'APPEALED',
-              'ENFORCEMENT',
-              'CLOSED',
-            ].map((value) => ({ value, label: t(`cases.status.${value}`) })),
+            { value: '', label: t('cases.allStatuses') },
+            ...CASE_STATUSES.map((value) => ({ value, label: t(`cases.status.${value}`) })),
           ]}
         />
         <label className="checkbox-field">
@@ -70,16 +67,14 @@ export function CaseListPage() {
       {isLoading ? (
         <Skeleton className="table-message h-24" aria-label={t('cases.loading')} />
       ) : isError ? (
-        <p role="alert">تعذر تحميل السجلات. حاول مرة أخرى.</p>
+        <p className="error" role="alert">
+          {t('app.loadError')}
+        </p>
       ) : !cases?.length ? (
         <Card className="empty-state-card">
-          <strong>{query || status ? 'لا توجد قضايا مطابقة' : t('cases.empty')}</strong>
-          <span>
-            {query || status
-              ? 'غيّر كلمات البحث أو حالة القضية.'
-              : 'أنشئ أول قضية واربطها بموكل واحد على الأقل.'}
-          </span>
-          {!query && !status && (
+          <strong>{filtered ? t('cases.noResults') : t('cases.empty')}</strong>
+          <span>{filtered ? t('cases.noResultsHint') : t('cases.emptyHint')}</span>
+          {!filtered && (
             <Button onClick={() => navigate('/cases/new')}>{t('cases.newButton')}</Button>
           )}
         </Card>
@@ -90,7 +85,7 @@ export function CaseListPage() {
             <thead>
               <tr>
                 <th scope="col">{t('cases.columns.number')}</th>
-                <th scope="col">{t('cases.columns.year')}</th>
+                <th scope="col">{t('cases.columns.official')}</th>
                 <th scope="col">{t('cases.columns.client')}</th>
                 <th scope="col">{t('cases.columns.status')}</th>
               </tr>
@@ -103,14 +98,22 @@ export function CaseListPage() {
                       <bdi>{caseSummary.internalNumber}</bdi>
                     </Link>
                   </th>
-                  <td>{caseSummary.officialYear ? <bdi>{caseSummary.officialYear}</bdi> : '—'}</td>
-                  <td>{caseSummary.clientNames.join('، ') || '—'}</td>
                   <td>
-                    <Badge className="badge">
-                      {caseSummary.archivedAt
-                        ? t('cases.archivedBadge')
-                        : t(`cases.status.${caseSummary.status}`)}
-                    </Badge>
+                    {caseSummary.officialNumber ? (
+                      <OfficialReference
+                        number={caseSummary.officialNumber}
+                        year={caseSummary.officialYear}
+                      />
+                    ) : (
+                      <span className="cell-muted">—</span>
+                    )}
+                  </td>
+                  <td className="cell-wrap">{caseSummary.clientNames.join('، ') || '—'}</td>
+                  <td>
+                    <CaseStatusBadge
+                      status={caseSummary.status}
+                      archived={Boolean(caseSummary.archivedAt)}
+                    />
                   </td>
                 </tr>
               ))}

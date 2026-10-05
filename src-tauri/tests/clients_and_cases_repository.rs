@@ -2,7 +2,7 @@ use legalmaster_lib::{
     db,
     dto::{CaseClientInput, CaseDto},
     errors::Error,
-    repositories::case_repository,
+    repositories::{case_repository, power_of_attorney_repository},
     security,
 };
 use rusqlite::{params, Connection};
@@ -157,4 +157,42 @@ fn case_repository_rejects_a_poa_for_another_client_and_missing_cases() {
         case_repository::get(&conn, "missing"),
         Err(Error::CaseNotFound)
     ));
+}
+
+fn seed_poa(conn: &Connection, sequence: &str, client_id: &str, archived: bool) -> String {
+    let poa_id = id();
+    conn.execute(
+        "INSERT INTO powers_of_attorney (id, internal_sequence, archived_at, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')",
+        params![poa_id, sequence, archived.then_some("now")],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO power_of_attorney_clients (power_of_attorney_id, client_id, created_at) VALUES (?1, ?2, 'now')",
+        params![poa_id, client_id],
+    )
+    .unwrap();
+    poa_id
+}
+
+#[test]
+fn power_of_attorney_list_filters_by_client_identity_not_name() {
+    let (_dir, conn) = open_migrated_test_db();
+    let first = seed_client(&conn, "CL-1", "محمد علي");
+    let namesake = seed_client(&conn, "CL-2", "محمد علي");
+    let first_poa = seed_poa(&conn, "TA-1", &first, false);
+    let namesake_poa = seed_poa(&conn, "TA-2", &namesake, false);
+    let archived_poa = seed_poa(&conn, "TA-3", &first, true);
+
+    let ids = |client: Option<&str>, archived: bool| {
+        power_of_attorney_repository::list(&conn, None, archived, client)
+            .unwrap()
+            .into_iter()
+            .map(|poa| poa.id)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(ids(Some(&first), false), vec![first_poa.clone()]);
+    assert_eq!(ids(Some(&namesake), false), vec![namesake_poa.clone()]);
+    assert_eq!(ids(Some(&first), true), vec![first_poa, archived_poa]);
+    assert!(ids(Some("missing-client"), true).is_empty());
+    assert_eq!(ids(None, false).len(), 2);
 }

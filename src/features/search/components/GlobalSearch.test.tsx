@@ -74,7 +74,7 @@ describe('GlobalSearch', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('لا توجد نتائج.')).toBeInTheDocument();
+    expect(await screen.findByText('لا توجد نتائج مطابقة.')).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Escape' });
     expect(onNavigate).toHaveBeenCalledOnce();
   });

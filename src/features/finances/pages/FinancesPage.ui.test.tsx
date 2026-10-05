@@ -126,7 +126,7 @@ describe('FinancesPage', () => {
     const expenseDialog = await screen.findByRole('dialog', { name: 'إضافة مصروف' });
     expect(
       within(expenseDialog).getByText(
-        'يمكن ربط المصروف بقضية أو موكل، أو ترك كلا الرابطين فارغين.',
+        'اربط المصروف بقضية أو موكل إن وُجد، أو اتركه بلا ربط لمصروفات المكتب العامة.',
       ),
     ).toBeInTheDocument();
     fireEvent.change(within(expenseDialog).getByLabelText('المبلغ (ج.م)'), {
@@ -156,7 +156,7 @@ describe('FinancesPage', () => {
     ]);
     renderPage();
 
-    const transaction = await screen.findByRole('button', { name: /2026-08-24/ });
+    const transaction = await screen.findByRole('button', { name: /24 أغسطس 2026/ });
     transaction.focus();
     fireEvent.click(transaction);
     const inspection = await screen.findByRole('dialog', { name: 'تفاصيل الدفعة' });

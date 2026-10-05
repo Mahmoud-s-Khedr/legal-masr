@@ -42,7 +42,7 @@ test('keyboard route navigation and dialog focus return', async ({ page }) => {
   await expect(page).toHaveURL(/\/clients$/);
   await expect(clients).toHaveClass(/active/);
   await page.goto('/attachments?case=demo-case-14&captureLocale=ar');
-  const add = page.getByRole('button', { name: 'إضافة مرفق', exact: true });
+  const add = page.getByRole('button', { name: 'إضافة مستند', exact: true });
   await add.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toBeVisible();

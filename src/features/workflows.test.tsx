@@ -32,8 +32,8 @@ const lists = [
     method: 'clientList',
     text: fixtures.client.fullName,
     href: `/clients/${fixtures.client.id}`,
-    loading: 'جارٍ التحميل…',
-    empty: 'لا يوجد موكلون بعد.',
+    loading: 'جارٍ تحميل الموكلين…',
+    empty: 'لا يوجد موكلون بعد',
     filter: 'ابحث بالاسم أو الهاتف',
   },
   {
@@ -42,8 +42,8 @@ const lists = [
     method: 'caseList',
     text: fixtures.caseItem.internalNumber,
     href: `/cases/${fixtures.caseItem.id}`,
-    loading: 'جارٍ التحميل…',
-    empty: 'لا توجد قضايا بعد.',
+    loading: 'جارٍ تحميل القضايا…',
+    empty: 'لا توجد قضايا بعد',
     filter: 'ابحث برقم القضية أو المحكمة أو الموكل',
   },
   {
@@ -97,7 +97,7 @@ it('creates a client and invalidates the list', async () => {
   const { invalidate } = renderWorkflow(<NewClientPage />, '/clients/new', '/clients/new');
   fireEvent.change(screen.getByLabelText('الرقم الداخلي'), { target: { value: 'FICTIONAL-2' } });
   fireEvent.change(screen.getByLabelText('الاسم الكامل'), { target: { value: 'موكل خيالي' } });
-  fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ الموكل' }));
   expect(await screen.findByText('تم الانتقال')).toBeVisible();
   expect(invalidate).toHaveBeenCalled();
   expect(vi.mocked(bridge.clientCreate).mock.calls[0][0]).toMatchObject({
@@ -118,14 +118,12 @@ it('preserves a rejected client draft and explicitly confirms probable duplicate
   const { invalidate } = renderWorkflow(<NewClientPage />, '/clients/new', '/clients/new');
   fireEvent.change(screen.getByLabelText('الرقم الداخلي'), { target: { value: 'FICTIONAL-3' } });
   fireEvent.change(screen.getByLabelText('الاسم الكامل'), { target: { value: 'موكل خيالي' } });
-  fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ الموكل' }));
   await screen.findByRole('alert');
   expect(screen.getByLabelText('الاسم الكامل')).toHaveValue('موكل خيالي');
   expect(invalidate).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
-  fireEvent.click(
-    await screen.findByRole('button', { name: /تأكيد|إنشاء رغم|المتابعة|إضافة على أي/ }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ الموكل' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'إضافة الموكل رغم التشابه' }));
   await screen.findByText('تم الانتقال');
   expect(vi.mocked(bridge.clientCreate).mock.calls.at(-1)?.[0]).toMatchObject({
     confirmDuplicate: true,
@@ -137,13 +135,15 @@ it('creates a case with its client relationship and retains a rejected draft', a
     .mockRejectedValueOnce(fictionalFailure)
     .mockResolvedValue(fixtures.caseItem);
   const { invalidate } = renderWorkflow(<NewCasePage />, '/cases/new', '/cases/new');
-  fireEvent.change(screen.getByLabelText('رقم القضية'), { target: { value: 'FICTIONAL-CASE' } });
+  fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), {
+    target: { value: 'FICTIONAL-CASE' },
+  });
   fireEvent.click(await screen.findByRole('checkbox', { name: fixtures.client.fullName }));
-  fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ القضية' }));
   await screen.findByRole('alert');
-  expect(screen.getByLabelText('رقم القضية')).toHaveValue('FICTIONAL-CASE');
+  expect(screen.getByLabelText('رقم الملف الداخلي')).toHaveValue('FICTIONAL-CASE');
   expect(invalidate).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ القضية' }));
   await screen.findByText('تم الانتقال');
   expect(vi.mocked(bridge.caseCreate).mock.calls.at(-1)?.[0]).toMatchObject({
     clients: [{ clientId: fixtures.client.id }],
@@ -182,7 +182,7 @@ const details = [
     restore: 'powerOfAttorneyRestore',
     item: fixtures.poa,
     label: fixtures.poa.internalSequence,
-    confirm: 'أرشفة',
+    confirm: 'أرشفة التوكيل',
   },
 ] as const;
 for (const row of details)
@@ -266,7 +266,7 @@ it('adds, edits and confirms removal of opponents and retains failed changes', a
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'إلغاء' }));
   expect(bridge.caseRemoveOpponent).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'إزالة' }));
-  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة' }));
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة الخصم' }));
   await waitFor(() => expect(bridge.caseRemoveOpponent).toHaveBeenCalled());
 });
 describe('dashboard and agenda', () => {
@@ -293,14 +293,31 @@ describe('dashboard and agenda', () => {
       'href',
       '/tasks?task=overdue',
     );
-    expect(screen.getByRole('link', { name: /2026-10-10/ })).toHaveAttribute(
+    const upcomingDate = document.querySelector('time[datetime="2026-10-10"]');
+    expect(upcomingDate).toHaveTextContent('أكتوبر');
+    expect(within(upcomingDate!.closest('li')!).getByRole('link')).toHaveAttribute(
       'href',
       '/calendar?hearing=upcoming',
     );
+    expect(screen.getByText('متأخرة 4 أيام')).toBeVisible();
     expect(screen.getByRole('link', { name: fixtures.client.fullName })).toHaveAttribute(
       'href',
       `/clients/${fixtures.client.id}`,
     );
+  });
+  it('completes a task from Today and reports a rejected completion', async () => {
+    vi.mocked(bridge.taskComplete)
+      .mockRejectedValueOnce(fictionalFailure)
+      .mockResolvedValue({ ...fixtures.task, completed: true });
+    renderWorkflow(<DashboardPage />);
+    const checkbox = await screen.findByRole('checkbox', {
+      name: `إتمام ${fixtures.task.title}`,
+    });
+    fireEvent.click(checkbox);
+    expect(await screen.findByRole('alert')).toHaveTextContent('تعذر تغيير حالة المهمة');
+    fireEvent.click(checkbox);
+    await waitFor(() => expect(bridge.taskComplete).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(bridge.taskComplete).mock.calls[1][0]).toBe(fixtures.task.id);
   });
   it('shows loading and rejected reads', async () => {
     let reject!: (error: unknown) => void;
@@ -328,7 +345,9 @@ describe('dashboard and agenda', () => {
     renderWorkflow(<AgendaPage />, '/calendar?date=2026-10-03');
     expect(await screen.findByRole('button', { name: 'تسجيل القرار' })).toBeVisible();
     expect(
-      screen.getByRole('button', { name: '2026-10-03: 1 جلسة، 1 مهمة مفتوحة، 0 مهمة مكتملة' }),
+      screen.getByRole('button', {
+        name: 'السبت، 3 أكتوبر 2026 — الجلسات: 1، المهام المفتوحة: 1، المكتملة: 0',
+      }),
     ).toBeVisible();
   });
   it('opens the exact hearing requested by a deep link', async () => {
@@ -337,7 +356,7 @@ describe('dashboard and agenda', () => {
   });
   it('reports an unavailable hearing deep link without opening another record', async () => {
     renderWorkflow(<AgendaPage />, '/calendar?hearing=deleted-hearing');
-    expect(await screen.findByRole('alert')).toHaveTextContent('هذه الجلسة لم تعد متاحة');
+    expect(await screen.findByRole('alert')).toHaveTextContent('هذه الجلسة لم تعد موجودة');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
   it('handles rejected agenda reads', async () => {
@@ -348,7 +367,7 @@ describe('dashboard and agenda', () => {
 });
 it('global documents disallow additions; case scope passes only the owner ID', async () => {
   renderWorkflow(<AttachmentsPage />, '/attachments?case=demo-case-14');
-  await screen.findByText('لا توجد مرفقات بعد.');
+  await screen.findByText('لا توجد مستندات بعد.');
   expect(vi.mocked(bridge.attachmentList).mock.calls[0][0]).toEqual({
     caseId: 'demo-case-14',
     clientId: undefined,
@@ -379,7 +398,7 @@ it('creates a POA with multiple clients/lawyers and retains a rejected draft', a
   for (const name of [fixtures.client.fullName, 'موكل خيالي ثانٍ'])
     fireEvent.click(await screen.findByRole('checkbox', { name }));
   for (const name of ['محامٍ خيالي أول', 'محامٍ خيالي ثانٍ']) {
-    fireEvent.change(screen.getByLabelText('الاسم'), { target: { value: name } });
+    fireEvent.change(screen.getByLabelText('اسم المحامي'), { target: { value: name } });
     fireEvent.click(screen.getByRole('button', { name: 'إضافة محامٍ' }));
   }
   fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));
@@ -413,7 +432,7 @@ it('edits a POA and displays client/lawyer relationships', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'تعديل' }));
   fireEvent.change(screen.getByLabelText('الرقم الداخلي'), { target: { value: 'POA-EDITED' } });
   fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));
-  await screen.findByText('تعذر حفظ التوكيل.');
+  await screen.findByText(/تعذر حفظ التوكيل/);
   expect(screen.getByLabelText('الرقم الداخلي')).toHaveValue('POA-EDITED');
   fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -424,11 +443,13 @@ it('edits a case while preserving its client and POA relationships', async () =>
     .mockResolvedValue(fixtures.caseItem);
   renderWorkflow(<CaseDetailPage />, `/cases/${fixtures.caseItem.id}`, '/cases/:id');
   fireEvent.click(await screen.findByRole('button', { name: 'تعديل' }));
-  fireEvent.change(screen.getByLabelText('رقم القضية'), { target: { value: 'CASE-EDITED' } });
-  fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+  fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), {
+    target: { value: 'CASE-EDITED' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
   await screen.findByRole('alert');
-  expect(screen.getByLabelText('رقم القضية')).toHaveValue('CASE-EDITED');
-  fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+  expect(screen.getByLabelText('رقم الملف الداخلي')).toHaveValue('CASE-EDITED');
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(vi.mocked(bridge.caseUpdate).mock.calls.at(-1)?.[0]).toMatchObject({
     internalNumber: 'CASE-EDITED',
@@ -464,8 +485,8 @@ it('creates/edits hearings and records a decision with a next hearing', async ()
   fireEvent.click(screen.getByRole('button', { name: 'حفظ الجلسة' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   fireEvent.click(screen.getByRole('button', { name: 'تسجيل القرار' }));
-  fireEvent.change(screen.getByLabelText('نص القرار'), { target: { value: 'قرار خيالي' } });
-  fireEvent.change(screen.getByLabelText('الجلسة التالية (اختيارية)'), {
+  fireEvent.change(screen.getByLabelText('قرار الجلسة'), { target: { value: 'قرار خيالي' } });
+  fireEvent.change(screen.getByLabelText('تاريخ الجلسة القادمة (إن أُجلت)'), {
     target: { value: '2026-10-10' },
   });
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'تسجيل القرار' }));
@@ -485,7 +506,7 @@ it('opens an exact task from a deep link and accepts create context', async () =
 });
 it('reports an unavailable task deep link without opening another task', async () => {
   renderWorkflow(<TasksPage />, '/tasks?task=deleted-task');
-  expect(await screen.findByRole('alert')).toHaveTextContent('هذه المهمة لم تعد متاحة');
+  expect(await screen.findByRole('alert')).toHaveTextContent('هذه المهمة لم تعد موجودة');
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 it('confirms hearing deletion, preserves refusals and refreshes after success', async () => {
@@ -497,19 +518,21 @@ it('confirms hearing deletion, preserves refusals and refreshes after success', 
   fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
   expect(bridge.hearingDelete).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'حذف الجلسة' }));
-  fireEvent.click(screen.getByRole('button', { name: 'تأكيد الحذف' }));
+  fireEvent.click(screen.getByRole('button', { name: 'حذف الجلسة' }));
   await screen.findByRole('alert');
   expect(invalidate).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'تأكيد الحذف' }));
+  fireEvent.click(screen.getByRole('button', { name: 'حذف الجلسة' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(invalidate).toHaveBeenCalled();
 });
 it('does not submit a case when client choices fail to load', async () => {
   vi.mocked(bridge.clientList).mockRejectedValue(fictionalFailure);
   renderWorkflow(<NewCasePage />);
-  fireEvent.change(screen.getByLabelText('رقم القضية'), { target: { value: 'PRESERVED-CASE' } });
+  fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), {
+    target: { value: 'PRESERVED-CASE' },
+  });
   expect(await screen.findByRole('alert')).toHaveTextContent('تعذر تحميل الموكلين');
-  expect(screen.getByLabelText('رقم القضية')).toHaveValue('PRESERVED-CASE');
-  expect(screen.getByRole('button', { name: 'حفظ' })).toBeDisabled();
+  expect(screen.getByLabelText('رقم الملف الداخلي')).toHaveValue('PRESERVED-CASE');
+  expect(screen.getByRole('button', { name: 'حفظ القضية' })).toBeDisabled();
   expect(bridge.caseCreate).not.toHaveBeenCalled();
 });

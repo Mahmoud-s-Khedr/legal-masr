@@ -16,6 +16,9 @@ type SelectProps = {
   className?: string;
   id?: string;
   'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-invalid'?: boolean;
+  'aria-required'?: boolean;
 };
 
 /** Accessible Base UI select. Values are explicit so forms do not depend on native select registration. */

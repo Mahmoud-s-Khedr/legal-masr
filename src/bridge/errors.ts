@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import type { AppError, AppErrorCode } from './types';
 
 const appErrorCodes = new Set<AppErrorCode>([
@@ -37,5 +38,14 @@ export function asAppError(error: unknown): AppError | null {
   return value as AppError;
 }
 
-export const errorMessage = (error: unknown, fallback: string): string =>
-  typeof error === 'string' ? error : (asAppError(error)?.message ?? fallback);
+/**
+ * The message shown for a failed command. Known error codes are translated in
+ * the interface language; the backend's Arabic text is only a last resort.
+ */
+export function errorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'string') return error;
+  const appError = asAppError(error);
+  if (!appError) return fallback;
+  const key = `errors.${appError.code}`;
+  return i18n.exists(key) ? i18n.t(key) : appError.message;
+}

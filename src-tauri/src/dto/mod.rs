@@ -587,6 +587,8 @@ pub struct PowerOfAttorneyListInput {
     pub query: Option<String>,
     #[serde(default)]
     pub include_archived: bool,
+    #[serde(default)]
+    pub client_id: Option<String>,
 }
 
 #[derive(Serialize, Clone)]

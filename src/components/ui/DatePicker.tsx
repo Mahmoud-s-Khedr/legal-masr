@@ -24,6 +24,21 @@ function parseDateOnly(value: string) {
     : null;
 }
 
+const ARABIC_INDIC = /[٠-٩۰-۹]/g;
+
+/**
+ * Accepts the day-first dates lawyers type (3/10/2026, 03-10-2026, ٣/١٠/٢٠٢٦)
+ * and returns the canonical YYYY-MM-DD value, or null when it is not a real date.
+ */
+export function normalizeTypedDate(raw: string) {
+  const value = raw.trim().replace(ARABIC_INDIC, (digit) => String(digit.charCodeAt(0) & 0xf));
+  const dayFirst = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(value);
+  const candidate = dayFirst
+    ? `${dayFirst[3]}-${dayFirst[2].padStart(2, '0')}-${dayFirst[1].padStart(2, '0')}`
+    : value;
+  return parseDateOnly(candidate) ? candidate : null;
+}
+
 function formatDateOnly(date: Date) {
   const pad = (value: number) => String(value).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -72,6 +87,11 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
           onChange={(event) => {
             if (!controlled) setTextValue(event.target.value);
             onChange?.(event);
+          }}
+          onBlur={(event) => {
+            const normalized = normalizeTypedDate(event.target.value);
+            if (normalized && normalized !== event.target.value) emitChange(normalized);
+            inputProps.onBlur?.(event);
           }}
         />
         <Popover.Trigger
