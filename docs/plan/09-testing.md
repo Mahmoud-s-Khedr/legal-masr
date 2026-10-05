@@ -62,10 +62,13 @@ are uploaded. Packaging binaries are scanned for harness markers.
 
 The driver must return a successful local `/status` response before a journey
 launches; startup polls every 250 ms for up to 30 seconds and records only a
-fixed startup/session/scenario error code. It never retains raw WebDriver
-errors, DOM, paths, passwords, or vault data. Windows runs all three attempts
-even after a failure and keeps each available sanitized per-run JSON outcome;
-the job fails after the final attempt if any attempt failed.
+fixed startup/session/scenario error code. The backup/restore journey also
+records an allowlisted operation checkpoint on failure. It never retains raw
+WebDriver errors, DOM, paths, passwords, or vault data. Linux and Windows finish
+all configured attempts even after a failure and keep each available sanitized
+per-run JSON outcome; the job fails after the final attempt if any attempt
+failed or did not produce a report. Each attempt removes the previous report
+first so stale results cannot be retained as new evidence.
 
 PRs run Linux smoke plus all visual comparisons. Nightly and release validation
 run Linux/Windows desktop suites three times; Windows matches its driver to the

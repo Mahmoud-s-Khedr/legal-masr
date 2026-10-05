@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../bridge/commands', async (importOriginal) => {
   const original = await importOriginal<typeof import('../bridge/commands')>();
   return { bridge: Object.fromEntries(Object.keys(original.bridge).map((key) => [key, vi.fn()])) };
@@ -25,6 +25,7 @@ beforeEach(async () => {
   prepareWorkflowMocks();
   await i18n.changeLanguage('ar');
 });
+afterEach(() => vi.useRealTimers());
 const lists = [
   {
     name: 'clients',
@@ -271,6 +272,8 @@ it('adds, edits and confirms removal of opponents and retains failed changes', a
 });
 describe('dashboard and agenda', () => {
   it('renders today/upcoming/overdue with record navigation', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 5, 12));
     vi.mocked(bridge.dashboardSummary).mockResolvedValue({
       todayHearings: [fixtures.hearing],
       todayTasks: [fixtures.task],

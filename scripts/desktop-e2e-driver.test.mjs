@@ -91,3 +91,17 @@ test('application diagnostics preserve the existing fixed allowlist', () => {
   assert.equal(applicationDiagnostic('ملف النسخة الاحتياطية غير صالح.'), 'BACKUP_CORRUPTED');
   assert.equal(applicationDiagnostic('تعذر إتمام العملية بأمان.'), 'OPERATION_FAILED');
 });
+
+test('failed outcomes retain a fixed journey checkpoint without accepting arbitrary data', () => {
+  const failure = { scenario: 'synthetic-failure', stage: 'scenario', error: new Error('secret') };
+  assert.equal(
+    failedDesktopOutcome({ ...failure, checkpoint: 'add-attachment' }).checkpoint,
+    'add-attachment',
+  );
+  const outcome = failedDesktopOutcome({
+    ...failure,
+    checkpoint: 'password=secret /private/vault',
+  });
+  assert.equal(Object.hasOwn(outcome, 'checkpoint'), false);
+  assert.doesNotMatch(JSON.stringify(outcome), /secret|private/);
+});

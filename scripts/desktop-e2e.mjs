@@ -43,6 +43,7 @@ async function scenario(name, exercise) {
   });
   let browser;
   let stage = 'driver-start';
+  let checkpoint;
   const launch = async () => {
     stage = 'webdriver-session';
     browser = await remote({
@@ -122,6 +123,9 @@ async function scenario(name, exercise) {
       initialize,
       unlock,
       client,
+      checkpoint(value) {
+        checkpoint = value;
+      },
       get browser() {
         return browser;
       },
@@ -140,6 +144,7 @@ async function scenario(name, exercise) {
       failedDesktopOutcome({
         scenario: name,
         stage,
+        checkpoint,
         error,
         diagnosticMessage,
       }),
@@ -156,8 +161,11 @@ async function scenario(name, exercise) {
   }
 }
 await scenario('initialize-client-case-attachment-backup-restore', async (h) => {
+  h.checkpoint('initialize');
   await h.initialize();
+  h.checkpoint('create-client');
   await h.client('E2E-ORIGINAL');
+  h.checkpoint('create-case');
   await h.nav('/cases');
   await h.click('إضافة قضية');
   await h.input('internalNumber', 'E2E-CASE');
@@ -166,29 +174,37 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.click('حفظ القضية');
   // Saving opens the new case file.
   await h.browser.$('h2*=E2E-CASE').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('add-attachment');
   await h.click('المستندات');
   await h.click('إضافة مستند');
   await h.click('اختيار ملف');
   await h.waitText('fictional.pdf');
   await h.click('حفظ المستند');
   await h.browser.$('.attachment-rows').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('create-backup');
   await h.nav('/backups');
   await h.click('إنشاء نسخة احتياطية الآن');
   await h.waitText('تم إنشاء النسخة الاحتياطية بنجاح.');
+  h.checkpoint('edit-after-backup');
   await h.client('E2E-AFTER');
+  h.checkpoint('restore-backup');
   await h.selection('backup');
   await h.nav('/backups');
   await h.click('استعادة من نسخة احتياطية');
   await h.click('تأكيد الاستعادة');
   await h.browser.$('.gate').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('unlock-restored-vault');
   await h.unlock();
+  h.checkpoint('verify-restored-records');
   await h.nav('/clients');
   await h.browser.$('a*=E2E-ORIGINAL').waitForDisplayed();
   assert.equal(await h.browser.$('a*=E2E-AFTER').isExisting(), false);
   await h.nav('/cases');
   await h.browser.$('a*=E2E-CASE').click();
+  h.checkpoint('verify-restored-attachment');
   await h.click('المستندات');
   await h.waitText('fictional.pdf');
+  h.checkpoint('verify-attachment-bytes');
   await h.close();
   const managed = await readdir(join(h.root, 'vault/attachments'));
   assert.equal(managed.length, 1);

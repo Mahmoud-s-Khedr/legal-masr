@@ -73,10 +73,13 @@ jobs:
         run: |
           repeats=1
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then repeats=3; fi
+          any_failed=0
           for run in $(seq 1 "$repeats"); do
-            xvfb-run --auto-servernum pnpm test:desktop
-            cp test-results/desktop/results.json "test-results/desktop/run-$run.json"
+            rm -f test-results/desktop/results.json
+            if ! xvfb-run --auto-servernum pnpm test:desktop; then any_failed=1; fi
+            if ! cp test-results/desktop/results.json "test-results/desktop/run-$run.json"; then any_failed=1; fi
           done
+          exit "$any_failed"
       - name: Windows journeys
         if: runner.os == 'Windows'
         shell: pwsh
