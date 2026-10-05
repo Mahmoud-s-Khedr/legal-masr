@@ -57,14 +57,16 @@ describe('BackupSettingsPanel', () => {
 
     renderPanel();
 
-    expect(await screen.findByText('2026-10-04 09:30')).toBeInTheDocument();
-    expect(screen.getByText('12345')).toBeInTheDocument();
+    expect(await screen.findByText(/4 أكتوبر 2026/)).toBeInTheDocument();
+    expect(screen.getByText(/12 ك\.ب/)).toBeInTheDocument();
   });
 
   it('explains when no successful backup exists', async () => {
     renderPanel();
 
     expect(await screen.findByText('لا توجد نسخة احتياطية ناجحة بعد.')).toBeInTheDocument();
+    expect(screen.getByText('لم تُنشئ أي نسخة احتياطية بعد. أنشئ أول نسخة الآن.')).toBeVisible();
+    expect(screen.getByText(/فلاشة أو قرص خارجي/)).toBeVisible();
   });
 
   it('reports successful and failed backup creation', async () => {

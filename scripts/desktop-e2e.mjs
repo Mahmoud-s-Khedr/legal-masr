@@ -86,8 +86,10 @@ async function scenario(name, exercise) {
   const initialize = async () => {
     await input('fullName', 'محامٍ خيالي');
     await input('password', password);
+    await input('confirmPassword', password);
     await click('إنشاء الخزنة');
-    await click('حفظته في مكان آمن');
+    await browser.$('.gate-confirm [role="checkbox"]').click();
+    await click('متابعة إلى مساحة العمل');
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
   };
   const unlock = async () => {
@@ -101,7 +103,8 @@ async function scenario(name, exercise) {
     await input('internalNumber', number);
     await input('fullName', `موكل خيالي ${number}`);
     await click('حفظ');
-    await browser.$(`a*=${`موكل خيالي ${number}`}`).waitForDisplayed({ timeout: 15000 });
+    // Saving opens the new client file.
+    await browser.$(`h2*=${`موكل خيالي ${number}`}`).waitForDisplayed({ timeout: 15000 });
   };
   try {
     await waitForDriver(driver);
@@ -161,9 +164,8 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.browser.$('[role="checkbox"]').waitForDisplayed();
   await h.browser.$('[role="checkbox"]').click();
   await h.click('حفظ');
-  const caseLink = await h.browser.$('a*=E2E-CASE');
-  await caseLink.waitForDisplayed({ timeout: 15000 });
-  await caseLink.click();
+  // Saving opens the new case file.
+  await h.browser.$('h2*=E2E-CASE').waitForDisplayed({ timeout: 15000 });
   await h.click('المرفقات');
   await h.click('إضافة مرفق');
   await h.click('اختيار ملف');

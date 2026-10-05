@@ -159,6 +159,7 @@ function AppContent() {
           subGate={gate}
           recoveryKey={recoveryKey}
           onSwitchToRecovery={() => setManualGate('recovery')}
+          onBackToUnlock={() => setManualGate(null)}
           onSetupSucceeded={(newRecoveryKey) => {
             setRecoveryKey(newRecoveryKey);
             setManualGate('recovery-key');

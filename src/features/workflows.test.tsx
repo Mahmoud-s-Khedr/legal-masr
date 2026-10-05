@@ -347,7 +347,9 @@ describe('dashboard and agenda', () => {
     renderWorkflow(<AgendaPage />, '/calendar?date=2026-10-03');
     expect(await screen.findByRole('button', { name: 'تسجيل القرار' })).toBeVisible();
     expect(
-      screen.getByRole('button', { name: '2026-10-03: 1 جلسة، 1 مهمة مفتوحة، 0 مهمة مكتملة' }),
+      screen.getByRole('button', {
+        name: 'السبت، 3 أكتوبر 2026: 1 جلسة، 1 مهمة مفتوحة، 0 مهمة مكتملة',
+      }),
     ).toBeVisible();
   });
   it('opens the exact hearing requested by a deep link', async () => {

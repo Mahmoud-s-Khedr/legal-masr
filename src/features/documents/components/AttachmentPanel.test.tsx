@@ -89,7 +89,7 @@ describe('managed attachments with real query hooks', () => {
     vi.mocked(bridge.attachmentList).mockResolvedValue([item]);
     mount();
     expect(await screen.findByText('fictional.pdf')).toBeVisible();
-    expect(screen.getByText('2026-10-03').tagName).toBe('BDI');
+    expect(screen.getByText('03/10/2026').tagName).toBe('BDI');
   });
   it('adds once while pending, closes only on success and refreshes affected views', async () => {
     let resolve!: (value: AttachmentDto) => void;
@@ -167,7 +167,7 @@ describe('managed attachments with real query hooks', () => {
     vi.mocked(bridge.attachmentList).mockResolvedValue([item]);
     vi.mocked(bridge.attachmentUpdate).mockRejectedValueOnce(failure());
     const { invalidate } = mount();
-    fireEvent.click(await screen.findByRole('button', { name: 'تعديل' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'تعديل بيانات fictional.pdf' }));
     fireEvent.change(screen.getByLabelText('الوصف'), { target: { value: 'تعديل خيالي' } });
     fireEvent.click(screen.getByRole('button', { name: 'حفظ البيانات' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('تعذر حفظ');
@@ -184,8 +184,8 @@ describe('managed attachments with real query hooks', () => {
     expect(invalidate).toHaveBeenCalled();
   });
   it.each([
-    ['فتح', 'attachmentOpen'],
-    ['إظهار', 'attachmentReveal'],
+    ['فتح fictional.pdf', 'attachmentOpen'],
+    ['إظهار fictional.pdf في المجلد', 'attachmentReveal'],
   ] as const)('handles %s failure', async (label, method) => {
     vi.mocked(bridge.attachmentList).mockResolvedValue([item]);
     vi.mocked(bridge[method]).mockRejectedValue(failure());
@@ -198,10 +198,10 @@ describe('managed attachments with real query hooks', () => {
     vi.mocked(bridge.attachmentList).mockResolvedValue([item]);
     vi.mocked(bridge.attachmentRemove).mockRejectedValueOnce(failure());
     const { invalidate } = mount();
-    fireEvent.click(await screen.findByRole('button', { name: 'إزالة' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'إزالة fictional.pdf' }));
     fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
     expect(bridge.attachmentRemove).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'إزالة' }));
+    fireEvent.click(screen.getByRole('button', { name: 'إزالة fictional.pdf' }));
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة المرفق' }),
     );

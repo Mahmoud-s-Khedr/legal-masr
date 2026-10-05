@@ -11,6 +11,7 @@ import { OnboardingPage, type OnboardingSubGate } from './OnboardingPage';
 function mount(subGate: OnboardingSubGate) {
   const callbacks = {
     onSwitchToRecovery: vi.fn(),
+    onBackToUnlock: vi.fn(),
     onSetupSucceeded: vi.fn(),
     onUnlocked: vi.fn(),
     onRecovered: vi.fn(),
@@ -56,6 +57,10 @@ describe('vault forms', () => {
         screen.getByLabelText(gate === 'recovery' ? 'كلمة مرور جديدة' : 'كلمة المرور'),
         { target: { value: 'fictional password 2026' } },
       );
+      if (gate !== 'unlock')
+        fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), {
+          target: { value: 'fictional password 2026' },
+        });
       fireEvent.submit(
         screen
           .getByRole('button', {
@@ -99,5 +104,36 @@ describe('vault forms', () => {
     const { callbacks } = mount('unlock');
     fireEvent.click(screen.getByRole('button', { name: 'لدي مفتاح الاسترداد' }));
     expect(callbacks.onSwitchToRecovery).toHaveBeenCalledOnce();
+  });
+  it('explains a short or mismatched new password before contacting the vault', async () => {
+    mount('setup');
+    fireEvent.change(screen.getByLabelText('اسم المحامي'), { target: { value: 'محامٍ خيالي' } });
+    fireEvent.change(screen.getByLabelText('كلمة المرور'), { target: { value: 'short' } });
+    fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), { target: { value: 'other' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'إنشاء الخزنة' }).closest('form')!);
+    expect(await screen.findByText(/كلمة المرور قصيرة/)).toBeVisible();
+    expect(screen.getByText('كلمتا المرور غير متطابقتين.')).toBeVisible();
+    expect(bridge.initialize).not.toHaveBeenCalled();
+  });
+  it('lets the lawyer reveal a password deliberately', () => {
+    mount('unlock');
+    const password = screen.getByLabelText('كلمة المرور');
+    expect(password).toHaveAttribute('type', 'password');
+    fireEvent.click(screen.getByRole('button', { name: 'إظهار كلمة المرور' }));
+    expect(password).toHaveAttribute('type', 'text');
+  });
+  it('requires acknowledging the recovery key before continuing', () => {
+    const { callbacks } = mount('recovery-key');
+    expect(screen.getByText('fictional-recovery')).toBeVisible();
+    const proceed = screen.getByRole('button', { name: 'متابعة إلى مساحة العمل' });
+    expect(proceed).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(proceed);
+    expect(callbacks.onRecoveryKeySaved).toHaveBeenCalledOnce();
+  });
+  it('returns from recovery to the unlock gate', () => {
+    const { callbacks } = mount('recovery');
+    fireEvent.click(screen.getByRole('button', { name: 'رجوع إلى فتح الخزنة' }));
+    expect(callbacks.onBackToUnlock).toHaveBeenCalledOnce();
   });
 });

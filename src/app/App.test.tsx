@@ -75,6 +75,9 @@ describe('application gate', () => {
     fireEvent.change(screen.getByLabelText('كلمة المرور'), {
       target: { value: 'a secure local password' },
     });
+    fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), {
+      target: { value: 'a secure local password' },
+    });
     fireEvent.submit(screen.getByRole('button', { name: 'إنشاء الخزنة' }).closest('form')!);
 
     expect(await screen.findByText('test-recovery-key')).toBeInTheDocument();

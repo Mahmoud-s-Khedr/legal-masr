@@ -156,7 +156,7 @@ describe('FinancesPage', () => {
     ]);
     renderPage();
 
-    const transaction = await screen.findByRole('button', { name: /2026-08-24/ });
+    const transaction = await screen.findByRole('button', { name: /24 أغسطس 2026/ });
     transaction.focus();
     fireEvent.click(transaction);
     const inspection = await screen.findByRole('dialog', { name: 'تفاصيل الدفعة' });

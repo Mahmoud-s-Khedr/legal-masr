@@ -1,4 +1,8 @@
 import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useFormat } from '../../../i18n/LocalePresentation';
+import { useCaseList } from '../../cases/api/casesApi';
+import { useClientList } from '../../clients/api/clientsApi';
 import { asAppError } from '../../../bridge/errors';
 import { bridge } from '../../../bridge/commands';
 import type { AttachmentCategory, AttachmentDto, AttachmentListInput } from '../../../bridge/types';
@@ -27,6 +31,41 @@ const categories: ReadonlyArray<[AttachmentCategory, string]> = [
   ['OTHER', 'أخرى'],
 ];
 
+const fileExtension = (filename: string) => {
+  const extension = /\.([a-z0-9]{1,5})$/i.exec(filename)?.[1];
+  return extension ? extension.toUpperCase() : 'ملف';
+};
+
+/** Which record a file belongs to, for the global documents list. */
+function AttachmentOwner({ attachment }: { attachment: AttachmentDto }) {
+  const cases = useCaseList({ includeArchived: true });
+  const clients = useClientList({ includeArchived: true });
+  if (attachment.caseId) {
+    const item = cases.data?.find((candidate) => candidate.id === attachment.caseId);
+    return (
+      <Link className="owner-link" to={`/cases/${attachment.caseId}`}>
+        قضية <bdi>{item?.internalNumber ?? '…'}</bdi>
+      </Link>
+    );
+  }
+  if (attachment.clientId) {
+    const item = clients.data?.find((candidate) => candidate.id === attachment.clientId);
+    return (
+      <Link className="owner-link" to={`/clients/${attachment.clientId}`}>
+        الموكل <bdi>{item?.fullName ?? '…'}</bdi>
+      </Link>
+    );
+  }
+  if (attachment.powerOfAttorneyId)
+    return (
+      <Link className="owner-link" to={`/powers-of-attorney/${attachment.powerOfAttorneyId}`}>
+        توكيل
+      </Link>
+    );
+  if (attachment.expenseId) return <span className="owner-link">مرفق مصروف</span>;
+  return null;
+}
+
 const categoryLabel = (category: AttachmentCategory) =>
   categories.find(([value]) => value === category)?.[1] ?? category;
 
@@ -35,12 +74,15 @@ export function AttachmentPanel({
   title = 'المرفقات',
   description = 'يُنسخ كل ملف إلى مساحة التطبيق المحلية ويُضمّن في النسخ الاحتياطية.',
   allowAdd = true,
+  showOwner = false,
 }: {
   owner: AttachmentListInput;
   title?: string;
   description?: string;
   allowAdd?: boolean;
+  showOwner?: boolean;
 }) {
+  const format = useFormat();
   const attachments = useAttachments(owner);
   const add = useAddAttachment();
   const update = useUpdateAttachment();
@@ -169,7 +211,7 @@ export function AttachmentPanel({
           {attachments.data.map((attachment) => (
             <li key={attachment.id}>
               <span className="file-mark" aria-hidden="true">
-                ملف
+                {fileExtension(attachment.originalFilename)}
               </span>
               <div className="record-copy">
                 <strong>
@@ -179,18 +221,27 @@ export function AttachmentPanel({
                   {categoryLabel(attachment.category)}
                   {attachment.documentDate && (
                     <>
-                      {' '}
-                      · <bdi>{attachment.documentDate}</bdi>
+                      {' · '}
+                      <bdi>{format.date(attachment.documentDate)}</bdi>
                     </>
                   )}
-                  {attachment.description && ` · ${attachment.description}`}
+                  {' · '}
+                  {format.bytes(attachment.fileSizeBytes)}
+                  {attachment.description && (
+                    <>
+                      {' · '}
+                      <bdi dir="auto">{attachment.description}</bdi>
+                    </>
+                  )}
                 </span>
+                {showOwner && <AttachmentOwner attachment={attachment} />}
               </div>
               <div className="attachment-actions">
                 <Button
                   type="button"
                   className="text-button"
                   disabled={open.isPending}
+                  aria-label={`فتح ${attachment.originalFilename}`}
                   onClick={() => {
                     setActionError(null);
                     open.mutate(attachment.id, {
@@ -207,6 +258,7 @@ export function AttachmentPanel({
                   type="button"
                   className="text-button"
                   disabled={reveal.isPending}
+                  aria-label={`إظهار ${attachment.originalFilename} في المجلد`}
                   onClick={() => {
                     setActionError(null);
                     reveal.mutate(attachment.id, {
@@ -220,6 +272,7 @@ export function AttachmentPanel({
                 <Button
                   type="button"
                   className="text-button"
+                  aria-label={`تعديل بيانات ${attachment.originalFilename}`}
                   onClick={() => {
                     setActionError(null);
                     setEditingId(attachment.id);
@@ -232,9 +285,10 @@ export function AttachmentPanel({
                   تعديل
                 </Button>
                 <Button
-                  variant="destructive"
+                  variant="ghost"
                   type="button"
                   className="text-button danger-button"
+                  aria-label={`إزالة ${attachment.originalFilename}`}
                   onClick={() => setRemoving(attachment)}
                 >
                   إزالة

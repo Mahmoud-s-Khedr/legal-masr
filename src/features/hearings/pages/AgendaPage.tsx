@@ -8,7 +8,9 @@ import { Input } from '../../../components/ui/input';
 import { Tabs } from '../../../components/ui/Tabs';
 import { Select } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
-import { useLocalePresentation } from '../../../i18n/LocalePresentation';
+import { Icon } from '../../../components/layout/Icon';
+import { PageHeader } from '../../../components/layout/PageHeader';
+import { useFormat, useLocalePresentation } from '../../../i18n/LocalePresentation';
 import { dateOnlyToLocalDate, localDateOnly } from '../../../lib/dateOnly';
 import { useCaseList } from '../../cases/api/casesApi';
 import { useTaskList } from '../../tasks/api/tasksApi';
@@ -27,7 +29,9 @@ const formatDate = (date: Date) => localDate(date);
 
 export function AgendaPage() {
   const { t } = useTranslation();
-  const { dateLocale, weekStartsOn } = useLocalePresentation();
+  const { weekStartsOn, direction } = useLocalePresentation();
+  const format = useFormat();
+  const cases = useCaseList({ includeArchived: true });
   const [params] = useSearchParams();
   const requestedHearingId = params.get('hearing');
   const createIntent = params.get('create') === 'hearing';
@@ -59,9 +63,16 @@ export function AgendaPage() {
     return dates;
   }, [hearings.data, tasks.data]);
   const selected = items.get(selectedDate) ?? { hearings: [], tasks: [] };
-  const label = new Intl.DateTimeFormat(dateLocale.code, { month: 'long', year: 'numeric' }).format(
-    cursor,
-  );
+  const label = format.monthYear(cursor);
+  const caseLabel = (caseId: string) => {
+    const item = cases.data?.find((candidate) => candidate.id === caseId);
+    return item
+      ? t('dashboard.caseContext', {
+          caseNumber: item.internalNumber,
+          clients: item.clientNames.join('، '),
+        })
+      : t('dashboard.caseContextUnavailable');
+  };
 
   useEffect(() => {
     if (!requestedHearingId || !hearings.data || handledHearingId.current === requestedHearingId)
@@ -97,36 +108,49 @@ export function AgendaPage() {
   if (hearings.isError || tasks.isError) return <p role="alert">{t('agenda.loadError')}</p>;
   return (
     <section className="calendar-page">
-      <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="kicker">{t('agenda.kicker')}</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">{t('agenda.title')}</h1>
-          <p className="mt-1 text-muted-foreground">{t('agenda.description')}</p>
-        </div>
-        <Button type="button" onClick={() => setEditing('new')}>
-          {t('agenda.add')}
-        </Button>
-      </header>
+      <PageHeader
+        kicker={t('agenda.kicker')}
+        title={t('agenda.title')}
+        description={t('agenda.description')}
+        actions={
+          <Button type="button" onClick={() => setEditing('new')}>
+            {t('agenda.add')}
+          </Button>
+        }
+      />
       <div className="calendar-toolbar">
         <div className="calendar-period">
           <Button
             type="button"
-            className="secondary-button"
+            variant="secondary"
+            className="secondary-button icon-only"
             aria-label={t('agenda.previousPeriod')}
             onClick={() => shift(-1)}
           >
-            ‹
+            <Icon name={direction === 'rtl' ? 'chevron-right' : 'chevron-left'} size={18} />
           </Button>
-          <strong>
+          <strong aria-live="polite">
             <bdi>{label}</bdi>
           </strong>
           <Button
             type="button"
-            className="secondary-button"
+            variant="secondary"
+            className="secondary-button icon-only"
             aria-label={t('agenda.nextPeriod')}
             onClick={() => shift(1)}
           >
-            ›
+            <Icon name={direction === 'rtl' ? 'chevron-left' : 'chevron-right'} size={18} />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-button"
+            onClick={() => {
+              setCursor(new Date());
+              setSelectedDate(localDate());
+            }}
+          >
+            {t('agenda.goToday')}
           </Button>
         </div>
         <Tabs
@@ -149,9 +173,8 @@ export function AgendaPage() {
               items={items}
               onSelect={setSelectedDate}
               weekStartsOn={weekStartsOn}
-              weekdayFormatter={(day) =>
-                new Intl.DateTimeFormat(dateLocale.code, { weekday: 'short' }).format(day)
-              }
+              weekdayFormatter={(day) => format.weekday(day, 'short')}
+              dayLabel={format.dateLong}
               t={t}
             />
           ) : view === 'week' ? (
@@ -161,17 +184,24 @@ export function AgendaPage() {
               items={items}
               onSelect={setSelectedDate}
               weekStartsOn={weekStartsOn}
+              dayLabel={format.dateCompact}
               t={t}
             />
           ) : (
-            <AgendaList items={items} onSelect={setSelectedDate} t={t} />
+            <AgendaList
+              items={items}
+              onSelect={setSelectedDate}
+              dayLabel={format.dateLong}
+              selectedDate={selectedDate}
+              t={t}
+            />
           )}
         </section>
         <aside className="calendar-detail">
-          <p className="kicker">
-            <bdi>{selectedDate}</bdi>
-          </p>
-          <h3>{t('agenda.dayDetails')}</h3>
+          <p className="kicker">{t('agenda.dayDetails')}</p>
+          <h3>
+            <time dateTime={selectedDate}>{format.dateLong(selectedDate)}</time>
+          </h3>
           {unavailable && (
             <div className="record-unavailable" role="alert">
               <p>{t('agenda.recordUnavailable')}</p>
@@ -185,38 +215,81 @@ export function AgendaPage() {
             </div>
           )}
           {!selected.hearings.length && !selected.tasks.length && (
-            <p className="empty-compact">{t('agenda.emptyDay')}</p>
-          )}
-          {selected.hearings.map((hearing) => (
-            <article className="agenda-item" key={hearing.id}>
-              <strong>{hearing.hearingType ?? t('agenda.hearing')}</strong>
-              <span>
-                {hearing.hearingTime ? <bdi>{hearing.hearingTime}</bdi> : t('agenda.allDay')} ·{' '}
-                {hearing.location ?? t('agenda.noLocation')}
-              </span>
-              <Button type="button" variant="ghost" onClick={() => setEditing(hearing)}>
-                {t('agenda.editHearing')}
-              </Button>
-              <Button type="button" variant="destructive" onClick={() => setRemoving(hearing)}>
-                {t('agenda.deleteHearing')}
-              </Button>
-              {hearing.status === 'SCHEDULED' ? (
+            <div className="empty-compact">
+              <div>
+                <strong>{t('agenda.emptyDay')}</strong>
                 <Button
                   type="button"
                   variant="ghost"
                   className="text-button"
-                  onClick={() => setDeciding(hearing)}
+                  onClick={() => setEditing('new')}
                 >
-                  {t('agenda.recordDecision')}
+                  {t('agenda.addOnDay')}
                 </Button>
-              ) : (
-                <span>{hearing.decisionText ?? t('agenda.decisionRecorded')}</span>
+              </div>
+            </div>
+          )}
+          {selected.hearings.map((hearing) => (
+            <article className="agenda-item" key={hearing.id}>
+              <div className="agenda-item-head">
+                <strong dir="auto">{hearing.hearingType ?? t('agenda.hearing')}</strong>
+                <span className="agenda-time">
+                  {hearing.hearingTime ? format.time(hearing.hearingTime) : t('agenda.allDay')}
+                </span>
+              </div>
+              <span dir="auto">{caseLabel(hearing.caseId)}</span>
+              <span dir="auto">
+                {[hearing.location, hearing.circuitName].filter(Boolean).join(' · ') ||
+                  t('agenda.noLocation')}
+              </span>
+              {hearing.requiredDocuments && (
+                <small className="preparation-context" dir="auto">
+                  {t('dashboard.preparation')}: {hearing.requiredDocuments}
+                </small>
               )}
+              {hearing.status !== 'SCHEDULED' && (
+                <p className="agenda-decision" dir="auto">
+                  {hearing.decisionText ?? t('agenda.decisionRecorded')}
+                </p>
+              )}
+              <div className="row-actions">
+                {hearing.status === 'SCHEDULED' && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="compact-button"
+                    onClick={() => setDeciding(hearing)}
+                  >
+                    {t('agenda.recordDecision')}
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-button"
+                  onClick={() => setEditing(hearing)}
+                >
+                  {t('agenda.editHearing')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-button danger-button"
+                  onClick={() => setRemoving(hearing)}
+                >
+                  {t('agenda.deleteHearing')}
+                </Button>
+              </div>
             </article>
           ))}
           {selected.tasks.map((task) => (
-            <article className="agenda-item" key={task.id}>
-              <strong>{task.completed ? t('agenda.completedTask') : t('agenda.task')}</strong>
+            <article
+              className={`agenda-item agenda-task${task.completed ? ' is-done' : ''}`}
+              key={task.id}
+            >
+              <span className="agenda-item-kind">
+                {task.completed ? t('agenda.completedTask') : t('agenda.task')}
+              </span>
               <Link to={`/tasks?task=${task.id}`} dir="auto">
                 <bdi>{task.title}</bdi>
               </Link>
@@ -306,6 +379,7 @@ function MonthGrid({
   onSelect,
   weekStartsOn,
   weekdayFormatter,
+  dayLabel,
   t,
 }: {
   cursor: Date;
@@ -314,6 +388,7 @@ function MonthGrid({
   onSelect: (date: string) => void;
   weekStartsOn: number;
   weekdayFormatter: (day: Date) => string;
+  dayLabel: (date: string) => string;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
@@ -340,7 +415,7 @@ function MonthGrid({
               className={`calendar-day ${day.getMonth() !== cursor.getMonth() ? 'muted-day' : ''} ${date === selectedDate ? 'selected' : ''} ${date === localDate() ? 'today' : ''}`}
               onClick={() => onSelect(date)}
               aria-label={t('agenda.dayAria', {
-                date,
+                date: dayLabel(date),
                 hearings: events?.hearings.length ?? 0,
                 tasks: openTaskCount,
                 completed: completedTaskCount,
@@ -382,6 +457,7 @@ function WeekList({
   items,
   onSelect,
   weekStartsOn,
+  dayLabel,
   t,
 }: {
   cursor: Date;
@@ -389,6 +465,7 @@ function WeekList({
   items: Map<string, CalendarDayItems>;
   onSelect: (date: string) => void;
   weekStartsOn: number;
+  dayLabel: (date: string) => string;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const start = plusDays(cursor, -((cursor.getDay() - weekStartsOn + 7) % 7));
@@ -405,9 +482,7 @@ function WeekList({
             key={date}
             onClick={() => onSelect(date)}
           >
-            <strong>
-              <bdi>{date}</bdi>
-            </strong>
+            <strong>{dayLabel(date)}</strong>
             <span>
               {entry
                 ? t('agenda.dayCounts', {
@@ -426,10 +501,14 @@ function WeekList({
 function AgendaList({
   items,
   onSelect,
+  dayLabel,
+  selectedDate,
   t,
 }: {
   items: Map<string, CalendarDayItems>;
   onSelect: (date: string) => void;
+  dayLabel: (date: string) => string;
+  selectedDate: string;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   return (
@@ -439,14 +518,12 @@ function AgendaList({
         .map(([date, entry]) => (
           <Button
             variant="ghost"
-            className="agenda-item"
+            className={`agenda-item ${selectedDate === date ? 'selected-record' : ''}`}
             type="button"
             key={date}
             onClick={() => onSelect(date)}
           >
-            <strong>
-              <bdi>{date}</bdi>
-            </strong>
+            <strong>{dayLabel(date)}</strong>
             <span>
               {entry.hearings
                 .map((hearing) => hearing.hearingType ?? t('agenda.hearing'))
@@ -518,7 +595,12 @@ export function HearingForm({
           value={caseId}
           onValueChange={setCaseId}
           placeholder={t('agenda.fields.casePlaceholder')}
-          items={(cases.data ?? []).map((item) => ({ value: item.id, label: item.internalNumber }))}
+          items={(cases.data ?? []).map((item) => ({
+            value: item.id,
+            label: item.clientNames.length
+              ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
+              : item.internalNumber,
+          }))}
         />
       </label>
       <div className="settings-two-columns">

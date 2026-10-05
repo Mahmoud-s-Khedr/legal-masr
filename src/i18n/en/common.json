@@ -53,7 +53,7 @@
   "tasks": {
     "kicker": "Tasks",
     "title": "Legal tasks",
-    "description": "Status is based on due date and completion; this version has no priority, time, or assignee.",
+    "description": "Order your follow-ups by due date and tick off what you finish.",
     "add": "Add task",
     "filter": "Filter tasks",
     "case": "Case",
@@ -93,12 +93,20 @@
       "UPCOMING": "Upcoming",
       "COMPLETED": "Completed",
       "ALL": "All"
+    },
+    "deleteAria": "Delete {{title}}",
+    "emptyViews": {
+      "TODAY": "Nothing is due today. Add a task or look at upcoming ones.",
+      "OVERDUE": "No overdue tasks. Well organised!",
+      "UPCOMING": "No upcoming tasks.",
+      "COMPLETED": "No completed tasks in this view yet.",
+      "ALL": "No tasks yet. Add your first follow-up for a case or client."
     }
   },
   "agenda": {
     "kicker": "Agenda",
     "title": "Hearings and tasks",
-    "description": "Legal dates are shown as dates only and never converted between time zones.",
+    "description": "Follow your hearings and tasks, and pick any day to see its details and record decisions.",
     "add": "Add hearing",
     "loading": "Loading agenda…",
     "loadError": "Could not load the agenda.",
@@ -131,8 +139,8 @@
     "decisionError": "Could not record the decision or next hearing.",
     "recordUnavailable": "This hearing is no longer available. It may have been deleted or you may not have access to it.",
     "dismissUnavailable": "Continue to agenda",
-    "openTaskCount": "{{count}} open task",
-    "completedTaskCount": "{{count}} completed task",
+    "openTaskCount": "{{count}} task(s)",
+    "completedTaskCount": "{{count}} done",
     "moreEvents": "More work",
     "tasksLabel": "Tasks",
     "dayCounts": "{{hearings}} hearings · {{tasks}} open tasks · {{completed}} completed tasks",
@@ -154,7 +162,9 @@
       "SCHEDULED": "Scheduled",
       "COMPLETED": "Heard",
       "CANCELLED": "Cancelled"
-    }
+    },
+    "goToday": "Today",
+    "addOnDay": "Add a hearing on this day"
   },
   "gate": {
     "kicker": {
@@ -170,7 +180,7 @@
       "unlock": "Unlock your vault"
     },
     "recoveryKeyWarning": "This key is shown once only. Support cannot recover it for you.",
-    "recoveryKeySavedButton": "I saved it somewhere safe",
+    "recoveryKeySavedButton": "Continue to workspace",
     "fields": {
       "fullName": "Lawyer's full name",
       "language": "Interface language",
@@ -181,7 +191,8 @@
       "directoryPlaceholder": "Choose a local path",
       "recoveryKey": "Recovery key",
       "newPassword": "New password",
-      "password": "Password"
+      "password": "Password",
+      "confirmPassword": "Confirm password"
     },
     "submit": {
       "busy": "Working…",
@@ -189,7 +200,34 @@
       "recovery": "Recover access",
       "unlock": "Unlock vault"
     },
-    "haveRecoveryKey": "I have a recovery key"
+    "haveRecoveryKey": "I have a recovery key",
+    "intro": {
+      "setup": "Your legal records are stored on this computer and encrypted with your password. No account or internet needed.",
+      "unlock": "Enter your password to open your files.",
+      "recovery": "Enter the recovery key you saved during setup, then choose a new password.",
+      "recoveryKey": "This key is the only way to open your files if you forget your password."
+    },
+    "points": {
+      "encrypted": "Your files are encrypted with your password",
+      "local": "They stay on your computer and are never uploaded",
+      "backup": "Encrypted backups under your control"
+    },
+    "fullNameHint": "Shown on printed reports; you can change it later.",
+    "passwordHint": "At least {{count}} characters. A short sentence you remember is easier and stronger.",
+    "passwordTooShort": "The password is too short; use at least {{count}} characters.",
+    "passwordMismatch": "The passwords do not match.",
+    "show": "Show",
+    "hide": "Hide",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "recoveryKeyHint": "Type it exactly, including letters and dashes.",
+    "recoveryTips": {
+      "paper": "Write it on paper and keep it somewhere safe away from this computer.",
+      "separate": "Do not store it in the same folder as your backups.",
+      "difference": "The password opens the app every day; the recovery key is for emergencies only."
+    },
+    "recoveryKeyConfirm": "I have written the key down and stored it safely",
+    "backToUnlock": "Back to unlock"
   },
   "backups": {
     "kicker": "Data protection",
@@ -211,7 +249,24 @@
     "restoreCancel": "Cancel",
     "restoring": "Restoring…",
     "restoreSuccess": "Restore completed successfully. Reopen the app to load the restored data.",
-    "filePickerName": "Legal Masr backup"
+    "filePickerName": "Legal Masr backup",
+    "latestTitle": "Latest successful backup",
+    "latestCompleted": "Completed {{date}}",
+    "latestSize": "Size {{size}}",
+    "firstAdvice": "You have not created a backup yet. Create your first one now.",
+    "staleAdvice_zero": "It has been a while since the last backup. Create a new one.",
+    "staleAdvice_one": "1 day since the last backup. Create a new one.",
+    "staleAdvice_two": "{{count}} days since the last backup. Create a new one.",
+    "staleAdvice_few": "{{count}} days since the last backup. Create a new one.",
+    "staleAdvice_many": "{{count}} days since the last backup. Create a new one.",
+    "staleAdvice_other": "{{count}} days since the last backup. Create a new one.",
+    "createTitle": "New backup",
+    "createHint": "One encrypted file with your records and managed documents.",
+    "validateTitle": "Check an older backup",
+    "validateHint": "Pick a backup file to confirm it is intact and restorable.",
+    "restoreTitle": "Restore data",
+    "restoreHint": "Replaces your current data with an earlier backup; an emergency copy is kept automatically.",
+    "offsiteAdvice": "Copy the backup file to a USB drive or external disk kept away from this computer; a backup on the same computer does not protect you if it is damaged or stolen."
   },
   "dashboard": {
     "today": "Today",

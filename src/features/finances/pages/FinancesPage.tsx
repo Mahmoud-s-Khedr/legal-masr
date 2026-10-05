@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { parseMoneyToMinor } from '../../../lib/money';
 import { useSearchParams } from 'react-router-dom';
+import { PageHeader } from '../../../components/layout/PageHeader';
+import { useFormat } from '../../../i18n/LocalePresentation';
 import type { ExpenseDto, ExpenseType, PaymentDto, PaymentMethod } from '../../../bridge/types';
 import { DatePicker } from '../../../components/ui/DatePicker';
 import { Button } from '../../../components/ui/button';
@@ -12,7 +14,13 @@ import { Table } from '../../../components/ui/table';
 import { Textarea } from '../../../components/ui/textarea';
 import { useCase, useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
-import { useExpenses, usePayments, useSaveExpense, useSavePayment } from '../api/financesApi';
+import {
+  useCaseFinanceSummary,
+  useExpenses,
+  usePayments,
+  useSaveExpense,
+  useSavePayment,
+} from '../api/financesApi';
 import { localDateOnly } from '../../../lib/dateOnly';
 
 const methods: ReadonlyArray<[PaymentMethod, string]> = [
@@ -51,6 +59,8 @@ export function FinancesPage() {
   const cases = useCaseList({});
   const clients = useClientList({});
   const selectedCase = useCase(filterCaseId);
+  const caseAccount = useCaseFinanceSummary(filterCaseId);
+  const format = useFormat();
   const payments = usePayments({
     caseId: filterCaseId || undefined,
     payerClientId: filterClientId || undefined,
@@ -67,18 +77,16 @@ export function FinancesPage() {
   const closeEntry = () => setEntry(null);
   return (
     <section className="work-page finance-page">
-      <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="kicker">المالية</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">الدفعات والمصروفات</h1>
-          <p className="mt-1 text-muted-foreground">
-            متابعة نقدية بسيطة بالجنيه المصري؛ لا يحول التطبيق هذا السجل إلى دفتر محاسبي.
-          </p>
-        </div>
-        <Button type="button" onClick={() => setEntry({ type: tab, mode: 'edit' })}>
-          إضافة {tab === 'payment' ? 'دفعة' : 'مصروف'}
-        </Button>
-      </header>
+      <PageHeader
+        kicker="المالية"
+        title="الدفعات والمصروفات"
+        description="سجّل ما تحصّله من موكليك وما تنفقه على قضاياهم بالجنيه المصري."
+        actions={
+          <Button type="button" onClick={() => setEntry({ type: tab, mode: 'edit' })}>
+            إضافة {tab === 'payment' ? 'دفعة' : 'مصروف'}
+          </Button>
+        }
+      />
       <Tabs
         label="سجل المالية"
         value={tab}
@@ -93,13 +101,19 @@ export function FinancesPage() {
           القضية
           <Select
             value={filterCaseId}
+            placeholder="كل القضايا"
             onValueChange={(value) => {
               setFilterCaseId(value);
               setFilterClientId('');
             }}
             items={[
               { value: '', label: 'كل القضايا' },
-              ...(cases.data ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
+              ...(cases.data ?? []).map((item) => ({
+                value: item.id,
+                label: item.clientNames.length
+                  ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
+                  : item.internalNumber,
+              })),
             ]}
           />
         </label>
@@ -108,6 +122,7 @@ export function FinancesPage() {
           <Select
             value={filterClientId}
             onValueChange={setFilterClientId}
+            placeholder="كل الموكلين"
             items={[
               { value: '', label: 'كل الموكلين' },
               ...(tab === 'payment' && filterCaseId ? payerOptions : (clients.data ?? [])).map(
@@ -127,14 +142,51 @@ export function FinancesPage() {
           مسح التصفية
         </Button>
       </div>
+      {filterCaseId && caseAccount.data && (
+        <div className="finance-summary" aria-label="حساب القضية المحددة">
+          <article>
+            <span>الأتعاب المتفق عليها</span>
+            <strong>
+              <bdi>{format.money(caseAccount.data.agreedFeeMinor)}</bdi>
+            </strong>
+          </article>
+          <article>
+            <span>المحصل</span>
+            <strong>
+              <bdi>{format.money(caseAccount.data.receivedMinor)}</bdi>
+            </strong>
+          </article>
+          <article className="finance-net">
+            <span>المتبقي</span>
+            <strong>
+              <bdi>{format.money(caseAccount.data.outstandingMinor)}</bdi>
+            </strong>
+          </article>
+          <article>
+            <span>المصروفات</span>
+            <strong>
+              <bdi>{format.money(caseAccount.data.expensesMinor)}</bdi>
+            </strong>
+          </article>
+        </div>
+      )}
       <section className="work-register">
         <div className="card-title">
           <div>
             <h3>{tab === 'payment' ? 'سجل الدفعات' : 'سجل المصروفات'}</h3>
-            <p className="muted">{records.length} سجل</p>
+            <p className="muted">
+              {records.length} سجل · الإجمالي{' '}
+              <bdi>
+                {format.money(records.reduce((sum, record) => sum + record.amountMinor, 0))}
+              </bdi>
+            </p>
           </div>
         </div>
-        {!records.length ? (
+        {(tab === 'payment' ? payments.isError : expenses.isError) ? (
+          <p className="error" role="alert">
+            تعذر تحميل السجل المالي. حاول مرة أخرى.
+          </p>
+        ) : !records.length ? (
           <p className="empty-compact">لا توجد {tab === 'payment' ? 'دفعات' : 'مصروفات'} مطابقة.</p>
         ) : (
           <div className="data-table-scroll">
@@ -142,11 +194,13 @@ export function FinancesPage() {
               <caption>السجل المالي</caption>
               <thead>
                 <tr>
-                  <th>التاريخ</th>
-                  <th>البيان</th>
-                  <th>الارتباط</th>
-                  <th>المبلغ</th>
-                  <th>إجراء</th>
+                  <th scope="col">التاريخ</th>
+                  <th scope="col">البيان</th>
+                  <th scope="col">القضية والموكل</th>
+                  <th scope="col">المبلغ</th>
+                  <th scope="col">
+                    <span className="sr-only">إجراءات</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -166,7 +220,7 @@ export function FinancesPage() {
                           variant="ghost"
                           type="button"
                           className="text-button"
-                          aria-label={`عرض ${payment ? 'الدفعة' : 'المصروف'} بتاريخ ${payment?.paymentDate ?? expense?.expenseDate}`}
+                          aria-label={`عرض ${payment ? 'الدفعة' : 'المصروف'} بتاريخ ${format.dateLong(payment?.paymentDate ?? expense?.expenseDate ?? '')}`}
                           onClick={() =>
                             setEntry(
                               payment
@@ -175,7 +229,9 @@ export function FinancesPage() {
                             )
                           }
                         >
-                          <bdi>{payment?.paymentDate ?? expense?.expenseDate}</bdi>
+                          <bdi>
+                            {format.date(payment?.paymentDate ?? expense?.expenseDate ?? '')}
+                          </bdi>
                         </Button>
                       </td>
                       <td>
@@ -186,14 +242,14 @@ export function FinancesPage() {
                               : 'دفعة'
                             : expenseTypes.find(([value]) => value === expense!.expenseType)?.[1]}
                         </span>
-                        {record.notes && <small>{record.notes}</small>}
+                        {record.notes && <small dir="auto">{record.notes}</small>}
                       </td>
-                      <td>
-                        {caseName ?? '—'}
-                        {clientName && ` · ${clientName}`}
+                      <td className="cell-wrap">
+                        <bdi>{caseName ?? '—'}</bdi>
+                        {clientName && <span className="cell-muted"> · {clientName}</span>}
                       </td>
                       <td className={payment ? 'money-positive' : 'money-negative'}>
-                        <bdi>{money(record.amountMinor)}</bdi>
+                        <bdi>{format.money(record.amountMinor)}</bdi>
                       </td>
                       <td>
                         <Button
@@ -249,6 +305,7 @@ export function FinancesPage() {
         ) : entry?.type === 'payment' ? (
           <PaymentForm
             initial={entry.value}
+            initialCaseId={filterCaseId || undefined}
             cases={cases.data ?? []}
             onCancel={closeEntry}
             busy={savePayment.isPending}
@@ -260,6 +317,7 @@ export function FinancesPage() {
         ) : entry?.type === 'expense' ? (
           <ExpenseForm
             initial={entry.value}
+            initialCaseId={filterCaseId || undefined}
             cases={cases.data ?? []}
             clients={clients.data ?? []}
             onCancel={closeEntry}

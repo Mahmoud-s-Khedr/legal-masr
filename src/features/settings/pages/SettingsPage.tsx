@@ -6,6 +6,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
+import { Switch } from '../../../components/ui/Switch';
+import { PageHeader } from '../../../components/layout/PageHeader';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
@@ -129,13 +131,11 @@ export function SettingsPage() {
 
   return (
     <section className="settings settings-workspace">
-      <header className="page-heading settings-heading">
-        <div>
-          <p className="kicker">{t('settings.kicker')}</p>
-          <h2>الإعدادات</h2>
-          <p>بيانات مكتبك، حماية الخزنة، وتفضيلات العمل اليومية.</p>
-        </div>
-      </header>
+      <PageHeader
+        kicker={t('settings.kicker')}
+        title="الإعدادات"
+        description="بيانات مكتبك، حماية الخزنة، وتفضيلات العمل اليومية."
+      />
       <div className="settings-layout">
         <nav className="settings-nav" aria-label="أقسام الإعدادات">
           {(
@@ -371,14 +371,12 @@ export function SettingsPage() {
                     <strong>تشغيل ليجال مصر مع الجهاز</strong>
                     <span>يمكن تعطيله في أي وقت. لا يرسل التطبيق أي بيانات عبر الإنترنت.</span>
                   </div>
-                  <Button
-                    type="button"
-                    className={settings.autostartEnabled ? '' : 'secondary-button'}
+                  <Switch
+                    label="التشغيل التلقائي مع بدء الجهاز"
+                    checked={settings.autostartEnabled}
                     disabled={setAutostart.isPending}
-                    onClick={() => setAutostart.mutate(!settings.autostartEnabled)}
-                  >
-                    {settings.autostartEnabled ? 'مفعّل — إيقاف' : 'غير مفعّل — تشغيل'}
-                  </Button>
+                    onCheckedChange={(checked) => setAutostart.mutate(checked)}
+                  />
                 </div>
                 <div className="settings-toggle-row">
                   <div>
@@ -475,14 +473,12 @@ export function SettingsPage() {
                       تسجل أعدادًا إجمالية مثل عدد القضايا أو النسخ الاحتياطية التي أُنشئت.
                     </span>
                   </div>
-                  <Button
-                    type="button"
-                    className={settings.usageCountersEnabled ? '' : 'secondary-button'}
+                  <Switch
+                    label="تفعيل العدادات المجمّعة"
+                    checked={settings.usageCountersEnabled}
                     disabled={setUsageCounters.isPending}
-                    onClick={() => setUsageCounters.mutate(!settings.usageCountersEnabled)}
-                  >
-                    {settings.usageCountersEnabled ? 'مفعّلة — إيقاف' : 'غير مفعّلة — تشغيل'}
-                  </Button>
+                    onCheckedChange={(checked) => setUsageCounters.mutate(checked)}
+                  />
                 </div>
                 {setUsageCounters.isError && (
                   <p className="error">تعذر حفظ اختيار العدادات المجمّعة.</p>
