@@ -1,10 +1,16 @@
-import { localDateOnly } from '../../../lib/dateOnly';
+import { dateOnlyToLocalDate, localDateOnly } from '../../../lib/dateOnly';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import type { ExpenseDto, HearingDto, PaymentDto, TaskDto } from '../../../bridge/types';
+import { Fact, RecordHeader } from '../../../components/layout/RecordHeader';
 import { Dialog } from '../../../components/ui/Dialog';
+import { Tabs } from '../../../components/ui/Tabs';
 import { Button } from '../../../components/ui/button';
+import { Checkbox } from '../../../components/ui/checkbox';
 import { Input } from '../../../components/ui/input';
+import { useFormat } from '../../../i18n/LocalePresentation';
+import { minorToInput, parseMoneyToMinor } from '../../../lib/money';
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
 import {
   useCaseFinanceSummary,
@@ -24,15 +30,22 @@ import { TaskForm } from '../../tasks/pages/TasksPage';
 import { useCompleteTask, useReopenTask, useSaveTask, useTaskList } from '../../tasks/api/tasksApi';
 import { useCaseList } from '../api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
-import { ExpenseForm, parseMoneyToMinor, PaymentForm } from '../../finances/pages/FinancesPage';
+import { ExpenseForm, PaymentForm } from '../../finances/pages/FinancesPage';
 import { useArchiveCase, useCase, useRestoreCase, useUpdateCase } from '../api/casesApi';
 import { CaseClientsPanel } from '../components/CaseClientsPanel';
+import { CaseStatusBadge, OfficialReference } from '../components/CaseIdentity';
 import { CasePartiesPanel } from '../components/CasePartiesPanel';
 import { CaseEditForm } from '../forms/CaseEditForm';
 
-const money = (amount: number) =>
-  new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount / 100);
+const HEARING_TONE = {
+  SCHEDULED: 'tone-active',
+  COMPLETED: 'tone-muted',
+  CANCELLED: 'tone-danger',
+};
+
 export function CaseDetailPage() {
+  const { t } = useTranslation();
+  const format = useFormat();
   const { id = '' } = useParams();
   const [tab, setTab] = useState<
     'summary' | 'relationships' | 'hearings' | 'tasks' | 'attachments' | 'account'
@@ -47,7 +60,8 @@ export function CaseDetailPage() {
     | { type: 'expense'; value?: ExpenseDto; inspect?: boolean }
     | null
   >(null);
-  const [fee, setFee] = useState('');
+  const [fee, setFee] = useState<string | null>(null);
+  const [feeError, setFeeError] = useState('');
   const item = useCase(id);
   const hearings = useHearings({ caseId: id });
   const tasks = useTaskList({ view: 'ALL', referenceDate: '9999-12-31', caseId: id });
@@ -67,246 +81,540 @@ export function CaseDetailPage() {
   const reopenTask = useReopenTask();
   const saveHearing = useSaveHearing();
   const recordDecision = useRecordHearingDecision();
-  if (item.isLoading) return <p>جارٍ التحميل…</p>;
-  if (item.isError) return <p role="alert">تعذر تحميل السجل. حاول مرة أخرى.</p>;
-  if (!item.data) return <p>القضية غير موجودة.</p>;
+  if (item.isLoading)
+    return (
+      <p className="page-status" role="status">
+        {t('records.loading')}
+      </p>
+    );
+  if (item.isError)
+    return (
+      <p className="page-status error" role="alert">
+        {t('records.loadError')}
+      </p>
+    );
+  if (!item.data) return <p className="page-status">{t('cases.detail.notFound')}</p>;
   const caseDto = item.data;
-  const nextHearing = hearings.data?.find((hearing) => hearing.status === 'SCHEDULED');
+  const today = localDateOnly();
+  const sortedHearings = [...(hearings.data ?? [])].sort((a, b) =>
+    `${b.hearingDate}${b.hearingTime ?? ''}`.localeCompare(
+      `${a.hearingDate}${a.hearingTime ?? ''}`,
+    ),
+  );
+  const nextHearing = [...(hearings.data ?? [])]
+    .filter((hearing) => hearing.status === 'SCHEDULED')
+    .sort((a, b) =>
+      `${a.hearingDate}${a.hearingTime ?? ''}`.localeCompare(
+        `${b.hearingDate}${b.hearingTime ?? ''}`,
+      ),
+    )[0];
+  const lastDecision = sortedHearings.find((hearing) => hearing.decisionText);
+  const openTasks = (tasks.data ?? []).filter((task) => !task.completed);
+  const sortedTasks = [...(tasks.data ?? [])].sort(
+    (a, b) => Number(a.completed) - Number(b.completed) || a.dueDate.localeCompare(b.dueDate),
+  );
+  const agreed = account.data?.agreedFeeMinor ?? 0;
+  const feeValue = fee ?? (agreed ? minorToInput(agreed) : '');
   return (
-    <section className="entity-detail">
+    <section className="entity-detail detail-workspace">
       {(archive.isError || restore.isError) && (
-        <p role="alert">تعذر تغيير حالة السجل. حاول مرة أخرى.</p>
+        <p className="error" role="alert">
+          {t('records.statusChangeError')}
+        </p>
       )}
-      <header className="detail-hero">
-        <div>
-          <p className="kicker">قضية</p>
-          <h2>
-            <bdi>{caseDto.internalNumber}</bdi>
-          </h2>
-          <p>
-            {caseDto.officialNumber ? (
-              <bdi>{`${caseDto.officialNumber}${caseDto.officialYear ? ` / ${caseDto.officialYear}` : ''}`}</bdi>
-            ) : (
-              'لا يوجد رقم رسمي'
+      <RecordHeader
+        icon="cases"
+        kicker={t('cases.detail.kicker')}
+        title={<bdi>{caseDto.internalNumber}</bdi>}
+        badges={<CaseStatusBadge status={caseDto.status} archived={!!caseDto.archivedAt} />}
+        meta={
+          <>
+            <span>
+              {caseDto.officialNumber ? (
+                <OfficialReference number={caseDto.officialNumber} year={caseDto.officialYear} />
+              ) : (
+                t('cases.detail.noOfficialNumber')
+              )}
+            </span>
+            {caseDto.courtName && <span dir="auto">{caseDto.courtName}</span>}
+            {caseDto.clients.length > 0 && (
+              <span dir="auto">{caseDto.clients.map((client) => client.fullName).join('، ')}</span>
             )}
-          </p>
-        </div>
-        <div className="detail-actions">
-          <Button type="button" onClick={() => setEditOpen(true)}>
-            تعديل
-          </Button>
-          {caseDto.archivedAt ? (
-            <Button disabled={restore.isPending} onClick={() => restore.mutate(id)}>
-              استعادة
+          </>
+        }
+        actions={
+          <>
+            <Button type="button" onClick={() => setEditOpen(true)}>
+              {t('records.edit')}
             </Button>
-          ) : (
-            <Button
-              variant="secondary"
-              className="secondary-button"
-              disabled={archive.isPending}
-              onClick={() => archive.mutate(id)}
-            >
-              أرشفة
-            </Button>
-          )}
-        </div>
-      </header>
-      <nav className="detail-tabs">
-        {(['summary', 'relationships', 'hearings', 'tasks', 'attachments', 'account'] as const).map(
-          (value) => (
-            <Button
-              type="button"
-              variant="ghost"
-              key={value}
-              className={tab === value ? 'active' : ''}
-              onClick={() => setTab(value)}
-            >
-              {
-                {
-                  summary: 'الملخص',
-                  relationships: 'الأطراف',
-                  hearings: 'الجلسات',
-                  tasks: 'المهام',
-                  attachments: 'المرفقات',
-                  account: 'الحساب',
-                }[value]
-              }
-            </Button>
-          ),
-        )}
-      </nav>
-      {tab === 'summary' && (
-        <div className="detail-grid">
-          <section className="detail-card">
-            <h3>بيانات القضية</h3>
-            <dl>
-              <dt>المحكمة</dt>
-              <dd>{caseDto.courtName ?? '—'}</dd>
-              <dt>الموضوع</dt>
-              <dd>{caseDto.subject ?? '—'}</dd>
-              <dt>الجلسة القادمة</dt>
-              <dd>
-                {nextHearing ? (
-                  <bdi>{`${nextHearing.hearingDate} ${nextHearing.hearingTime ?? ''}`}</bdi>
-                ) : (
-                  '—'
-                )}
-              </dd>
-            </dl>
-          </section>
-        </div>
-      )}
+            {caseDto.archivedAt ? (
+              <Button
+                variant="secondary"
+                className="secondary-button"
+                disabled={restore.isPending}
+                onClick={() => restore.mutate(id)}
+              >
+                {t('records.restore')}
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                className="quiet-button"
+                disabled={archive.isPending}
+                onClick={() => archive.mutate(id)}
+              >
+                {t('records.archive')}
+              </Button>
+            )}
+          </>
+        }
+      />
+      <Tabs
+        variant="underline"
+        label={t('cases.detail.sectionsLabel')}
+        value={tab}
+        onChange={(value) => setTab(value as typeof tab)}
+        tabs={[
+          { id: 'summary', label: t('cases.detail.tabs.summary') },
+          {
+            id: 'relationships',
+            label: t('cases.detail.tabs.relationships'),
+            count: caseDto.clients.length + caseDto.opponents.length,
+          },
+          {
+            id: 'hearings',
+            label: t('cases.detail.tabs.hearings'),
+            count: hearings.data?.length ?? 0,
+          },
+          { id: 'tasks', label: t('cases.detail.tabs.tasks'), count: openTasks.length },
+          { id: 'attachments', label: t('cases.detail.tabs.attachments') },
+          { id: 'account', label: t('cases.detail.tabs.account') },
+        ]}
+      />
       {caseFeedback && (
         <p className="success" role="status">
           {caseFeedback}
         </p>
       )}
-      {tab === 'relationships' && (
-        <>
-          <CaseClientsPanel caseDto={caseDto} />
-          <CasePartiesPanel caseDto={caseDto} />
-        </>
-      )}
-      {tab === 'hearings' && (
-        <section className="detail-card">
-          <div className="card-title">
-            <h3>الجلسات</h3>
-            <Button type="button" onClick={() => setHearingEditor('new')}>
-              إضافة جلسة
-            </Button>
-          </div>
-          <ul>
-            {hearings.data?.map((hearing) => (
-              <li key={hearing.id}>
+      {tab === 'summary' && (
+        <div className="case-summary-layout">
+          <section className="detail-card">
+            <div className="card-title">
+              <h3>{t('cases.detail.dataTitle')}</h3>
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-button"
+                onClick={() => setEditOpen(true)}
+              >
+                {t('cases.detail.editData')}
+              </Button>
+            </div>
+            <dl className="facts">
+              <Fact label={t('cases.fields.caseNumber')}>
+                <bdi>{caseDto.internalNumber}</bdi>
+              </Fact>
+              <Fact label={t('cases.fields.officialNumber')}>
+                {caseDto.officialNumber && (
+                  <OfficialReference number={caseDto.officialNumber} year={caseDto.officialYear} />
+                )}
+              </Fact>
+              <Fact label={t('cases.fields.caseType')}>{caseDto.caseType}</Fact>
+              <Fact label={t('cases.fields.litigationDegree')}>
+                {caseDto.litigationDegree && t(`cases.degrees.${caseDto.litigationDegree}`)}
+              </Fact>
+              <Fact label={t('cases.fields.courtName')}>{caseDto.courtName}</Fact>
+              <Fact label={t('cases.fields.circuitName')}>{caseDto.circuitName}</Fact>
+              <Fact label={t('cases.fields.filedOn')}>
+                {caseDto.filedOn && format.date(caseDto.filedOn)}
+              </Fact>
+              <Fact label={t('cases.fields.closedOn')}>
+                {caseDto.closedOn && format.date(caseDto.closedOn)}
+              </Fact>
+              <Fact label={t('cases.fields.summary')} wide>
+                {caseDto.subject && <span className="prewrap">{caseDto.subject}</span>}
+              </Fact>
+              {caseDto.notes && (
+                <Fact label={t('cases.fields.notes')} wide>
+                  <span className="prewrap">{caseDto.notes}</span>
+                </Fact>
+              )}
+            </dl>
+          </section>
+          <div className="case-side-summary">
+            <section className="detail-card next-event-card">
+              <div className="card-title">
+                <h3>{t('cases.detail.nextHearing')}</h3>
+              </div>
+              {nextHearing ? (
+                <>
+                  <time dateTime={nextHearing.hearingDate}>
+                    {format.dateLong(nextHearing.hearingDate)}
+                  </time>
+                  <strong>
+                    {nextHearing.hearingTime
+                      ? format.time(nextHearing.hearingTime)
+                      : t('dashboard.allDay')}
+                  </strong>
+                  <span dir="auto">
+                    {[nextHearing.hearingType, nextHearing.location, nextHearing.circuitName]
+                      .filter(Boolean)
+                      .join(' · ') || t('agenda.hearing')}
+                  </span>
+                  {nextHearing.requiredDocuments && (
+                    <small className="preparation-context" dir="auto">
+                      {t('dashboard.preparation')}: {nextHearing.requiredDocuments}
+                    </small>
+                  )}
+                  <div className="card-actions">
+                    {nextHearing.hearingDate <= today && (
+                      <Button type="button" onClick={() => setHearingDecision(nextHearing)}>
+                        {t('agenda.recordDecision')}
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="secondary-button"
+                      onClick={() => setHearingEditor(nextHearing)}
+                    >
+                      {t('agenda.editHearing')}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="muted">{t('cases.detail.noNextHearing')}</p>
+                  <div className="card-actions">
+                    <Button type="button" onClick={() => setHearingEditor('new')}>
+                      {t('agenda.add')}
+                    </Button>
+                  </div>
+                </>
+              )}
+              {lastDecision && (
+                <div className="case-summary-text">
+                  <span>
+                    {t('cases.detail.lastDecision', {
+                      date: format.date(lastDecision.hearingDate),
+                    })}
+                  </span>
+                  <p className="prewrap" dir="auto">
+                    {lastDecision.decisionText}
+                  </p>
+                </div>
+              )}
+            </section>
+            <section className="detail-card">
+              <div className="card-title">
+                <h3>{t('cases.detail.accountTitle')}</h3>
                 <Button
                   type="button"
                   variant="ghost"
                   className="text-button"
-                  onClick={() => setHearingEditor(hearing)}
+                  onClick={() => setTab('account')}
                 >
-                  <bdi>{hearing.hearingDate}</bdi> · {hearing.hearingType ?? 'جلسة'} ·{' '}
-                  {hearing.status}
+                  {t('dashboard.viewAll')}
                 </Button>
-                {hearing.status === 'SCHEDULED' && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="text-button"
-                    onClick={() => setHearingDecision(hearing)}
-                  >
-                    تسجيل القرار
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
+              </div>
+              <dl className="facts facts-compact">
+                <Fact label={t('cases.detail.agreed')}>
+                  <bdi>{format.money(agreed)}</bdi>
+                </Fact>
+                <Fact label={t('cases.detail.received')}>
+                  <bdi>{format.money(account.data?.receivedMinor ?? 0)}</bdi>
+                </Fact>
+                <Fact label={t('cases.detail.outstanding')}>
+                  <bdi>{format.money(account.data?.outstandingMinor ?? 0)}</bdi>
+                </Fact>
+                <Fact label={t('cases.detail.openTasks')}>{format.number(openTasks.length)}</Fact>
+              </dl>
+            </section>
+          </div>
+        </div>
+      )}
+      {tab === 'relationships' && (
+        <div className="detail-stack">
+          <CaseClientsPanel caseDto={caseDto} />
+          <CasePartiesPanel caseDto={caseDto} />
+        </div>
+      )}
+      {tab === 'hearings' && (
+        <section className="detail-card">
+          <div className="card-title">
+            <h3>{t('cases.detail.tabs.hearings')}</h3>
+            <Button type="button" onClick={() => setHearingEditor('new')}>
+              {t('agenda.add')}
+            </Button>
+          </div>
+          {!sortedHearings.length ? (
+            <p className="empty-compact">{t('cases.detail.noHearings')}</p>
+          ) : (
+            <ul className="timeline-list">
+              {sortedHearings.map((hearing) => (
+                <li key={hearing.id}>
+                  <time dateTime={hearing.hearingDate}>
+                    {format.date(hearing.hearingDate)}
+                    <small>
+                      {hearing.hearingTime
+                        ? format.time(hearing.hearingTime)
+                        : format.weekday(dateOnlyToLocalDate(hearing.hearingDate), 'long')}
+                    </small>
+                  </time>
+                  <div>
+                    <div className="timeline-title">
+                      <strong dir="auto">{hearing.hearingType ?? t('agenda.hearing')}</strong>
+                      <span className={`status-badge ${HEARING_TONE[hearing.status]}`}>
+                        {t(`agenda.status.${hearing.status}`)}
+                      </span>
+                    </div>
+                    {(hearing.location || hearing.circuitName) && (
+                      <span dir="auto">
+                        {[hearing.location, hearing.circuitName].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                    {hearing.decisionText && (
+                      <p className="prewrap" dir="auto">
+                        <strong>{t('agenda.fields.decisionText')}: </strong>
+                        {hearing.decisionText}
+                      </p>
+                    )}
+                    <div className="row-actions">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-button"
+                        onClick={() => setHearingEditor(hearing)}
+                      >
+                        {t('agenda.editHearing')}
+                      </Button>
+                      {hearing.status === 'SCHEDULED' && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="text-button"
+                          onClick={() => setHearingDecision(hearing)}
+                        >
+                          {t('agenda.recordDecision')}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
       {tab === 'tasks' && (
         <section className="detail-card">
           <div className="card-title">
-            <h3>المهام</h3>
+            <h3>{t('cases.detail.tabs.tasks')}</h3>
             <Button type="button" onClick={() => setTaskEditor('new')}>
-              إضافة مهمة
+              {t('tasks.add')}
             </Button>
           </div>
-          <ul>
-            {tasks.data?.map((task) => (
-              <li key={task.id}>
-                {task.completed ? '✓' : '○'}{' '}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-button"
-                  onClick={() => setTaskEditor(task)}
-                >
-                  {task.title}
-                </Button>{' '}
-                · <bdi>{task.dueDate}</bdi>
-              </li>
-            ))}
-          </ul>
+          {!sortedTasks.length ? (
+            <p className="empty-compact">{t('cases.detail.noTasks')}</p>
+          ) : (
+            <ul className="work-rows">
+              {sortedTasks.map((task) => {
+                const overdue = !task.completed && task.dueDate < today;
+                return (
+                  <li
+                    key={task.id}
+                    className={task.completed ? 'is-done' : overdue ? 'is-overdue' : undefined}
+                  >
+                    <Checkbox
+                      checked={task.completed}
+                      disabled={completeTask.isPending || reopenTask.isPending}
+                      onCheckedChange={() =>
+                        (task.completed ? reopenTask : completeTask).mutate(task.id)
+                      }
+                      aria-label={t(task.completed ? 'tasks.reopenAria' : 'tasks.completeAria', {
+                        title: task.title,
+                      })}
+                    />
+                    <div>
+                      <button
+                        type="button"
+                        className="link-button"
+                        onClick={() => setTaskEditor(task)}
+                      >
+                        <bdi>{task.title}</bdi>
+                      </button>
+                      <span>{format.date(task.dueDate)}</span>
+                    </div>
+                    {overdue && <span className="row-meta">{t('tasks.overdue')}</span>}
+                    {task.completed && <span className="row-meta">{t('tasks.completed')}</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {(completeTask.isError || reopenTask.isError) && !taskEditor && (
+            <p className="error" role="alert">
+              {t('tasks.statusError')}
+            </p>
+          )}
         </section>
       )}
-      {tab === 'attachments' && <AttachmentPanel owner={{ caseId: id }} title="مرفقات القضية" />}
+      {tab === 'attachments' && (
+        <AttachmentPanel owner={{ caseId: id }} title={t('cases.detail.attachmentsTitle')} />
+      )}
       {tab === 'account' && (
-        <section className="detail-card">
-          <div className="card-title">
-            <h3>الحساب</h3>
-            <div>
+        <div className="detail-stack">
+          <div className="finance-summary">
+            <article>
+              <span>{t('cases.detail.agreed')}</span>
+              <strong>
+                <bdi>{format.money(agreed)}</bdi>
+              </strong>
+            </article>
+            <article>
+              <span>{t('cases.detail.received')}</span>
+              <strong>
+                <bdi>{format.money(account.data?.receivedMinor ?? 0)}</bdi>
+              </strong>
+            </article>
+            <article className="finance-net">
+              <span>{t('cases.detail.outstanding')}</span>
+              <strong>
+                <bdi>{format.money(account.data?.outstandingMinor ?? 0)}</bdi>
+              </strong>
+            </article>
+            <article>
+              <span>{t('cases.detail.expenses')}</span>
+              <strong>
+                <bdi>{format.money(account.data?.expensesMinor ?? 0)}</bdi>
+              </strong>
+            </article>
+          </div>
+          <section className="detail-card">
+            <div className="card-title">
+              <div>
+                <h3>{t('cases.detail.feeTitle')}</h3>
+                <p className="card-note">{t('cases.detail.feeHint')}</p>
+              </div>
+            </div>
+            <form
+              className="inline-form"
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault();
+                const amount = parseMoneyToMinor(feeValue);
+                if (!amount) return setFeeError(t('cases.detail.feeInvalid'));
+                setFeeError('');
+                saveFee.mutate(
+                  { caseId: id, amountMinor: amount },
+                  { onSuccess: () => setFee(null) },
+                );
+              }}
+            >
+              <label>
+                {t('cases.detail.feeLabel')}
+                <Input
+                  value={feeValue}
+                  onChange={(event) => {
+                    setFee(event.target.value);
+                    saveFee.reset();
+                  }}
+                  inputMode="decimal"
+                  dir="ltr"
+                  aria-invalid={feeError ? true : undefined}
+                />
+              </label>
+              <Button disabled={saveFee.isPending}>{t('cases.detail.feeSave')}</Button>
+            </form>
+            {feeError && (
+              <p className="field-error" role="alert">
+                {feeError}
+              </p>
+            )}
+            {saveFee.isError && (
+              <p className="error" role="alert">
+                {t('cases.detail.feeSaveError')}
+              </p>
+            )}
+            {saveFee.isSuccess && (
+              <p className="success" role="status">
+                {t('cases.detail.feeSaved')}
+              </p>
+            )}
+          </section>
+          <section className="detail-card">
+            <div className="card-title">
+              <h3>{t('cases.detail.paymentsTitle')}</h3>
               <Button type="button" onClick={() => setTransactionEditor({ type: 'payment' })}>
-                إضافة دفعة
+                {t('cases.detail.addPayment')}
               </Button>
+            </div>
+            {!payments.data?.length ? (
+              <p className="muted">{t('cases.detail.noPayments')}</p>
+            ) : (
+              <ul className="ledger-rows">
+                {payments.data.map((payment) => (
+                  <li key={payment.id}>
+                    <button
+                      type="button"
+                      className="ledger-row"
+                      onClick={() =>
+                        setTransactionEditor({ type: 'payment', value: payment, inspect: true })
+                      }
+                    >
+                      <span>{format.date(payment.paymentDate)}</span>
+                      <span dir="auto">
+                        {caseDto.clients.find((client) => client.clientId === payment.payerClientId)
+                          ?.fullName ?? '—'}
+                      </span>
+                      <strong className="money-positive">
+                        <bdi>{format.money(payment.amountMinor)}</bdi>
+                      </strong>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section className="detail-card">
+            <div className="card-title">
+              <h3>{t('cases.detail.expensesTitle')}</h3>
               <Button
                 type="button"
                 variant="secondary"
                 className="secondary-button"
                 onClick={() => setTransactionEditor({ type: 'expense' })}
               >
-                إضافة مصروف
+                {t('cases.detail.addExpense')}
               </Button>
             </div>
-          </div>
-          <p>
-            المتفق عليه: <bdi>{money(account.data?.agreedFeeMinor ?? 0)}</bdi> · المحصل:{' '}
-            <bdi>{money(account.data?.receivedMinor ?? 0)}</bdi> · المتبقي:{' '}
-            <bdi>{money(account.data?.outstandingMinor ?? 0)}</bdi> · المصروفات:{' '}
-            <bdi>{money(account.data?.expensesMinor ?? 0)}</bdi>
-          </p>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              const amount = parseMoneyToMinor(fee);
-              if (amount) saveFee.mutate({ caseId: id, amountMinor: amount });
-            }}
-          >
-            <label>
-              قيمة اتفاق الأتعاب (ج.م)
-              <Input
-                value={fee}
-                onChange={(event) => setFee(event.target.value)}
-                inputMode="decimal"
-              />
-            </label>
-            <Button>حفظ اتفاق الأتعاب</Button>
-          </form>
-          <h4>الدفعات</h4>
-          <ul className="entity-list-rows">
-            {payments.data?.map((payment) => (
-              <li key={payment.id}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-button"
-                  onClick={() =>
-                    setTransactionEditor({ type: 'payment', value: payment, inspect: true })
-                  }
-                >
-                  <bdi>{payment.paymentDate}</bdi> · <bdi>{money(payment.amountMinor)}</bdi>
-                </Button>
-              </li>
-            ))}
-          </ul>
-          <h4>المصروفات</h4>
-          <ul className="entity-list-rows">
-            {expenses.data?.map((expense) => (
-              <li key={expense.id}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-button"
-                  onClick={() =>
-                    setTransactionEditor({ type: 'expense', value: expense, inspect: true })
-                  }
-                >
-                  <bdi>{expense.expenseDate}</bdi> · <bdi>{money(expense.amountMinor)}</bdi>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
+            {!expenses.data?.length ? (
+              <p className="muted">{t('cases.detail.noExpenses')}</p>
+            ) : (
+              <ul className="ledger-rows">
+                {expenses.data.map((expense) => (
+                  <li key={expense.id}>
+                    <button
+                      type="button"
+                      className="ledger-row"
+                      onClick={() =>
+                        setTransactionEditor({ type: 'expense', value: expense, inspect: true })
+                      }
+                    >
+                      <span>{format.date(expense.expenseDate)}</span>
+                      <span dir="auto">{expense.notes ?? '—'}</span>
+                      <strong className="money-negative">
+                        <bdi>{format.money(expense.amountMinor)}</bdi>
+                      </strong>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       )}
-      <Dialog open={editOpen} onOpenChange={setEditOpen} title="تعديل بيانات القضية">
+      <Dialog open={editOpen} onOpenChange={setEditOpen} title={t('cases.detail.editTitle')}>
         <CaseEditForm
           caseDto={caseDto}
           busy={update.isPending}
@@ -325,7 +633,7 @@ export function CaseDetailPage() {
                 })),
               });
               setEditOpen(false);
-              setCaseFeedback('تم حفظ تعديلات القضية.');
+              setCaseFeedback(t('records.saved'));
             } catch {
               // Keep the dialog and its draft available for retry.
             }
@@ -333,14 +641,14 @@ export function CaseDetailPage() {
         />
         {update.isError && (
           <p className="error" role="alert">
-            تعذر حفظ تعديلات القضية. بقيت البيانات للمحاولة مرة أخرى.
+            {t('records.saveRetry')}
           </p>
         )}
       </Dialog>
       <Dialog
         open={Boolean(taskEditor)}
         onOpenChange={(open) => !open && setTaskEditor(null)}
-        title={taskEditor === 'new' ? 'إضافة مهمة' : 'تفاصيل المهمة'}
+        title={taskEditor === 'new' ? t('tasks.add') : t('tasks.details')}
       >
         {taskEditor && (
           <TaskForm
@@ -368,19 +676,19 @@ export function CaseDetailPage() {
         )}
         {saveTask.isError && (
           <p className="error" role="alert">
-            تعذر حفظ المهمة. بقيت البيانات للمحاولة مرة أخرى.
+            {t('tasks.saveError')}
           </p>
         )}
         {(completeTask.isError || reopenTask.isError) && (
           <p className="error" role="alert">
-            تعذر تغيير حالة المهمة. حاول مرة أخرى.
+            {t('tasks.statusError')}
           </p>
         )}
       </Dialog>
       <Dialog
         open={Boolean(hearingEditor)}
         onOpenChange={(open) => !open && setHearingEditor(null)}
-        title={hearingEditor === 'new' ? 'إضافة جلسة' : 'تعديل الجلسة'}
+        title={hearingEditor === 'new' ? t('agenda.add') : t('agenda.editHearing')}
       >
         {hearingEditor && (
           <HearingForm
@@ -401,14 +709,14 @@ export function CaseDetailPage() {
         )}
         {saveHearing.isError && (
           <p className="error" role="alert">
-            تعذر حفظ الجلسة.
+            {t('agenda.saveError')}
           </p>
         )}
       </Dialog>
       <Dialog
         open={Boolean(hearingDecision)}
         onOpenChange={(open) => !open && setHearingDecision(null)}
-        title="تسجيل قرار الجلسة"
+        title={t('agenda.recordDecision')}
       >
         {hearingDecision && (
           <DecisionForm
@@ -427,7 +735,7 @@ export function CaseDetailPage() {
         )}
         {recordDecision.isError && (
           <p className="error" role="alert">
-            تعذر تسجيل القرار أو الجلسة التالية.
+            {t('agenda.decisionError')}
           </p>
         )}
       </Dialog>
@@ -436,8 +744,10 @@ export function CaseDetailPage() {
         onOpenChange={(open) => !open && setTransactionEditor(null)}
         title={
           transactionEditor?.inspect
-            ? `تفاصيل ${transactionEditor.type === 'payment' ? 'الدفعة' : 'المصروف'}`
-            : `${transactionEditor?.value ? 'تعديل' : 'إضافة'} ${transactionEditor?.type === 'payment' ? 'دفعة' : 'مصروف'}`
+            ? t(`cases.detail.inspect.${transactionEditor.type}`)
+            : t(
+                `cases.detail.${transactionEditor?.value ? 'editEntry' : 'newEntry'}.${transactionEditor?.type ?? 'payment'}`,
+              )
         }
       >
         {transactionEditor?.inspect && transactionEditor.value ? (
@@ -497,7 +807,7 @@ export function CaseDetailPage() {
         ) : null}
         {(savePayment.isError || saveExpense.isError) && (
           <p className="error" role="alert">
-            تعذر حفظ السجل المالي. بقيت البيانات للمحاولة مرة أخرى.
+            {t('cases.detail.entrySaveError')}
           </p>
         )}
       </Dialog>
@@ -520,44 +830,46 @@ function CaseTransactionInspection({
   onClose: () => void;
   onEdit: () => void;
 }) {
+  const { t } = useTranslation();
+  const format = useFormat();
   const date =
     transaction.type === 'payment' ? transaction.value.paymentDate : transaction.value.expenseDate;
   return (
     <div className="dialog-form">
       <dl className="detail-definition-grid">
         <div>
-          <dt>التاريخ</dt>
+          <dt>{t('cases.detail.entryDate')}</dt>
           <dd>
-            <bdi>{date}</bdi>
+            <bdi>{format.date(date)}</bdi>
           </dd>
         </div>
         <div>
-          <dt>القضية</dt>
+          <dt>{t('tasks.case')}</dt>
           <dd>
             <bdi>{caseNumber}</bdi>
           </dd>
         </div>
         <div>
-          <dt>الموكل</dt>
+          <dt>{t('tasks.client')}</dt>
           <dd>{clientName ?? '—'}</dd>
         </div>
         <div>
-          <dt>المبلغ</dt>
+          <dt>{t('cases.detail.entryAmount')}</dt>
           <dd>
-            <bdi>{money(transaction.value.amountMinor)}</bdi>
+            <bdi>{format.money(transaction.value.amountMinor)}</bdi>
           </dd>
         </div>
       </dl>
       <div>
-        <strong>ملاحظات</strong>
+        <strong>{t('common.notes')}</strong>
         <p>{transaction.value.notes ?? '—'}</p>
       </div>
       <div className="dialog-actions">
         <Button type="button" variant="secondary" className="secondary-button" onClick={onClose}>
-          إغلاق
+          {t('records.close')}
         </Button>
         <Button type="button" onClick={onEdit}>
-          تعديل السجل
+          {t('cases.detail.editEntryButton')}
         </Button>
       </div>
     </div>

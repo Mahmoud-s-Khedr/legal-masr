@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Dialog } from '../../../components/ui/Dialog';
-import { Badge } from '../../../components/ui/badge';
+import { PageHeader } from '../../../components/layout/PageHeader';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Input } from '../../../components/ui/input';
@@ -19,24 +19,24 @@ export function PowersOfAttorneyPage() {
   const save = useSavePowerOfAttorney();
   const navigate = useNavigate();
   return (
-    <section className="work-page">
-      <header className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="kicker">التوكيلات</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">التوكيلات</h1>
-          <p className="mt-1 text-muted-foreground">
-            اربط التوكيل بموكل واحد أو أكثر وسجّل المحامين المذكورين فيه.
-          </p>
-        </div>
-        <Button type="button" onClick={() => setAdding(true)}>
-          إضافة توكيل
-        </Button>
-      </header>
+    <section className="entity-list">
+      <PageHeader
+        kicker="سجل التوكيلات"
+        title="التوكيلات"
+        description="اربط التوكيل بموكل واحد أو أكثر وسجّل المحامين المذكورين فيه."
+        actions={
+          <Button type="button" onClick={() => setAdding(true)}>
+            إضافة توكيل
+          </Button>
+        }
+      />
       <div className="entity-list-toolbar">
         <Input
+          type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="ابحث برقم التوكيل أو الموكل أو مكتب التوثيق"
+          aria-label="ابحث برقم التوكيل أو الموكل أو مكتب التوثيق"
         />
         <label className="checkbox-field">
           <Checkbox checked={includeArchived} onCheckedChange={setIncludeArchived} />
@@ -46,7 +46,9 @@ export function PowersOfAttorneyPage() {
       {powers.isLoading ? (
         <Skeleton className="table-message h-24" aria-label="جارٍ تحميل التوكيلات…" />
       ) : powers.isError ? (
-        <p role="alert">تعذر تحميل التوكيلات. حاول مرة أخرى.</p>
+        <p className="error" role="alert">
+          تعذر تحميل التوكيلات. حاول مرة أخرى.
+        </p>
       ) : !powers.data?.length ? (
         <Card className="empty-state-card">
           <strong>{query ? 'لا توجد توكيلات مطابقة' : 'لا توجد توكيلات بعد'}</strong>
@@ -71,20 +73,26 @@ export function PowersOfAttorneyPage() {
             </thead>
             <tbody>
               {powers.data.map((power) => (
-                <tr key={power.id} onClick={() => navigate(`/powers-of-attorney/${power.id}`)}>
-                  <th>
+                <tr
+                  key={power.id}
+                  className="clickable-row"
+                  onClick={() => navigate(`/powers-of-attorney/${power.id}`)}
+                >
+                  <th scope="row">
                     <Link to={`/powers-of-attorney/${power.id}`}>
                       <bdi>{power.internalSequence}</bdi>
                     </Link>
                   </th>
-                  <td>{power.officialNumber ? <bdi>{power.officialNumber}</bdi> : '—'}</td>
-                  <td>{power.clientNames.join('، ') || '—'}</td>
+                  <td className="mono">
+                    {power.officialNumber ? <bdi>{power.officialNumber}</bdi> : '—'}
+                  </td>
+                  <td className="cell-wrap">{power.clientNames.join('، ') || '—'}</td>
                   <td>
-                    {power.archivedAt ? (
-                      <Badge className="badge">مؤرشف</Badge>
-                    ) : (
-                      <span className="status-dot">نشط</span>
-                    )}
+                    <span
+                      className={`status-badge ${power.archivedAt ? 'tone-muted' : 'tone-active'}`}
+                    >
+                      {power.archivedAt ? 'مؤرشف' : 'نشط'}
+                    </span>
                   </td>
                 </tr>
               ))}

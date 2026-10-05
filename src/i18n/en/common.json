@@ -149,6 +149,11 @@
       "requiredDocuments": "Required documents",
       "decisionText": "Decision text",
       "nextHearing": "Next hearing (optional)"
+    },
+    "status": {
+      "SCHEDULED": "Scheduled",
+      "COMPLETED": "Heard",
+      "CANCELLED": "Cancelled"
     }
   },
   "gate": {
@@ -354,9 +359,34 @@
     "duplicateWarning": "A probable duplicate client with this name or phone already exists.",
     "confirmCreate": "Create anyway",
     "detail": {
-      "casesTitle": "Cases",
+      "casesTitle": "Client cases",
       "noCases": "No cases linked to this client.",
-      "notFound": "Client not found."
+      "notFound": "Client not found.",
+      "kicker": "Client file",
+      "sectionsLabel": "Client file sections",
+      "tabs": {
+        "summary": "Summary",
+        "cases": "Cases",
+        "poas": "Powers of attorney",
+        "account": "Account",
+        "attachments": "Attachments"
+      },
+      "contactTitle": "Client details",
+      "newCase": "New case for client",
+      "poasTitle": "Client powers of attorney",
+      "managePoas": "All powers of attorney",
+      "noPoas": "No powers of attorney are linked to this client.",
+      "noOfficialNumber": "No official number",
+      "received": "Received from client",
+      "expenses": "Expenses",
+      "net": "Net movement",
+      "poasCount": "Powers of attorney",
+      "accountNote": "Payments and expenses recorded for this client across all their cases.",
+      "openLedger": "Open ledger",
+      "attachmentsTitle": "Client attachments",
+      "editTitle": "Edit client",
+      "archiveTitle": "Archive client",
+      "archiveDescription": "The client is hidden from regular lists while their cases and records stay saved. You can restore them later."
     },
     "form": {
       "identitySection": "Client details",
@@ -414,16 +444,74 @@
     "archive": "Archive",
     "restore": "Restore",
     "detail": {
-      "notFound": "Case not found."
+      "notFound": "Case not found.",
+      "kicker": "Case file",
+      "sectionsLabel": "Case file sections",
+      "noOfficialNumber": "No court number yet",
+      "tabs": {
+        "summary": "Summary",
+        "relationships": "Parties",
+        "hearings": "Hearings",
+        "tasks": "Tasks",
+        "attachments": "Attachments",
+        "account": "Account"
+      },
+      "dataTitle": "Case details",
+      "nextHearing": "Next hearing",
+      "noNextHearing": "No hearing is scheduled for this case.",
+      "lastDecision": "Latest decision — {{date}}",
+      "accountTitle": "Fees at a glance",
+      "agreed": "Agreed fee",
+      "received": "Received",
+      "outstanding": "Outstanding",
+      "expenses": "Expenses",
+      "openTasks": "Open tasks",
+      "noHearings": "No hearings recorded for this case yet.",
+      "noTasks": "No tasks for this case.",
+      "attachmentsTitle": "Case attachments",
+      "feeTitle": "Fee agreement",
+      "feeHint": "The total fee agreed with the client for this case.",
+      "feeLabel": "Fee amount (EGP)",
+      "feeSave": "Save fee",
+      "feeInvalid": "Enter the amount in pounds, such as 15000 or 15,000.50.",
+      "feeSaveError": "Could not save the fee agreement. Please try again.",
+      "feeSaved": "Fee agreement saved.",
+      "paymentsTitle": "Payments received",
+      "expensesTitle": "Case expenses",
+      "addPayment": "Add payment",
+      "addExpense": "Add expense",
+      "noPayments": "No payments recorded yet.",
+      "noExpenses": "No expenses recorded yet.",
+      "editTitle": "Edit case",
+      "inspect": {
+        "payment": "Payment details",
+        "expense": "Expense details"
+      },
+      "editEntry": {
+        "payment": "Edit payment",
+        "expense": "Edit expense"
+      },
+      "newEntry": {
+        "payment": "Add payment",
+        "expense": "Add expense"
+      },
+      "entrySaveError": "Could not save the entry. Your entries are kept so you can try again.",
+      "entryDate": "Date",
+      "entryAmount": "Amount",
+      "editEntryButton": "Edit entry",
+      "editData": "Edit details"
     },
     "clientsPanel": {
-      "title": "Clients on this case",
+      "title": "Clients in this case",
       "attach": "Add client",
       "detach": "Remove",
       "setPrimary": "Set as primary",
       "primaryBadge": "Primary",
       "mustHaveOneWarning": "The only client on a case cannot be removed.",
-      "reassignPrimaryWarning": "Assign another client as primary before removing this one."
+      "reassignPrimaryWarning": "Assign another client as primary before removing this one.",
+      "noCapacity": "Capacity not set",
+      "poaLinked": "Power of attorney linked",
+      "noPoa": "No power of attorney"
     },
     "parties": {
       "title": "Other parties",
@@ -492,5 +580,19 @@
     "required": "This field is required.",
     "invalid": "Check the value you entered.",
     "notSpecified": "Not specified"
+  },
+  "records": {
+    "archive": "Archive",
+    "restore": "Restore",
+    "edit": "Edit",
+    "archived": "Archived",
+    "loading": "Loading…",
+    "loadError": "Could not load the record. Please try again.",
+    "statusChangeError": "Could not change the record status. Please try again.",
+    "archiveError": "Could not archive the record.",
+    "saveEdits": "Save changes",
+    "saveRetry": "Could not save the changes. Your entries are kept so you can try again.",
+    "close": "Close",
+    "saved": "Changes saved."
   }
 }

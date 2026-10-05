@@ -13,22 +13,42 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
   const update = useUpdateOpponent(caseDto.id);
   const remove = useRemoveOpponent(caseDto.id);
   return (
-    <div className="panel">
+    <section className="detail-card">
       <div className="card-title">
-        <h3>الخصوم</h3>
-        <Button type="button" onClick={() => setEditing('new')}>
+        <h3>الخصوم والأطراف الأخرى</h3>
+        <Button
+          type="button"
+          variant="secondary"
+          className="secondary-button"
+          onClick={() => setEditing('new')}
+        >
           إضافة خصم
         </Button>
       </div>
       {!caseDto.opponents.length ? (
-        <p>لا يوجد خصوم مسجلون.</p>
+        <p className="empty-compact">لا يوجد خصوم مسجلون. أضف الخصم وصفته ومحاميه إن وُجد.</p>
       ) : (
-        <ul className="entity-list-rows">
+        <ul className="compact-records">
           {caseDto.opponents.map((opponent) => (
             <li key={opponent.id}>
-              <strong>{opponent.fullName}</strong>
-              {opponent.legalCapacity && <span> · {opponent.legalCapacity}</span>}
-              <div>
+              <div className="record-copy">
+                <strong dir="auto">{opponent.fullName}</strong>
+                <span dir="auto">
+                  {[
+                    opponent.legalCapacity,
+                    opponent.lawyerName && `المحامي: ${opponent.lawyerName}`,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || 'دون صفة مسجلة'}
+                  {opponent.phone && (
+                    <>
+                      {' · '}
+                      <bdi className="mono">{opponent.phone}</bdi>
+                    </>
+                  )}
+                </span>
+              </div>
+              <div className="row-actions">
                 <Button
                   type="button"
                   variant="ghost"
@@ -81,8 +101,11 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
         confirmLabel="إزالة"
         cancelLabel="إلغاء"
         destructive
+        pending={remove.isPending}
         onConfirm={() =>
-          removing && remove.mutate(removing.id, { onSuccess: () => setRemoving(null) })
+          removing &&
+          !remove.isPending &&
+          remove.mutate(removing.id, { onSuccess: () => setRemoving(null) })
         }
       />
       {remove.isError && (
@@ -90,7 +113,7 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
           تعذرت إزالة الخصم. حاول مرة أخرى.
         </p>
       )}
-    </div>
+    </section>
   );
 }
 

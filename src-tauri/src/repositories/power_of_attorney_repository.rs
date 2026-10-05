@@ -139,6 +139,7 @@ pub fn list(
     conn: &Connection,
     query: Option<&str>,
     include_archived: bool,
+    client_id: Option<&str>,
 ) -> Result<Vec<PowerOfAttorneySummary>, Error> {
     let like = query.map(|value| format!("%{value}%"));
     let mut statement = conn.prepare(
@@ -147,10 +148,11 @@ pub fn list(
          LEFT JOIN power_of_attorney_clients pc ON pc.power_of_attorney_id = p.id
          LEFT JOIN clients c ON c.id = pc.client_id
          WHERE (?1 OR p.archived_at IS NULL) AND (?2 IS NULL OR p.internal_sequence LIKE ?2 OR p.official_number LIKE ?2 OR c.full_name LIKE ?2)
+           AND (?3 IS NULL OR EXISTS (SELECT 1 FROM power_of_attorney_clients owner WHERE owner.power_of_attorney_id = p.id AND owner.client_id = ?3))
          GROUP BY p.id ORDER BY p.archived_at IS NOT NULL, p.internal_sequence",
     )?;
     let rows = statement
-        .query_map(params![include_archived, like], |row| {
+        .query_map(params![include_archived, like, client_id], |row| {
             let client_names = row.get::<_, String>(5)?;
             Ok(PowerOfAttorneySummary {
                 id: row.get(0)?,

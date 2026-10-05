@@ -139,6 +139,7 @@ pub fn list<R: Runtime>(
         &db::open_db(&path, &master)?,
         input.query.as_deref(),
         input.include_archived,
+        input.client_id.as_deref(),
     )
 }
 pub fn set_archived<R: Runtime>(

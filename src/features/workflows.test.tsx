@@ -432,7 +432,7 @@ it('edits a POA and displays client/lawyer relationships', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'تعديل' }));
   fireEvent.change(screen.getByLabelText('الرقم الداخلي'), { target: { value: 'POA-EDITED' } });
   fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));
-  await screen.findByText('تعذر حفظ التوكيل.');
+  await screen.findByText(/تعذر حفظ التوكيل/);
   expect(screen.getByLabelText('الرقم الداخلي')).toHaveValue('POA-EDITED');
   fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());

@@ -287,7 +287,11 @@ export type PowerOfAttorneyInput = {
   clientIds: string[];
   lawyers: PowerOfAttorneyLawyerInput[];
 };
-export type PowerOfAttorneyListInput = { query?: string; includeArchived?: boolean };
+export type PowerOfAttorneyListInput = {
+  query?: string;
+  includeArchived?: boolean;
+  clientId?: string;
+};
 
 export type HearingStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
 export type HearingDto = {

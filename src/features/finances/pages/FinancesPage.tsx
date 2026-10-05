@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { parseMoneyToMinor } from '../../../lib/money';
 import { useSearchParams } from 'react-router-dom';
 import type { ExpenseDto, ExpenseType, PaymentDto, PaymentMethod } from '../../../bridge/types';
 import { DatePicker } from '../../../components/ui/DatePicker';
@@ -29,15 +30,7 @@ const expenseTypes: ReadonlyArray<[ExpenseType, string]> = [
   ['OTHER', 'أخرى'],
 ];
 const today = () => localDateOnly();
-export const parseMoneyToMinor = (value: string): number | null => {
-  const match = value
-    .trim()
-    .replace(',', '.')
-    .match(/^(\d+)(?:\.(\d{1,2}))?$/);
-  if (!match) return null;
-  const amount = Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
-  return Number.isSafeInteger(amount) && amount > 0 ? amount : null;
-};
+export { parseMoneyToMinor };
 const money = (amount: number) =>
   new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount / 100);
 export const paymentPayerOptions = (

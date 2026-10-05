@@ -149,6 +149,11 @@
       "requiredDocuments": "المستندات المطلوبة",
       "decisionText": "نص القرار",
       "nextHearing": "الجلسة التالية (اختيارية)"
+    },
+    "status": {
+      "SCHEDULED": "مجدولة",
+      "COMPLETED": "تم نظرها",
+      "CANCELLED": "ملغاة"
     }
   },
   "gate": {
@@ -354,9 +359,34 @@
     "duplicateWarning": "يوجد موكل مشابه محتمل بهذا الاسم أو رقم الهاتف.",
     "confirmCreate": "إنشاء رغم ذلك",
     "detail": {
-      "casesTitle": "القضايا",
+      "casesTitle": "قضايا الموكل",
       "noCases": "لا توجد قضايا مرتبطة بهذا الموكل.",
-      "notFound": "لم يتم العثور على الموكل."
+      "notFound": "لم يتم العثور على الموكل.",
+      "kicker": "ملف موكل",
+      "sectionsLabel": "أقسام ملف الموكل",
+      "tabs": {
+        "summary": "ملخص",
+        "cases": "القضايا",
+        "poas": "التوكيلات",
+        "account": "الحساب",
+        "attachments": "المرفقات"
+      },
+      "contactTitle": "بيانات الموكل",
+      "newCase": "قضية جديدة للموكل",
+      "poasTitle": "توكيلات الموكل",
+      "managePoas": "كل التوكيلات",
+      "noPoas": "لا توجد توكيلات مرتبطة بهذا الموكل.",
+      "noOfficialNumber": "دون رقم رسمي",
+      "received": "المحصل من الموكل",
+      "expenses": "المصروفات",
+      "net": "صافي الحركة",
+      "poasCount": "التوكيلات المسجلة",
+      "accountNote": "إجمالي ما سُجل لهذا الموكل من دفعات ومصروفات في كل قضاياه.",
+      "openLedger": "فتح السجل المالي",
+      "attachmentsTitle": "مرفقات الموكل",
+      "editTitle": "تعديل بيانات الموكل",
+      "archiveTitle": "أرشفة الموكل",
+      "archiveDescription": "سيُخفى الموكل من القوائم الاعتيادية مع بقاء قضاياه وسجلاته محفوظة. يمكنك استعادته لاحقًا."
     },
     "form": {
       "identitySection": "بيانات الموكل",
@@ -414,16 +444,74 @@
     "archive": "أرشفة",
     "restore": "استعادة",
     "detail": {
-      "notFound": "لم يتم العثور على القضية."
+      "notFound": "لم يتم العثور على القضية.",
+      "kicker": "ملف قضية",
+      "sectionsLabel": "أقسام ملف القضية",
+      "noOfficialNumber": "دون رقم دعوى بعد",
+      "tabs": {
+        "summary": "الملخص",
+        "relationships": "الأطراف",
+        "hearings": "الجلسات",
+        "tasks": "المهام",
+        "attachments": "المرفقات",
+        "account": "الحساب"
+      },
+      "dataTitle": "بيانات القضية",
+      "nextHearing": "الجلسة القادمة",
+      "noNextHearing": "لا توجد جلسة مجدولة لهذه القضية.",
+      "lastDecision": "آخر قرار — {{date}}",
+      "accountTitle": "الأتعاب باختصار",
+      "agreed": "الأتعاب المتفق عليها",
+      "received": "المحصل",
+      "outstanding": "المتبقي",
+      "expenses": "المصروفات",
+      "openTasks": "مهام مفتوحة",
+      "noHearings": "لم تُسجل جلسات لهذه القضية بعد.",
+      "noTasks": "لا توجد مهام لهذه القضية.",
+      "attachmentsTitle": "مرفقات القضية",
+      "feeTitle": "اتفاق الأتعاب",
+      "feeHint": "المبلغ الإجمالي المتفق عليه مع الموكل في هذه القضية.",
+      "feeLabel": "قيمة الأتعاب (ج.م)",
+      "feeSave": "حفظ الأتعاب",
+      "feeInvalid": "اكتب المبلغ بالجنيه، مثل 15000 أو 15,000.50.",
+      "feeSaveError": "تعذر حفظ اتفاق الأتعاب. حاول مرة أخرى.",
+      "feeSaved": "تم حفظ اتفاق الأتعاب.",
+      "paymentsTitle": "الدفعات المحصلة",
+      "expensesTitle": "مصروفات القضية",
+      "addPayment": "إضافة دفعة",
+      "addExpense": "إضافة مصروف",
+      "noPayments": "لم تُسجل دفعات بعد.",
+      "noExpenses": "لم تُسجل مصروفات بعد.",
+      "editTitle": "تعديل بيانات القضية",
+      "inspect": {
+        "payment": "تفاصيل الدفعة",
+        "expense": "تفاصيل المصروف"
+      },
+      "editEntry": {
+        "payment": "تعديل دفعة",
+        "expense": "تعديل مصروف"
+      },
+      "newEntry": {
+        "payment": "إضافة دفعة",
+        "expense": "إضافة مصروف"
+      },
+      "entrySaveError": "تعذر حفظ السجل المالي. بقيت البيانات للمحاولة مرة أخرى.",
+      "entryDate": "التاريخ",
+      "entryAmount": "المبلغ",
+      "editEntryButton": "تعديل السجل",
+      "editData": "تعديل البيانات"
     },
     "clientsPanel": {
-      "title": "الموكلون في القضية",
+      "title": "موكلو القضية",
       "attach": "إضافة موكل",
       "detach": "إزالة",
       "setPrimary": "تعيين كأساسي",
       "primaryBadge": "أساسي",
       "mustHaveOneWarning": "لا يمكن إزالة الموكل الوحيد في القضية.",
-      "reassignPrimaryWarning": "عيّن موكلًا أساسيًا آخر قبل إزالة هذا الموكل."
+      "reassignPrimaryWarning": "عيّن موكلًا أساسيًا آخر قبل إزالة هذا الموكل.",
+      "noCapacity": "لم تُحدد الصفة",
+      "poaLinked": "توكيل مرتبط",
+      "noPoa": "دون توكيل مرتبط"
     },
     "parties": {
       "title": "الأطراف الأخرى",
@@ -492,5 +580,19 @@
     "required": "هذا الحقل مطلوب.",
     "invalid": "تحقق من القيمة المدخلة.",
     "notSpecified": "غير محدد"
+  },
+  "records": {
+    "archive": "أرشفة",
+    "restore": "استعادة",
+    "edit": "تعديل",
+    "archived": "مؤرشف",
+    "loading": "جارٍ التحميل…",
+    "loadError": "تعذر تحميل السجل. حاول مرة أخرى.",
+    "statusChangeError": "تعذر تغيير حالة السجل. حاول مرة أخرى.",
+    "archiveError": "تعذر أرشفة السجل.",
+    "saveEdits": "حفظ التعديلات",
+    "saveRetry": "تعذر حفظ التعديلات. بقيت البيانات للمحاولة مرة أخرى.",
+    "close": "إغلاق",
+    "saved": "تم حفظ التعديلات."
   }
 }
