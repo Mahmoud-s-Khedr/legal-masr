@@ -2979,6 +2979,10 @@ html[dir='rtl'] .data-table thead th {
   font-size: 0.93rem;
   line-height: 1.75;
 }
+.button-link,
+.page-header-actions button {
+  white-space: nowrap;
+}
 .page-header-actions {
   display: flex;
   align-items: center;

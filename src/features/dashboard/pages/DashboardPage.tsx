@@ -221,9 +221,12 @@ export function DashboardPage() {
                   </time>
                   <div className="upcoming-copy">
                     <Link to={`/calendar?hearing=${hearing.id}`}>
-                      {hearing.hearingType ?? t('dashboard.legalEvent')}
+                      <bdi dir="auto">{hearing.hearingType ?? t('dashboard.legalEvent')}</bdi>
                       {hearing.hearingTime && (
-                        <span className="muted"> · {format.time(hearing.hearingTime)}</span>
+                        <span className="muted">
+                          {' · '}
+                          <bdi>{format.time(hearing.hearingTime)}</bdi>
+                        </span>
                       )}
                     </Link>
                     <span dir="auto">
