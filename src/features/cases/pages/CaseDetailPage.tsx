@@ -136,9 +136,15 @@ export function CaseDetailPage() {
                 t('cases.detail.noOfficialNumber')
               )}
             </span>
-            {caseDto.courtName && <span dir="auto">{caseDto.courtName}</span>}
+            {caseDto.courtName && (
+              <span>
+                <bdi dir="auto">{caseDto.courtName}</bdi>
+              </span>
+            )}
             {caseDto.clients.length > 0 && (
-              <span dir="auto">{caseDto.clients.map((client) => client.fullName).join('، ')}</span>
+              <span>
+                <bdi dir="auto">{caseDto.clients.map((client) => client.fullName).join('، ')}</bdi>
+              </span>
             )}
           </>
         }

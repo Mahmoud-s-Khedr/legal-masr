@@ -19,13 +19,13 @@ async function writeArtifact(root, directory, name, contents = name) {
 
 async function fixtureRoot() {
   const root = await mkdtemp(join(tmpdir(), 'legalmaster-release-assets-'));
-  await writeArtifact(root, 'raw-windows-x64', 'LegalMaster Solo_0.1.0_x64-setup.exe');
-  await writeArtifact(root, 'raw-windows-x64', 'LegalMaster-Solo-windows-x64-portable.zip');
+  await writeArtifact(root, 'raw-windows-x64', 'Legal Masr_0.1.0_x64-setup.exe');
+  await writeArtifact(root, 'raw-windows-x64', 'Legal-Masr-windows-x64-portable.zip');
   await writeArtifact(root, 'raw-linux-x64', 'legalmaster-solo_0.1.0_amd64.deb');
   await writeArtifact(root, 'raw-linux-x64', 'legalmaster-solo-0.1.0-1.x86_64.rpm');
   await writeArtifact(root, 'raw-linux-x64', 'legalmaster-solo_0.1.0_amd64.AppImage');
-  await writeArtifact(root, 'raw-macos-x64', 'LegalMaster Solo_x86_64.dmg');
-  await writeArtifact(root, 'raw-macos-arm64', 'LegalMaster Solo_aarch64.dmg');
+  await writeArtifact(root, 'raw-macos-x64', 'Legal Masr_x86_64.dmg');
+  await writeArtifact(root, 'raw-macos-arm64', 'Legal Masr_aarch64.dmg');
   return root;
 }
 
@@ -47,13 +47,13 @@ test('stages every required platform package and checksums', async () => {
 
   assert.equal(result.status, 0, result.stderr);
   const names = [
-    `LegalMaster-Solo_${version}_windows_x64-setup.exe`,
-    `LegalMaster-Solo_${version}_windows_x64-portable.zip`,
-    `LegalMaster-Solo_${version}_linux_x64.deb`,
-    `LegalMaster-Solo_${version}_linux_x64.rpm`,
-    `LegalMaster-Solo_${version}_linux_x64.AppImage`,
-    `LegalMaster-Solo_${version}_macos_x64.dmg`,
-    `LegalMaster-Solo_${version}_macos_arm64.dmg`,
+    `Legal-Masr_${version}_windows_x64-setup.exe`,
+    `Legal-Masr_${version}_windows_x64-portable.zip`,
+    `Legal-Masr_${version}_linux_x64.deb`,
+    `Legal-Masr_${version}_linux_x64.rpm`,
+    `Legal-Masr_${version}_linux_x64.AppImage`,
+    `Legal-Masr_${version}_macos_x64.dmg`,
+    `Legal-Masr_${version}_macos_arm64.dmg`,
   ];
   const sums = await readFile(join(output, 'SHA256SUMS.txt'), 'utf8');
   for (const name of names) {

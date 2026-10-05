@@ -126,7 +126,7 @@ describe('FinancesPage', () => {
     const expenseDialog = await screen.findByRole('dialog', { name: 'إضافة مصروف' });
     expect(
       within(expenseDialog).getByText(
-        'يمكن ربط المصروف بقضية أو موكل، أو ترك كلا الرابطين فارغين.',
+        'اربط المصروف بقضية أو موكل إن وُجد، أو اتركه بلا ربط لمصروفات المكتب العامة.',
       ),
     ).toBeInTheDocument();
     fireEvent.change(within(expenseDialog).getByLabelText('المبلغ (ج.م)'), {

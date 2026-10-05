@@ -48,7 +48,7 @@ function mount() {
   return { queryClient, invalidate };
 }
 async function addDraft() {
-  fireEvent.click(screen.getByRole('button', { name: 'إضافة مرفق' }));
+  fireEvent.click(screen.getByRole('button', { name: 'إضافة مستند' }));
   fireEvent.change(screen.getByLabelText('الوصف'), { target: { value: 'مسودة محفوظة' } });
   fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف' }));
   await screen.findByText('selected.pdf');
@@ -74,16 +74,16 @@ describe('managed attachments with real query hooks', () => {
         }),
     );
     mount();
-    expect(screen.getByText('جارٍ تحميل المرفقات…')).toBeVisible();
+    expect(screen.getByText('جارٍ تحميل المستندات…')).toBeVisible();
     resolve([]);
-    expect(await screen.findByText('لا توجد مرفقات بعد.')).toBeVisible();
+    expect(await screen.findByText('لا توجد مستندات بعد.')).toBeVisible();
     expect(bridge.attachmentList).toHaveBeenCalledWith({ clientId: 'fictional-client' });
   });
   it('distinguishes a rejected read from an empty list', async () => {
     vi.mocked(bridge.attachmentList).mockRejectedValue(failure());
     mount();
     expect(await screen.findByRole('alert')).toHaveTextContent('تعذر تحميل');
-    expect(screen.queryByText('لا توجد مرفقات بعد.')).not.toBeInTheDocument();
+    expect(screen.queryByText('لا توجد مستندات بعد.')).not.toBeInTheDocument();
   });
   it('shows populated filenames and timezone-free document dates', async () => {
     vi.mocked(bridge.attachmentList).mockResolvedValue([item]);
@@ -101,7 +101,7 @@ describe('managed attachments with real query hooks', () => {
     );
     const { invalidate } = mount();
     await addDraft();
-    const submit = screen.getByRole('button', { name: 'إضافة المرفق' });
+    const submit = screen.getByRole('button', { name: 'حفظ المستند' });
     fireEvent.click(submit);
     fireEvent.click(submit);
     await waitFor(() => expect(bridge.attachmentAdd).toHaveBeenCalledOnce());
@@ -120,7 +120,7 @@ describe('managed attachments with real query hooks', () => {
   it('picker cancellation is quiet and performs no mutation', async () => {
     vi.mocked(bridge.attachmentSelectSource).mockRejectedValue(failure('OPERATION_CANCELLED'));
     mount();
-    fireEvent.click(screen.getByRole('button', { name: 'إضافة مرفق' }));
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة مستند' }));
     fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'اختيار ملف' })).toBeEnabled());
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -131,7 +131,7 @@ describe('managed attachments with real query hooks', () => {
   it('picker failure is handled without discarding metadata', async () => {
     vi.mocked(bridge.attachmentSelectSource).mockRejectedValue(failure());
     mount();
-    fireEvent.click(screen.getByRole('button', { name: 'إضافة مرفق' }));
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة مستند' }));
     fireEvent.change(screen.getByLabelText('الوصف'), { target: { value: 'مسودة' } });
     fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('تعذر اختيار');
@@ -143,10 +143,10 @@ describe('managed attachments with real query hooks', () => {
       vi.mocked(bridge.attachmentAdd).mockRejectedValue(failure(code));
       const { invalidate } = mount();
       await addDraft();
-      fireEvent.click(screen.getByRole('button', { name: 'إضافة المرفق' }));
-      expect(await screen.findByRole('alert')).toHaveTextContent('اختر الملف مرة أخرى');
+      fireEvent.click(screen.getByRole('button', { name: 'حفظ المستند' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('اختره مرة أخرى');
       expect(screen.getByLabelText('الوصف')).toHaveValue('مسودة محفوظة');
-      expect(screen.getByRole('button', { name: 'إضافة المرفق' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'حفظ المستند' })).toBeDisabled();
       expect(invalidate).not.toHaveBeenCalled();
       vi.mocked(bridge.attachmentAdd).mockResolvedValue(item);
       vi.mocked(bridge.attachmentSelectSource).mockResolvedValue({
@@ -155,7 +155,7 @@ describe('managed attachments with real query hooks', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف' }));
       await screen.findByText('selected.pdf');
-      fireEvent.click(screen.getByRole('button', { name: 'إضافة المرفق' }));
+      fireEvent.click(screen.getByRole('button', { name: 'حفظ المستند' }));
       await waitFor(() =>
         expect(bridge.attachmentAdd).toHaveBeenLastCalledWith(
           expect.objectContaining({ sourceToken: 'fresh-token', description: 'مسودة محفوظة' }),
@@ -169,11 +169,11 @@ describe('managed attachments with real query hooks', () => {
     const { invalidate } = mount();
     fireEvent.click(await screen.findByRole('button', { name: 'تعديل بيانات fictional.pdf' }));
     fireEvent.change(screen.getByLabelText('الوصف'), { target: { value: 'تعديل خيالي' } });
-    fireEvent.click(screen.getByRole('button', { name: 'حفظ البيانات' }));
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('تعذر حفظ');
     expect(screen.getByLabelText('الوصف')).toHaveValue('تعديل خيالي');
     expect(invalidate).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'حفظ البيانات' }));
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(bridge.attachmentUpdate).toHaveBeenLastCalledWith({
       id: item.id,
@@ -203,12 +203,12 @@ describe('managed attachments with real query hooks', () => {
     expect(bridge.attachmentRemove).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'إزالة fictional.pdf' }));
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة المرفق' }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة المستند' }),
     );
     expect(await screen.findByRole('alert')).toHaveTextContent('تعذر إزالة');
     expect(invalidate).not.toHaveBeenCalled();
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة المرفق' }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة المستند' }),
     );
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(invalidate).toHaveBeenCalled();

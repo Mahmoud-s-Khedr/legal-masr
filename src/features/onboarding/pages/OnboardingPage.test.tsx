@@ -54,7 +54,7 @@ describe('vault forms', () => {
           target: { value: 'fictional-recovery' },
         });
       fireEvent.change(
-        screen.getByLabelText(gate === 'recovery' ? 'كلمة مرور جديدة' : 'كلمة المرور'),
+        screen.getByLabelText(gate === 'recovery' ? 'كلمة المرور الجديدة' : 'كلمة المرور'),
         { target: { value: 'fictional password 2026' } },
       );
       if (gate !== 'unlock')
@@ -64,29 +64,25 @@ describe('vault forms', () => {
       fireEvent.submit(
         screen
           .getByRole('button', {
-            name:
-              gate === 'setup'
-                ? 'إنشاء الخزنة'
-                : gate === 'unlock'
-                  ? 'فتح الخزنة'
-                  : 'استعادة الوصول',
+            name: gate === 'setup' ? 'بدء الاستخدام' : gate === 'unlock' ? 'فتح' : 'استعادة الوصول',
           })
           .closest('form')!,
       );
-      expect(await screen.findByRole('alert')).toHaveTextContent('تعذر فتح');
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        gate === 'unlock'
+          ? 'كلمة المرور غير صحيحة'
+          : gate === 'recovery'
+            ? 'مفتاح الاسترداد غير صحيح'
+            : 'تعذر إتمام العملية',
+      );
       expect(invalidate).not.toHaveBeenCalled();
       expect(
-        screen.getByLabelText(gate === 'recovery' ? 'كلمة مرور جديدة' : 'كلمة المرور'),
+        screen.getByLabelText(gate === 'recovery' ? 'كلمة المرور الجديدة' : 'كلمة المرور'),
       ).toHaveValue('fictional password 2026');
       fireEvent.submit(
         screen
           .getByRole('button', {
-            name:
-              gate === 'setup'
-                ? 'إنشاء الخزنة'
-                : gate === 'unlock'
-                  ? 'فتح الخزنة'
-                  : 'استعادة الوصول',
+            name: gate === 'setup' ? 'بدء الاستخدام' : gate === 'unlock' ? 'فتح' : 'استعادة الوصول',
           })
           .closest('form')!,
       );
@@ -110,7 +106,7 @@ describe('vault forms', () => {
     fireEvent.change(screen.getByLabelText('اسم المحامي'), { target: { value: 'محامٍ خيالي' } });
     fireEvent.change(screen.getByLabelText('كلمة المرور'), { target: { value: 'short' } });
     fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), { target: { value: 'other' } });
-    fireEvent.submit(screen.getByRole('button', { name: 'إنشاء الخزنة' }).closest('form')!);
+    fireEvent.submit(screen.getByRole('button', { name: 'بدء الاستخدام' }).closest('form')!);
     expect(await screen.findByText(/كلمة المرور قصيرة/)).toBeVisible();
     expect(screen.getByText('كلمتا المرور غير متطابقتين.')).toBeVisible();
     expect(bridge.initialize).not.toHaveBeenCalled();
@@ -133,7 +129,7 @@ describe('vault forms', () => {
   });
   it('returns from recovery to the unlock gate', () => {
     const { callbacks } = mount('recovery');
-    fireEvent.click(screen.getByRole('button', { name: 'رجوع إلى فتح الخزنة' }));
+    fireEvent.click(screen.getByRole('button', { name: 'رجوع إلى الدخول بكلمة المرور' }));
     expect(callbacks.onBackToUnlock).toHaveBeenCalledOnce();
   });
 });

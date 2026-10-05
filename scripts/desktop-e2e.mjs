@@ -87,22 +87,22 @@ async function scenario(name, exercise) {
     await input('fullName', 'محامٍ خيالي');
     await input('password', password);
     await input('confirmPassword', password);
-    await click('إنشاء الخزنة');
+    await click('بدء الاستخدام');
     await browser.$('.gate-confirm [role="checkbox"]').click();
     await click('متابعة إلى مساحة العمل');
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
   };
   const unlock = async () => {
     await input('password', password);
-    await click('فتح الخزنة');
+    await click('فتح');
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
   };
   const client = async (number) => {
     await nav('/clients');
-    await click('موكل جديد');
+    await click('إضافة موكل');
     await input('internalNumber', number);
     await input('fullName', `موكل خيالي ${number}`);
-    await click('حفظ');
+    await click('حفظ الموكل');
     // Saving opens the new client file.
     await browser.$(`h2*=${`موكل خيالي ${number}`}`).waitForDisplayed({ timeout: 15000 });
   };
@@ -159,18 +159,18 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.initialize();
   await h.client('E2E-ORIGINAL');
   await h.nav('/cases');
-  await h.click('قضية جديدة');
+  await h.click('إضافة قضية');
   await h.input('internalNumber', 'E2E-CASE');
   await h.browser.$('[role="checkbox"]').waitForDisplayed();
   await h.browser.$('[role="checkbox"]').click();
-  await h.click('حفظ');
+  await h.click('حفظ القضية');
   // Saving opens the new case file.
   await h.browser.$('h2*=E2E-CASE').waitForDisplayed({ timeout: 15000 });
-  await h.click('المرفقات');
-  await h.click('إضافة مرفق');
+  await h.click('المستندات');
+  await h.click('إضافة مستند');
   await h.click('اختيار ملف');
   await h.waitText('fictional.pdf');
-  await h.click('إضافة المرفق');
+  await h.click('حفظ المستند');
   await h.browser.$('.attachment-rows').waitForDisplayed({ timeout: 15000 });
   await h.nav('/backups');
   await h.click('إنشاء نسخة احتياطية الآن');
@@ -187,7 +187,7 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   assert.equal(await h.browser.$('a*=E2E-AFTER').isExisting(), false);
   await h.nav('/cases');
   await h.browser.$('a*=E2E-CASE').click();
-  await h.click('المرفقات');
+  await h.click('المستندات');
   await h.waitText('fictional.pdf');
   await h.close();
   const managed = await readdir(join(h.root, 'vault/attachments'));
@@ -199,7 +199,7 @@ await scenario('wrong-password-refusal', async (h) => {
   await h.initialize();
   await h.click('قفل التطبيق');
   await h.input('password', 'fictional incorrect password');
-  await h.click('فتح الخزنة');
+  await h.click('فتح');
   await h.browser.$('[role="alert"]').waitForDisplayed();
   assert.equal(await h.browser.$('nav').isExisting(), false);
   await h.unlock();

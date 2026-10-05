@@ -51,7 +51,7 @@ describe('application gate', () => {
 
   it('starts with the Arabic secure onboarding form', async () => {
     render(<App />);
-    expect(await screen.findByRole('heading', { name: 'أنشئ خزنتك' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'جهّز مكتبك' })).toBeInTheDocument();
     expect(screen.getByLabelText('اسم المحامي')).toBeRequired();
   });
 
@@ -59,9 +59,9 @@ describe('application gate', () => {
     vi.mocked(bridge.status).mockRejectedValueOnce(new Error('IPC unavailable'));
     render(<App />);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('تعذر بدء التطبيق');
+    expect(await screen.findByRole('alert')).toHaveTextContent('تعذر بدء ليجال مصر');
     fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
-    await screen.findByRole('heading', { name: 'أنشئ خزنتك' });
+    await screen.findByRole('heading', { name: 'جهّز مكتبك' });
     expect(bridge.status).toHaveBeenCalledTimes(2);
   });
 
@@ -78,7 +78,7 @@ describe('application gate', () => {
     fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), {
       target: { value: 'a secure local password' },
     });
-    fireEvent.submit(screen.getByRole('button', { name: 'إنشاء الخزنة' }).closest('form')!);
+    fireEvent.submit(screen.getByRole('button', { name: 'بدء الاستخدام' }).closest('form')!);
 
     expect(await screen.findByText('test-recovery-key')).toBeInTheDocument();
   });
@@ -86,7 +86,7 @@ describe('application gate', () => {
   it('shows the lock form for an initialized vault', async () => {
     vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: false });
     render(<App />);
-    expect(await screen.findByRole('heading', { name: 'افتح خزنتك' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'افتح ليجال مصر' })).toBeInTheDocument();
   });
 
   it('goes straight to the dashboard once unlocked, with no backup gate', async () => {
@@ -146,7 +146,7 @@ describe('application gate', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: 'قفل التطبيق' })[0]);
 
-    expect(await screen.findByRole('heading', { name: 'افتح خزنتك' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'افتح ليجال مصر' })).toBeInTheDocument();
     expect(queryClient.getQueryCache().findAll({ queryKey: queryKeys.clients.all })).toHaveLength(
       0,
     );
@@ -245,7 +245,7 @@ describe('application gate', () => {
     // permanently poison the query cache (retry is disabled) with no later
     // trigger to retry after unlocking, which left destinations like the
     // backup directory stuck undefined forever.
-    await screen.findByRole('heading', { name: 'افتح خزنتك' });
+    await screen.findByRole('heading', { name: 'افتح ليجال مصر' });
     expect(bridge.settings).not.toHaveBeenCalled();
   });
 });

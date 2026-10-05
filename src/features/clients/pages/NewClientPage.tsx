@@ -35,7 +35,7 @@ export function NewClientPage() {
     <section className="record-editor">
       <PageHeader
         kicker={t('clients.editorKicker')}
-        title={t('clients.newButton')}
+        title={t('clients.newTitle')}
         description={t('clients.editorDescription')}
       />
       <div className="editor-surface">

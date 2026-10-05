@@ -81,13 +81,13 @@ async function stage(input, output) {
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   const artifacts = [
-    [installers[0], `LegalMaster-Solo_${version}_windows_x64-setup.exe`],
-    [portableArchives[0], `LegalMaster-Solo_${version}_windows_x64-portable.zip`],
-    [debs[0], `LegalMaster-Solo_${version}_linux_x64.deb`],
-    [rpms[0], `LegalMaster-Solo_${version}_linux_x64.rpm`],
-    [appImages[0], `LegalMaster-Solo_${version}_linux_x64.AppImage`],
-    [intel, `LegalMaster-Solo_${version}_macos_x64.dmg`],
-    [arm, `LegalMaster-Solo_${version}_macos_arm64.dmg`],
+    [installers[0], `Legal-Masr_${version}_windows_x64-setup.exe`],
+    [portableArchives[0], `Legal-Masr_${version}_windows_x64-portable.zip`],
+    [debs[0], `Legal-Masr_${version}_linux_x64.deb`],
+    [rpms[0], `Legal-Masr_${version}_linux_x64.rpm`],
+    [appImages[0], `Legal-Masr_${version}_linux_x64.AppImage`],
+    [intel, `Legal-Masr_${version}_macos_x64.dmg`],
+    [arm, `Legal-Masr_${version}_macos_arm64.dmg`],
   ];
   for (const [source, name] of artifacts) await cp(source, join(output, name));
   for (const [, name] of artifacts) {

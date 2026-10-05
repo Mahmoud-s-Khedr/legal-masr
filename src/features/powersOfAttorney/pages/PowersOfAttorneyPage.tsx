@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Dialog } from '../../../components/ui/Dialog';
@@ -12,6 +13,7 @@ import { PowerOfAttorneyForm } from '../components/PowerOfAttorneyForm';
 import { usePowerOfAttorneyList, useSavePowerOfAttorney } from '../api/powersOfAttorneyApi';
 
 export function PowersOfAttorneyPage() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -21,12 +23,12 @@ export function PowersOfAttorneyPage() {
   return (
     <section className="entity-list">
       <PageHeader
-        kicker="سجل التوكيلات"
-        title="التوكيلات"
-        description="اربط التوكيل بموكل واحد أو أكثر وسجّل المحامين المذكورين فيه."
+        kicker={t('poa.listKicker')}
+        title={t('poa.title')}
+        description={t('poa.description')}
         actions={
           <Button type="button" onClick={() => setAdding(true)}>
-            إضافة توكيل
+            {t('poa.add')}
           </Button>
         }
       />
@@ -35,40 +37,40 @@ export function PowersOfAttorneyPage() {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="ابحث برقم التوكيل أو الموكل أو مكتب التوثيق"
-          aria-label="ابحث برقم التوكيل أو الموكل أو مكتب التوثيق"
+          placeholder={t('poa.searchPlaceholder')}
+          aria-label={t('poa.searchPlaceholder')}
         />
         <label className="checkbox-field">
           <Checkbox checked={includeArchived} onCheckedChange={setIncludeArchived} />
-          إظهار المؤرشف
+          {t('poa.showArchived')}
         </label>
       </div>
       {powers.isLoading ? (
-        <Skeleton className="table-message h-24" aria-label="جارٍ تحميل التوكيلات…" />
+        <Skeleton className="table-message h-24" aria-label={t('poa.loading')} />
       ) : powers.isError ? (
         <p className="error" role="alert">
-          تعذر تحميل التوكيلات. حاول مرة أخرى.
+          {t('poa.loadError')}
         </p>
       ) : !powers.data?.length ? (
         <Card className="empty-state-card">
-          <strong>{query ? 'لا توجد توكيلات مطابقة' : 'لا توجد توكيلات بعد'}</strong>
-          <span>أضف توكيلًا واربطه بالموكلين المرتبطين به.</span>
+          <strong>{query ? t('poa.noResults') : t('poa.empty')}</strong>
+          <span>{query ? t('poa.noResultsHint') : t('poa.emptyHint')}</span>
           {!query && (
             <Button type="button" onClick={() => setAdding(true)}>
-              إضافة توكيل
+              {t('poa.add')}
             </Button>
           )}
         </Card>
       ) : (
         <div className="data-table-scroll">
           <Table className="data-table">
-            <caption>التوكيلات</caption>
+            <caption>{t('poa.title')}</caption>
             <thead>
               <tr>
-                <th>الرقم الداخلي</th>
-                <th>رقم التوكيل</th>
-                <th>الموكلون</th>
-                <th>الحالة</th>
+                <th scope="col">{t('poa.fields.internalSequence')}</th>
+                <th scope="col">{t('poa.fields.officialNumber')}</th>
+                <th scope="col">{t('poa.tabs.clients')}</th>
+                <th scope="col">{t('clients.columns.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -91,7 +93,7 @@ export function PowersOfAttorneyPage() {
                     <span
                       className={`status-badge ${power.archivedAt ? 'tone-muted' : 'tone-active'}`}
                     >
-                      {power.archivedAt ? 'مؤرشف' : 'نشط'}
+                      {power.archivedAt ? t('records.archived') : t('clients.active')}
                     </span>
                   </td>
                 </tr>
@@ -100,7 +102,7 @@ export function PowersOfAttorneyPage() {
           </Table>
         </div>
       )}
-      <Dialog open={adding} onOpenChange={setAdding} title="إضافة توكيل">
+      <Dialog open={adding} onOpenChange={setAdding} title={t('poa.add')}>
         <PowerOfAttorneyForm
           busy={save.isPending}
           onCancel={() => setAdding(false)}
@@ -112,7 +114,7 @@ export function PowersOfAttorneyPage() {
         />
         {save.isError && (
           <p className="error" role="alert">
-            تعذر حفظ التوكيل. راجع الحقول وحاول مجددًا.
+            {t('poa.saveError')}
           </p>
         )}
       </Dialog>

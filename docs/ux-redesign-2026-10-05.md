@@ -45,7 +45,7 @@ The app was rendered in capture mode with the fictional fixture bridge at 1366×
 
 ## Remaining risks and follow-ups
 
-- **English copy:** new strings go through i18n, but older client, POA, finance, attachment and settings text is still hardcoded Arabic, so English mode mixes languages there (UX-15).
+- **Copy:** every interface string now lives in the Arabic and English catalogs and follows [the copy guide](copy-guide.md). Error codes are translated by the frontend; reminder notifications are still composed in Arabic by the backend.
 - **Case relationships (UX-06):** clients' legal capacity and linked POA are shown but still cannot be edited from the case file.
 - **Unsaved-draft protection (UX-11):** still absent for navigation, Escape and locking.
 - **Reminders (UX-25):** per-record reminder controls are not added.

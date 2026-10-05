@@ -17,7 +17,7 @@ export function NewCasePage() {
     <section className="record-editor">
       <PageHeader
         kicker={t('cases.editorKicker')}
-        title={t('cases.newButton')}
+        title={t('cases.newTitle')}
         description={t('cases.editorDescription')}
       />
       <div className="editor-surface">

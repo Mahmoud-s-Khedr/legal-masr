@@ -62,7 +62,10 @@ fn choose_backup<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, E
     #[cfg(not(feature = "desktop-e2e"))]
     app.dialog()
         .file()
-        .add_filter("LegalMaster backup", &["lmsbackup"])
+        .add_filter(
+            "نسخة ليجال مصر الاحتياطية (Legal Masr backup)",
+            &["lmsbackup"],
+        )
         .blocking_pick_file()
         .ok_or(Error::Cancelled)?
         .into_path()

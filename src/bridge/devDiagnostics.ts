@@ -21,5 +21,5 @@ export function developerDiagnostic(command: string, error: unknown): string | n
 
 export function logCommandFailure(command: string, error: unknown) {
   const diagnostic = developerDiagnostic(command, error);
-  if (diagnostic) console.error(`[LegalMaster diagnostics]\n${diagnostic}`);
+  if (diagnostic) console.error(`[Legal Masr diagnostics]\n${diagnostic}`);
 }

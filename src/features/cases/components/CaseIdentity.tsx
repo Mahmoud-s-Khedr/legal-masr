@@ -22,8 +22,8 @@ export function OfficialReference({ number, year }: { number: string; year?: num
   return (
     <span className="official-reference">
       {year
-        ? t('cases.officialReference', { number: '⁨' + number + '⁩', year })
-        : t('cases.officialNumberOnly', { number: '⁨' + number + '⁩' })}
+        ? t('cases.officialReference', { number: '\u2068' + number + '\u2069', year })
+        : t('cases.officialNumberOnly', { number: '\u2068' + number + '\u2069' })}
     </span>
   );
 }

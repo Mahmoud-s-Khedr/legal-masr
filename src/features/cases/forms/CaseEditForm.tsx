@@ -45,7 +45,7 @@ export function CaseEditForm({
     >
       <CaseCoreFields register={register} control={control} errors={formState.errors} />
       <div className="form-actions">
-        <Button disabled={busy || formState.isSubmitting}>{t('cases.save')}</Button>
+        <Button disabled={busy || formState.isSubmitting}>{t('records.saveEdits')}</Button>
         {onCancel && (
           <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
             {t('cases.cancel')}

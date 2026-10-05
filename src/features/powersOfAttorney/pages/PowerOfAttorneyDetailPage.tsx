@@ -43,7 +43,7 @@ export function PowerOfAttorneyDetailPage() {
         {t('records.loadError')}
       </p>
     );
-  if (!power.data) return <p className="page-status">التوكيل غير موجود.</p>;
+  if (!power.data) return <p className="page-status">{t('poa.notFound')}</p>;
   const item = power.data;
   return (
     <section className="entity-detail detail-workspace">
@@ -54,7 +54,7 @@ export function PowerOfAttorneyDetailPage() {
       )}
       <RecordHeader
         icon="poa"
-        kicker="توكيل"
+        kicker={t('poa.kicker')}
         title={<bdi>{item.internalSequence}</bdi>}
         badges={
           item.archivedAt && (
@@ -66,16 +66,28 @@ export function PowerOfAttorneyDetailPage() {
             <span>
               {item.officialNumber ? (
                 <>
-                  رقم <bdi className="mono">{item.officialNumber}</bdi>
-                  {item.issueYear ? <> لسنة {item.issueYear}</> : null}
+                  {item.issueYear
+                    ? t('cases.officialReference', {
+                        number: '\u2068' + item.officialNumber + '\u2069',
+                        year: item.issueYear,
+                      })
+                    : t('cases.officialNumberOnly', {
+                        number: '\u2068' + item.officialNumber + '\u2069',
+                      })}
                 </>
               ) : (
-                'لا يوجد رقم رسمي'
+                t('poa.noOfficialNumber')
               )}
             </span>
-            {item.notaryOffice && <span dir="auto">{item.notaryOffice}</span>}
+            {item.notaryOffice && (
+              <span>
+                <bdi dir="auto">{item.notaryOffice}</bdi>
+              </span>
+            )}
             {item.clients.length > 0 && (
-              <span dir="auto">{item.clients.map((client) => client.fullName).join('، ')}</span>
+              <span>
+                <bdi dir="auto">{item.clients.map((client) => client.fullName).join('، ')}</bdi>
+              </span>
             )}
           </>
         }
@@ -109,32 +121,34 @@ export function PowerOfAttorneyDetailPage() {
       />
       <Tabs
         variant="underline"
-        label="أقسام التوكيل"
+        label={t('poa.sectionsLabel')}
         value={tab}
         onChange={(value) => setTab(value as typeof tab)}
         tabs={[
-          { id: 'summary', label: 'ملخص' },
-          { id: 'clients', label: 'الموكلون', count: item.clients.length },
-          { id: 'lawyers', label: 'المحامون', count: item.lawyers.length },
-          { id: 'cases', label: 'القضايا', count: item.caseIds.length },
-          { id: 'attachments', label: 'المرفقات' },
+          { id: 'summary', label: t('poa.tabs.summary') },
+          { id: 'clients', label: t('poa.tabs.clients'), count: item.clients.length },
+          { id: 'lawyers', label: t('poa.tabs.lawyers'), count: item.lawyers.length },
+          { id: 'cases', label: t('poa.tabs.cases'), count: item.caseIds.length },
+          { id: 'attachments', label: t('poa.tabs.documents') },
         ]}
       />
       {tab === 'summary' && (
         <div className="detail-grid">
           <section className="detail-card">
             <div className="card-title">
-              <h3>بيانات التوكيل</h3>
+              <h3>{t('poa.dataTitle')}</h3>
             </div>
             <dl className="facts">
-              <Fact label="رقم التوكيل الرسمي">
+              <Fact label={t('poa.fields.officialNumber')}>
                 {item.officialNumber && <bdi className="mono">{item.officialNumber}</bdi>}
               </Fact>
-              <Fact label="سنة الإصدار">{item.issueYear}</Fact>
-              <Fact label="تاريخ الإصدار">{item.issueDate && format.date(item.issueDate)}</Fact>
-              <Fact label="مكتب التوثيق">{item.notaryOffice}</Fact>
+              <Fact label={t('poa.fields.issueYear')}>{item.issueYear}</Fact>
+              <Fact label={t('poa.fields.issueDate')}>
+                {item.issueDate && format.date(item.issueDate)}
+              </Fact>
+              <Fact label={t('poa.fields.notaryOffice')}>{item.notaryOffice}</Fact>
               {item.notes && (
-                <Fact label="ملاحظات" wide>
+                <Fact label={t('common.notes')} wide>
                   <span className="prewrap">{item.notes}</span>
                 </Fact>
               )}
@@ -142,7 +156,7 @@ export function PowerOfAttorneyDetailPage() {
           </section>
           <section className="detail-card">
             <div className="card-title">
-              <h3>الموكلون في التوكيل</h3>
+              <h3>{t('poa.clientsTitle')}</h3>
             </div>
             <ul className="compact-records">
               {item.clients.map((client) => (
@@ -159,8 +173,8 @@ export function PowerOfAttorneyDetailPage() {
               ))}
             </ul>
             <dl className="facts facts-compact">
-              <Fact label="المحامون المذكورون">{format.number(item.lawyers.length)}</Fact>
-              <Fact label="قضايا مرتبطة">{format.number(item.caseIds.length)}</Fact>
+              <Fact label={t('poa.lawyersTitle')}>{format.number(item.lawyers.length)}</Fact>
+              <Fact label={t('poa.linkedCases')}>{format.number(item.caseIds.length)}</Fact>
             </dl>
           </section>
         </div>
@@ -168,7 +182,7 @@ export function PowerOfAttorneyDetailPage() {
       {tab === 'clients' && (
         <section className="detail-card">
           <div className="card-title">
-            <h3>الموكلون</h3>
+            <h3>{t('poa.tabs.clients')}</h3>
           </div>
           <ul className="compact-records">
             {item.clients.map((client) => (
@@ -187,10 +201,10 @@ export function PowerOfAttorneyDetailPage() {
       {tab === 'lawyers' && (
         <section className="detail-card">
           <div className="card-title">
-            <h3>المحامون المذكورون</h3>
+            <h3>{t('poa.lawyersTitle')}</h3>
           </div>
           {!item.lawyers.length ? (
-            <p className="empty-compact">لا يوجد محامون مسجلون في هذا التوكيل.</p>
+            <p className="empty-compact">{t('poa.noLawyers')}</p>
           ) : (
             <ul className="compact-records">
               {item.lawyers.map((lawyer) => (
@@ -198,7 +212,7 @@ export function PowerOfAttorneyDetailPage() {
                   <div className="record-copy">
                     <strong>{lawyer.fullName}</strong>
                     <span>
-                      {lawyer.barNumber ? <bdi>{lawyer.barNumber}</bdi> : 'دون رقم قيد'}
+                      {lawyer.barNumber ? <bdi>{lawyer.barNumber}</bdi> : t('poa.noBarNumber')}
                       {lawyer.notes && ` · ${lawyer.notes}`}
                     </span>
                   </div>
@@ -211,10 +225,10 @@ export function PowerOfAttorneyDetailPage() {
       {tab === 'cases' && (
         <section className="detail-card">
           <div className="card-title">
-            <h3>القضايا المرتبطة</h3>
+            <h3>{t('poa.linkedCasesTitle')}</h3>
           </div>
           {!item.caseIds.length ? (
-            <p className="empty-compact">لا توجد قضايا مرتبطة بالتوكيل.</p>
+            <p className="empty-compact">{t('poa.noCases')}</p>
           ) : (
             <ul className="compact-records">
               {item.caseIds.map((caseId) => {
@@ -223,7 +237,7 @@ export function PowerOfAttorneyDetailPage() {
                   <li key={caseId}>
                     <div className="record-copy">
                       <Link to={`/cases/${caseId}`}>
-                        <bdi>{linked?.internalNumber ?? 'فتح القضية المرتبطة'}</bdi>
+                        <bdi>{linked?.internalNumber ?? t('poa.openCase')}</bdi>
                       </Link>
                       {linked && <span dir="auto">{linked.clientNames.join('، ')}</span>}
                     </div>
@@ -238,9 +252,9 @@ export function PowerOfAttorneyDetailPage() {
         </section>
       )}
       {tab === 'attachments' && (
-        <AttachmentPanel owner={{ powerOfAttorneyId: id }} title="صورة التوكيل والمرفقات" />
+        <AttachmentPanel owner={{ powerOfAttorneyId: id }} title={t('poa.documentsTitle')} />
       )}
-      <Dialog open={editOpen} onOpenChange={setEditOpen} title="تعديل التوكيل">
+      <Dialog open={editOpen} onOpenChange={setEditOpen} title={t('poa.editTitle')}>
         <PowerOfAttorneyForm
           powerOfAttorney={item}
           busy={save.isPending}
@@ -256,19 +270,19 @@ export function PowerOfAttorneyDetailPage() {
         />
         {save.isError && (
           <p className="error" role="alert">
-            تعذر حفظ التوكيل. بقيت البيانات للمحاولة مرة أخرى.
+            {t('poa.saveError')}
           </p>
         )}
       </Dialog>
       <ConfirmDialog
         open={archiveOpen}
         onOpenChange={setArchiveOpen}
-        title="أرشفة التوكيل"
-        description="سيبقى التوكيل وسجل علاقاته محفوظين، لكنه لن يظهر في القوائم الاعتيادية."
-        confirmLabel="أرشفة"
-        cancelLabel="إلغاء"
+        title={t('poa.archiveTitle')}
+        description={t('poa.archiveDescription')}
+        confirmLabel={t('poa.archiveTitle')}
+        cancelLabel={t('common.cancel')}
         pending={archive.isPending}
-        error={archive.isError ? 'تعذر أرشفة السجل.' : undefined}
+        error={archive.isError ? t('records.archiveError') : undefined}
         onConfirm={() => archive.mutate(id, { onSuccess: () => setArchiveOpen(false) })}
       />
     </section>

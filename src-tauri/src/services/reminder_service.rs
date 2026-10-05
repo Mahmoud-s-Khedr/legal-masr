@@ -51,8 +51,8 @@ pub fn refresh<R: Runtime>(
             candidate
                 .scheduled_time
                 .as_deref()
-                .map(|time| format!("موعد قانوني اليوم الساعة {time}"))
-                .unwrap_or_else(|| "لديك موعد قانوني اليوم".into())
+                .map(|time| format!("لديك جلسة اليوم الساعة {time}"))
+                .unwrap_or_else(|| "لديك جلسة اليوم".into())
         } else {
             "لديك مهمة مستحقة اليوم".into()
         };

@@ -54,7 +54,7 @@ export function BackupSettingsPanel() {
         <div>
           <strong>{t('backups.latestTitle')}</strong>
           {latestBackup.isLoading ? (
-            <Skeleton className="h-5 w-52" aria-label="جارٍ تحميل السجل المحلي…" />
+            <Skeleton className="h-5 w-52" aria-label={t('backups.loadingLatest')} />
           ) : latest ? (
             <p className="muted">
               {t('backups.latestCompleted', { date: format.dateTime(latest.completedAt) })}
@@ -63,7 +63,7 @@ export function BackupSettingsPanel() {
               )}
             </p>
           ) : (
-            <p className="muted">لا توجد نسخة احتياطية ناجحة بعد.</p>
+            <p className="muted">{t('backups.none')}</p>
           )}
           {!latestBackup.isLoading && stale && (
             <p className="backup-advice">

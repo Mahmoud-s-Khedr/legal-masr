@@ -3219,6 +3219,12 @@ html[dir='rtl'] .sidebar a.active::before {
   min-height: 68px;
   padding: 0.65rem 0.75rem;
 }
+.sidebar-brand.brand-block {
+  min-width: 0;
+}
+.sidebar-brand.brand-block > div {
+  min-width: 0;
+}
 .sidebar-brand img {
   width: 42px;
   height: 42px;

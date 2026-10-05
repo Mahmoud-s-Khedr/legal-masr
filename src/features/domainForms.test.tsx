@@ -56,7 +56,7 @@ describe('canonical domain forms', () => {
     expect(officialNumber).toHaveAttribute('dir', 'ltr');
     fireEvent.change(officialNumber, { target: { value: '2026/45' } });
     fireEvent.click(screen.getByRole('checkbox', { name: 'أحمد' }));
-    fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ القضية' }));
 
     await waitFor(() => expect(submit).toHaveBeenCalled());
     expect(submit.mock.calls[0][0]).toMatchObject({
@@ -85,7 +85,7 @@ describe('canonical domain forms', () => {
       { wrapper: MemoryRouter },
     );
     fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ القضية' }));
     expect(await screen.findByText('اختر موكلًا واحدًا على الأقل لحفظ القضية.')).toBeVisible();
     expect(screen.getByText('هذا الحقل مطلوب.')).toBeVisible();
     expect(screen.getByLabelText('رقم الملف الداخلي')).toHaveAttribute('aria-invalid', 'true');
@@ -97,7 +97,10 @@ describe('canonical domain forms', () => {
       wrapper: MemoryRouter,
     });
     expect(screen.getByText('لا يوجد موكلون بعد')).toBeVisible();
-    expect(screen.getByRole('link', { name: 'موكل جديد' })).toHaveAttribute('href', '/clients/new');
+    expect(screen.getByRole('link', { name: 'إضافة موكل' })).toHaveAttribute(
+      'href',
+      '/clients/new',
+    );
   });
 
   it('preselects the client a case is opened from', async () => {
@@ -122,7 +125,7 @@ describe('canonical domain forms', () => {
     );
     expect(screen.getByRole('checkbox', { name: 'أحمد' })).toBeChecked();
     fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), { target: { value: 'CA-9' } });
-    fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ القضية' }));
     await waitFor(() => expect(submit).toHaveBeenCalled());
     expect(submit.mock.calls[0][0]).toMatchObject({ clientIds: ['client-1'] });
   });
@@ -158,7 +161,7 @@ describe('canonical domain forms', () => {
     expect(screen.queryByLabelText('سنة الإصدار')).not.toBeInTheDocument();
     fireEvent.change(issueDate, { target: { value: '2026-10-22' } });
     fireEvent.click(screen.getByRole('checkbox', { name: /أحمد/ }));
-    fireEvent.change(screen.getByLabelText('الاسم'), { target: { value: 'محمود' } });
+    fireEvent.change(screen.getByLabelText('اسم المحامي'), { target: { value: 'محمود' } });
     fireEvent.change(screen.getByLabelText('رقم القيد'), { target: { value: '123' } });
     fireEvent.click(screen.getByRole('button', { name: 'إضافة محامٍ' }));
     fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));
@@ -244,7 +247,9 @@ describe('canonical domain forms', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'حفظ الموكل وربطه بالتوكيل' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('قد يكون هذا الموكل'));
-    fireEvent.click(screen.getByRole('button', { name: 'إنشاء الموكل وربطه بالتوكيل' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'إضافة الموكل رغم التشابه وربطه بالتوكيل' }),
+    );
 
     await waitFor(() =>
       expect(createClient).toHaveBeenLastCalledWith(

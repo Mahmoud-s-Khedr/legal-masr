@@ -113,5 +113,5 @@ pub fn run() {
             commands::reminders::reminders_refresh
         ])
         .run(tauri::generate_context!())
-        .expect("error while running LegalMaster Solo");
+        .expect("error while running Legal Masr");
 }

@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Icon } from '../../../components/layout/Icon';
 import { useFormat } from '../../../i18n/LocalePresentation';
 import { useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
@@ -20,31 +22,32 @@ import {
   useUpdateAttachment,
 } from '../api/documentsApi';
 
-const categories: ReadonlyArray<[AttachmentCategory, string]> = [
-  ['IDENTIFICATION', 'إثبات هوية'],
-  ['POWER_OF_ATTORNEY', 'توكيل'],
-  ['CASE_FILE', 'ملف قضية'],
-  ['COURT_DECISION', 'قرار أو حكم'],
-  ['EVIDENCE', 'دليل'],
-  ['RECEIPT', 'إيصال'],
-  ['CORRESPONDENCE', 'مراسلات'],
-  ['OTHER', 'أخرى'],
+const categories: readonly AttachmentCategory[] = [
+  'IDENTIFICATION',
+  'POWER_OF_ATTORNEY',
+  'CASE_FILE',
+  'COURT_DECISION',
+  'EVIDENCE',
+  'RECEIPT',
+  'CORRESPONDENCE',
+  'OTHER',
 ];
 
 const fileExtension = (filename: string) => {
   const extension = /\.([a-z0-9]{1,5})$/i.exec(filename)?.[1];
-  return extension ? extension.toUpperCase() : 'ملف';
+  return extension ? extension.toUpperCase() : null;
 };
 
 /** Which record a file belongs to, for the global documents list. */
 function AttachmentOwner({ attachment }: { attachment: AttachmentDto }) {
+  const { t } = useTranslation();
   const cases = useCaseList({ includeArchived: true });
   const clients = useClientList({ includeArchived: true });
   if (attachment.caseId) {
     const item = cases.data?.find((candidate) => candidate.id === attachment.caseId);
     return (
       <Link className="owner-link" to={`/cases/${attachment.caseId}`}>
-        قضية <bdi>{item?.internalNumber ?? '…'}</bdi>
+        {t('documents.owner.case')} <bdi>{item?.internalNumber ?? '…'}</bdi>
       </Link>
     );
   }
@@ -52,27 +55,25 @@ function AttachmentOwner({ attachment }: { attachment: AttachmentDto }) {
     const item = clients.data?.find((candidate) => candidate.id === attachment.clientId);
     return (
       <Link className="owner-link" to={`/clients/${attachment.clientId}`}>
-        الموكل <bdi>{item?.fullName ?? '…'}</bdi>
+        {t('documents.owner.client')} <bdi>{item?.fullName ?? '…'}</bdi>
       </Link>
     );
   }
   if (attachment.powerOfAttorneyId)
     return (
       <Link className="owner-link" to={`/powers-of-attorney/${attachment.powerOfAttorneyId}`}>
-        توكيل
+        {t('documents.owner.poa')}
       </Link>
     );
-  if (attachment.expenseId) return <span className="owner-link">مرفق مصروف</span>;
+  if (attachment.expenseId)
+    return <span className="owner-link">{t('documents.owner.expense')}</span>;
   return null;
 }
 
-const categoryLabel = (category: AttachmentCategory) =>
-  categories.find(([value]) => value === category)?.[1] ?? category;
-
 export function AttachmentPanel({
   owner,
-  title = 'المرفقات',
-  description = 'يُنسخ كل ملف إلى مساحة التطبيق المحلية ويُضمّن في النسخ الاحتياطية.',
+  title,
+  description,
   allowAdd = true,
   showOwner = false,
 }: {
@@ -83,6 +84,8 @@ export function AttachmentPanel({
   showOwner?: boolean;
 }) {
   const format = useFormat();
+  const { t } = useTranslation();
+  const categoryLabel = (category: AttachmentCategory) => t(`documents.categories.${category}`);
   const attachments = useAttachments(owner);
   const add = useAddAttachment();
   const update = useUpdateAttachment();
@@ -132,7 +135,7 @@ export function AttachmentPanel({
         generation === dialogGeneration.current &&
         asAppError(error)?.code !== 'OPERATION_CANCELLED'
       )
-        setActionError('تعذر اختيار الملف. حاول الاختيار مرة أخرى.');
+        setActionError(t('documents.pickError'));
     } finally {
       picking.current = false;
       setPickerPending(false);
@@ -168,10 +171,10 @@ export function AttachmentPanel({
     } catch (error) {
       setActionError(
         editingId
-          ? 'تعذر حفظ بيانات المرفق. بيانات النموذج محفوظة للمحاولة مرة أخرى.'
+          ? t('documents.updateError')
           : asAppError(error)?.code === 'ATTACHMENT_SOURCE_MISSING'
-            ? 'الملف المختار غير متاح. اختر الملف مرة أخرى؛ بيانات النموذج محفوظة.'
-            : 'تعذر نسخ المرفق. اختر الملف مرة أخرى؛ بيانات النموذج محفوظة.',
+            ? t('documents.sourceMissing')
+            : t('documents.copyError'),
       );
     } finally {
       saving.current = false;
@@ -182,8 +185,8 @@ export function AttachmentPanel({
     <section className="detail-card attachment-panel">
       <div className="card-title">
         <div>
-          <h3>{title}</h3>
-          <p className="muted">{description}</p>
+          <h3>{title ?? t('documents.title')}</h3>
+          <p className="muted">{description ?? t('documents.panelHint')}</p>
         </div>
         {allowAdd && (
           <Button
@@ -194,24 +197,24 @@ export function AttachmentPanel({
               setDialogOpen(true);
             }}
           >
-            إضافة مرفق
+            {t('documents.add')}
           </Button>
         )}
       </div>
       {attachments.isLoading ? (
-        <p className="table-message">جارٍ تحميل المرفقات…</p>
+        <p className="table-message">{t('documents.loading')}</p>
       ) : attachments.isError ? (
         <p className="error" role="alert">
-          تعذر تحميل المرفقات. حاول فتح السجل مرة أخرى.
+          {t('documents.loadError')}
         </p>
       ) : !attachments.data?.length ? (
-        <p className="empty-compact">لا توجد مرفقات بعد.</p>
+        <p className="empty-compact">{t('documents.empty')}</p>
       ) : (
         <ul className="compact-records attachment-rows">
           {attachments.data.map((attachment) => (
             <li key={attachment.id}>
               <span className="file-mark" aria-hidden="true">
-                {fileExtension(attachment.originalFilename)}
+                {fileExtension(attachment.originalFilename) ?? t('documents.fileMark')}
               </span>
               <div className="record-copy">
                 <strong>
@@ -241,38 +244,34 @@ export function AttachmentPanel({
                   type="button"
                   className="text-button"
                   disabled={open.isPending}
-                  aria-label={`فتح ${attachment.originalFilename}`}
+                  aria-label={t('documents.openAria', { name: attachment.originalFilename })}
                   onClick={() => {
                     setActionError(null);
                     open.mutate(attachment.id, {
-                      onError: () =>
-                        setActionError(
-                          'تعذر فتح المرفق. تأكد من توفر النسخة المُدارة والتطبيق المناسب.',
-                        ),
+                      onError: () => setActionError(t('documents.openError')),
                     });
                   }}
                 >
-                  فتح
+                  {t('documents.open')}
                 </Button>
                 <Button
                   type="button"
                   className="text-button"
                   disabled={reveal.isPending}
-                  aria-label={`إظهار ${attachment.originalFilename} في المجلد`}
+                  aria-label={t('documents.revealAria', { name: attachment.originalFilename })}
                   onClick={() => {
                     setActionError(null);
                     reveal.mutate(attachment.id, {
-                      onError: () =>
-                        setActionError('تعذر إظهار المرفق. تأكد من توفر النسخة المُدارة.'),
+                      onError: () => setActionError(t('documents.revealError')),
                     });
                   }}
                 >
-                  إظهار
+                  {t('documents.reveal')}
                 </Button>
                 <Button
                   type="button"
                   className="text-button"
-                  aria-label={`تعديل بيانات ${attachment.originalFilename}`}
+                  aria-label={t('documents.editAria', { name: attachment.originalFilename })}
                   onClick={() => {
                     setActionError(null);
                     setEditingId(attachment.id);
@@ -282,16 +281,16 @@ export function AttachmentPanel({
                     setDialogOpen(true);
                   }}
                 >
-                  تعديل
+                  {t('records.edit')}
                 </Button>
                 <Button
                   variant="ghost"
                   type="button"
                   className="text-button danger-button"
-                  aria-label={`إزالة ${attachment.originalFilename}`}
+                  aria-label={t('documents.removeAria', { name: attachment.originalFilename })}
                   onClick={() => setRemoving(attachment)}
                 >
-                  إزالة
+                  {t('documents.remove')}
                 </Button>
               </div>
             </li>
@@ -301,7 +300,7 @@ export function AttachmentPanel({
       <Dialog
         open={dialogOpen}
         onOpenChange={(openValue) => (openValue ? setDialogOpen(true) : close())}
-        title={editingId ? 'تعديل بيانات المرفق' : 'إضافة مرفق'}
+        title={editingId ? t('documents.editTitle') : t('documents.add')}
       >
         <form className="dialog-form" onSubmit={(event) => void save(event)}>
           {actionError && (
@@ -312,13 +311,13 @@ export function AttachmentPanel({
           {!editingId && (
             <div className="document-pick">
               <span className="document-glyph" aria-hidden="true">
-                ⌑
+                <Icon name="documents" size={20} />
               </span>
               <div>
                 <strong>
-                  <bdi>{source?.filename ?? 'لم يُختر ملف'}</bdi>
+                  <bdi>{source?.filename ?? t('documents.noFile')}</bdi>
                 </strong>
-                <span>سيُنشأ نسخة مُدارة محليًا؛ لا يُحتفظ بمسار الملف الأصلي.</span>
+                <span>{t('documents.copyNote')}</span>
               </div>
               <Button
                 variant="secondary"
@@ -327,27 +326,27 @@ export function AttachmentPanel({
                 disabled={pickerPending || add.isPending || update.isPending}
                 onClick={() => void selectSource()}
               >
-                اختيار ملف
+                {t('documents.pick')}
               </Button>
             </div>
           )}
           <label>
-            الفئة
+            {t('documents.category')}
             <Select
               value={category}
               onValueChange={(value) => setCategory(value as AttachmentCategory)}
-              items={categories.map(([value, label]) => ({ value, label }))}
+              items={categories.map((value) => ({ value, label: categoryLabel(value) }))}
             />
           </label>
           <label>
-            الوصف{' '}
+            {t('documents.description')}
             <Input
               value={descriptionValue}
               onChange={(event) => setDescriptionValue(event.target.value)}
             />
           </label>
           <label>
-            تاريخ المستند{' '}
+            {t('documents.date')}
             <DatePicker
               value={documentDate}
               onChange={(event) => setDocumentDate(event.target.value)}
@@ -361,14 +360,14 @@ export function AttachmentPanel({
               disabled={add.isPending || update.isPending}
               onClick={close}
             >
-              إلغاء
+              {t('common.cancel')}
             </Button>
             <Button
               disabled={
                 pickerPending || add.isPending || update.isPending || (!editingId && !source)
               }
             >
-              {editingId ? 'حفظ البيانات' : 'إضافة المرفق'}
+              {editingId ? t('records.saveEdits') : t('documents.save')}
             </Button>
           </div>
         </form>
@@ -381,10 +380,10 @@ export function AttachmentPanel({
       <ConfirmDialog
         open={Boolean(removing)}
         onOpenChange={(openValue) => !openValue && setRemoving(null)}
-        title="إزالة المرفق"
-        description="سيُحذف سجل المرفق والنسخة المُدارة من مساحة التطبيق. لا يؤثر ذلك في الملف الأصلي الذي اخترته."
-        confirmLabel="إزالة المرفق"
-        cancelLabel="إلغاء"
+        title={t('documents.removeTitle')}
+        description={t('documents.removeDescription')}
+        confirmLabel={t('documents.removeTitle')}
+        cancelLabel={t('common.cancel')}
         destructive
         pending={remove.isPending}
         error={actionError ?? undefined}
@@ -394,8 +393,7 @@ export function AttachmentPanel({
           setActionError(null);
           remove.mutate(removing, {
             onSuccess: () => setRemoving(null),
-            onError: () =>
-              setActionError('تعذر إزالة المرفق. تحقق من السجل قبل المحاولة مرة أخرى.'),
+            onError: () => setActionError(t('documents.removeError')),
             onSettled: () => {
               deleting.current = false;
             },
