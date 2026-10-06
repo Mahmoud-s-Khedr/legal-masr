@@ -1,0 +1,35 @@
+{
+  "sourceRevision": "93433d750482f2f11a8168d31abaf5e75644a85a",
+  "binarySha256": "841c1612cd90ce9ad0d0f3ece6f70e31fd7a5e405490cc08a8df7cd8dd889bc6",
+  "manifestSha256": "04d85c1022ac262efdcb38a0ed9ee2dc3381930fb535fe500aee4d0f52c8f365",
+  "results": [
+    {
+      "locale": "ar",
+      "result": "passed",
+      "screens": 89,
+      "images": 100,
+      "pdfPages": 115,
+      "pdfBytes": 4980007,
+      "offline": true,
+      "selectablePdfText": true,
+      "standalonePdf": true,
+      "pdfSha256": "7dda69750fdc8fc022b3c85c60e0d7efa997408dc6c136d9bc307da19d2744f7",
+      "htmlSha256": "1b52051193407f25ec482594d8268ed9f36da34f8e516f0a46cf20af3c6065c8",
+      "markdownSha256": "036c3c451c5d9bae5bb3f1fa932c838f43808c82de119f9c7fb167929a10f9c7"
+    },
+    {
+      "locale": "en",
+      "result": "passed",
+      "screens": 89,
+      "images": 100,
+      "pdfPages": 115,
+      "pdfBytes": 5070916,
+      "offline": true,
+      "selectablePdfText": true,
+      "standalonePdf": true,
+      "pdfSha256": "422148912550a8922903a6400960172f8b6e0cb2a1524e401a50aa5a75d016ad",
+      "htmlSha256": "197d0a52cb8b6b01c80ad9583e673b69dda635028f6755f9e0ef827684569f8e",
+      "markdownSha256": "6eb2cb50142bc01fa34542dae1601b2a8da7f79f5a13b86e316d8a4d7b6ecd57"
+    }
+  ]
+}

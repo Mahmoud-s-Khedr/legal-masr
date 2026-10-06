@@ -79,6 +79,14 @@ must not flip (dates, identifiers, money, phones, filenames, versions) use
 
 ## Current gaps and release risks
 
+The illustrated-guide audit also confirmed that the case-client relationship
+panel is read-only: creation selects clients, but case editing preserves their
+relationships and does not expose client reassignment, legal-capacity editing,
+or POA selection. Expense-owned attachments are supported by Rust, but the
+expense dialogs do not expose an attachment-upload control. Client JSON export
+also remains a backend command without a visible UI action. The guide documents
+these limits rather than providing instructions for unavailable controls.
+
 - Backups are manual and saved to the app-data backup folder; there is no
   configurable destination, automatic schedule, retention policy, or history
   list UI.
