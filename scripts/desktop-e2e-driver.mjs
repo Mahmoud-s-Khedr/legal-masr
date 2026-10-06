@@ -6,6 +6,19 @@ export const DESKTOP_ERROR_CODES = Object.freeze([
 ]);
 
 export const SAFE_DESKTOP_STAGES = Object.freeze(['driver-start', 'webdriver-session', 'scenario']);
+export const SAFE_DESKTOP_CHECKPOINTS = Object.freeze([
+  'initialize',
+  'create-client',
+  'create-case',
+  'add-attachment',
+  'create-backup',
+  'edit-after-backup',
+  'restore-backup',
+  'unlock-restored-vault',
+  'verify-restored-records',
+  'verify-restored-attachment',
+  'verify-attachment-bytes',
+]);
 
 const driverStatusUrl = 'http://127.0.0.1:4444/status';
 const driverFailed = Symbol('driver-failed');
@@ -103,7 +116,13 @@ export function applicationDiagnostic(message) {
   );
 }
 
-export function failedDesktopOutcome({ scenario, stage, error, diagnosticMessage = '' }) {
+export function failedDesktopOutcome({
+  scenario,
+  stage,
+  checkpoint,
+  error,
+  diagnosticMessage = '',
+}) {
   const safeStage = SAFE_DESKTOP_STAGES.includes(stage) ? stage : 'scenario';
   const errorCode = DESKTOP_ERROR_CODES.includes(error?.errorCode)
     ? error.errorCode
@@ -118,6 +137,7 @@ export function failedDesktopOutcome({ scenario, stage, error, diagnosticMessage
     result: 'failed',
     errorCode,
     stage: safeStage,
+    ...(SAFE_DESKTOP_CHECKPOINTS.includes(checkpoint) ? { checkpoint } : {}),
     diagnostic: applicationDiagnostic(diagnosticMessage),
   };
 }
