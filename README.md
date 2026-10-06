@@ -74,6 +74,12 @@ See [the finalized correction plan](docs/finalized-domain-correction-plan.md)
 and its [Phase 7 report](docs/finalized-domain-phase-7-report.md) for the
 current decision record and evidence.
 
+## Illustrated user guides
+
+Arabic and English guides are available as Markdown, offline HTML, and PDF in
+[docs/user-guide](docs/user-guide/README.md). They include annotated screenshots
+and a validation report from the native desktop walkthrough.
+
 ## Local development
 
 ```bash

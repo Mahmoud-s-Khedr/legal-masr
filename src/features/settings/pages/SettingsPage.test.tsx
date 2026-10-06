@@ -31,14 +31,14 @@ const settings = {
   usageCountersEnabled: false,
 };
 
-function renderSettingsPage() {
+function renderSettingsPage(route = '/settings') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[route]}>
         <SettingsPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -56,6 +56,17 @@ describe('SettingsPage', () => {
       officeAddress: null,
       defaultCurrency: 'EGP',
     });
+  });
+
+  it('shows developer information when About is opened directly', async () => {
+    vi.mocked(bridge.settings).mockResolvedValue(settings);
+    renderSettingsPage('/settings?tab=about');
+    expect(await screen.findByRole('heading', { name: 'عن المطوّر' })).toBeVisible();
+    expect(screen.getByText('طوّر التطبيق محمود خضر')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'لينكدإن' })).toHaveAttribute(
+      'href',
+      'https://www.linkedin.com/in/mahmoud-s-khedr/',
+    );
   });
 
   it('shows the settings workspace after local settings load', async () => {

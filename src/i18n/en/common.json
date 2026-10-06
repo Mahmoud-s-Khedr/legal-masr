@@ -409,7 +409,17 @@
     },
     "about": {
       "version": "Version {{version}}",
-      "description": "An app for the Egyptian solo lawyer: clients, cases, hearings, tasks and fees in one place, on your computer and without internet."
+      "description": "An app for the Egyptian solo lawyer: clients, cases, hearings, tasks and fees in one place, on your computer and without internet.",
+      "developerTitle": "About the developer",
+      "createdBy": "Created by Mahmoud Khedr",
+      "contactHint": "Choose a contact option to get in touch with the app developer.",
+      "contactLabel": "Contact the developer",
+      "email": "Email",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "linkedin": "LinkedIn",
+      "openError": "Could not open this contact option. Try again or use the contact details shown."
     }
   },
   "clients": {

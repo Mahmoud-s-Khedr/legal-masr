@@ -1,0 +1,2128 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Legal Masr user guide</title>
+    <style>
+      @font-face {
+        font-family: Cairo;
+        src: url(assets/cairo-arabic.woff2) format('woff2');
+        unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+        font-display: block;
+      }
+      @font-face {
+        font-family: Cairo;
+        src: url(assets/cairo-latin.woff2) format('woff2');
+        font-display: block;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        overflow-wrap: anywhere;
+        background: #faf9f6;
+        color: #182b29;
+        font:
+          17px/1.9 Cairo,
+          Arial,
+          sans-serif;
+      }
+      header,
+      main,
+      nav,
+      footer {
+        max-width: 1080px;
+        margin: auto;
+        padding: 24px 36px;
+      }
+      header {
+        padding-top: 64px;
+        border-bottom: 4px solid #0c635b;
+      }
+      header p {
+        color: #52615f;
+      }
+      h1 {
+        font-size: 38px;
+        line-height: 1.4;
+      }
+      h2 {
+        color: #0c635b;
+        border-bottom: 1px solid #cbd7d4;
+        padding-bottom: 12px;
+        margin-top: 64px;
+      }
+      h3 {
+        margin-top: 48px;
+      }
+      a {
+        color: #075c53;
+        text-underline-offset: 3px;
+      }
+      nav {
+        background: #f0f4f1;
+        border-radius: 6px;
+        margin-top: 24px;
+      }
+      nav ol {
+        columns: 2;
+        column-gap: 48px;
+      }
+      nav li {
+        break-inside: avoid;
+      }
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid #d0d9d6;
+        background: white;
+      }
+      p:has(img) {
+        margin: 24px 0 12px;
+      }
+      li {
+        margin: 5px 0;
+      }
+      blockquote {
+        border-inline-start: 4px solid #b74335;
+        margin: 24px 0;
+        padding: 12px 20px;
+        background: #fff5ed;
+      }
+      code {
+        direction: ltr;
+        unicode-bidi: isolate;
+      }
+      footer {
+        border-top: 1px solid #cbd7d4;
+        color: #52615f;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      td,
+      th {
+        border: 1px solid #cbd7d4;
+        padding: 8px;
+        text-align: start;
+      }
+      .provenance {
+        color: #52615f;
+        font-size: 14px;
+      }
+      @media (max-width: 700px) {
+        header,
+        main,
+        nav,
+        footer {
+          padding: 20px;
+        }
+        nav ol {
+          columns: 1;
+        }
+        h1 {
+          font-size: 30px;
+        }
+      }
+      @page {
+        size: A4;
+        margin: 16mm 12mm 19mm;
+      }
+      @media print {
+        .formats {
+          display: none;
+        }
+        html {
+          scroll-behavior: auto;
+        }
+        body {
+          background: white;
+          font-size: 10pt;
+          line-height: 1.65;
+        }
+        header,
+        main,
+        nav,
+        footer {
+          padding: 0;
+          max-width: none;
+        }
+        header {
+          padding-bottom: 12mm;
+        }
+        nav {
+          margin-top: 8mm;
+          background: white;
+        }
+        h1 {
+          font-size: 26pt;
+        }
+        h2 {
+          break-before: page;
+          margin-top: 0;
+          font-size: 20pt;
+        }
+        h3 {
+          break-before: page;
+          margin-top: 0;
+          font-size: 16pt;
+        }
+        h1,
+        h2,
+        h3 {
+          break-after: avoid;
+        }
+        p:has(img) {
+          break-inside: avoid;
+          margin: 5mm 0 3mm;
+        }
+        img {
+          max-height: 155mm;
+          object-fit: contain;
+          border: 0;
+        }
+        a {
+          color: inherit;
+        }
+        blockquote {
+          break-inside: avoid;
+        }
+        li {
+          break-inside: avoid;
+        }
+        footer {
+          margin-top: 8mm;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Legal Masr user guide</h1>
+      <p>Illustrated guide • Version 0.1.0 • Available offline</p>
+      <p class="formats">
+        <a href="guide.pdf">PDF</a> · <a href="guide.md">Markdown</a> ·
+        <a href="../ar/index.html">العربية</a>
+      </p>
+    </header>
+    <nav aria-label="Contents">
+      <strong>Contents</strong>
+      <ol>
+        <li><a href="#section-1">Getting started and protecting access</a></li>
+        <li><a href="#section-8">Workspace and your day</a></li>
+        <li><a href="#section-14">Clients</a></li>
+        <li><a href="#section-27">Powers of attorney</a></li>
+        <li><a href="#section-39">Cases</a></li>
+        <li><a href="#section-53">Agenda and hearings</a></li>
+        <li><a href="#section-62">Tasks and deadlines</a></li>
+        <li><a href="#section-71">Documents</a></li>
+        <li><a href="#section-77">Fees, payments, and expenses</a></li>
+        <li><a href="#section-86">Backup and restore</a></li>
+        <li><a href="#section-93">Settings</a></li>
+        <li><a href="#section-101">Troubleshooting and current limitations</a></li>
+        <li><a href="#section-102">About this guide</a></li>
+      </ol>
+    </nav>
+    <main>
+      <p>
+        A desktop organizer for Egyptian solo lawyers: clients, cases, powers of attorney, hearings,
+        tasks, documents, and finances on your computer. Daily use needs no internet or account.
+        This guide documents pre-beta version 0.1.0. All pictured records and files are fictional.
+      </p>
+      <p>
+        Numbers inside red marks correspond to explanations below each screenshot. Long pages are
+        split into successive screenshots. Open full-size images from HTML or the image folder.
+        Instructions describe the current interface and do not promise future features.
+      </p>
+      <p>
+        <strong>Suggested daily flow:</strong> add a client → record a power of attorney if needed →
+        create a case and link clients → add hearings and tasks → attach documents → record fees and
+        payments → create a backup.
+      </p>
+      <h2 id="section-1">Getting started and protecting access</h2>
+      <h3 id="section-2">First-run setup</h3>
+      <p>
+        Enter the lawyer’s name and a password of at least 12 characters, confirm it, and choose
+        Start using the app. No online account is needed. You can edit the name later. Keep the
+        password safe.
+      </p>
+      <p>
+        <a href="assets/setup.png" aria-label="Open full-size screenshot"
+          ><img src="assets/setup.png" alt="First-run setup" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Lawyer name: Enter the full name so you can locate the record.</li>
+        <li>Password: Use at least 12 characters and keep it safe.</li>
+        <li>Confirm password: Use at least 12 characters and keep it safe.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-3">Correcting setup details</h3>
+      <p>
+        Leaving required fields empty shows messages beside them. Complete the name, password, and
+        confirmation, then retry. Setup does not create a vault until it succeeds.
+      </p>
+      <p>
+        <a href="assets/setup-validation.png" aria-label="Open full-size screenshot"
+          ><img src="assets/setup-validation.png" alt="Correcting setup details" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Lawyer name: Enter the full name so you can locate the record.</li>
+        <li>Password: Use at least 12 characters and keep it safe.</li>
+        <li>Confirm password: Use at least 12 characters and keep it safe.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-4">Saving the recovery key</h3>
+      <p>
+        The recovery key appears once after setup. Write it down and store it separately from the
+        computer; do not send it to support. Its value is intentionally hidden in this screenshot.
+        Confirm you saved it, then continue. The key recovers access to this vault; a backup
+        preserves records and files.
+      </p>
+      <p>
+        <a href="assets/recovery-key.png" aria-label="Open full-size screenshot"
+          ><img src="assets/recovery-key.png" alt="Saving the recovery key" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Recovery key: hidden in the guide; save your real key separately from the computer.</li>
+        <li>Saved-key confirmation: continue only after safely storing your key.</li>
+      </ol>
+      <h3 id="section-5">Unlocking the vault</h3>
+      <p>
+        Enter your password and choose Unlock. This screen appears after locking or restarting the
+        app. The password visibility control is optional; use it only when nobody can see the
+        screen.
+      </p>
+      <p>
+        <a href="assets/unlock.png" aria-label="Open full-size screenshot"
+          ><img src="assets/unlock.png" alt="Unlocking the vault" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Password: Use at least 12 characters and keep it safe.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-6">Incorrect password</h3>
+      <p>
+        An incorrect password is refused and records remain locked. Check keyboard language and
+        letter case, then retry. If you forgot it, use the recovery-key link.
+      </p>
+      <p>
+        <a href="assets/wrong-password.png" aria-label="Open full-size screenshot"
+          ><img src="assets/wrong-password.png" alt="Incorrect password" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Password: Use at least 12 characters and keep it safe.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+        <li>Error: correct the stated cause, then retry.</li>
+      </ol>
+      <h3 id="section-7">Recovering access</h3>
+      <p>
+        From Unlock, choose the recovery-key link. Enter your saved key and a new password of at
+        least 12 characters, confirm it, and choose Recover access. Back returns to Unlock. Email
+        recovery is unavailable.
+      </p>
+      <p>
+        <a href="assets/recovery.png" aria-label="Open full-size screenshot"
+          ><img src="assets/recovery.png" alt="Recovering access" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>
+          Recovery key: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>New password: Use at least 12 characters and keep it safe.</li>
+        <li>Confirm password: Use at least 12 characters and keep it safe.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h2 id="section-8">Workspace and your day</h2>
+      <h3 id="section-9">Navigation, search, and locking</h3>
+      <p>
+        Choose a section in the sidebar. Header search finds clients, cases, and powers of attorney.
+        Add provides shortcuts to a new client, case, hearing, or task. Lock immediately hides
+        records; returning requires the password. العربية and English switch interface language.
+      </p>
+      <p>
+        <a href="assets/shell.png" aria-label="Open full-size screenshot"
+          ><img src="assets/shell.png" alt="Navigation, search, and locking (1/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Sections: select one to open its page.</li>
+        <li>Search: type a name or number and choose a result.</li>
+        <li>Add, language, and lock: workspace shortcuts.</li>
+      </ol>
+      <p>
+        <a href="assets/shell-2.png" aria-label="Open full-size screenshot"
+          ><img src="assets/shell-2.png" alt="Navigation, search, and locking (2/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Search: type a name or number and choose a result.</li>
+        <li>Add, language, and lock: workspace shortcuts.</li>
+      </ol>
+      <h3 id="section-10">Quick-add menu</h3>
+      <p>
+        Open Add and choose the record type. The app opens the corresponding form; selecting a
+        shortcut alone does not save a record. Add documents from their owning record.
+      </p>
+      <p>
+        <a href="assets/quick-add.png" aria-label="Open full-size screenshot"
+          ><img src="assets/quick-add.png" alt="Quick-add menu" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+      </ol>
+      <h3 id="section-11">Today dashboard</h3>
+      <p>
+        Start by reviewing today’s hearings, due and overdue tasks, and upcoming hearings. Open the
+        linked record for details or to record a decision. Language and date preferences affect
+        presentation; legal dates do not shift with time zones.
+      </p>
+      <p>
+        <a href="assets/dashboard.png" aria-label="Open full-size screenshot"
+          ><img src="assets/dashboard.png" alt="Today dashboard (1/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+      </ol>
+      <p>
+        <a href="assets/dashboard-2.png" aria-label="Open full-size screenshot"
+          ><img src="assets/dashboard-2.png" alt="Today dashboard (2/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Schedule: review dates, links, and preparation details.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+      </ol>
+      <h3 id="section-12">Global search results</h3>
+      <p>
+        Type a name or number into search. Results are grouped by record type. Select a result to
+        open its file. Search normalizes Arabic letters and digits; it does not search document
+        contents.
+      </p>
+      <p>
+        <a href="assets/search.png" aria-label="Open full-size screenshot"
+          ><img src="assets/search.png" alt="Global search results" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+      </ol>
+      <h3 id="section-13">Keyboard search</h3>
+      <p>
+        Press Ctrl+K or Command+K to open search. Type your query, use Up/Down arrows and Enter to
+        choose a result. Escape closes the window.
+      </p>
+      <p>
+        <a href="assets/search-palette.png" aria-label="Open full-size screenshot"
+          ><img src="assets/search-palette.png" alt="Keyboard search" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+      </ol>
+      <h2 id="section-14">Clients</h2>
+      <h3 id="section-15">Client list</h3>
+      <p>
+        Search by name or number, then open a file from its row. Show archived includes archived
+        clients. Choose Add client to start a new record.
+      </p>
+      <p>
+        <a href="assets/clients-list.png" aria-label="Open full-size screenshot"
+          ><img src="assets/clients-list.png" alt="Client list" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-16">Adding a client</h3>
+      <p>
+        Internal client number and full name are required. Add phone, email, address, national ID,
+        and notes as needed. Use a unique internal number, then save; the client file opens after
+        saving.
+      </p>
+      <p>
+        <a href="assets/client-create.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-create.png" alt="Adding a client (1/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Full name: Enter the full name so you can locate the record.</li>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          National ID: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Phone number: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Email: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+      </ol>
+      <p>
+        <a href="assets/client-create-2.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-create-2.png" alt="Adding a client (2/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Full name: Enter the full name so you can locate the record.</li>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          National ID: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Phone number: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Email: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-17">Required client fields</h3>
+      <p>
+        Saving an empty form shows required-field errors. Correct the internal number and name, then
+        save. Do not invent values just to bypass validation in real records.
+      </p>
+      <p>
+        <a href="assets/client-required.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-required.png" alt="Required client fields (1/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Full name: Enter the full name so you can locate the record.</li>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          National ID: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Phone number: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Email: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+      </ol>
+      <p>
+        <a href="assets/client-required-2.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/client-required-2.png"
+            alt="Required client fields (2/2)"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Full name: Enter the full name so you can locate the record.</li>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          National ID: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Phone number: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Email: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-18">Possible duplicate warning</h3>
+      <p>
+        When client details resemble an existing record, review the displayed candidates first.
+        Correct the details or open the existing file; confirm a separate client only if it is a
+        different person. The warning does not automatically merge records.
+      </p>
+      <p>
+        <a href="assets/client-duplicate.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/client-duplicate.png"
+            alt="Possible duplicate warning (1/2)"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Full name: Enter the full name so you can locate the record.</li>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          National ID: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Phone number: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Email: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+      </ol>
+      <p>
+        <a href="assets/client-duplicate-2.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/client-duplicate-2.png"
+            alt="Possible duplicate warning (2/2)"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Full name: Enter the full name so you can locate the record.</li>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          National ID: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Phone number: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Email: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+        <li>Error: correct the stated cause, then retry.</li>
+      </ol>
+      <h3 id="section-19">Client summary</h3>
+      <p>
+        Review contact details, internal number, and linked cases. A dash means the field was not
+        recorded.
+      </p>
+      <p>
+        <a href="assets/client-summary.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-summary.png" alt="Client summary" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-20">Client cases</h3>
+      <p>
+        Open a linked case or choose Add case for client to start a case with this client already
+        selected.
+      </p>
+      <p>
+        <a href="assets/client-cases.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-cases.png" alt="Client cases" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-21">Client powers of attorney</h3>
+      <p>
+        Open a linked power of attorney to inspect it. Manage powers of attorney returns to the
+        list.
+      </p>
+      <p>
+        <a href="assets/client-poas.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-poas.png" alt="Client powers of attorney" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-22">Client account</h3>
+      <p>
+        Review received payments, linked expenses, and net cash. Open the finance ledger for
+        transactions. This view does not allocate shared case fees among clients.
+      </p>
+      <p>
+        <a href="assets/client-account.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-account.png" alt="Client account" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Account: review the totals; amounts are in EGP.</li>
+      </ol>
+      <h3 id="section-23">Client documents</h3>
+      <p>
+        Add copies of identification or other documents from this tab. Each attachment here belongs
+        to this client alone.
+      </p>
+      <p>
+        <a href="assets/client-attachments.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-attachments.png" alt="Client documents" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-24">Editing a client</h3>
+      <p>
+        Choose Edit in the file, change details, and save edits. Cancel closes the form without
+        saving the draft.
+      </p>
+      <p>
+        <a href="assets/client-edit.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-edit.png" alt="Editing a client" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Full name: Enter the full name so you can locate the record.</li>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          National ID: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Phone number: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Email: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-25">Archiving a client</h3>
+      <p>
+        Choose Archive and review the confirmation. Archiving hides the client from the usual list
+        without deleting its files. To restore: show archived, open the file, and choose Restore.
+      </p>
+      <p>
+        <a href="assets/client-archive.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-archive.png" alt="Archiving a client" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Confirmation: read what will happen before proceeding.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-26">Restoring an archived client</h3>
+      <p>
+        Open the archived client and choose Restore to include it in active lists again. Permanent
+        client deletion is unavailable in the interface.
+      </p>
+      <p>
+        <a href="assets/client-restored.png" aria-label="Open full-size screenshot"
+          ><img src="assets/client-restored.png" alt="Restoring an archived client" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h2 id="section-27">Powers of attorney</h2>
+      <h3 id="section-28">Power-of-attorney list</h3>
+      <p>
+        Search by power-of-attorney number or details and open it from the row. Show archived
+        includes archived records. Official numbers may repeat; internal sequences must be unique.
+      </p>
+      <p>
+        <a href="assets/poa-list.png" aria-label="Open full-size screenshot"
+          ><img src="assets/poa-list.png" alt="Power-of-attorney list" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-29">Adding a power of attorney</h3>
+      <p>
+        Enter the internal sequence, official number, issue date, and notary office. Select clients
+        and add named lawyers and bar numbers as needed. Add lawyer adds an entry to the draft; Save
+        power of attorney saves the full record.
+      </p>
+      <p>
+        <a href="assets/poa-create.png" aria-label="Open full-size screenshot"
+          ><img src="assets/poa-create.png" alt="Adding a power of attorney" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          Power of attorney number: review the value or enter the relevant information, then save
+          the form.
+        </li>
+        <li>
+          Date issued: Type day/month/year or year-month-day, then leave the field, or choose a day
+          from the calendar.
+        </li>
+        <li>Lawyer name: Enter the full name so you can locate the record.</li>
+        <li>Bar number: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Clients: Choose an existing client; payment payers must belong to the case.</li>
+      </ol>
+      <h3 id="section-30">Adding a client inside a power of attorney</h3>
+      <p>
+        Inside the power-of-attorney form, choose Add client. Save the new client; it is
+        automatically selected in the power-of-attorney draft. Saving the client does not also save
+        the power of attorney.
+      </p>
+      <p>
+        <a href="assets/poa-inline-client.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/poa-inline-client.png"
+            alt="Adding a client inside a power of attorney"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Full name: Enter the full name so you can locate the record.</li>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          National ID: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Phone number: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Email: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-31">Power-of-attorney summary</h3>
+      <p>Review the official number, issue date, notary office, and clients.</p>
+      <p>
+        <a href="assets/poa-summary.png" aria-label="Open full-size screenshot"
+          ><img src="assets/poa-summary.png" alt="Power-of-attorney summary" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-32">Power-of-attorney clients</h3>
+      <p>Open linked client files. Edit the power of attorney to change selections.</p>
+      <p>
+        <a href="assets/poa-clients.png" aria-label="Open full-size screenshot"
+          ><img src="assets/poa-clients.png" alt="Power-of-attorney clients" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-33">Named lawyers</h3>
+      <p>
+        The list shows named lawyers, bar numbers, and notes. These are descriptive entries, not
+        user accounts or permissions.
+      </p>
+      <p>
+        <a href="assets/poa-lawyers.png" aria-label="Open full-size screenshot"
+          ><img src="assets/poa-lawyers.png" alt="Named lawyers" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-34">Cases using this power of attorney</h3>
+      <p>
+        Cases with recorded links to this power of attorney appear here. Open the case from the
+        list; creating or changing these links is unavailable in the current interface.
+      </p>
+      <p>
+        <a href="assets/poa-cases.png" aria-label="Open full-size screenshot"
+          ><img src="assets/poa-cases.png" alt="Cases using this power of attorney" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-35">Power-of-attorney documents</h3>
+      <p>
+        Add a copy of the power of attorney from this tab, then open it or edit its description as
+        needed.
+      </p>
+      <p>
+        <a href="assets/poa-attachments.png" aria-label="Open full-size screenshot"
+          ><img src="assets/poa-attachments.png" alt="Power-of-attorney documents" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-36">Editing a power of attorney</h3>
+      <p>
+        Choose Edit, change the power-of-attorney details, clients, and lawyers, then save. The form
+        derives the year from the issue date.
+      </p>
+      <p>
+        <a href="assets/poa-edit.png" aria-label="Open full-size screenshot"
+          ><img src="assets/poa-edit.png" alt="Editing a power of attorney" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Internal number: Unique office identifier; separate from the official reference.</li>
+        <li>
+          Power of attorney number: review the value or enter the relevant information, then save
+          the form.
+        </li>
+        <li>
+          Date issued: Type day/month/year or year-month-day, then leave the field, or choose a day
+          from the calendar.
+        </li>
+        <li>Lawyer name: Enter the full name so you can locate the record.</li>
+        <li>Bar number: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Clients: Choose an existing client; payment payers must belong to the case.</li>
+      </ol>
+      <h3 id="section-37">Archiving a power of attorney</h3>
+      <p>
+        Review the confirmation before archiving. To restore it, show archived records in the list,
+        open it, and choose Restore.
+      </p>
+      <p>
+        <a href="assets/poa-archive.png" aria-label="Open full-size screenshot"
+          ><img src="assets/poa-archive.png" alt="Archiving a power of attorney" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Confirmation: read what will happen before proceeding.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-38">Restoring an archived power of attorney</h3>
+      <p>
+        Restore returns the power of attorney to the active list. Archiving does not erase its
+        attachments.
+      </p>
+      <p>
+        <a href="assets/poa-restored.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/poa-restored.png"
+            alt="Restoring an archived power of attorney"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h2 id="section-39">Cases</h2>
+      <h3 id="section-40">Case list</h3>
+      <p>
+        Search by number or case details, or filter by status. Open a row to inspect its file. Show
+        archived includes archived files.
+      </p>
+      <p>
+        <a href="assets/cases-list.png" aria-label="Open full-size screenshot"
+          ><img src="assets/cases-list.png" alt="Case list" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-41">Adding a case</h3>
+      <p>
+        An internal number and at least one client are required. The official number and year are
+        separate from your file number. Record court, circuit, type, litigation degree, status,
+        dates, and subject. Select clients, then save.
+      </p>
+      <p>
+        <a href="assets/case-create.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-create.png" alt="Adding a case (1/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>
+          Internal file number: Unique office identifier; separate from the official reference.
+        </li>
+        <li>Court case number: Choose the case related to this record.</li>
+        <li>
+          Judicial year: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Case type: Choose the case related to this record.</li>
+        <li>
+          Litigation degree: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Status: review the value or enter the relevant information, then save the form.</li>
+        <li>Clients: Choose an existing client; payment payers must belong to the case.</li>
+      </ol>
+      <p>
+        <a href="assets/case-create-2.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-create-2.png" alt="Adding a case (2/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>
+          Internal file number: Unique office identifier; separate from the official reference.
+        </li>
+        <li>Court case number: Choose the case related to this record.</li>
+        <li>
+          Judicial year: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Case type: Choose the case related to this record.</li>
+        <li>
+          Litigation degree: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Status: review the value or enter the relevant information, then save the form.</li>
+        <li>Court: review the value or enter the relevant information, then save the form.</li>
+        <li>Circuit: review the value or enter the relevant information, then save the form.</li>
+        <li>Filed on: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          Concluded on: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Subject of the case: Choose the case related to this record.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-42">Case summary</h3>
+      <p>
+        Review case identity, next hearing, latest decision, and open tasks. Detail links open the
+        corresponding tab.
+      </p>
+      <p>
+        <a href="assets/case-summary.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-summary.png" alt="Case summary" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-43">Clients and opponents</h3>
+      <p>
+        This section displays case clients, capacities, and any recorded power-of-attorney links.
+        These relationships are currently read-only: the edit form cannot change clients,
+        capacities, or powers of attorney. You can add and edit opponents.
+      </p>
+      <p>
+        <a href="assets/case-relationships.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-relationships.png" alt="Clients and opponents" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-44">Case hearings</h3>
+      <p>
+        Add a hearing or open an existing hearing to edit it. Recording a decision can create a
+        linked next hearing in one step.
+      </p>
+      <p>
+        <a href="assets/case-hearings.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-hearings.png" alt="Case hearings" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-45">Case tasks</h3>
+      <p>
+        Add a task for the case or open it to edit details. The completion checkbox completes it;
+        you can reopen it.
+      </p>
+      <p>
+        <a href="assets/case-tasks.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-tasks.png" alt="Case tasks" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-46">Case documents</h3>
+      <p>
+        Add pleadings, decisions, and evidence to the case file. An attachment is an
+        application-managed copy, not a link to the source file.
+      </p>
+      <p>
+        <a href="assets/case-attachments.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-attachments.png" alt="Case documents" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-47">Case account and fees</h3>
+      <p>
+        Enter and save agreed fees. The account shows agreed, received, outstanding, expenses, and
+        net cash. Payments are separate from expenses; all amounts are in Egyptian pounds.
+      </p>
+      <p>
+        <a href="assets/case-account.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-account.png" alt="Case account and fees (1/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Fee amount (EGP): Enter a positive EGP amount, with up to two piastre digits.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+        <li>Account: review the totals; amounts are in EGP.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <p>
+        <a href="assets/case-account-2.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-account-2.png" alt="Case account and fees (2/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Fee amount (EGP): Enter a positive EGP amount, with up to two piastre digits.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+        <li>Account: review the totals; amounts are in EGP.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-48">Editing a case and client relationships</h3>
+      <p>
+        Edit case details, court, status, dates, and subject, then save. Client relationships remain
+        unchanged and cannot be edited in this form. Closing the case does not automatically change
+        hearing or task dates.
+      </p>
+      <p>
+        <a href="assets/case-edit.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/case-edit.png"
+            alt="Editing a case and client relationships"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>
+          Internal file number: Unique office identifier; separate from the official reference.
+        </li>
+        <li>Court case number: Choose the case related to this record.</li>
+        <li>
+          Judicial year: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Case type: Choose the case related to this record.</li>
+        <li>
+          Litigation degree: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Status: review the value or enter the relevant information, then save the form.</li>
+        <li>Court: review the value or enter the relevant information, then save the form.</li>
+        <li>Circuit: review the value or enter the relevant information, then save the form.</li>
+        <li>Filed on: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          Concluded on: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Subject of the case: Choose the case related to this record.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-49">Adding an opponent</h3>
+      <p>
+        From Clients and opponents, choose Add opponent. Name is required; legal capacity, opponent
+        lawyer, phone, address, and notes are optional. Save to add it to this case.
+      </p>
+      <p>
+        <a href="assets/opponent-create.png" aria-label="Open full-size screenshot"
+          ><img src="assets/opponent-create.png" alt="Adding an opponent" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Opponent name: Enter the full name so you can locate the record.</li>
+        <li>Capacity: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          Opponent's lawyer: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Phone: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-50">Editing an opponent</h3>
+      <p>
+        Choose Edit beside the opponent, update details, and save. This updates the opponent in this
+        case.
+      </p>
+      <p>
+        <a href="assets/opponent-edit.png" aria-label="Open full-size screenshot"
+          ><img src="assets/opponent-edit.png" alt="Editing an opponent" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Opponent name: Enter the full name so you can locate the record.</li>
+        <li>Capacity: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          Opponent's lawyer: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Phone: review the value or enter the relevant information, then save the form.</li>
+        <li>Address: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-51">Removing an opponent</h3>
+      <p>
+        Review the confirmation before removing the opponent from the case. Cancel leaves the
+        relationship unchanged.
+      </p>
+      <p>
+        <a href="assets/opponent-remove.png" aria-label="Open full-size screenshot"
+          ><img src="assets/opponent-remove.png" alt="Removing an opponent" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Confirmation: read what will happen before proceeding.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-52">Archived case</h3>
+      <p>
+        Archive in the file header hides the case from ordinary lists. Open the archived file and
+        choose Restore to return it. Archiving is separate from Closed status and does not delete
+        the case.
+      </p>
+      <p>
+        <a href="assets/case-archived.png" aria-label="Open full-size screenshot"
+          ><img src="assets/case-archived.png" alt="Archived case" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h2 id="section-53">Agenda and hearings</h2>
+      <h3 id="section-54">Month view</h3>
+      <p>
+        Choose the view, then navigate dates. Hearings and tasks appear together by day. Selecting a
+        day displays its details and hearing actions. The week start follows Settings.
+      </p>
+      <p>
+        <a href="assets/agenda-month.png" aria-label="Open full-size screenshot"
+          ><img src="assets/agenda-month.png" alt="Month view (1/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <p>
+        <a href="assets/agenda-month-2.png" aria-label="Open full-size screenshot"
+          ><img src="assets/agenda-month-2.png" alt="Month view (2/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Schedule: review dates, links, and preparation details.</li>
+      </ol>
+      <h3 id="section-55">Week view</h3>
+      <p>
+        Choose the view, then navigate dates. Hearings and tasks appear together by day. Selecting a
+        day displays its details and hearing actions. The week start follows Settings.
+      </p>
+      <p>
+        <a href="assets/agenda-week.png" aria-label="Open full-size screenshot"
+          ><img src="assets/agenda-week.png" alt="Week view (1/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <p>
+        <a href="assets/agenda-week-2.png" aria-label="Open full-size screenshot"
+          ><img src="assets/agenda-week-2.png" alt="Week view (2/2)" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-56">List view</h3>
+      <p>
+        Choose the view, then navigate dates. Hearings and tasks appear together by day. Selecting a
+        day displays its details and hearing actions. The week start follows Settings.
+      </p>
+      <p>
+        <a href="assets/agenda-list.png" aria-label="Open full-size screenshot"
+          ><img src="assets/agenda-list.png" alt="List view" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-57">Adding a hearing</h3>
+      <p>
+        Choose the case and date, then add time, type, location, circuit, required documents, and
+        notes as needed. Save to show the hearing in the agenda and case file.
+      </p>
+      <p>
+        <a href="assets/hearing-create.png" aria-label="Open full-size screenshot"
+          ><img src="assets/hearing-create.png" alt="Adding a hearing" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Case: Choose the case related to this record.</li>
+        <li>
+          Date: Type day/month/year or year-month-day, then leave the field, or choose a day from
+          the calendar.
+        </li>
+        <li>
+          Time (optional): review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Hearing type: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Court or place: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Circuit: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          To prepare for the hearing: review the value or enter the relevant information, then save
+          the form.
+        </li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-58">Editing a hearing</h3>
+      <p>
+        Open hearing details, correct them, and save. Editing a follow-up hearing does not change
+        its previous hearing.
+      </p>
+      <p>
+        <a href="assets/hearing-edit.png" aria-label="Open full-size screenshot"
+          ><img src="assets/hearing-edit.png" alt="Editing a hearing" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Case: Choose the case related to this record.</li>
+        <li>
+          Date: Type day/month/year or year-month-day, then leave the field, or choose a day from
+          the calendar.
+        </li>
+        <li>
+          Time (optional): review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Hearing type: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Court or place: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Circuit: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          To prepare for the hearing: review the value or enter the relevant information, then save
+          the form.
+        </li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-59">Recording a decision and next hearing</h3>
+      <p>
+        Enter the decision and a next-hearing date if one exists, then record the decision. The
+        current hearing completes and the next one is linked to it. Leave the date empty if no next
+        hearing was set; edit the follow-up later as needed.
+      </p>
+      <p>
+        <a href="assets/hearing-decision.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/hearing-decision.png"
+            alt="Recording a decision and next hearing"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>
+          Hearing decision: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Next hearing date (if postponed): Type day/month/year or year-month-day, then leave the
+          field, or choose a day from the calendar.
+        </li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-60">Deleting a hearing</h3>
+      <p>
+        From the day’s details, choose Delete hearing and review the confirmation. Cancel to keep
+        it. Deleting a hearing is different from recording its decision.
+      </p>
+      <p>
+        <a href="assets/hearing-delete.png" aria-label="Open full-size screenshot"
+          ><img src="assets/hearing-delete.png" alt="Deleting a hearing" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Confirmation: read what will happen before proceeding.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-61">Choosing a date</h3>
+      <p>
+        Type a date such as 03/10/2026 or 2026-10-03, then leave the field, or open the calendar
+        button and choose a day. Arabic digits are accepted. After normalization the field shows
+        year-month-day. The value remains a date without a time zone.
+      </p>
+      <p>
+        <a href="assets/date-picker.png" aria-label="Open full-size screenshot"
+          ><img src="assets/date-picker.png" alt="Choosing a date" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Schedule: review dates, links, and preparation details.</li>
+      </ol>
+      <h2 id="section-62">Tasks and deadlines</h2>
+      <h3 id="section-63">Today’s tasks</h3>
+      <p>
+        Choose the relevant tab and filter by case or client as needed. Open a task title to edit
+        it. The checkbox changes completion status; Clear filters removes case/client restrictions.
+      </p>
+      <p>
+        <a href="assets/tasks-today.png" aria-label="Open full-size screenshot"
+          ><img src="assets/tasks-today.png" alt="Today’s tasks" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-64">Overdue tasks</h3>
+      <p>
+        Choose the relevant tab and filter by case or client as needed. Open a task title to edit
+        it. The checkbox changes completion status; Clear filters removes case/client restrictions.
+      </p>
+      <p>
+        <a href="assets/tasks-overdue.png" aria-label="Open full-size screenshot"
+          ><img src="assets/tasks-overdue.png" alt="Overdue tasks" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-65">Upcoming tasks</h3>
+      <p>
+        Choose the relevant tab and filter by case or client as needed. Open a task title to edit
+        it. The checkbox changes completion status; Clear filters removes case/client restrictions.
+      </p>
+      <p>
+        <a href="assets/tasks-upcoming.png" aria-label="Open full-size screenshot"
+          ><img src="assets/tasks-upcoming.png" alt="Upcoming tasks" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-66">Completed tasks</h3>
+      <p>
+        Choose the relevant tab and filter by case or client as needed. Open a task title to edit
+        it. The checkbox changes completion status; Clear filters removes case/client restrictions.
+      </p>
+      <p>
+        <a href="assets/tasks-completed.png" aria-label="Open full-size screenshot"
+          ><img src="assets/tasks-completed.png" alt="Completed tasks" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-67">All tasks</h3>
+      <p>
+        Choose the relevant tab and filter by case or client as needed. Open a task title to edit
+        it. The checkbox changes completion status; Clear filters removes case/client restrictions.
+      </p>
+      <p>
+        <a href="assets/tasks-all.png" aria-label="Open full-size screenshot"
+          ><img src="assets/tasks-all.png" alt="All tasks" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-68">Adding a task</h3>
+      <p>
+        Enter a title and due date. Optionally link a case or client and add details and notes.
+        There is no priority, employee assignment, or due time; this is a solo-lawyer application.
+      </p>
+      <p>
+        <a href="assets/task-create.png" aria-label="Open full-size screenshot"
+          ><img src="assets/task-create.png" alt="Adding a task" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Task: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          Due date: Type day/month/year or year-month-day, then leave the field, or choose a day
+          from the calendar.
+        </li>
+        <li>Case: Choose the case related to this record.</li>
+        <li>Client: Choose an existing client; payment payers must belong to the case.</li>
+        <li>Details: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-69">Editing and completing a task</h3>
+      <p>
+        Open a task, update its details, and save. Complete task or Reopen changes status directly.
+        Completing a task does not require changing its due date.
+      </p>
+      <p>
+        <a href="assets/task-edit.png" aria-label="Open full-size screenshot"
+          ><img src="assets/task-edit.png" alt="Editing and completing a task" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Task: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          Due date: Type day/month/year or year-month-day, then leave the field, or choose a day
+          from the calendar.
+        </li>
+        <li>Case: Choose the case related to this record.</li>
+        <li>Client: Choose an existing client; payment payers must belong to the case.</li>
+        <li>Details: review the value or enter the relevant information, then save the form.</li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-70">Deleting a task</h3>
+      <p>
+        Choose Delete beside the task and confirm. Cancel keeps it. Use completion rather than
+        deletion when you want to retain the completed-work record.
+      </p>
+      <p>
+        <a href="assets/task-delete.png" aria-label="Open full-size screenshot"
+          ><img src="assets/task-delete.png" alt="Deleting a task" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Confirmation: read what will happen before proceeding.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h2 id="section-71">Documents</h2>
+      <h3 id="section-72">All documents</h3>
+      <p>
+        This is the global document list. Review filename, category, date, and owner. To add a
+        document, open its client, case, or power-of-attorney file. Adding is unavailable from the
+        global list.
+      </p>
+      <p>
+        <a href="assets/documents-global.png" aria-label="Open full-size screenshot"
+          ><img src="assets/documents-global.png" alt="All documents" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+      </ol>
+      <h3 id="section-73">Adding a document copy</h3>
+      <p>
+        From the owner’s documents tab, choose Add document, then Choose file. Select a file in the
+        system dialog, add category, description, and date, and save. The app keeps a copy without
+        changing the source. Canceling selection creates no attachment.
+      </p>
+      <p>
+        <a href="assets/document-create.png" aria-label="Open full-size screenshot"
+          ><img src="assets/document-create.png" alt="Adding a document copy" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Category: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          Description: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Document date: Type day/month/year or year-month-day, then leave the field, or choose a
+          day from the calendar.
+        </li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+        <li>
+          File selection: choose a document; the app keeps a managed copy and leaves the original in
+          place.
+        </li>
+      </ol>
+      <h3 id="section-74">Editing document metadata</h3>
+      <p>
+        Choose Edit beside a document to change category, description, and document date. This form
+        does not replace file contents. Open uses the appropriate system application; Reveal opens
+        the managed copy’s location.
+      </p>
+      <p>
+        <a href="assets/document-edit.png" aria-label="Open full-size screenshot"
+          ><img src="assets/document-edit.png" alt="Editing document metadata" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Category: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          Description: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Document date: Type day/month/year or year-month-day, then leave the field, or choose a
+          day from the calendar.
+        </li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-75">Removing a document</h3>
+      <p>
+        Review the confirmation before removing the managed copy and its metadata. The originally
+        selected source file is not deleted. Cancel keeps the attachment.
+      </p>
+      <p>
+        <a href="assets/document-remove.png" aria-label="Open full-size screenshot"
+          ><img src="assets/document-remove.png" alt="Removing a document" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Confirmation: read what will happen before proceeding.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-76">Document could not be opened</h3>
+      <p>
+        A missing managed file or failed open shows an error. Check file availability and system
+        configuration; do not manually move files inside the app’s data folder. Keep backups that
+        include documents.
+      </p>
+      <p>
+        <a href="assets/document-missing.png" aria-label="Open full-size screenshot"
+          ><img src="assets/document-missing.png" alt="Document could not be opened" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Error: correct the stated cause, then retry.</li>
+      </ol>
+      <h2 id="section-77">Fees, payments, and expenses</h2>
+      <h3 id="section-78">Payment register</h3>
+      <p>
+        Filter by case and client. With a case selected, payer filtering is limited to its clients.
+        Review payments and the account, and open a transaction to edit it.
+      </p>
+      <p>
+        <a href="assets/finance-payments.png" aria-label="Open full-size screenshot"
+          ><img src="assets/finance-payments.png" alt="Payment register" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Account: review the totals; amounts are in EGP.</li>
+      </ol>
+      <h3 id="section-79">Expense register</h3>
+      <p>
+        Switch to Expenses and review type, date, amount, and links. An expense may link to a case,
+        a client, or neither. Expenses do not count as fee payments.
+      </p>
+      <p>
+        <a href="assets/finance-expenses.png" aria-label="Open full-size screenshot"
+          ><img src="assets/finance-expenses.png" alt="Expense register" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Filters: choose what to display; filters do not change records.</li>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Records and actions: open a record or use its adjacent action.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Account: review the totals; amounts are in EGP.</li>
+      </ol>
+      <h3 id="section-80">Adding a payment</h3>
+      <p>
+        Choose a case and a payer from its linked clients. Enter a positive amount, payment date,
+        method, and notes, then save. Amounts use Egyptian pounds and piastres with exact minor-unit
+        storage.
+      </p>
+      <p>
+        <a href="assets/payment-create.png" aria-label="Open full-size screenshot"
+          ><img src="assets/payment-create.png" alt="Adding a payment" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Case: Choose the case related to this record.</li>
+        <li>Paying client: Choose an existing client; payment payers must belong to the case.</li>
+        <li>Amount (EGP): Enter a positive EGP amount, with up to two piastre digits.</li>
+        <li>
+          Payment date: Type day/month/year or year-month-day, then leave the field, or choose a day
+          from the calendar.
+        </li>
+        <li>
+          Payment method: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-81">Editing a payment</h3>
+      <p>
+        Open a payment, correct amount, date, method, or notes, and save. The case account updates
+        after saving. The current interface has no payment-delete control.
+      </p>
+      <p>
+        <a href="assets/payment-edit.png" aria-label="Open full-size screenshot"
+          ><img src="assets/payment-edit.png" alt="Editing a payment" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Case: Choose the case related to this record.</li>
+        <li>Paying client: Choose an existing client; payment payers must belong to the case.</li>
+        <li>Amount (EGP): Enter a positive EGP amount, with up to two piastre digits.</li>
+        <li>
+          Payment date: Type day/month/year or year-month-day, then leave the field, or choose a day
+          from the calendar.
+        </li>
+        <li>
+          Payment method: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-82">Adding an expense</h3>
+      <p>
+        Enter a positive amount, date, and expense type. Case and client links are optional. Types
+        are court fees, transport, office supplies, expert fees, and other. Save the transaction.
+      </p>
+      <p>
+        <a href="assets/expense-create.png" aria-label="Open full-size screenshot"
+          ><img src="assets/expense-create.png" alt="Adding an expense" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Case: Choose the case related to this record.</li>
+        <li>Client: Choose an existing client; payment payers must belong to the case.</li>
+        <li>Amount (EGP): Enter a positive EGP amount, with up to two piastre digits.</li>
+        <li>
+          Expense date: Type day/month/year or year-month-day, then leave the field, or choose a day
+          from the calendar.
+        </li>
+        <li>
+          Expense type: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-83">Editing an expense and its documents</h3>
+      <p>
+        Open an expense to edit details and save. The current interface has no expense
+        attachment-upload or expense-delete control. You can keep case receipts as case documents.
+      </p>
+      <p>
+        <a href="assets/expense-edit.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/expense-edit.png"
+            alt="Editing an expense and its documents"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Case: Choose the case related to this record.</li>
+        <li>Client: Choose an existing client; payment payers must belong to the case.</li>
+        <li>Amount (EGP): Enter a positive EGP amount, with up to two piastre digits.</li>
+        <li>
+          Expense date: Type day/month/year or year-month-day, then leave the field, or choose a day
+          from the calendar.
+        </li>
+        <li>
+          Expense type: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Notes: Optional additional information saved with the record.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-84">Payment details</h3>
+      <p>
+        Choose the payment date to inspect details without editing. Edit opens the editing form;
+        Close returns to the register.
+      </p>
+      <p>
+        <a href="assets/payment-inspect.png" aria-label="Open full-size screenshot"
+          ><img src="assets/payment-inspect.png" alt="Payment details" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-85">Expense details and receipts</h3>
+      <p>
+        Choose the expense date to inspect details without editing. Edit opens the form and Close
+        returns to the register. Attaching receipts to an expense is unavailable in this dialog.
+      </p>
+      <p>
+        <a href="assets/expense-inspect.png" aria-label="Open full-size screenshot"
+          ><img src="assets/expense-inspect.png" alt="Expense details and receipts" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Details: review this section and follow the instructions above.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h2 id="section-86">Backup and restore</h2>
+      <h3 id="section-87">Backup page</h3>
+      <p>
+        Create a backup now; it is saved in Backups inside application data. Latest backup shows
+        date, size, and advice when stale. Manually copy the archive to safe storage. Automatic
+        backups and changing the destination are unavailable.
+      </p>
+      <p>
+        <a href="assets/backups-page.png" aria-label="Open full-size screenshot"
+          ><img src="assets/backups-page.png" alt="Backup page" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-88">Backup created successfully</h3>
+      <p>
+        Success means the app created and checked the encrypted archive. It includes the database
+        and managed documents. Check the latest timestamp afterward.
+      </p>
+      <p>
+        <a href="assets/backup-created.png" aria-label="Open full-size screenshot"
+          ><img src="assets/backup-created.png" alt="Backup created successfully" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-89">Validating a backup</h3>
+      <p>
+        Choose Validate and select the archive in the system dialog. Success establishes archive
+        structure and content integrity in this vault; it does not establish portability to a new
+        computer.
+      </p>
+      <p>
+        <a href="assets/backup-validate.png" aria-label="Open full-size screenshot"
+          ><img src="assets/backup-validate.png" alt="Validating a backup" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-90">Restore confirmation</h3>
+      <p>
+        Restore replaces current state with the snapshot. Make a current backup first. Review the
+        warning and confirm or cancel. There is no restore preview.
+      </p>
+      <p>
+        <a href="assets/backup-restore-confirm.png" aria-label="Open full-size screenshot"
+          ><img src="assets/backup-restore-confirm.png" alt="Restore confirmation" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Confirmation: read what will happen before proceeding.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-91">Corrupt backup refused</h3>
+      <p>
+        An invalid archive is refused and current data remains intact. Choose a valid backup and
+        validate again; do not manually alter the archive contents.
+      </p>
+      <p>
+        <a href="assets/backup-corrupt.png" aria-label="Open full-size screenshot"
+          ><img src="assets/backup-corrupt.png" alt="Corrupt backup refused" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-92">Lock after restore</h3>
+      <p>
+        Successful restore locks the app. Unlock and verify records and documents as of the
+        snapshot. Changes made afterward are absent from restored state. Restoring into a new vault
+        with only the original password is currently unsupported.
+      </p>
+      <p>
+        <a href="assets/backup-restored.png" aria-label="Open full-size screenshot"
+          ><img src="assets/backup-restored.png" alt="Lock after restore" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Password: Use at least 12 characters and keep it safe.</li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h2 id="section-93">Settings</h2>
+      <h3 id="section-94">Lawyer profile</h3>
+      <p>
+        Edit name, bar number, phone, and office address, then save. These are your office details,
+        not an online account.
+      </p>
+      <p>
+        <a href="assets/settings-profile.png" aria-label="Open full-size screenshot"
+          ><img src="assets/settings-profile.png" alt="Lawyer profile" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Lawyer name: Enter the full name so you can locate the record.</li>
+        <li>
+          Bar registration number: review the value or enter the relevant information, then save the
+          form.
+        </li>
+        <li>
+          Phone number: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>
+          Office address: review the value or enter the relevant information, then save the form.
+        </li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-95">Display and calendar</h3>
+      <p>
+        Choose Arabic or English, light/dark/system appearance, date format, week start, and default
+        reminder lead time, then save. Current task and hearing forms have no separate reminder
+        field.
+      </p>
+      <p>
+        <a href="assets/settings-general.png" aria-label="Open full-size screenshot"
+          ><img src="assets/settings-general.png" alt="Display and calendar" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>
+          Interface language: review the value or enter the relevant information, then save the
+          form.
+        </li>
+        <li>Appearance: review the value or enter the relevant information, then save the form.</li>
+        <li>
+          Date format: Type day/month/year or year-month-day, then leave the field, or choose a day
+          from the calendar.
+        </li>
+        <li>
+          First day of the week: review the value or enter the relevant information, then save the
+          form.
+        </li>
+        <li>
+          Reminder before a hearing or task (minutes): review the value or enter the relevant
+          information, then save the form.
+        </li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+      </ol>
+      <h3 id="section-96">Security and notifications</h3>
+      <p>
+        Set and save the lock timeout. Autostart is optional; notifications require system
+        permission and the app running. Password change requires the current password, a new one,
+        and confirmation. Local counters are optional and do not transmit case data. Also review the
+        lower part of the page.
+      </p>
+      <p>
+        <a href="assets/settings-security.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/settings-security.png"
+            alt="Security and notifications (1/2)"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>
+          Minutes of inactivity before locking: review the value or enter the relevant information,
+          then save the form.
+        </li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <p>
+        <a href="assets/settings-security-2.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/settings-security-2.png"
+            alt="Security and notifications (2/2)"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Current password: Use at least 12 characters and keep it safe.</li>
+        <li>New password: Use at least 12 characters and keep it safe.</li>
+        <li>Confirm password: Use at least 12 characters and keep it safe.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-97">Backups in Settings</h3>
+      <p>
+        Settings contains the same create, validate, and restore tools as the Backup section. Backup
+        setup is not required to finish onboarding.
+      </p>
+      <p>
+        <a href="assets/settings-backups.png" aria-label="Open full-size screenshot"
+          ><img src="assets/settings-backups.png" alt="Backups in Settings" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-98">Privacy and data location</h3>
+      <p>
+        Review storage, document, backup, and network information. The database is encrypted, but
+        managed documents are not individually encrypted; use a protected OS account and disk
+        encryption.
+      </p>
+      <p>
+        <a href="assets/settings-privacy.png" aria-label="Open full-size screenshot"
+          ><img src="assets/settings-privacy.png" alt="Privacy and data location" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-99">About the app</h3>
+      <p>
+        Review product name, version, application status, and available information links. This
+        application is pre-beta; passing Linux tests does not validate Windows or macOS.
+      </p>
+      <p>
+        <a href="assets/settings-about.png" aria-label="Open full-size screenshot"
+          ><img src="assets/settings-about.png" alt="About the app" loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Tabs and views: switch to the section you want to review.</li>
+        <li>Page identity and actions: check the heading before adding or editing.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h3 id="section-100">Correcting password confirmation</h3>
+      <p>
+        A mismatch between the new password and confirmation shows a message and does not save the
+        change. Enter matching values; the new password must have at least 12 characters.
+      </p>
+      <p>
+        <a href="assets/password-mismatch.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/password-mismatch.png"
+            alt="Correcting password confirmation (1/2)"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>
+          Minutes of inactivity before locking: review the value or enter the relevant information,
+          then save the form.
+        </li>
+        <li>Action buttons: save or confirm when ready; Cancel keeps the previous state.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <p>
+        <a href="assets/password-mismatch-2.png" aria-label="Open full-size screenshot"
+          ><img
+            src="assets/password-mismatch-2.png"
+            alt="Correcting password confirmation (2/2)"
+            loading="lazy"
+        /></a>
+      </p>
+      <ol>
+        <li>Current password: Use at least 12 characters and keep it safe.</li>
+        <li>New password: Use at least 12 characters and keep it safe.</li>
+        <li>Confirm password: Use at least 12 characters and keep it safe.</li>
+        <li>Error: correct the stated cause, then retry.</li>
+        <li>Details: review this section and follow the instructions above.</li>
+      </ol>
+      <h2 id="section-101">Troubleshooting and current limitations</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Problem</th>
+            <th>What to do</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Internal number already used</td>
+            <td>Choose another number; internal identifiers must be unique.</td>
+          </tr>
+          <tr>
+            <td>Client or case missing</td>
+            <td>Clear filters, include archived records, and search by internal number.</td>
+          </tr>
+          <tr>
+            <td>Payment payer unavailable</td>
+            <td>
+              Select the client when creating the case; changing client links afterward is
+              unavailable in the current interface.
+            </td>
+          </tr>
+          <tr>
+            <td>Date rejected</td>
+            <td>Choose it from the calendar or enter a real day/month/year date.</td>
+          </tr>
+          <tr>
+            <td>Document file missing</td>
+            <td>Check the managed copy or restore an intact snapshot in the original vault.</td>
+          </tr>
+          <tr>
+            <td>Notification missing</td>
+            <td>
+              Check OS permission and that the app is running; physical platform validation remains
+              pending.
+            </td>
+          </tr>
+          <tr>
+            <td>Corrupt backup</td>
+            <td>Current data is preserved; try a valid archive.</td>
+          </tr>
+          <tr>
+            <td>Forgotten password</td>
+            <td>Use the recovery key; email/support password recovery is unavailable.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>Important limits:</strong> the current version cannot restore into an independently
+        initialized vault with only the original password, schedule backups/retention, preview
+        restores, export a complete installation/case, or permanently delete clients/cases. It is a
+        solo-lawyer organizer, not an accounting or multi-user collaboration system.
+      </p>
+      <h2 id="section-102">About this guide</h2>
+      <p>
+        Screenshots come from the real Tauri application on Linux using a temporary fictional vault
+        and actual persistence. Test file selection uses an allowlisted substitute; these
+        screenshots do not validate OS dialogs, installation, or notifications on Windows/macOS. The
+        recovery key is intentionally hidden.
+      </p>
+      <p>
+        Source revision: 93433d750482f2f11a8168d31abaf5e75644a85a. Working-tree changes included.
+        Capture date: 2026-10-06.
+      </p>
+    </main>
+    <footer>Legal Masr · 0.1.0</footer>
+  </body>
+</html>

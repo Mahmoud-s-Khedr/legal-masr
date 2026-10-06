@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../../bridge/commands', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../../bridge/commands')>();
@@ -29,6 +30,52 @@ beforeEach(async () => {
   await i18n.changeLanguage('ar');
 });
 describe('vault forms', () => {
+  it('shows only the current gate error when switching from unlock to recovery', async () => {
+    vi.mocked(bridge.unlock).mockRejectedValue({
+      code: 'INVALID_PASSWORD',
+      message: 'Fictional refusal',
+      details: null,
+    });
+    vi.mocked(bridge.recover).mockRejectedValue({
+      code: 'RECOVERY_KEY_INVALID',
+      message: 'Fictional refusal',
+      details: null,
+    });
+    function Gates() {
+      const [subGate, setSubGate] = useState<OnboardingSubGate>('unlock');
+      return (
+        <OnboardingPage
+          subGate={subGate}
+          recoveryKey=""
+          onSwitchToRecovery={() => setSubGate('recovery')}
+          onBackToUnlock={() => setSubGate('unlock')}
+          onSetupSucceeded={vi.fn()}
+          onUnlocked={vi.fn()}
+          onRecovered={vi.fn()}
+          onRecoveryKeySaved={vi.fn()}
+        />
+      );
+    }
+    renderWorkflow(<Gates />);
+    fireEvent.change(screen.getByLabelText('كلمة المرور'), {
+      target: { value: 'fictional password 2026' },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'فتح' }).closest('form')!);
+    expect(await screen.findByRole('alert')).toHaveTextContent('كلمة المرور غير صحيحة');
+    fireEvent.click(screen.getByRole('button', { name: 'لدي مفتاح الاسترداد' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('مفتاح الاسترداد'), {
+      target: { value: 'fictional invalid key' },
+    });
+    fireEvent.change(screen.getByLabelText('كلمة المرور الجديدة'), {
+      target: { value: 'fictional password 2026' },
+    });
+    fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), {
+      target: { value: 'fictional password 2026' },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'استعادة الوصول' }).closest('form')!);
+    expect(await screen.findByRole('alert')).toHaveTextContent('مفتاح الاسترداد غير صحيح');
+  });
   for (const gate of ['setup', 'unlock', 'recovery'] as const) {
     it(`${gate} handles refusal, retains the draft and succeeds on retry`, async () => {
       const method = gate === 'setup' ? 'initialize' : gate === 'unlock' ? 'unlock' : 'recover';

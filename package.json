@@ -35,7 +35,10 @@
     "check:coverage": "node scripts/check-coverage.mjs",
     "capture:visual:canonical": "node scripts/visual-container.mjs compare",
     "update:visual:canonical": "node scripts/visual-container.mjs update",
-    "probe:visual:canonical": "node scripts/visual-container.mjs probe"
+    "probe:visual:canonical": "node scripts/visual-container.mjs probe",
+    "guide:capture": "node scripts/capture-user-guide.mjs",
+    "guide:build": "node scripts/build-user-guide.mjs",
+    "guide:verify": "node scripts/verify-user-guide.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -75,6 +78,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.8.0",
     "jsdom": "^26.1.0",
+    "markdown-it": "15.0.2",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "~5.8.3",

@@ -111,6 +111,14 @@ describe('application gate', () => {
       '/backups',
     );
     expect(document.documentElement).toHaveAttribute('data-theme', 'system');
+    const footer = screen.getByRole('contentinfo');
+    expect(footer).toHaveTextContent('طوّر التطبيق محمود خضر');
+    expect(footer).toHaveTextContent('Mahmoud.s.khedr.2@gmail.com');
+    expect(footer).toHaveTextContent('+201016240934');
+    expect(screen.getByRole('link', { name: 'عن ليجال مصر' })).toHaveAttribute(
+      'href',
+      '/settings?tab=about',
+    );
   });
 
   it('removes cached legal records from the renderer when the vault locks', async () => {

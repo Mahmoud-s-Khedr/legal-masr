@@ -14,7 +14,11 @@ Settings provide profile (name, bar number, phone, office address), Arabic or
 English UI, theme, date format, week start, default reminder lead time, lock
 timeout, autostart, notification permission, aggregate usage-counter consent,
 manual backup controls, privacy/data-location information, and About. Backup
-setup never blocks onboarding.
+setup never blocks onboarding. About credits developer Mahmoud Khedr and offers
+email, phone, WhatsApp, Telegram, and LinkedIn contact actions. The workspace
+footer repeats these contact options and links directly to About. Contact actions
+use a narrow Rust command with fixed destinations; no renderer-supplied URL or
+message content is opened.
 
 ### Clients, POAs, and cases
 
@@ -78,6 +82,14 @@ must not flip (dates, identifiers, money, phones, filenames, versions) use
 `<bdi>`.
 
 ## Current gaps and release risks
+
+The illustrated-guide audit also confirmed that the case-client relationship
+panel is read-only: creation selects clients, but case editing preserves their
+relationships and does not expose client reassignment, legal-capacity editing,
+or POA selection. Expense-owned attachments are supported by Rust, but the
+expense dialogs do not expose an attachment-upload control. Client JSON export
+also remains a backend command without a visible UI action. The guide documents
+these limits rather than providing instructions for unavailable controls.
 
 - Backups are manual and saved to the app-data backup folder; there is no
   configurable destination, automatic schedule, retention policy, or history

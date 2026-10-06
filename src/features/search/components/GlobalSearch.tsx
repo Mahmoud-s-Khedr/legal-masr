@@ -57,7 +57,7 @@ export function GlobalSearch({
         aria-autocomplete="list"
         aria-controls={resultsId}
         aria-expanded={(palette || open) && Boolean(debounced)}
-        aria-activedescendant={activeIndex >= 0 ? `global-search-option-${activeIndex}` : undefined}
+        aria-activedescendant={activeIndex >= 0 ? `${resultsId}-option-${activeIndex}` : undefined}
         aria-label={t('app.searchLabel')}
         placeholder={t('search.placeholder')}
         value={query}

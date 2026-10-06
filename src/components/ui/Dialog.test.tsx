@@ -24,6 +24,26 @@ function DialogHarness({ onChange = vi.fn() }: { onChange?: (open: boolean) => v
 }
 
 describe('Dialog', () => {
+  it('preserves focus in a draft when parent state or error content changes', () => {
+    const change = vi.fn();
+    const { rerender } = render(
+      <Dialog open onOpenChange={change} title="تعديل">
+        <button>إلغاء</button>
+        <input aria-label="مسودة" />
+      </Dialog>,
+    );
+    const draft = screen.getByRole('textbox', { name: 'مسودة' });
+    draft.focus();
+    rerender(
+      <Dialog open onOpenChange={change} title="تعديل">
+        <button>إلغاء</button>
+        <input aria-label="مسودة" />
+        <p role="alert">تعذر الحفظ؛ أعد المحاولة</p>
+      </Dialog>,
+    );
+    expect(draft).toHaveFocus();
+  });
+
   it('contains focus, closes with Escape, and returns focus to its trigger', () => {
     const onChange = vi.fn();
     render(<DialogHarness onChange={onChange} />);

@@ -1,5 +1,5 @@
 import { Dialog as BaseDialog } from '@base-ui/react/dialog';
-import { type ReactNode, useEffect, useId, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect, useId, useRef } from 'react';
 import { Button } from './button';
 
 type DialogProps = {
@@ -16,6 +16,20 @@ export function Dialog({ open, onOpenChange, title, children, labelledBy }: Dial
   const titleId = labelledBy ?? generatedTitleId;
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
+  // Keep the callback stable while open: rerendering errors or query data must
+  // not reset the lawyer's focus while editing a draft.
+  const focusInitialControl = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!open) return;
+      node
+        ?.querySelector<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        )
+        ?.focus();
+    },
+    [open],
+  );
+
   useEffect(() => {
     if (open) {
       returnFocusRef.current =
@@ -31,15 +45,7 @@ export function Dialog({ open, onOpenChange, title, children, labelledBy }: Dial
         <BaseDialog.Backdrop className="dialog-backdrop" />
         <BaseDialog.Viewport className="dialog-viewport">
           <BaseDialog.Popup
-            ref={(node) => {
-              if (open) {
-                node
-                  ?.querySelector<HTMLElement>(
-                    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-                  )
-                  ?.focus();
-              }
-            }}
+            ref={focusInitialControl}
             className="dialog-surface"
             aria-labelledby={titleId}
             initialFocus={false}

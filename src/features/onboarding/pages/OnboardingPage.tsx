@@ -48,7 +48,14 @@ export function OnboardingPage({
   const [keySaved, setKeySaved] = useState(false);
 
   const busy = initializeVault.isPending || unlockVault.isPending || recoverAccess.isPending;
-  const error = initializeVault.error ?? unlockVault.error ?? recoverAccess.error;
+  const error =
+    subGate === 'setup'
+      ? initializeVault.error
+      : subGate === 'unlock'
+        ? unlockVault.error
+        : subGate === 'recovery'
+          ? recoverAccess.error
+          : null;
   const copyKey = subGate === 'recovery-key' ? 'recoveryKey' : subGate;
 
   return (

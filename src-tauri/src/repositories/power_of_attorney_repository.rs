@@ -127,7 +127,7 @@ pub fn hydrate(
         })?
         .collect::<Result<_, _>>()?;
     let mut cases = conn.prepare(
-        "SELECT case_id FROM case_clients WHERE power_of_attorney_id = ?1 ORDER BY case_id",
+        "SELECT DISTINCT case_id FROM case_clients WHERE power_of_attorney_id = ?1 ORDER BY case_id",
     )?;
     poa.case_ids = cases
         .query_map([&poa.id], |row| row.get(0))?
@@ -228,8 +228,13 @@ mod tests {
             "now",
         )
         .unwrap();
+        assert!(hydrate(&connection, get(&connection, &poa_id).unwrap())
+            .unwrap()
+            .case_ids
+            .is_empty());
         connection.execute("INSERT INTO cases (id, internal_number, status, created_at, updated_at) VALUES (?1, 'CA-1', 'ACTIVE', 'now', 'now')", [&case_id]).unwrap();
         connection.execute("INSERT INTO case_clients (case_id, client_id, power_of_attorney_id, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')", params![case_id, first_client, poa_id]).unwrap();
+        connection.execute("INSERT INTO case_clients (case_id, client_id, power_of_attorney_id, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')", params![case_id, second_client, poa_id]).unwrap();
 
         let saved = hydrate(&connection, get(&connection, &poa_id).unwrap()).unwrap();
         assert_eq!(saved.clients.len(), 2);

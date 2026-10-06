@@ -411,7 +411,7 @@ code {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 252px minmax(0, 1fr);
-  grid-template-rows: 72px minmax(0, 1fr);
+  grid-template-rows: 72px minmax(0, 1fr) auto;
   background: var(--canvas);
 }
 .topbar {
@@ -839,6 +839,7 @@ html[data-theme='dark'] .sidebar a {
 }
 .dialog-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.85rem;
   margin-top: 1rem;
 }
@@ -1972,7 +1973,7 @@ html[data-theme='dark'] .sidebar a {
 @media (max-width: 980px) {
   .app-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: 64px minmax(0, 1fr);
+    grid-template-rows: 64px minmax(0, 1fr) auto;
   }
   .topbar {
     grid-column: 1;
@@ -4758,4 +4759,47 @@ html[dir='ltr'] .password-input input {
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --font-sans: var(--latin-ui);
+}
+
+/* Developer contact details shared by About and the workspace footer. */
+.app-footer {
+  grid-column: 2;
+  grid-row: 3;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding: 1rem clamp(1rem, 2.8vw, 2.25rem);
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.app-footer > a {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+}
+.developer-credit {
+  margin: 0 0 0.5rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+.developer-contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+}
+.developer-contact-links a {
+  min-width: 0;
+  padding-block: 0.25rem;
+  overflow-wrap: anywhere;
+}
+.developer-contact-links a[aria-disabled='true'] {
+  opacity: 0.6;
+}
+.developer-contact-links a:focus-visible,
+.app-footer > a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 980px) {
+  .app-footer {
+    grid-column: 1;
+  }
 }

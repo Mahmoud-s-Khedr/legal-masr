@@ -667,7 +667,10 @@ export function CaseDetailPage() {
             onToggleCompletion={
               taskEditor === 'new'
                 ? undefined
-                : () => (taskEditor.completed ? reopenTask : completeTask).mutate(taskEditor.id)
+                : () =>
+                    (taskEditor.completed ? reopenTask : completeTask).mutate(taskEditor.id, {
+                      onSuccess: (updated) => setTaskEditor(updated),
+                    })
             }
             onCancel={() => setTaskEditor(null)}
             onSave={async (input) => {
