@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../bridge/commands', () => ({
   bridge: {
@@ -17,21 +17,68 @@ vi.mock('../../../bridge/commands', () => ({
 
 import { bridge } from '../../../bridge/commands';
 import { FinancesPage } from './FinancesPage';
+import i18n from '../../../i18n';
+import { LocalePresentationContext } from '../../../i18n/LocalePresentation';
+import { arEG, enUS } from 'date-fns/locale';
 
-function renderPage() {
+function renderPage(language: 'ar' | 'en' = 'ar') {
   return render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <MemoryRouter>
-        <FinancesPage />
+        <LocalePresentationContext.Provider
+          value={{
+            language,
+            direction: language === 'ar' ? 'rtl' : 'ltr',
+            dateLocale: language === 'ar' ? arEG : enUS,
+            weekStartsOn: 6,
+            dateFormat: 'dd/MM/yyyy',
+          }}
+        >
+          <FinancesPage />
+        </LocalePresentationContext.Provider>
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
 describe('FinancesPage', () => {
-  beforeEach(() => {
+  it.each(['ar', 'en'] as const)(
+    'uses %s locale and the date preference in payment inspection',
+    async (language) => {
+      await i18n.changeLanguage(language);
+      vi.mocked(bridge.paymentList).mockResolvedValue([
+        {
+          id: 'payment-1',
+          caseId: 'case-1',
+          payerClientId: 'client-1',
+          amountMinor: 150025,
+          paymentDate: '2026-08-24',
+          paymentMethod: 'CASH',
+          notes: null,
+          createdAt: 'now',
+          updatedAt: 'now',
+        },
+      ]);
+      renderPage(language);
+      const table = await screen.findByRole('table');
+      await waitFor(() => expect(within(table).getAllByRole('button')).toHaveLength(2));
+      fireEvent.click(within(table).getAllByRole('button')[0]);
+      const dialog = await screen.findByRole('dialog');
+      expect(within(dialog).getByText('24/08/2026')).toBeVisible();
+      const amount = within(dialog).getByText(/1,500.25/);
+      expect(amount.tagName).toBe('BDI');
+      if (language === 'en') expect(amount).toHaveTextContent('EGP');
+      expect(amount).not.toHaveTextContent('١');
+    },
+  );
+
+  afterEach(async () => {
+    await i18n.changeLanguage('ar');
+  });
+  beforeEach(async () => {
+    await i18n.changeLanguage('ar');
     vi.clearAllMocks();
     vi.mocked(bridge.caseList).mockResolvedValue([
       {

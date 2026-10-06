@@ -32,6 +32,40 @@ function renderPage(path = '/tasks') {
 }
 
 describe('TasksPage', () => {
+  it('updates the open dialog after completion and allows reopening without losing its draft', async () => {
+    const original = (await bridge.taskList({ referenceDate: '2026-10-06' }))[0];
+    vi.mocked(bridge.taskReopen).mockResolvedValue(original);
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: original.title }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'المهمة' }), {
+      target: { value: 'مسودة لم تحفظ' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'إتمام المهمة' }));
+    const reopen = await within(dialog).findByRole('button', { name: 'إعادة فتح المهمة' });
+    expect(within(dialog).getByRole('textbox', { name: 'المهمة' })).toHaveValue('مسودة لم تحفظ');
+    fireEvent.click(reopen);
+    expect(await within(dialog).findByRole('button', { name: 'إتمام المهمة' })).toBeVisible();
+    expect(vi.mocked(bridge.taskReopen).mock.calls[0][0]).toBe('task-1');
+  });
+
+  it('keeps the dialog status and draft when completion fails', async () => {
+    vi.mocked(bridge.taskComplete).mockRejectedValue({
+      code: 'OPERATION_FAILED',
+      message: 'x',
+      details: null,
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'مراجعة عقد ABC-42' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'إتمام المهمة' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('تعذر تغيير حالة المهمة');
+    expect(within(dialog).getByRole('button', { name: 'إتمام المهمة' })).toBeVisible();
+    expect(
+      within(dialog).queryByRole('button', { name: 'إعادة فتح المهمة' }),
+    ).not.toBeInTheDocument();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(bridge.caseList).mockResolvedValue([]);

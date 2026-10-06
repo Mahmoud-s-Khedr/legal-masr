@@ -103,7 +103,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
         </Popover.Trigger>
       </span>
       <Popover.Portal>
-        <Popover.Positioner side="bottom" align="start" sideOffset={6}>
+        <Popover.Positioner side="bottom" align="start" sideOffset={6} style={{ zIndex: 110 }}>
           <Popover.Popup
             className="date-picker-popover"
             aria-label={t('datePicker.chooseDate')}

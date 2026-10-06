@@ -52,6 +52,9 @@ describe('GlobalSearch', () => {
     expect(screen.getByText('التوكيلات')).toBeInTheDocument();
 
     fireEvent.keyDown(input, { key: 'ArrowDown' });
+    const selected = screen.getByRole('option', { name: /أحمد علي.*C-1/ });
+    expect(input).toHaveAttribute('aria-activedescendant', selected.id);
+    expect(selected).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(screen.getByTestId('location')).toHaveTextContent('/cases/case-1');
@@ -75,6 +78,8 @@ describe('GlobalSearch', () => {
     );
 
     expect(await screen.findByText('لا توجد نتائج مطابقة.')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'ArrowDown' });
+    expect(screen.getByRole('combobox')).not.toHaveAttribute('aria-activedescendant');
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Escape' });
     expect(onNavigate).toHaveBeenCalledOnce();
   });

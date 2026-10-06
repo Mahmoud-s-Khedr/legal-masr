@@ -40,8 +40,6 @@ const expenseTypes: readonly ExpenseType[] = [
 ];
 const today = () => localDateOnly();
 export { parseMoneyToMinor };
-const money = (amount: number) =>
-  new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount / 100);
 export const paymentPayerOptions = (
   caseClients: ReadonlyArray<{ clientId: string; fullName: string }> | undefined,
 ) => caseClients?.map((client) => ({ id: client.clientId, fullName: client.fullName })) ?? [];
@@ -360,6 +358,7 @@ function TransactionInspection({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const isPayment = entry.type === 'payment';
   const record = entry.value;
   const date = isPayment ? (record as PaymentDto).paymentDate : (record as ExpenseDto).expenseDate;
@@ -369,7 +368,7 @@ function TransactionInspection({
         <div>
           <dt>{t('cases.detail.entryDate')}</dt>
           <dd>
-            <bdi>{date}</bdi>
+            <bdi>{format.date(date)}</bdi>
           </dd>
         </div>
         <div>
@@ -385,7 +384,7 @@ function TransactionInspection({
         <div>
           <dt>{t('cases.detail.entryAmount')}</dt>
           <dd>
-            <bdi>{money(record.amountMinor)}</bdi>
+            <bdi>{format.money(record.amountMinor)}</bdi>
           </dd>
         </div>
       </dl>

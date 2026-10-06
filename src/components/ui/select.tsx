@@ -46,18 +46,18 @@ export function Select({
     >
       <SelectPrimitive.Trigger
         className={cn(
-          'flex min-h-11 w-full items-center justify-between rounded-sm border border-border bg-card px-3 py-2 text-start text-foreground focus:outline-3 focus:outline-primary/50 disabled:cursor-not-allowed disabled:opacity-55',
+          'flex min-h-11 min-w-0 w-full items-center justify-between rounded-sm border border-border bg-card px-3 py-2 text-start text-foreground focus:outline-3 focus:outline-primary/50 disabled:cursor-not-allowed disabled:opacity-55',
           className,
         )}
         {...props}
       >
-        <SelectPrimitive.Value className="truncate" placeholder={placeholder} />
+        <SelectPrimitive.Value className="min-w-0 flex-1 truncate" placeholder={placeholder} />
         <SelectPrimitive.Icon>
           <IconChevronDown size={16} />
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
-        <SelectPrimitive.Positioner sideOffset={4} className="z-50">
+        <SelectPrimitive.Positioner sideOffset={4} className="z-[110]">
           <SelectPrimitive.Popup className="max-h-72 min-w-[var(--anchor-width)] overflow-auto rounded-md border border-border bg-card p-1 text-foreground shadow-lg">
             <SelectPrimitive.List>
               {items.map((item) => (

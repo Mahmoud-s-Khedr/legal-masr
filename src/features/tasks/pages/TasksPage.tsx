@@ -264,7 +264,10 @@ export function TasksPage() {
             onToggleCompletion={
               editing === 'new'
                 ? undefined
-                : () => (editing.completed ? reopen : complete).mutate(editing.id)
+                : () =>
+                    (editing.completed ? reopen : complete).mutate(editing.id, {
+                      onSuccess: (updated) => setEditing(updated),
+                    })
             }
             toggling={complete.isPending || reopen.isPending}
             onCancel={() => setEditing(null)}
