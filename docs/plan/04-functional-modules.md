@@ -14,7 +14,11 @@ Settings provide profile (name, bar number, phone, office address), Arabic or
 English UI, theme, date format, week start, default reminder lead time, lock
 timeout, autostart, notification permission, aggregate usage-counter consent,
 manual backup controls, privacy/data-location information, and About. Backup
-setup never blocks onboarding.
+setup never blocks onboarding. About credits developer Mahmoud Khedr and offers
+email, phone, WhatsApp, Telegram, and LinkedIn contact actions. The workspace
+footer repeats these contact options and links directly to About. Contact actions
+use a narrow Rust command with fixed destinations; no renderer-supplied URL or
+message content is opened.
 
 ### Clients, POAs, and cases
 

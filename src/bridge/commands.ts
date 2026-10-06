@@ -51,6 +51,8 @@ import type {
   SearchRebuildResult,
 } from './types';
 
+export type DeveloperContact = 'email' | 'phone' | 'whatsapp' | 'telegram' | 'linkedin';
+
 export const bridge = {
   status: () => invoke<AppStatus>('app_get_status'),
   initialize: (input: InitializeInput) =>
@@ -65,6 +67,8 @@ export const bridge = {
   latestSuccessfulBackup: () => invoke<LatestSuccessfulBackup | null>('backup_latest_successful'),
   validateBackup: () => invoke<void>('backup_validate'),
   restoreBackup: () => invoke<void>('backup_restore'),
+  openDeveloperContact: (contact: DeveloperContact) =>
+    invoke<void>('settings_open_developer_contact', { contact }),
   settings: () => invoke<Settings>('settings_get'),
   updateSettings: (settings: SettingsUpdateInput) =>
     invoke<Settings>('settings_update', { input: settings }),

@@ -54,6 +54,7 @@ pub fn run() {
             commands::backup::backup_validate,
             commands::backup::backup_restore,
             commands::settings::settings_get,
+            commands::settings::settings_open_developer_contact,
             commands::settings::settings_update,
             commands::settings::profile_get,
             commands::settings::profile_update,

@@ -196,6 +196,12 @@ const contracts = [
   ['latestSuccessfulBackup', 'backup_latest_successful', [], () => bridge.latestSuccessfulBackup()],
   ['validateBackup', 'backup_validate', [], () => bridge.validateBackup()],
   ['restoreBackup', 'backup_restore', [], () => bridge.restoreBackup()],
+  [
+    'openDeveloperContact',
+    'settings_open_developer_contact',
+    [{ contact: 'email' }],
+    () => bridge.openDeveloperContact('email'),
+  ],
   ['settings', 'settings_get', [], () => bridge.settings()],
   [
     'updateSettings',
@@ -511,8 +517,8 @@ describe('canonical Tauri bridge payload contracts', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('covers every bridge method', () => {
-    expect(contracts).toHaveLength(68);
-    expect(Object.keys(bridge)).toHaveLength(68);
+    expect(contracts).toHaveLength(69);
+    expect(Object.keys(bridge)).toHaveLength(69);
   });
 
   it.each(contracts)(

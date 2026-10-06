@@ -9,6 +9,7 @@ import { Sheet } from '../ui/sheet';
 import { useSettings } from '../../features/settings/api/settingsApi';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Icon } from './Icon';
+import { DeveloperContacts } from './DeveloperContacts';
 import { shouldLockForLifecycleGap } from '../../lib/lifecycleLock';
 
 export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
@@ -169,6 +170,10 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
             <main className="workspace">
               <AppRoutes />
             </main>
+            <footer className="app-footer no-print">
+              <Link to="/settings?tab=about">{t('settings.tabs.about')}</Link>
+              <DeveloperContacts />
+            </footer>
             <Sheet.Portal>
               <Sheet.Backdrop className="drawer-backdrop" />
               <Sheet.Viewport className="mobile-drawer">

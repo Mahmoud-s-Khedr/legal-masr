@@ -51,3 +51,12 @@ pub fn settings_set_usage_counters(
 ) -> Result<SettingsDto, Error> {
     settings_service::set_usage_counters(&app, &state, enabled)
 }
+
+#[tauri::command]
+pub fn settings_open_developer_contact(
+    app: AppHandle,
+    state: State<AppState>,
+    contact: String,
+) -> Result<(), Error> {
+    settings_service::open_developer_contact(&app, &state, &contact)
+}

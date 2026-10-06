@@ -4,6 +4,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
+import { DeveloperContacts } from '../../../components/layout/DeveloperContacts';
 import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
 import { Switch } from '../../../components/ui/Switch';
@@ -577,16 +578,27 @@ export function SettingsPage() {
           )}
 
           {selectedTab === 'about' && (
-            <section className="settings-section about-section">
-              <img src="/logo.png" alt="" />
-              <div>
-                <h3>{t('app.brandName')}</h3>
-                <p className="about-tagline">{t('app.brandTagline')}</p>
-                <p>{t('settings.about.version', { version: '0.1.0' })}</p>
-                <p>{t('settings.about.description')}</p>
-                <span className="local-status">{t('app.localOnly')}</span>
-              </div>
-            </section>
+            <div className="settings-stack">
+              <section className="settings-section about-section">
+                <img src="/logo.png" alt="" />
+                <div>
+                  <h3>{t('app.brandName')}</h3>
+                  <p className="about-tagline">{t('app.brandTagline')}</p>
+                  <p>{t('settings.about.version', { version: '0.1.0' })}</p>
+                  <p>{t('settings.about.description')}</p>
+                  <span className="local-status">{t('app.localOnly')}</span>
+                </div>
+              </section>
+              <section className="settings-section">
+                <div className="section-heading">
+                  <div>
+                    <h3>{t('settings.about.developerTitle')}</h3>
+                    <p>{t('settings.about.contactHint')}</p>
+                  </div>
+                </div>
+                <DeveloperContacts />
+              </section>
+            </div>
           )}
         </div>
       </div>

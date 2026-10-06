@@ -86,3 +86,94 @@ pub fn set_usage_counters<R: Runtime>(
     settings_repository::update_usage_counters(&connection, enabled)?;
     settings_repository::get_settings(&connection)
 }
+
+// The renderer selects a contact kind; it cannot supply a URL or executable.
+fn dispatch_developer_contact(
+    state: &AppState,
+    contact: &str,
+    opener: impl FnOnce(&str) -> Result<(), Error>,
+) -> Result<(), Error> {
+    state.unlocked()?;
+    let url = match contact {
+        "email" => "mailto:Mahmoud.s.khedr.2@gmail.com",
+        "phone" => "tel:+201016240934",
+        "whatsapp" => "https://wa.me/201016240934",
+        "telegram" => "https://t.me/+201016240934",
+        "linkedin" => "https://www.linkedin.com/in/mahmoud-s-khedr/",
+        _ => return Err(Error::Validation),
+    };
+    opener(url)
+}
+
+pub fn open_developer_contact<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    contact: &str,
+) -> Result<(), Error> {
+    use tauri_plugin_opener::OpenerExt;
+    dispatch_developer_contact(state, contact, |url| {
+        app.opener()
+            .open_url(url, None::<&str>)
+            .map_err(|_| Error::Operation)
+    })
+}
+
+#[cfg(test)]
+mod contact_tests {
+    use super::*;
+
+    fn unlocked_state() -> AppState {
+        let state = AppState::default();
+        *state.master_key.lock().unwrap() = Some([7; 32]);
+        state
+    }
+
+    #[test]
+    fn opens_only_fixed_developer_destinations() {
+        for (contact, expected) in [
+            ("email", "mailto:Mahmoud.s.khedr.2@gmail.com"),
+            ("phone", "tel:+201016240934"),
+            ("whatsapp", "https://wa.me/201016240934"),
+            ("telegram", "https://t.me/+201016240934"),
+            ("linkedin", "https://www.linkedin.com/in/mahmoud-s-khedr/"),
+        ] {
+            dispatch_developer_contact(&unlocked_state(), contact, |url| {
+                assert_eq!(url, expected);
+                Ok(())
+            })
+            .unwrap();
+        }
+    }
+
+    #[test]
+    fn rejects_arbitrary_destinations_without_opening_them() {
+        for contact in [
+            "",
+            "https://example.com",
+            "file:///tmp/file",
+            "email?body=private",
+            "EMAIL",
+        ] {
+            assert!(matches!(
+                dispatch_developer_contact(&unlocked_state(), contact, |_| panic!("must not open")),
+                Err(Error::Validation)
+            ));
+        }
+    }
+
+    #[test]
+    fn rejects_contacts_while_locked() {
+        assert!(matches!(
+            dispatch_developer_contact(&AppState::default(), "email", |_| panic!("must not open")),
+            Err(Error::Locked)
+        ));
+    }
+
+    #[test]
+    fn propagates_opener_failure() {
+        assert!(matches!(
+            dispatch_developer_contact(&unlocked_state(), "email", |_| Err(Error::Operation)),
+            Err(Error::Operation)
+        ));
+    }
+}
