@@ -32,11 +32,16 @@ export class CdpBrowser {
   #nextId = 0;
   #pending = new Map();
 
-  static async connect(port) {
-    const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) =>
-      response.json(),
-    );
-    const target = applicationTarget(targets);
+  static async connect(port, { timeoutMs = 30_000 } = {}) {
+    const deadline = Date.now() + timeoutMs;
+    let target;
+    while (Date.now() < deadline && !target) {
+      const targets = await fetch(`http://127.0.0.1:${port}/json/list`)
+        .then((response) => response.json())
+        .catch(() => []);
+      target = applicationTarget(targets);
+      if (!target) await delay(100);
+    }
     if (!target?.webSocketDebuggerUrl) throw new Error('CDP_APPLICATION_TARGET_MISSING');
     const socket = new WebSocket(target.webSocketDebuggerUrl);
     await new Promise((resolve, reject) => {
