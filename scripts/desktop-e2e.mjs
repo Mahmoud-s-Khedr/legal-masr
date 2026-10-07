@@ -262,5 +262,5 @@ await writeFile(
     2,
   ),
 );
-for (const result of results) console.log(`${result.scenario}: ${result.result}`);
+for (const result of results) console.log(JSON.stringify(result));
 if (results.some((result) => result.result !== 'passed')) process.exitCode = 1;
