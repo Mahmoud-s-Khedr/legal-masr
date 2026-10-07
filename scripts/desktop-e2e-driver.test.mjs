@@ -6,50 +6,10 @@ import {
   applicationDiagnostic,
   failedDesktopOutcome,
   sessionDiagnostic,
-  selectDesktopWindow,
   stopDriver,
   waitForDriver,
   waitForWebView,
 } from './desktop-e2e-driver.mjs';
-
-test('Windows attachment selects the Tauri target after an initial blank target', async () => {
-  let selected;
-  await selectDesktopWindow({
-    getWindowHandles: async () => ['blank', 'application'],
-    switchToWindow: async (handle) => {
-      selected = handle;
-    },
-    getUrl: async () => (selected === 'blank' ? 'about:blank' : 'http://tauri.localhost/'),
-  });
-  assert.equal(selected, 'application');
-});
-
-test('Windows attachment waits for the application target to navigate', async () => {
-  let attempts = 0;
-  await selectDesktopWindow(
-    {
-      getWindowHandles: async () => ['application'],
-      switchToWindow: async () => undefined,
-      getUrl: async () => (++attempts === 1 ? 'about:blank' : 'https://tauri.localhost/'),
-    },
-    { pollIntervalMs: 1 },
-  );
-  assert.equal(attempts, 2);
-});
-
-test('Windows attachment rejects unrelated pages without retaining their URLs', async () => {
-  await assert.rejects(
-    selectDesktopWindow(
-      {
-        getWindowHandles: async () => ['unrelated'],
-        switchToWindow: async () => undefined,
-        getUrl: async () => 'https://tauri.localhost.example/private-vault?password=secret',
-      },
-      { timeoutMs: 10, pollIntervalMs: 1 },
-    ),
-    { errorCode: 'DESKTOP_APPLICATION_WINDOW_MISSING' },
-  );
-});
 
 class FakeDriver extends EventEmitter {
   exitCode = null;

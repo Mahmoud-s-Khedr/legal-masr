@@ -7,10 +7,9 @@ import { randomUUID, createHash } from 'node:crypto';
 import { createServer } from 'node:net';
 import assert from 'node:assert/strict';
 import { WINDOWS_WEBVIEW_DEBUG_PORT } from './desktop-e2e-build.mjs';
+import { CdpBrowser } from './desktop-e2e-cdp.mjs';
 import {
   failedDesktopOutcome,
-  desktopPageKind,
-  selectDesktopWindow,
   stopDriver,
   waitForDriver,
   waitForWebView,
@@ -55,15 +54,18 @@ async function scenario(name, exercise) {
   await writeFile(join(root, 'fixtures/corrupt.lmsbackup'), 'fictional corrupt archive');
   const selection = (value) => writeFile(join(root, 'dialog-selection'), value);
   await selection('attachment');
-  // EdgeDriver's WebView2 attachment is the supported Windows path. Tauri's
-  // proxy is retained on Linux for its application-launch capability.
+  // Current EdgeDriver versions attach a separate blank target to WebView2.
+  // Windows uses the API-configured debug target directly; Linux uses Tauri's
+  // WebDriver application-launch path.
   const windows = process.platform === 'win32';
-  const driver = spawn(windows ? 'msedgedriver' : 'tauri-driver', windows ? ['--port=4444'] : [], {
-    env: { ...process.env, LEGALMASTER_E2E_ROOT: root, LEGALMASTER_E2E_NONCE: nonce },
-    stdio: 'ignore',
-  });
+  const driver = windows
+    ? undefined
+    : spawn('tauri-driver', [], {
+        env: { ...process.env, LEGALMASTER_E2E_ROOT: root, LEGALMASTER_E2E_NONCE: nonce },
+        stdio: 'ignore',
+      });
   let driverError = false;
-  driver.on('error', () => {
+  driver?.on('error', () => {
     driverError = true;
   });
   let browser;
@@ -71,7 +73,7 @@ async function scenario(name, exercise) {
   let stage = 'driver-start';
   let checkpoint;
   const launch = async () => {
-    let capabilities = { 'tauri:options': { application: binary } };
+    const capabilities = { 'tauri:options': { application: binary } };
     if (process.platform === 'win32') {
       stage = 'webview-start';
       const port = await reserveDebuggingPort();
@@ -87,33 +89,18 @@ async function scenario(name, exercise) {
       // Retain no process output; readiness reports only fixed startup categories.
       application.on('error', () => undefined);
       await waitForWebView(application, port);
-      const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) =>
-        response.json(),
-      );
-      console.log(
-        JSON.stringify({
-          event: 'windows-debug-targets',
-          targets: targets.map((target) => ({
-            kind: desktopPageKind(target.url),
-            type: ['page', 'webview', 'iframe'].includes(target.type) ? target.type : 'other',
-          })),
-        }),
-      );
-      capabilities = {
-        browserName: 'webview2',
-        'ms:edgeOptions': { debuggerAddress: `localhost:${port}` },
-      };
+      browser = await CdpBrowser.connect(port);
+    } else {
+      stage = 'webdriver-session';
+      browser = await remote({
+        hostname: '127.0.0.1',
+        port: 4444,
+        logLevel: 'silent',
+        connectionRetryCount: 0,
+        capabilities,
+      });
     }
-    stage = 'webdriver-session';
-    browser = await remote({
-      hostname: '127.0.0.1',
-      port: 4444,
-      logLevel: 'silent',
-      connectionRetryCount: 0,
-      capabilities,
-    });
     await browser.setTimeout({ implicit: 0 });
-    if (process.platform === 'win32') await selectDesktopWindow(browser);
     stage = 'scenario';
     return browser;
   };
@@ -131,13 +118,6 @@ async function scenario(name, exercise) {
   const click = async (text) => {
     const element = await browser.$(`//button[normalize-space(.)=${JSON.stringify(text)}]`);
     await element.waitForDisplayed({ timeout: 15000 });
-    // WebDriver's wheel/animation-frame scrolling can stall in headless WebKit.
-    // Scroll synchronously so native clicks cannot race the app's smooth scrolling.
-    await browser.execute(
-      (target) =>
-        target.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' }),
-      element,
-    );
     await element.waitForClickable({ timeout: 15000 });
     await element.click();
   };
@@ -185,7 +165,7 @@ async function scenario(name, exercise) {
     await browser.$(`h2*=${`موكل خيالي ${number}`}`).waitForDisplayed({ timeout: 15000 });
   };
   try {
-    await waitForDriver(driver);
+    if (driver) await waitForDriver(driver);
     await launch();
     stage = 'scenario';
     await exercise({
@@ -246,7 +226,7 @@ async function scenario(name, exercise) {
     // WebDriver exceptions may include secret input, paths, or DOM. Never print them.
   } finally {
     await close().catch(() => undefined);
-    if (driver.exitCode === null && !driverError) {
+    if (driver?.exitCode === null && !driverError) {
       await stopDriver(driver);
     }
     await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
