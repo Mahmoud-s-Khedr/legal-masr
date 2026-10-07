@@ -18,6 +18,11 @@ export const SAFE_DESKTOP_STAGES = Object.freeze([
 ]);
 export const SAFE_DESKTOP_CHECKPOINTS = Object.freeze([
   'initialize',
+  'initialize-name',
+  'initialize-password',
+  'initialize-submit',
+  'initialize-confirm',
+  'initialize-continue',
   'create-client',
   'create-case',
   'add-attachment',

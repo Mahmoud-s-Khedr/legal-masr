@@ -140,11 +140,16 @@ async function scenario(name, exercise) {
       .waitForDisplayed({ timeout: 15000 });
   };
   const initialize = async () => {
+    checkpoint = 'initialize-name';
     await input('fullName', 'محامٍ خيالي');
+    checkpoint = 'initialize-password';
     await input('password', password);
     await input('confirmPassword', password);
+    checkpoint = 'initialize-submit';
     await click('بدء الاستخدام');
+    checkpoint = 'initialize-confirm';
     await browser.$('.gate-confirm [role="checkbox"]').click();
+    checkpoint = 'initialize-continue';
     await click('متابعة إلى مساحة العمل');
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
   };
@@ -195,15 +200,30 @@ async function scenario(name, exercise) {
             .getText()
             .catch(() => '')
         : '';
-    results.push(
-      failedDesktopOutcome({
+    const pageState =
+      stage === 'scenario' && browser
+        ? await browser
+            .execute(() => ({
+              applicationOrigin: location.hostname === 'tauri.localhost',
+              documentReady: document.readyState === 'complete',
+              rootHasContent: Boolean(document.querySelector('#root')?.children.length),
+              initializeInputPresent: Boolean(document.querySelector('input[name="fullName"]')),
+              gatePresent: Boolean(document.querySelector('.gate')),
+              confirmationPresent: Boolean(document.querySelector('.gate-confirm')),
+              workspacePresent: Boolean(document.querySelector('nav')),
+            }))
+            .catch(() => undefined)
+        : undefined;
+    results.push({
+      ...failedDesktopOutcome({
         scenario: name,
         stage,
         checkpoint,
         error,
         diagnosticMessage,
       }),
-    );
+      ...(pageState ? { pageState } : {}),
+    });
     // WebDriver exceptions may include secret input, paths, or DOM. Never print them.
   } finally {
     await close().catch(() => undefined);
