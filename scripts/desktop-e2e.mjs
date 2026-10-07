@@ -55,7 +55,10 @@ async function scenario(name, exercise) {
   await writeFile(join(root, 'fixtures/corrupt.lmsbackup'), 'fictional corrupt archive');
   const selection = (value) => writeFile(join(root, 'dialog-selection'), value);
   await selection('attachment');
-  const driver = spawn('tauri-driver', [], {
+  // EdgeDriver's WebView2 attachment is the supported Windows path. Tauri's
+  // proxy is retained on Linux for its application-launch capability.
+  const windows = process.platform === 'win32';
+  const driver = spawn(windows ? 'msedgedriver' : 'tauri-driver', windows ? ['--port=4444'] : [], {
     env: { ...process.env, LEGALMASTER_E2E_ROOT: root, LEGALMASTER_E2E_NONCE: nonce },
     stdio: 'ignore',
   });
@@ -98,8 +101,7 @@ async function scenario(name, exercise) {
       );
       capabilities = {
         browserName: 'webview2',
-        'ms:edgeChromium': true,
-        'ms:edgeOptions': { debuggerAddress: `127.0.0.1:${port}` },
+        'ms:edgeOptions': { debuggerAddress: `localhost:${port}` },
       };
     }
     stage = 'webdriver-session';
