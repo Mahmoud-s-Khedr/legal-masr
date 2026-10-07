@@ -32,17 +32,25 @@ const refused = spawnSync(binary, [], {
 assert.equal(refused.status, 2, 'Desktop harness must refuse unmarked launches');
 // Verify that the test binary's API-configured port is free before each launch.
 // This prevents attaching to another application or a surviving earlier process.
-async function reserveDebuggingPort() {
-  const server = createServer();
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(WINDOWS_WEBVIEW_DEBUG_PORT, '127.0.0.1', resolve);
-  });
-  const { port } = server.address();
-  await new Promise((resolve, reject) =>
-    server.close((error) => (error ? reject(error) : resolve())),
-  );
-  return port;
+async function reserveDebuggingPort({ timeoutMs = 15_000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  while (true) {
+    const server = createServer();
+    try {
+      await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(WINDOWS_WEBVIEW_DEBUG_PORT, '127.0.0.1', resolve);
+      });
+      const { port } = server.address();
+      await new Promise((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+      return port;
+    } catch (error) {
+      if (error.code !== 'EADDRINUSE' || Date.now() >= deadline) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
 }
 const results = [];
 async function scenario(name, exercise) {
