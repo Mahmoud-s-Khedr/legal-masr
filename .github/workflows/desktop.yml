@@ -45,30 +45,13 @@ jobs:
           key: desktop-e2e-${{ runner.os }}
           cache-on-failure: true
       - run: pnpm install --frozen-lockfile
-      - run: cargo install tauri-driver --version 2.1.0 --locked
-      - name: Match Windows driver to installed WebView2
-        if: runner.os == 'Windows'
-        shell: pwsh
+      - name: Install Linux desktop driver
+        if: runner.os == 'Linux'
+        run: cargo install tauri-driver --version 2.1.0 --locked
+      - name: Linux desktop-driver preflight
+        if: runner.os == 'Linux'
         run: |
-          $runtime = Get-ChildItem "${env:ProgramFiles(x86)}/Microsoft/EdgeWebView/Application/*/msedgewebview2.exe" | Sort-Object { [version]$_.VersionInfo.ProductVersion } -Descending | Select-Object -First 1
-          if (!$runtime) { throw "WebView2 runtime is missing" }
-          $version = $runtime.VersionInfo.ProductVersion
-          Invoke-WebRequest "https://msedgedriver.microsoft.com/$version/edgedriver_win64.zip" -OutFile "$env:RUNNER_TEMP/edgedriver.zip"
-          Expand-Archive "$env:RUNNER_TEMP/edgedriver.zip" "$env:RUNNER_TEMP/edgedriver" -Force
-          $driverVersion = & "$env:RUNNER_TEMP/edgedriver/msedgedriver.exe" --version
-          if (!$driverVersion.Contains($version)) { throw "WebView2/driver version mismatch" }
-          "$env:RUNNER_TEMP/edgedriver" | Out-File $env:GITHUB_PATH -Append
-      - name: Windows desktop-driver preflight
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $tauriDriver = Get-Command tauri-driver -CommandType Application -ErrorAction Stop
-          $edgeDriver = Get-Command msedgedriver -CommandType Application -ErrorAction Stop
-          if (!$tauriDriver.Path -or !$edgeDriver.Path) { throw "Desktop driver command is not resolved from PATH" }
           tauri-driver --help
-          if ($LASTEXITCODE -ne 0) { throw "Tauri driver preflight failed" }
-          msedgedriver --version
-          if ($LASTEXITCODE -ne 0) { throw "Edge driver preflight failed" }
       - run: pnpm build:desktop:e2e
       - name: Linux journeys
         if: runner.os == 'Linux'

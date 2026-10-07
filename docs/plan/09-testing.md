@@ -69,23 +69,24 @@ classified in memory into fixed startup diagnostics (missing DevTools port,
 version mismatch, occupied profile, application exit, connection refusal or
 request timeout); only these categories are retained in JSON and CI output.
 Windows launches the marked application directly with a reserved loopback debugging
-port and a WebView profile inside the disposable root, waits for the local
-WebView endpoint, and attaches EdgeDriver using `debuggerAddress`. This avoids
-EdgeDriver's failed `DevToolsActivePort` discovery during application launch.
+port, waits for the local WebView endpoint and its `tauri.localhost` page target,
+then drives that target through the Chrome DevTools Protocol. Current EdgeDriver
+builds can attach a separate blank page to this WebView2 setup, so Windows does
+not use it. Linux retains Tauri's WebDriver application-launch path.
 WebView2 150+ ignores environment-supplied browser arguments on elevated hosts,
 including GitHub's Windows runners. The separate Windows harness build supplies
 port 9222 through Tauri's `additionalBrowserArgs` configuration, which uses the
 WebView2 API. It preserves the configured window and Wry 0.55.1's default browser
-arguments. The runner verifies that the port is free before each launch and waits
-for its local endpoint; production build configuration has no debug-port override.
+arguments. The runner verifies that the port is free before each launch, waiting
+briefly for a closing process to release it, and then waits for its local endpoint;
+production build configuration has no debug-port override.
 Closing a session also stops the application, so restart persistence exercises a
-new application process against the same vault. These debugging settings apply
-only to the separate marked harness binary. Windows driver shutdown terminates
-the owned process tree before deleting its
-temporary vault, preventing a surviving EdgeDriver from reusing an old marker.
+new application process against the same vault and a new disposable WebView profile.
+These debugging settings apply only to the separate marked harness binary. Windows
+process shutdown terminates the owned tree before deleting its temporary vault,
+preventing a surviving process from reusing an old marker.
 Temporary-directory removal retries briefly for Windows profile locks to clear.
-The Windows preflight checks each command's exit status and uses the supported
-`tauri-driver --help` command. Linux and Windows finish
+The Linux preflight uses the supported `tauri-driver --help` command. Linux and Windows finish
 all configured attempts even after a failure and keep each available sanitized
 per-run JSON outcome; the job fails after the final attempt if any attempt
 failed or did not produce a report. Each attempt removes the previous report
