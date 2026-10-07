@@ -116,6 +116,22 @@ export function applicationDiagnostic(message) {
   );
 }
 
+// Classify in memory; never retain raw driver messages, which may contain paths.
+export function sessionDiagnostic(error) {
+  const message = typeof error?.message === 'string' ? error.message : '';
+  for (const [pattern, diagnostic] of [
+    [/DevToolsActivePort/i, 'WEBDRIVER_DEVTOOLS_PORT_MISSING'],
+    [/only supports.*version|current browser version/i, 'WEBDRIVER_VERSION_MISMATCH'],
+    [/user data directory.*in use/i, 'WEBDRIVER_PROFILE_IN_USE'],
+    [/failed to start|exited (normally|abnormally)|crashed/i, 'WEBDRIVER_APPLICATION_EXITED'],
+    [/ECONNREFUSED|connection refused/i, 'WEBDRIVER_CONNECTION_REFUSED'],
+    [/timeout|timed out/i, 'WEBDRIVER_REQUEST_TIMEOUT'],
+  ]) {
+    if (pattern.test(message)) return diagnostic;
+  }
+  return 'NO_ALLOWLISTED_DIAGNOSTIC';
+}
+
 export function failedDesktopOutcome({
   scenario,
   stage,
@@ -138,6 +154,9 @@ export function failedDesktopOutcome({
     errorCode,
     stage: safeStage,
     ...(SAFE_DESKTOP_CHECKPOINTS.includes(checkpoint) ? { checkpoint } : {}),
-    diagnostic: applicationDiagnostic(diagnosticMessage),
+    diagnostic:
+      safeStage === 'webdriver-session'
+        ? sessionDiagnostic(error)
+        : applicationDiagnostic(diagnosticMessage),
   };
 }

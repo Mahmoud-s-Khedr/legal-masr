@@ -28,8 +28,10 @@ test('desktop workflow has a Windows driver preflight after installation', () =>
   const body = stepBody('Windows desktop-driver preflight');
   assert.match(body, /Get-Command tauri-driver -CommandType Application -ErrorAction Stop/);
   assert.match(body, /Get-Command msedgedriver -CommandType Application -ErrorAction Stop/);
-  assert.match(body, /^ {10}tauri-driver --version$/m);
+  assert.match(body, /^ {10}tauri-driver --help$/m);
   assert.match(body, /^ {10}msedgedriver --version$/m);
+  assert.match(body, /if \(\$LASTEXITCODE -ne 0\) \{ throw "Tauri driver preflight failed" \}/);
+  assert.match(body, /if \(\$LASTEXITCODE -ne 0\) \{ throw "Edge driver preflight failed" \}/);
 });
 
 test('Windows retries run all three attempts and retain each available sanitized result', () => {

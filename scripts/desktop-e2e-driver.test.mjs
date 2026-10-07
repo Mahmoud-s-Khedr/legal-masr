@@ -5,6 +5,7 @@ import {
   DESKTOP_ERROR_CODES,
   applicationDiagnostic,
   failedDesktopOutcome,
+  sessionDiagnostic,
   waitForDriver,
 } from './desktop-e2e-driver.mjs';
 
@@ -104,4 +105,33 @@ test('failed outcomes retain a fixed journey checkpoint without accepting arbitr
   });
   assert.equal(Object.hasOwn(outcome, 'checkpoint'), false);
   assert.doesNotMatch(JSON.stringify(outcome), /secret|private/);
+});
+
+test('session diagnostics classify startup failures without retaining raw paths or secrets', () => {
+  for (const [message, expected] of [
+    [
+      "DevToolsActivePort file doesn't exist /private/vault password=secret",
+      'WEBDRIVER_DEVTOOLS_PORT_MISSING',
+    ],
+    [
+      'only supports Microsoft Edge version 152, current browser version 153',
+      'WEBDRIVER_VERSION_MISMATCH',
+    ],
+    ['user data directory is already in use C:\\Users\\lawyer', 'WEBDRIVER_PROFILE_IN_USE'],
+    ['Microsoft Edge failed to start: exited normally', 'WEBDRIVER_APPLICATION_EXITED'],
+    ['connect ECONNREFUSED 127.0.0.1:4445', 'WEBDRIVER_CONNECTION_REFUSED'],
+    ['request timed out password=secret', 'WEBDRIVER_REQUEST_TIMEOUT'],
+    ['unrecognized failure /private/vault password=secret', 'NO_ALLOWLISTED_DIAGNOSTIC'],
+  ]) {
+    const error = new Error(message);
+    assert.equal(sessionDiagnostic(error), expected);
+    const outcome = failedDesktopOutcome({
+      scenario: 'synthetic',
+      stage: 'webdriver-session',
+      error,
+    });
+    assert.equal(outcome.diagnostic, expected);
+    assert.doesNotMatch(JSON.stringify(outcome), /secret|private|lawyer/);
+  }
+  assert.equal(sessionDiagnostic(undefined), 'NO_ALLOWLISTED_DIAGNOSTIC');
 });

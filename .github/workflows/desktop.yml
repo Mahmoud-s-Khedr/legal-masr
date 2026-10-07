@@ -64,8 +64,10 @@ jobs:
           $tauriDriver = Get-Command tauri-driver -CommandType Application -ErrorAction Stop
           $edgeDriver = Get-Command msedgedriver -CommandType Application -ErrorAction Stop
           if (!$tauriDriver.Path -or !$edgeDriver.Path) { throw "Desktop driver command is not resolved from PATH" }
-          tauri-driver --version
+          tauri-driver --help
+          if ($LASTEXITCODE -ne 0) { throw "Tauri driver preflight failed" }
           msedgedriver --version
+          if ($LASTEXITCODE -ne 0) { throw "Edge driver preflight failed" }
       - run: pnpm build:desktop:e2e
       - name: Linux journeys
         if: runner.os == 'Linux'
