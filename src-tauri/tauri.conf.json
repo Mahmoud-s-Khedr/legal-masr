@@ -20,6 +20,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "windows": {
+      "nsis": { "installerHooks": "windows/installer-hooks.nsh" }
+    },
     "macOS": {
       "signingIdentity": "-"
     },

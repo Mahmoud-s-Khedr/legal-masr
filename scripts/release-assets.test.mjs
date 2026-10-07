@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -29,13 +29,29 @@ async function fixtureRoot() {
   return root;
 }
 
-function stage(input, output) {
+const pubkey = Buffer.from(
+  `untrusted comment: fixture public key\n${Buffer.concat([Buffer.from('Ed'), Buffer.alloc(40)]).toString('base64')}\n`,
+).toString('base64');
+const signature = Buffer.from(
+  `untrusted comment: fixture signature\n${Buffer.concat([Buffer.from('ED'), Buffer.alloc(72)]).toString('base64')}\ntrusted comment: fixture\n${Buffer.alloc(64).toString('base64')}\n`,
+).toString('base64');
+
+function stage(input, output, updater = false) {
   return spawnSync(
     process.execPath,
-    [script.pathname, 'stage', '--input', input, '--output', output],
+    [
+      script.pathname,
+      'stage',
+      '--input',
+      input,
+      '--output',
+      output,
+      ...(updater ? ['--updater'] : []),
+    ],
     {
       cwd: repositoryRoot,
       encoding: 'utf8',
+      env: { ...process.env, LEGAL_MASR_UPDATER_PUBLIC_KEY: pubkey },
     },
   );
 }
@@ -78,4 +94,73 @@ test('refuses to stage an incomplete release', async () => {
     incompleteResult.stderr,
     /Expected one Windows installer, portable archive, Debian package, RPM package, AppImage/,
   );
+});
+
+async function signedFixture() {
+  const root = await fixtureRoot();
+  for (const [directory, name] of [
+    ['raw-windows-x64', 'Legal Masr_0.1.0_x64-setup.exe'],
+    ['raw-linux-x64', 'legalmaster-solo_0.1.0_amd64.AppImage'],
+    ['raw-macos-x64', 'Legal Masr.app.tar.gz'],
+    ['raw-macos-arm64', 'Legal Masr.app.tar.gz'],
+  ]) {
+    if (name.endsWith('.tar.gz')) await writeArtifact(root, directory, name);
+    await writeArtifact(root, directory, `${name}.sig`, signature);
+  }
+  return root;
+}
+
+test('signed releases advertise exactly the four native updater packages', async () => {
+  const root = await signedFixture();
+  const output = join(root, 'release-assets');
+  const result = stage(root, output, true);
+  assert.equal(result.status, 0, result.stderr);
+  const manifest = JSON.parse(await readFile(join(output, 'latest.json'), 'utf8'));
+  assert.equal(manifest.version, version);
+  assert.deepEqual(Object.keys(manifest.platforms).sort(), [
+    'darwin-aarch64',
+    'darwin-x86_64',
+    'linux-x86_64',
+    'windows-x86_64',
+  ]);
+  for (const { url, signature } of Object.values(manifest.platforms)) {
+    const file = new URL(url).pathname.split('/').at(-1);
+    assert.ok(
+      url.startsWith(
+        `https://github.com/Mahmoud-s-Khedr/legal-masr/releases/download/v${version}/`,
+      ),
+    );
+    assert.equal(signature, (await readFile(join(output, `${file}.sig`), 'utf8')).trim());
+    assert.ok((await readFile(join(output, file))).length > 0);
+  }
+  const sums = await readFile(join(output, 'SHA256SUMS.txt'), 'utf8');
+  assert.match(sums, / {2}latest.json\n/);
+  assert.match(sums, /\.app.tar.gz.sig\n/);
+});
+
+test('signed releases reject a missing signature rather than advertise an unusable update', async () => {
+  const root = await signedFixture();
+  await unlink(join(root, 'raw-linux-x64', 'legalmaster-solo_0.1.0_amd64.AppImage.sig'));
+  const result = stage(root, join(root, 'release-assets'), true);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /AppImage.sig/);
+});
+
+test('signed releases reject missing macOS updater archives', async () => {
+  const root = await signedFixture();
+  await unlink(join(root, 'raw-macos-arm64', 'Legal Masr.app.tar.gz'));
+  const result = stage(root, join(root, 'release-assets'), true);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Expected one updater archive/);
+});
+
+test('signed releases reject a mismatched public signing key', async () => {
+  const root = await signedFixture();
+  const mismatched = Buffer.from(
+    `untrusted comment: fixture\n${Buffer.concat([Buffer.from('ED'), Buffer.alloc(72, 1)]).toString('base64')}\ntrusted comment: fixture\n${Buffer.alloc(64).toString('base64')}\n`,
+  ).toString('base64');
+  await writeArtifact(root, 'raw-windows-x64', 'Legal Masr_0.1.0_x64-setup.exe.sig', mismatched);
+  const result = stage(root, join(root, 'release-assets'), true);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /does not match/);
 });

@@ -120,16 +120,17 @@ jobs:
           - id: macos-intel
             runner: macos-15-intel
             target: x86_64-apple-darwin
-            bundle: dmg
+            bundle: app,dmg
             artifact: raw-macos-x64
           - id: macos-apple-silicon
             runner: macos-latest
             target: aarch64-apple-darwin
-            bundle: dmg
+            bundle: app,dmg
             artifact: raw-macos-arm64
     runs-on: ${{ matrix.runner }}
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+      LEGAL_MASR_UPDATER_PUBLIC_KEY: ${{ vars.LEGAL_MASR_UPDATER_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -167,11 +168,18 @@ jobs:
         with:
           workspaces: src-tauri -> target
           key: ${{ matrix.id == 'linux-x64' && 'ubuntu-24.04' || runner.os }}-${{ matrix.target }}-${{ matrix.id }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+      - name: Prepare signed updater configuration
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: node scripts/prepare-updater.mjs
       - name: Build Tauri bundle
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0.6.2
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tauriScript: pnpm tauri
-          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundle }}
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundle }} --config release-updater.conf.json
       - name: Verify production harness boundary
         shell: bash
         run: node scripts/verify-release-boundary.mjs "src-tauri/target/${{ matrix.target }}/release/legalmaster-solo${{ runner.os == 'Windows' && '.exe' || '' }}"
@@ -190,6 +198,16 @@ jobs:
           cat appimage-smoke.log
           test "$status" -eq 124
           ! grep --fixed-strings "Could not create default EGL display" appimage-smoke.log
+      - name: Sign the final normalized AppImage
+        if: matrix.id == 'linux-x64' && vars.LEGAL_MASR_UPDATER_PUBLIC_KEY != ''
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          appimages=(src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage)
+          test "${#appimages[@]}" -eq 1
+          pnpm tauri signer sign "${appimages[0]}"
       - name: Verify Windows NSIS installer
         if: matrix.id == 'windows-x64'
         shell: pwsh
@@ -238,10 +256,13 @@ jobs:
           name: ${{ matrix.artifact }}
           path: |
             ${{ matrix.id == 'windows-x64' && 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe' || '' }}
+            ${{ matrix.id == 'windows-x64' && 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe.sig' || '' }}
             ${{ matrix.id == 'windows-x64' && 'release-portable/*.zip' || '' }}
             ${{ matrix.id == 'linux-x64' && 'src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb' || '' }}
             ${{ matrix.id == 'linux-x64' && 'src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/rpm/*.rpm' || '' }}
             ${{ matrix.id == 'linux-x64' && 'src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage' || '' }}
+            ${{ matrix.id == 'linux-x64' && 'src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage.sig' || '' }}
+            ${{ startsWith(matrix.id, 'macos-') && format('src-tauri/target/{0}/release/bundle/macos/*.app.tar.gz*', matrix.target) || '' }}
             ${{ startsWith(matrix.id, 'macos-') && format('src-tauri/target/{0}/release/bundle/dmg/*.dmg', matrix.target) || '' }}
           if-no-files-found: error
           retention-days: 7
@@ -273,7 +294,13 @@ jobs:
           path: release-raw
           merge-multiple: false
       - name: Name artifacts and generate SHA-256 checksums
-        run: node scripts/release-assets.mjs stage --input release-raw --output release-assets
+        env:
+          UPDATER_ENABLED: ${{ vars.LEGAL_MASR_UPDATER_PUBLIC_KEY != '' }}
+          LEGAL_MASR_UPDATER_PUBLIC_KEY: ${{ vars.LEGAL_MASR_UPDATER_PUBLIC_KEY }}
+        run: |
+          updater_args=()
+          if [ "$UPDATER_ENABLED" = "true" ]; then updater_args+=(--updater); fi
+          node scripts/release-assets.mjs stage --input release-raw --output release-assets "${updater_args[@]}"
       - name: Write release notes
         run: |
           cat > release-notes.md <<EOF
@@ -281,13 +308,13 @@ jobs:
 
           Downloads included in this draft prerelease:
 
-          - Windows x86-64: `Legal-Masr_${RELEASE_TAG#v}_windows_x64-setup.exe`
-          - Windows x86-64 portable: `Legal-Masr_${RELEASE_TAG#v}_windows_x64-portable.zip`
-          - Linux x86-64 Debian: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.deb`
-          - Linux x86-64 RPM: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.rpm`
-          - Linux x86-64 AppImage: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.AppImage`
-          - macOS Intel: `Legal-Masr_${RELEASE_TAG#v}_macos_x64.dmg`
-          - macOS Apple Silicon: `Legal-Masr_${RELEASE_TAG#v}_macos_arm64.dmg`
+          - Windows x86-64: \`Legal-Masr_${RELEASE_TAG#v}_windows_x64-setup.exe\`
+          - Windows x86-64 portable: \`Legal-Masr_${RELEASE_TAG#v}_windows_x64-portable.zip\`
+          - Linux x86-64 Debian: \`Legal-Masr_${RELEASE_TAG#v}_linux_x64.deb\`
+          - Linux x86-64 RPM: \`Legal-Masr_${RELEASE_TAG#v}_linux_x64.rpm\`
+          - Linux x86-64 AppImage: \`Legal-Masr_${RELEASE_TAG#v}_linux_x64.AppImage\`
+          - macOS Intel: \`Legal-Masr_${RELEASE_TAG#v}_macos_x64.dmg\`
+          - macOS Apple Silicon: \`Legal-Masr_${RELEASE_TAG#v}_macos_arm64.dmg\`
 
           The Windows installer is currently unsigned. Windows may show a publisher or SmartScreen warning.
           The portable archive contains the unsigned Windows executable; it does not make the application's local data directory portable.
@@ -296,7 +323,7 @@ jobs:
 
           The macOS builds are ad-hoc signed and are not notarized. Gatekeeper may require manual approval in **System Settings → Privacy & Security** before first launch.
 
-          SHA-256 checksums are in `SHA256SUMS.txt`; checksums are integrity aids, not code signatures.
+          SHA-256 checksums are in \`SHA256SUMS.txt\`; checksums are integrity aids, not code signatures.
 
           Windows 10 and Windows 11 are the currently documented Windows targets. Back up your data before updating beta releases.
           EOF

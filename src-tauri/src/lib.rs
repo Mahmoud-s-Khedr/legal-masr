@@ -11,6 +11,7 @@ pub mod repositories;
 pub mod security;
 pub mod services;
 pub mod state;
+mod updates;
 
 use state::AppState;
 use tauri::Manager;
@@ -24,6 +25,7 @@ pub fn run() {
     }
     let builder = tauri::Builder::default()
         .manage(AppState::default())
+        .manage(updates::UpdateState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(
@@ -31,10 +33,24 @@ pub fn run() {
             None,
         ))
         .plugin(tauri_plugin_opener::init());
+    let builder = if let Some(key) = updates::public_key() {
+        builder.plugin(tauri_plugin_updater::Builder::new().pubkey(key).build())
+    } else {
+        builder
+    };
     #[cfg(not(feature = "desktop-e2e"))]
     let builder = builder
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|_, _, _| {}));
+    let mut context = tauri::generate_context!();
+    if let Some(key) = updates::public_key() {
+        context
+            .config_mut()
+            .plugins
+            .0
+            .entry("updater".into())
+            .or_insert_with(|| serde_json::json!({ "pubkey": key }));
+    }
     builder
         .setup(|app| {
             let data_dir = db::app_dir(app.handle())?;
@@ -43,6 +59,10 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            updates::update_status,
+            updates::update_check,
+            updates::update_download,
+            updates::update_install,
             commands::app::app_get_status,
             commands::app::app_initialize,
             commands::app::app_unlock,
@@ -113,6 +133,6 @@ pub fn run() {
             commands::finances::finance_client_summary,
             commands::reminders::reminders_refresh
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("error while running Legal Masr");
 }

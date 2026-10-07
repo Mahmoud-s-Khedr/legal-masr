@@ -32,3 +32,6 @@ Thumbs.db
 
 test-results/
 playwright-report/
+
+# Release-only updater configuration (generated from the public repository variable)
+release-updater.conf.json

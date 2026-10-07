@@ -11,6 +11,8 @@ Application data, managed attachments, local backups, search index, and backup
 history stay on the device unless the lawyer explicitly chooses a native file
 operation.
 
+Optional signed update checks contact GitHub, which receives standard network metadata such as IP address. Checks/downloads send no profile, legal records, installation identifiers, or usage counts. Background checks are off by default; users can enable notify or automatic-download modes in Settings → About. Installation requires a user action and a fresh validated local backup. See [../UPDATES.md](../UPDATES.md).
+
 The local-only design reduces vendor processing but does not certify a lawyer's
 legal compliance. Before public release, an Egyptian privacy lawyer must review
 the privacy notice and marketing must not claim blanket legal compliance.

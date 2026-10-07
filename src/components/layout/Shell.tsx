@@ -1,3 +1,8 @@
+import {
+  UpdateInstallDialog,
+  UpdateNotice,
+  UpdateSync,
+} from '../../features/updates/UpdateSettings';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Link, NavLink } from 'react-router-dom';
@@ -80,6 +85,8 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
 
   return (
     <BrowserRouter>
+      <UpdateSync />
+      <UpdateInstallDialog />
       <Sheet.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
         <Sheet.Root open={searchPaletteOpen} onOpenChange={setSearchPaletteOpen}>
           <div className="app-shell">
@@ -168,6 +175,7 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
               </div>
             </header>
             <main className="workspace">
+              <UpdateNotice />
               <AppRoutes />
             </main>
             <footer className="app-footer no-print">
