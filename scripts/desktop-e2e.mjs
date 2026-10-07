@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { WINDOWS_WEBVIEW_DEBUG_PORT } from './desktop-e2e-build.mjs';
 import {
   failedDesktopOutcome,
+  selectDesktopWindow,
   stopDriver,
   waitForDriver,
   waitForWebView,
@@ -97,6 +98,7 @@ async function scenario(name, exercise) {
       capabilities,
     });
     await browser.setTimeout({ implicit: 0 });
+    if (process.platform === 'win32') await selectDesktopWindow(browser);
     stage = 'scenario';
     return browser;
   };

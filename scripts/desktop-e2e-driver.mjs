@@ -8,6 +8,7 @@ export const DESKTOP_ERROR_CODES = Object.freeze([
   'DESKTOP_DRIVER_STOP_FAILED',
   'DESKTOP_APPLICATION_EXITED_BEFORE_READY',
   'DESKTOP_APPLICATION_START_TIMEOUT',
+  'DESKTOP_APPLICATION_WINDOW_MISSING',
 ]);
 
 export const SAFE_DESKTOP_STAGES = Object.freeze([
@@ -142,6 +143,29 @@ export async function waitForWebView(application, port, options = {}) {
         : 'DESKTOP_APPLICATION_START_TIMEOUT',
     );
   }
+}
+
+/** Select the app, rather than an initial blank WebView2 debugging target. */
+export async function selectDesktopWindow(
+  browser,
+  { timeoutMs = 15_000, pollIntervalMs = 250, now = Date.now } = {},
+) {
+  const deadline = now() + timeoutMs;
+  while (now() < deadline) {
+    for (const handle of await browser.getWindowHandles()) {
+      await browser.switchToWindow(handle);
+      const url = new URL(await browser.getUrl());
+      if (
+        ((url.protocol === 'http:' || url.protocol === 'https:') &&
+          url.hostname === 'tauri.localhost') ||
+        (url.protocol === 'tauri:' && url.hostname === 'localhost')
+      ) {
+        return;
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+  throw new DesktopHarnessError('DESKTOP_APPLICATION_WINDOW_MISSING');
 }
 
 export function applicationDiagnostic(message) {
