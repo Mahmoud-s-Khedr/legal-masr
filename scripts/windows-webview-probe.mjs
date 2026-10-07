@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:net';
@@ -14,13 +14,17 @@ const nonce = randomUUID();
 await writeFile(join(root, 'runner-marker'), nonce);
 const profile = join(root, 'webview');
 const stderrCategories = new Set();
+const inheritedArgumentKeys = Object.keys(process.env).filter((key) => key.toUpperCase() === 'WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS');
+const launchEnvironment = { ...process.env };
+for (const key of inheritedArgumentKeys) delete launchEnvironment[key];
 const app = spawn(process.env.LEGALMASTER_PROBE_BINARY, [], {
   env: {
-    ...process.env,
+    ...launchEnvironment,
+    TAURI_WEBVIEW_AUTOMATION: 'true',
     LEGALMASTER_E2E_ROOT: root,
     LEGALMASTER_E2E_NONCE: nonce,
     WEBVIEW2_USER_DATA_FOLDER: profile,
-    WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`,
+    WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port} --enable-automation`,
   },
   stdio: ['ignore', 'ignore', 'pipe'],
 });
@@ -47,11 +51,15 @@ while (Date.now() < deadline && app.exitCode === null) {
   await new Promise((r) => setTimeout(r, 250));
 }
 const probe = spawnSync('pwsh', ['-NoProfile', '-Command', `
-  $owned = @(Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'msedgewebview2.exe' -and $_.CommandLine.Contains($env:LEGALMASTER_PROBE_PROFILE) })
+  $owned = @(Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'" | Where-Object { $_.Name -eq 'msedgewebview2.exe' -and $_.CommandLine.Contains($env:LEGALMASTER_PROBE_PROFILE) })
   $listeners = @(Get-NetTCPConnection -State Listen -LocalPort ([int]$env:LEGALMASTER_PROBE_PORT) -ErrorAction SilentlyContinue)
   @{
     webviewProcessCount = $owned.Count
     portFlagPresent = @($owned | Where-Object { $_.CommandLine.Contains("--remote-debugging-port=$env:LEGALMASTER_PROBE_PORT") }).Count -gt 0
+    anyPortFlag = @($owned | Where-Object { $_.CommandLine.Contains('remote-debugging-port') }).Count -gt 0
+    zeroPortFlag = @($owned | Where-Object { $_.CommandLine.Contains('--remote-debugging-port=0') }).Count -gt 0
+    pipeFlag = @($owned | Where-Object { $_.CommandLine.Contains('--remote-debugging-pipe') }).Count -gt 0
+    automationFlag = @($owned | Where-Object { $_.CommandLine.Contains('--enable-automation') }).Count -gt 0
     ipv4Listener = @($listeners | Where-Object { $_.LocalAddress -eq '127.0.0.1' -or $_.LocalAddress -eq '0.0.0.0' }).Count -gt 0
     ipv6Listener = @($listeners | Where-Object { $_.LocalAddress -eq '::1' -or $_.LocalAddress -eq '::' }).Count -gt 0
     windowPresent = (Get-Process -Id ([int]$env:LEGALMASTER_PROBE_PID) -ErrorAction SilentlyContinue).MainWindowHandle -ne 0
@@ -62,7 +70,14 @@ const probe = spawnSync('pwsh', ['-NoProfile', '-Command', `
 });
 let metadata;
 try { metadata = JSON.parse(probe.stdout); } catch { metadata = { processProbeFailed: true }; }
-console.log(JSON.stringify({ ready, fetchCode, exitCode: app.exitCode, stderrCategories: [...stderrCategories], ...metadata }));
+const portFiles = [];
+for (const directory of [profile, join(profile, 'EBWebView')]) {
+  try {
+    const portText = (await readFile(join(directory, 'DevToolsActivePort'), 'utf8')).split('\n')[0];
+    portFiles.push({ exists: true, valid: /^\d+$/.test(portText), matchesRequested: Number(portText) === port });
+  } catch { portFiles.push({ exists: false }); }
+}
+console.log(JSON.stringify({ inheritedArgumentKeys, portFiles, ready, fetchCode, exitCode: app.exitCode, stderrCategories: [...stderrCategories], ...metadata }));
 if (app.pid && app.exitCode === null) spawnSync('taskkill.exe', ['/PID', String(app.pid), '/T', '/F'], { stdio: 'ignore' });
 await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => console.log('PROFILE_CLEANUP_LOCKED'));
 process.exitCode = ready ? 0 : 1;
