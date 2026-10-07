@@ -12,6 +12,7 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: 22.21.1
+          package-manager-cache: false
       - name: Download verified normal debug package
         shell: pwsh
         env:
