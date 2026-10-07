@@ -1,12 +1,11 @@
 import { remote } from 'webdriverio';
 import { spawn, spawnSync } from 'node:child_process';
-import { once } from 'node:events';
 import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
-import { failedDesktopOutcome, waitForDriver } from './desktop-e2e-driver.mjs';
+import { failedDesktopOutcome, stopDriver, waitForDriver } from './desktop-e2e-driver.mjs';
 const password = 'fictional desktop password 2026';
 const bytes = Buffer.from('%PDF-1.4\nFictional attachment for desktop validation only.\n');
 const binary = resolve(
@@ -159,9 +158,7 @@ async function scenario(name, exercise) {
   } finally {
     await close().catch(() => undefined);
     if (driver.exitCode === null && !driverError) {
-      const exited = once(driver, 'exit');
-      driver.kill();
-      await Promise.race([exited, new Promise((r) => setTimeout(r, 5000))]);
+      await stopDriver(driver);
     }
     await rm(root, { recursive: true, force: true });
   }

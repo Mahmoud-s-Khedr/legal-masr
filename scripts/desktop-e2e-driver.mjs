@@ -1,8 +1,11 @@
+import { spawnSync } from 'node:child_process';
+
 export const DESKTOP_ERROR_CODES = Object.freeze([
   'DESKTOP_DRIVER_EXITED_BEFORE_READY',
   'DESKTOP_DRIVER_START_TIMEOUT',
   'DESKTOP_WEBDRIVER_SESSION_FAILED',
   'DESKTOP_SCENARIO_FAILED',
+  'DESKTOP_DRIVER_STOP_FAILED',
 ]);
 
 export const SAFE_DESKTOP_STAGES = Object.freeze(['driver-start', 'webdriver-session', 'scenario']);
@@ -159,4 +162,31 @@ export function failedDesktopOutcome({
         ? sessionDiagnostic(error)
         : applicationDiagnostic(diagnosticMessage),
   };
+}
+
+/** Terminate the native driver's descendants before discarding its vault marker. */
+export async function stopDriver(
+  driver,
+  { platform = process.platform, run = spawnSync, timeoutMs = 5000 } = {},
+) {
+  if (driver.exitCode !== null || !driver.pid) return;
+  let onExit;
+  const exited = new Promise((resolve) => {
+    onExit = resolve;
+    driver.once('exit', onExit);
+  });
+  try {
+    const stopped =
+      platform === 'win32'
+        ? run('taskkill.exe', ['/PID', String(driver.pid), '/T', '/F'], {
+            stdio: 'ignore',
+            timeout: timeoutMs,
+          }).status === 0
+        : driver.kill();
+    if (!stopped || (await raceWithTimeout(exited, timeoutMs)) === timedOut) {
+      throw new DesktopHarnessError('DESKTOP_DRIVER_STOP_FAILED');
+    }
+  } finally {
+    driver.off('exit', onExit);
+  }
 }

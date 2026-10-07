@@ -64,7 +64,14 @@ The driver must return a successful local `/status` response before a journey
 launches; startup polls every 250 ms for up to 30 seconds and records only a
 fixed startup/session/scenario error code. The backup/restore journey also
 records an allowlisted operation checkpoint on failure. It never retains raw
-WebDriver errors, DOM, paths, passwords, or vault data. Linux and Windows finish
+WebDriver errors, DOM, paths, passwords, or vault data. Session failures are
+classified in memory into fixed startup diagnostics (missing DevTools port,
+version mismatch, occupied profile, application exit, connection refusal or
+request timeout); only these categories are retained in JSON and CI output.
+Windows driver shutdown terminates the owned process tree before deleting its
+temporary vault, preventing a surviving EdgeDriver from reusing an old marker.
+The Windows preflight checks each command's exit status and uses the supported
+`tauri-driver --help` command. Linux and Windows finish
 all configured attempts even after a failure and keep each available sanitized
 per-run JSON outcome; the job fails after the final attempt if any attempt
 failed or did not produce a report. Each attempt removes the previous report

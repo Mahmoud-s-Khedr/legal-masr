@@ -6,6 +6,7 @@ import {
   applicationDiagnostic,
   failedDesktopOutcome,
   sessionDiagnostic,
+  stopDriver,
   waitForDriver,
 } from './desktop-e2e-driver.mjs';
 
@@ -134,4 +135,61 @@ test('session diagnostics classify startup failures without retaining raw paths 
     assert.doesNotMatch(JSON.stringify(outcome), /secret|private|lawyer/);
   }
   assert.equal(sessionDiagnostic(undefined), 'NO_ALLOWLISTED_DIAGNOSTIC');
+});
+
+test('Windows shutdown kills the driver tree before completing cleanup', async () => {
+  const driver = new FakeDriver();
+  driver.pid = 12345;
+  let called = false;
+  await stopDriver(driver, {
+    platform: 'win32',
+    run(command, args, options) {
+      assert.equal(command, 'taskkill.exe');
+      assert.deepEqual(args, ['/PID', '12345', '/T', '/F']);
+      assert.equal(options.stdio, 'ignore');
+      called = true;
+      queueMicrotask(() => {
+        driver.exitCode = 1;
+        driver.emit('exit', 1);
+      });
+      return { status: 0 };
+    },
+  });
+  assert.equal(called, true);
+  assert.equal(driver.exitCode, 1);
+});
+
+test('shutdown reports a fixed failure when process termination fails', async () => {
+  const driver = new FakeDriver();
+  driver.pid = 12345;
+  await assert.rejects(stopDriver(driver, { platform: 'win32', run: () => ({ status: 1 }) }), {
+    errorCode: 'DESKTOP_DRIVER_STOP_FAILED',
+  });
+});
+
+test('Linux shutdown waits for exit and skips drivers that already exited', async () => {
+  const driver = new FakeDriver();
+  driver.pid = 12345;
+  let kills = 0;
+  driver.kill = () => {
+    kills++;
+    queueMicrotask(() => {
+      driver.exitCode = 0;
+      driver.emit('exit', 0);
+    });
+    return true;
+  };
+  await stopDriver(driver, { platform: 'linux' });
+  await stopDriver(driver, { platform: 'linux' });
+  assert.equal(kills, 1);
+});
+
+test('shutdown times out safely if a successful kill does not emit exit', async () => {
+  const driver = new FakeDriver();
+  driver.pid = 12345;
+  await assert.rejects(
+    stopDriver(driver, { platform: 'win32', run: () => ({ status: 0 }), timeoutMs: 10 }),
+    { errorCode: 'DESKTOP_DRIVER_STOP_FAILED' },
+  );
+  assert.equal(driver.listenerCount('exit'), 0);
 });
