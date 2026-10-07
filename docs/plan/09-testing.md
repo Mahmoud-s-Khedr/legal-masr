@@ -68,7 +68,14 @@ WebDriver errors, DOM, paths, passwords, or vault data. Session failures are
 classified in memory into fixed startup diagnostics (missing DevTools port,
 version mismatch, occupied profile, application exit, connection refusal or
 request timeout); only these categories are retained in JSON and CI output.
-Windows driver shutdown terminates the owned process tree before deleting its
+Windows launches the marked application directly with a fresh loopback debugging
+port and a WebView profile inside the disposable root, waits for the local
+WebView endpoint, and attaches EdgeDriver using `debuggerAddress`. This avoids
+EdgeDriver's failed `DevToolsActivePort` discovery during application launch.
+Closing a session also stops the application, so restart persistence exercises a
+new application process against the same vault. These debugging settings apply
+only to the harness-launched child process. Windows driver shutdown terminates
+the owned process tree before deleting its
 temporary vault, preventing a surviving EdgeDriver from reusing an old marker.
 The Windows preflight checks each command's exit status and uses the supported
 `tauri-driver --help` command. Linux and Windows finish

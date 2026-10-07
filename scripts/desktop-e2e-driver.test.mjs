@@ -8,6 +8,7 @@ import {
   sessionDiagnostic,
   stopDriver,
   waitForDriver,
+  waitForWebView,
 } from './desktop-e2e-driver.mjs';
 
 class FakeDriver extends EventEmitter {
@@ -192,4 +193,34 @@ test('shutdown times out safely if a successful kill does not emit exit', async 
     { errorCode: 'DESKTOP_DRIVER_STOP_FAILED' },
   );
   assert.equal(driver.listenerCount('exit'), 0);
+});
+
+test('WebView readiness uses its assigned local port and waits for a successful endpoint', async () => {
+  const application = new FakeDriver();
+  let requests = 0;
+  await waitForWebView(application, 12345, {
+    timeoutMs: 100,
+    pollIntervalMs: 1,
+    fetchFn: async (url) => {
+      assert.equal(url, 'http://127.0.0.1:12345/json/version');
+      return { ok: ++requests === 2 };
+    },
+  });
+  assert.equal(requests, 2);
+});
+
+test('WebView startup distinguishes application exit from endpoint timeout', async () => {
+  const exited = new FakeDriver();
+  exited.exitCode = 2;
+  await assert.rejects(waitForWebView(exited, 12345), {
+    errorCode: 'DESKTOP_APPLICATION_EXITED_BEFORE_READY',
+  });
+  await assert.rejects(
+    waitForWebView(new FakeDriver(), 12345, {
+      timeoutMs: 10,
+      pollIntervalMs: 1,
+      fetchFn: async () => ({ ok: false }),
+    }),
+    { errorCode: 'DESKTOP_APPLICATION_START_TIMEOUT' },
+  );
 });

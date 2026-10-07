@@ -4,8 +4,14 @@ import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, access } from 'node:f
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
+import { createServer } from 'node:net';
 import assert from 'node:assert/strict';
-import { failedDesktopOutcome, stopDriver, waitForDriver } from './desktop-e2e-driver.mjs';
+import {
+  failedDesktopOutcome,
+  stopDriver,
+  waitForDriver,
+  waitForWebView,
+} from './desktop-e2e-driver.mjs';
 const password = 'fictional desktop password 2026';
 const bytes = Buffer.from('%PDF-1.4\nFictional attachment for desktop validation only.\n');
 const binary = resolve(
@@ -22,6 +28,19 @@ const refused = spawnSync(binary, [], {
   timeout: 15000,
 });
 assert.equal(refused.status, 2, 'Desktop harness must refuse unmarked launches');
+// Reserve a fresh local debugging port for each Windows launch, including restart.
+async function reserveDebuggingPort() {
+  const server = createServer();
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const { port } = server.address();
+  await new Promise((resolve, reject) =>
+    server.close((error) => (error ? reject(error) : resolve())),
+  );
+  return port;
+}
 const results = [];
 async function scenario(name, exercise) {
   const root = await mkdtemp(join(tmpdir(), 'legalmaster-desktop-e2e-'));
@@ -41,24 +60,54 @@ async function scenario(name, exercise) {
     driverError = true;
   });
   let browser;
+  let application;
   let stage = 'driver-start';
   let checkpoint;
   const launch = async () => {
+    let capabilities = { 'tauri:options': { application: binary } };
+    if (process.platform === 'win32') {
+      stage = 'webview-start';
+      const port = await reserveDebuggingPort();
+      application = spawn(binary, [], {
+        env: {
+          ...process.env,
+          LEGALMASTER_E2E_ROOT: root,
+          LEGALMASTER_E2E_NONCE: nonce,
+          WEBVIEW2_USER_DATA_FOLDER: join(root, 'webview'),
+          WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `${process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS || ''} --remote-debugging-address=127.0.0.1 --remote-debugging-port=${port}`,
+        },
+        stdio: 'ignore',
+      });
+      // Retain no process output; readiness reports only fixed startup categories.
+      application.on('error', () => undefined);
+      await waitForWebView(application, port);
+      capabilities = {
+        browserName: 'webview2',
+        'ms:edgeChromium': true,
+        'ms:edgeOptions': { debuggerAddress: `127.0.0.1:${port}` },
+      };
+    }
     stage = 'webdriver-session';
     browser = await remote({
       hostname: '127.0.0.1',
       port: 4444,
       logLevel: 'silent',
       connectionRetryCount: 0,
-      capabilities: { 'tauri:options': { application: binary } },
+      capabilities,
     });
     await browser.setTimeout({ implicit: 0 });
+    stage = 'scenario';
     return browser;
   };
   const close = async () => {
-    if (browser) {
-      await browser.deleteSession();
+    try {
+      if (browser) await browser.deleteSession();
+    } finally {
       browser = undefined;
+      if (application) {
+        await stopDriver(application);
+        application = undefined;
+      }
     }
   };
   const click = async (text) => {

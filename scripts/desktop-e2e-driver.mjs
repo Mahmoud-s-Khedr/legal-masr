@@ -6,9 +6,16 @@ export const DESKTOP_ERROR_CODES = Object.freeze([
   'DESKTOP_WEBDRIVER_SESSION_FAILED',
   'DESKTOP_SCENARIO_FAILED',
   'DESKTOP_DRIVER_STOP_FAILED',
+  'DESKTOP_APPLICATION_EXITED_BEFORE_READY',
+  'DESKTOP_APPLICATION_START_TIMEOUT',
 ]);
 
-export const SAFE_DESKTOP_STAGES = Object.freeze(['driver-start', 'webdriver-session', 'scenario']);
+export const SAFE_DESKTOP_STAGES = Object.freeze([
+  'driver-start',
+  'webview-start',
+  'webdriver-session',
+  'scenario',
+]);
 export const SAFE_DESKTOP_CHECKPOINTS = Object.freeze([
   'initialize',
   'create-client',
@@ -53,7 +60,13 @@ function raceWithTimeout(promise, timeoutMs) {
  */
 export async function waitForDriver(
   driver,
-  { timeoutMs = 30_000, pollIntervalMs = 250, fetchFn = fetch, now = Date.now } = {},
+  {
+    timeoutMs = 30_000,
+    pollIntervalMs = 250,
+    fetchFn = fetch,
+    now = Date.now,
+    statusUrl = driverStatusUrl,
+  } = {},
 ) {
   let signalDriverFailure;
   const driverFailure = new Promise((resolve) => {
@@ -78,7 +91,7 @@ export async function waitForDriver(
       const response = await raceWithTimeout(
         Promise.race([
           Promise.resolve()
-            .then(() => fetchFn(driverStatusUrl))
+            .then(() => fetchFn(statusUrl))
             .catch(() => undefined),
           driverFailure,
         ]),
@@ -107,6 +120,22 @@ export async function waitForDriver(
   } finally {
     driver.off('exit', onDriverFailure);
     driver.off('error', onDriverFailure);
+  }
+}
+
+/** Wait for the directly launched Windows WebView's local debugging endpoint. */
+export async function waitForWebView(application, port, options = {}) {
+  try {
+    await waitForDriver(application, {
+      ...options,
+      statusUrl: `http://127.0.0.1:${port}/json/version`,
+    });
+  } catch (error) {
+    throw new DesktopHarnessError(
+      error.errorCode === 'DESKTOP_DRIVER_EXITED_BEFORE_READY'
+        ? 'DESKTOP_APPLICATION_EXITED_BEFORE_READY'
+        : 'DESKTOP_APPLICATION_START_TIMEOUT',
+    );
   }
 }
 
@@ -147,9 +176,11 @@ export function failedDesktopOutcome({
     ? error.errorCode
     : safeStage === 'driver-start'
       ? 'DESKTOP_DRIVER_START_TIMEOUT'
-      : safeStage === 'webdriver-session'
-        ? 'DESKTOP_WEBDRIVER_SESSION_FAILED'
-        : 'DESKTOP_SCENARIO_FAILED';
+      : safeStage === 'webview-start'
+        ? 'DESKTOP_APPLICATION_START_TIMEOUT'
+        : safeStage === 'webdriver-session'
+          ? 'DESKTOP_WEBDRIVER_SESSION_FAILED'
+          : 'DESKTOP_SCENARIO_FAILED';
 
   return {
     scenario,
