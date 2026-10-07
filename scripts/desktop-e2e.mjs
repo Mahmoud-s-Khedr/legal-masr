@@ -204,13 +204,15 @@ async function scenario(name, exercise) {
       stage === 'scenario' && browser
         ? await browser
             .execute(() => ({
-              applicationOrigin: location.hostname === 'tauri.localhost',
-              documentReady: document.readyState === 'complete',
-              rootHasContent: Boolean(document.querySelector('#root')?.children.length),
-              initializeInputPresent: Boolean(document.querySelector('input[name="fullName"]')),
-              gatePresent: Boolean(document.querySelector('.gate')),
-              confirmationPresent: Boolean(document.querySelector('.gate-confirm')),
-              workspacePresent: Boolean(document.querySelector('nav')),
+              applicationOrigin: globalThis.location.hostname === 'tauri.localhost',
+              documentReady: globalThis.document.readyState === 'complete',
+              rootHasContent: Boolean(globalThis.document.querySelector('#root')?.children.length),
+              initializeInputPresent: Boolean(
+                globalThis.document.querySelector('input[name="fullName"]'),
+              ),
+              gatePresent: Boolean(globalThis.document.querySelector('.gate')),
+              confirmationPresent: Boolean(globalThis.document.querySelector('.gate-confirm')),
+              workspacePresent: Boolean(globalThis.document.querySelector('nav')),
             }))
             .catch(() => undefined)
         : undefined;
