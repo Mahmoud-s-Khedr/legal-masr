@@ -89,7 +89,7 @@ automatic installation never occurs. Verified download bytes are held in native
 memory for this application session; restarting requires another download.
 
 To install, save all work, acknowledge the restart, and click **Back up, install
-and restart**. A modal prevents further editing. Rust creates and validates a
+and restart**. The install action waits for pending workspace saves to finish. A modal prevents further editing. Rust creates and validates a
 fresh encrypted backup using the existing vault service. A locked vault,
 insufficient disk space, or failed backup stops installation. Signature or
 network failures never replace the app. Installer failures offer another

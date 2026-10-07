@@ -71,11 +71,11 @@ fn installed_windows(executable: Option<&Path>) -> bool {
         .is_some_and(|directory| directory.join(".legal-masr-installed").is_file())
 }
 
-fn availability(app: &AppHandle) -> Option<&'static str> {
+fn availability(_app: &AppHandle) -> Option<&'static str> {
     public_key()?;
     let executable = std::env::current_exe().ok();
     #[cfg(target_os = "linux")]
-    let appimage = app.env().appimage.is_some();
+    let appimage = _app.env().appimage.is_some();
     #[cfg(not(target_os = "linux"))]
     let appimage = false;
     if !supported_delivery(

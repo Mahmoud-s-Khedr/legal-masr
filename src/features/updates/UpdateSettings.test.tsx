@@ -5,6 +5,7 @@ import type { UpdateSnapshot } from './updateController';
 import i18n from '../../i18n';
 
 const mocks = vi.hoisted(() => ({
+  pendingSaves: vi.fn(() => 0),
   initialize: vi.fn().mockResolvedValue(undefined),
   check: vi.fn(),
   download: vi.fn(),
@@ -14,10 +15,12 @@ const mocks = vi.hoisted(() => ({
   subscribe: vi.fn(() => () => {}),
 }));
 vi.mock('./updateController', () => ({ updateController: mocks }));
+vi.mock('@tanstack/react-query', () => ({ useIsMutating: mocks.pendingSaves }));
 import { UpdateInstallDialog, UpdateNotice, UpdateSettings, UpdateSync } from './UpdateSettings';
 let snapshot: UpdateSnapshot;
 beforeEach(async () => {
   vi.clearAllMocks();
+  mocks.pendingSaves.mockReturnValue(0);
   await i18n.changeLanguage('en');
   snapshot = {
     mode: 'manual',
@@ -97,4 +100,31 @@ it('schedules automatic checks and cleans up when the vault workspace unmounts',
   fireEvent(window, new Event('online'));
   expect(mocks.check).toHaveBeenCalledTimes(3);
   vi.useRealTimers();
+});
+
+it('announces a completed upgrade in the workspace without opening Settings', () => {
+  snapshot.message = 'updated';
+  render(
+    <MemoryRouter>
+      <UpdateNotice />
+    </MemoryRouter>,
+  );
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'The application update completed successfully',
+  );
+});
+
+it('waits for pending saves before allowing installation', () => {
+  mocks.pendingSaves.mockReturnValue(1);
+  snapshot.update = { version: '0.2.0', downloaded: true, notes: '' };
+  const result = render(<UpdateSettings />);
+  fireEvent.click(screen.getByRole('checkbox'));
+  const button = screen.getByRole('button', { name: 'Back up, install and restart' });
+  expect(button).toBeDisabled();
+  expect(screen.getByRole('status')).toHaveTextContent('Waiting for your pending saves');
+  fireEvent.click(button);
+  expect(mocks.install).not.toHaveBeenCalled();
+  mocks.pendingSaves.mockReturnValue(0);
+  result.rerender(<UpdateSettings />);
+  expect(button).toBeEnabled();
 });

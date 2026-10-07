@@ -904,6 +904,7 @@
     "downloadFailed": "The update could not be downloaded or its signature could not be verified. Try downloading again.",
     "backupFailed": "The required backup could not be created or validated. No update was installed. Unlock the vault and check available disk space before retrying.",
     "installFailed": "The update could not be installed. Download it again and retry, or install the release manually.",
-    "preferenceFailed": "The update preference could not be saved. Your previous preference remains active."
+    "preferenceFailed": "The update preference could not be saved. Your previous preference remains active.",
+    "waitForSaves": "Waiting for your pending saves to finish before installation."
   }
 }

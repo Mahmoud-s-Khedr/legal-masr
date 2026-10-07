@@ -218,3 +218,14 @@ describe('update policy', () => {
     expect(controller.getSnapshot().status.available).toBe(false);
   });
 });
+
+it('preserves the successful-update notice during an automatic startup check', async () => {
+  localStorage.clear();
+  localStorage.setItem('legal-masr.update-target', '0.2.0');
+  localStorage.setItem('legal-masr.update-mode', 'notify');
+  const { controller, api } = setup({ ...enabled, currentVersion: '0.2.0' });
+  vi.mocked(api.check).mockResolvedValue(null);
+  await controller.check(true);
+  expect(controller.getSnapshot().message).toBe('updated');
+  expect(api.check).toHaveBeenCalledOnce();
+});

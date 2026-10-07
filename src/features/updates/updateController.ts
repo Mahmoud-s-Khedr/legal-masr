@@ -114,17 +114,25 @@ export class UpdateController {
         return;
       this.lastAutomatic = Date.now();
     }
-    this.set({ phase: 'checking', message: null });
+    const keepSuccessNotice = automatic && this.snapshot.message === 'updated';
+    this.set({ phase: 'checking', message: keepSuccessNotice ? 'updated' : null });
     try {
       const update = await this.api.check();
-      this.set({ update, phase: 'idle', message: update ? null : 'current' });
+      this.set({
+        update,
+        phase: 'idle',
+        message: keepSuccessNotice ? 'updated' : update ? null : 'current',
+      });
       // Re-read the preference after the network request: disabling automatic
       // downloads while a check is in flight must prevent that download.
       if (automatic && this.snapshot.mode === 'download' && update && !update.downloaded) {
         await this.download();
       }
     } catch {
-      this.set({ phase: 'idle', message: automatic ? null : 'checkFailed' });
+      this.set({
+        phase: 'idle',
+        message: keepSuccessNotice ? 'updated' : automatic ? null : 'checkFailed',
+      });
     }
   };
 

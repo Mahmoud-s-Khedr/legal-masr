@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useIsMutating } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
@@ -27,20 +28,23 @@ export function UpdateSync() {
 
 export function UpdateNotice() {
   const { t } = useTranslation();
-  const { update, phase } = useUpdates();
-  if (!update) return null;
+  const { update, phase, message } = useUpdates();
+  if (!update && message !== 'updated') return null;
   return (
     <p role="status" className="security-note no-print">
-      <Link to="/settings?tab=about">
-        {t(
-          phase === 'downloading'
-            ? 'updates.downloading'
-            : update.downloaded
-              ? 'updates.ready'
-              : 'updates.available',
-          { version: update.version },
-        )}
-      </Link>
+      {message === 'updated' && <span>{t('updates.updated')}</span>}
+      {update && (
+        <Link to="/settings?tab=about">
+          {t(
+            phase === 'downloading'
+              ? 'updates.downloading'
+              : update.downloaded
+                ? 'updates.ready'
+                : 'updates.available',
+            { version: update.version },
+          )}
+        </Link>
+      )}
     </p>
   );
 }
@@ -61,6 +65,7 @@ export function UpdateSettings() {
   const { t } = useTranslation();
   const { status, update, mode, phase, message } = useUpdates();
   const [savedWork, setSavedWork] = useState(false);
+  const pendingSaves = useIsMutating();
   useEffect(() => {
     void updateController.initialize();
   }, []);
@@ -124,7 +129,7 @@ export function UpdateSettings() {
                   <div className="form-actions">
                     <Button
                       type="button"
-                      disabled={busy || !savedWork}
+                      disabled={busy || !savedWork || pendingSaves > 0}
                       onClick={() => {
                         setSavedWork(false);
                         void updateController.install();
@@ -133,6 +138,7 @@ export function UpdateSettings() {
                       {t('updates.install')}
                     </Button>
                   </div>
+                  {pendingSaves > 0 && <p role="status">{t('updates.waitForSaves')}</p>}
                 </>
               )}
             </div>
