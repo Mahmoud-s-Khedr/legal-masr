@@ -1,0 +1,25 @@
+name: Windows WebView startup probe
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  probe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22.21.1
+      - name: Download verified normal debug package
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 37604565860 -n legalmaster-solo-windows-debug-portable -D "$env:RUNNER_TEMP/probe-download"
+          if ($LASTEXITCODE -ne 0) { throw "Package download failed" }
+          Expand-Archive "$env:RUNNER_TEMP/probe-download/Legal-Masr-windows-x64-portable.zip" "$env:RUNNER_TEMP/probe-application"
+          $binary = Get-ChildItem "$env:RUNNER_TEMP/probe-application/*.exe" -File | Select-Object -First 1
+          $env:LEGALMASTER_PROBE_BINARY = $binary.FullName
+          node scripts/windows-webview-probe.mjs
