@@ -68,15 +68,22 @@ WebDriver errors, DOM, paths, passwords, or vault data. Session failures are
 classified in memory into fixed startup diagnostics (missing DevTools port,
 version mismatch, occupied profile, application exit, connection refusal or
 request timeout); only these categories are retained in JSON and CI output.
-Windows launches the marked application directly with a fresh loopback debugging
+Windows launches the marked application directly with a reserved loopback debugging
 port and a WebView profile inside the disposable root, waits for the local
 WebView endpoint, and attaches EdgeDriver using `debuggerAddress`. This avoids
 EdgeDriver's failed `DevToolsActivePort` discovery during application launch.
+WebView2 150+ ignores environment-supplied browser arguments on elevated hosts,
+including GitHub's Windows runners. The separate Windows harness build supplies
+port 9222 through Tauri's `additionalBrowserArgs` configuration, which uses the
+WebView2 API. It preserves the configured window and Wry 0.55.1's default browser
+arguments. The runner verifies that the port is free before each launch and waits
+for its local endpoint; production build configuration has no debug-port override.
 Closing a session also stops the application, so restart persistence exercises a
 new application process against the same vault. These debugging settings apply
-only to the harness-launched child process. Windows driver shutdown terminates
+only to the separate marked harness binary. Windows driver shutdown terminates
 the owned process tree before deleting its
 temporary vault, preventing a surviving EdgeDriver from reusing an old marker.
+Temporary-directory removal retries briefly for Windows profile locks to clear.
 The Windows preflight checks each command's exit status and uses the supported
 `tauri-driver --help` command. Linux and Windows finish
 all configured attempts even after a failure and keep each available sanitized

@@ -6,6 +6,7 @@ import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { createServer } from 'node:net';
 import assert from 'node:assert/strict';
+import { WINDOWS_WEBVIEW_DEBUG_PORT } from './desktop-e2e-build.mjs';
 import {
   failedDesktopOutcome,
   stopDriver,
@@ -28,12 +29,13 @@ const refused = spawnSync(binary, [], {
   timeout: 15000,
 });
 assert.equal(refused.status, 2, 'Desktop harness must refuse unmarked launches');
-// Reserve a fresh local debugging port for each Windows launch, including restart.
+// Verify that the test binary's API-configured port is free before each launch.
+// This prevents attaching to another application or a surviving earlier process.
 async function reserveDebuggingPort() {
   const server = createServer();
   await new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(0, '127.0.0.1', resolve);
+    server.listen(WINDOWS_WEBVIEW_DEBUG_PORT, '127.0.0.1', resolve);
   });
   const { port } = server.address();
   await new Promise((resolve, reject) =>
@@ -74,7 +76,6 @@ async function scenario(name, exercise) {
           LEGALMASTER_E2E_ROOT: root,
           LEGALMASTER_E2E_NONCE: nonce,
           WEBVIEW2_USER_DATA_FOLDER: join(root, 'webview'),
-          WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `${process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS || ''} --remote-debugging-address=127.0.0.1 --remote-debugging-port=${port}`,
         },
         stdio: 'ignore',
       });
@@ -209,7 +210,7 @@ async function scenario(name, exercise) {
     if (driver.exitCode === null && !driverError) {
       await stopDriver(driver);
     }
-    await rm(root, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 }
 await scenario('initialize-client-case-attachment-backup-restore', async (h) => {

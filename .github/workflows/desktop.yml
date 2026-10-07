@@ -43,6 +43,7 @@ jobs:
         with:
           workspaces: src-tauri -> target/desktop-e2e
           key: desktop-e2e-${{ runner.os }}
+          cache-on-failure: true
       - run: pnpm install --frozen-lockfile
       - run: cargo install tauri-driver --version 2.1.0 --locked
       - name: Match Windows driver to installed WebView2
