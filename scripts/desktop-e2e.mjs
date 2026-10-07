@@ -1,12 +1,19 @@
 import { remote } from 'webdriverio';
 import { spawn, spawnSync } from 'node:child_process';
-import { once } from 'node:events';
 import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
+import { createServer } from 'node:net';
 import assert from 'node:assert/strict';
-import { failedDesktopOutcome, waitForDriver } from './desktop-e2e-driver.mjs';
+import { WINDOWS_WEBVIEW_DEBUG_PORT } from './desktop-e2e-build.mjs';
+import { CdpBrowser } from './desktop-e2e-cdp.mjs';
+import {
+  failedDesktopOutcome,
+  stopDriver,
+  waitForDriver,
+  waitForWebView,
+} from './desktop-e2e-driver.mjs';
 const password = 'fictional desktop password 2026';
 const bytes = Buffer.from('%PDF-1.4\nFictional attachment for desktop validation only.\n');
 const binary = resolve(
@@ -23,6 +30,28 @@ const refused = spawnSync(binary, [], {
   timeout: 15000,
 });
 assert.equal(refused.status, 2, 'Desktop harness must refuse unmarked launches');
+// Verify that the test binary's API-configured port is free before each launch.
+// This prevents attaching to another application or a surviving earlier process.
+async function reserveDebuggingPort({ timeoutMs = 15_000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  while (true) {
+    const server = createServer();
+    try {
+      await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(WINDOWS_WEBVIEW_DEBUG_PORT, '127.0.0.1', resolve);
+      });
+      const { port } = server.address();
+      await new Promise((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+      return port;
+    } catch (error) {
+      if (error.code !== 'EADDRINUSE' || Date.now() >= deadline) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+}
 const results = [];
 async function scenario(name, exercise) {
   const root = await mkdtemp(join(tmpdir(), 'legalmaster-desktop-e2e-'));
@@ -33,45 +62,83 @@ async function scenario(name, exercise) {
   await writeFile(join(root, 'fixtures/corrupt.lmsbackup'), 'fictional corrupt archive');
   const selection = (value) => writeFile(join(root, 'dialog-selection'), value);
   await selection('attachment');
-  const driver = spawn('tauri-driver', [], {
-    env: { ...process.env, LEGALMASTER_E2E_ROOT: root, LEGALMASTER_E2E_NONCE: nonce },
-    stdio: 'ignore',
-  });
+  // Current EdgeDriver versions attach a separate blank target to WebView2.
+  // Windows uses the API-configured debug target directly; Linux uses Tauri's
+  // WebDriver application-launch path.
+  const windows = process.platform === 'win32';
+  const driver = windows
+    ? undefined
+    : spawn('tauri-driver', [], {
+        env: { ...process.env, LEGALMASTER_E2E_ROOT: root, LEGALMASTER_E2E_NONCE: nonce },
+        stdio: 'ignore',
+      });
   let driverError = false;
-  driver.on('error', () => {
+  driver?.on('error', () => {
     driverError = true;
   });
   let browser;
+  let application;
   let stage = 'driver-start';
   let checkpoint;
+  let webviewLaunch = 0;
   const launch = async () => {
-    stage = 'webdriver-session';
-    browser = await remote({
-      hostname: '127.0.0.1',
-      port: 4444,
-      logLevel: 'silent',
-      connectionRetryCount: 0,
-      capabilities: { 'tauri:options': { application: binary } },
-    });
+    const capabilities = { 'tauri:options': { application: binary } };
+    if (process.platform === 'win32') {
+      stage = 'webview-start';
+      const port = await reserveDebuggingPort();
+      application = spawn(binary, [], {
+        env: {
+          ...process.env,
+          LEGALMASTER_E2E_ROOT: root,
+          LEGALMASTER_E2E_NONCE: nonce,
+          // A new browser profile avoids a still-closing WebView2 child locking
+          // its previous profile during the restart-persistence journey. The
+          // application vault stays under the same marked test root.
+          WEBVIEW2_USER_DATA_FOLDER: join(root, `webview-${++webviewLaunch}`),
+        },
+        stdio: 'ignore',
+      });
+      // Retain no process output; readiness reports only fixed startup categories.
+      application.on('error', () => undefined);
+      await waitForWebView(application, port);
+      browser = await CdpBrowser.connect(port);
+    } else {
+      stage = 'webdriver-session';
+      browser = await remote({
+        hostname: '127.0.0.1',
+        port: 4444,
+        logLevel: 'silent',
+        connectionRetryCount: 0,
+        capabilities,
+      });
+    }
     await browser.setTimeout({ implicit: 0 });
+    stage = 'scenario';
     return browser;
   };
   const close = async () => {
-    if (browser) {
-      await browser.deleteSession();
+    try {
+      if (browser) await browser.deleteSession();
+    } finally {
       browser = undefined;
+      if (application) {
+        await stopDriver(application);
+        application = undefined;
+      }
     }
   };
   const click = async (text) => {
     const element = await browser.$(`//button[normalize-space(.)=${JSON.stringify(text)}]`);
     await element.waitForDisplayed({ timeout: 15000 });
-    // WebDriver's wheel/animation-frame scrolling can stall in headless WebKit.
-    // Scroll synchronously so native clicks cannot race the app's smooth scrolling.
-    await browser.execute(
-      (target) =>
-        target.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' }),
-      element,
-    );
+    if (process.platform !== 'win32') {
+      // WebDriver's wheel/animation-frame scrolling can stall in headless WebKit.
+      // Scroll synchronously so native clicks cannot race the app's smooth scrolling.
+      await browser.execute(
+        (target) =>
+          target.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' }),
+        element,
+      );
+    }
     await element.waitForClickable({ timeout: 15000 });
     await element.click();
   };
@@ -91,11 +158,16 @@ async function scenario(name, exercise) {
       .waitForDisplayed({ timeout: 15000 });
   };
   const initialize = async () => {
+    checkpoint = 'initialize-name';
     await input('fullName', 'محامٍ خيالي');
+    checkpoint = 'initialize-password';
     await input('password', password);
     await input('confirmPassword', password);
+    checkpoint = 'initialize-submit';
     await click('بدء الاستخدام');
+    checkpoint = 'initialize-confirm';
     await browser.$('.gate-confirm [role="checkbox"]').click();
+    checkpoint = 'initialize-continue';
     await click('متابعة إلى مساحة العمل');
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
   };
@@ -114,7 +186,7 @@ async function scenario(name, exercise) {
     await browser.$(`h2*=${`موكل خيالي ${number}`}`).waitForDisplayed({ timeout: 15000 });
   };
   try {
-    await waitForDriver(driver);
+    if (driver) await waitForDriver(driver);
     await launch();
     stage = 'scenario';
     await exercise({
@@ -146,24 +218,39 @@ async function scenario(name, exercise) {
             .getText()
             .catch(() => '')
         : '';
-    results.push(
-      failedDesktopOutcome({
+    const pageState =
+      stage === 'scenario' && browser
+        ? await browser
+            .execute(() => ({
+              applicationOrigin: globalThis.location.hostname === 'tauri.localhost',
+              documentReady: globalThis.document.readyState === 'complete',
+              rootHasContent: Boolean(globalThis.document.querySelector('#root')?.children.length),
+              initializeInputPresent: Boolean(
+                globalThis.document.querySelector('input[name="fullName"]'),
+              ),
+              gatePresent: Boolean(globalThis.document.querySelector('.gate')),
+              confirmationPresent: Boolean(globalThis.document.querySelector('.gate-confirm')),
+              workspacePresent: Boolean(globalThis.document.querySelector('nav')),
+            }))
+            .catch(() => undefined)
+        : undefined;
+    results.push({
+      ...failedDesktopOutcome({
         scenario: name,
         stage,
         checkpoint,
         error,
         diagnosticMessage,
       }),
-    );
+      ...(pageState ? { pageState } : {}),
+    });
     // WebDriver exceptions may include secret input, paths, or DOM. Never print them.
   } finally {
     await close().catch(() => undefined);
-    if (driver.exitCode === null && !driverError) {
-      const exited = once(driver, 'exit');
-      driver.kill();
-      await Promise.race([exited, new Promise((r) => setTimeout(r, 5000))]);
+    if (driver?.exitCode === null && !driverError) {
+      await stopDriver(driver);
     }
-    await rm(root, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 }
 await scenario('initialize-client-case-attachment-backup-restore', async (h) => {
@@ -262,5 +349,5 @@ await writeFile(
     2,
   ),
 );
-for (const result of results) console.log(`${result.scenario}: ${result.result}`);
+for (const result of results) console.log(JSON.stringify(result));
 if (results.some((result) => result.result !== 'passed')) process.exitCode = 1;

@@ -17,19 +17,15 @@ function stepBody(name) {
   return workflow.slice(start, next === -1 ? undefined : next);
 }
 
-test('desktop workflow has a Windows driver preflight after installation', () => {
-  const matchDriver = workflow.indexOf(
-    '      - name: Match Windows driver to installed WebView2\n',
-  );
-  const preflight = workflow.indexOf('      - name: Windows desktop-driver preflight\n');
+test('desktop workflow installs Tauri driver only for the Linux WebDriver path', () => {
+  const install = stepBody('Install Linux desktop driver');
+  const preflight = stepBody('Linux desktop-driver preflight');
 
-  assert.ok(matchDriver >= 0);
-  assert.ok(preflight > matchDriver, 'preflight must follow EdgeDriver installation');
-  const body = stepBody('Windows desktop-driver preflight');
-  assert.match(body, /Get-Command tauri-driver -CommandType Application -ErrorAction Stop/);
-  assert.match(body, /Get-Command msedgedriver -CommandType Application -ErrorAction Stop/);
-  assert.match(body, /^ {10}tauri-driver --version$/m);
-  assert.match(body, /^ {10}msedgedriver --version$/m);
+  assert.match(install, /if: runner\.os == 'Linux'/);
+  assert.match(install, /cargo install tauri-driver --version 2\.1\.0 --locked/);
+  assert.match(preflight, /if: runner\.os == 'Linux'/);
+  assert.match(preflight, /^ {10}tauri-driver --help$/m);
+  assert.doesNotMatch(workflow, /msedgedriver|Match Windows driver/);
 });
 
 test('Windows retries run all three attempts and retain each available sanitized result', () => {

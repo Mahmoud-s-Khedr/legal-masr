@@ -1,13 +1,28 @@
+import { spawnSync } from 'node:child_process';
+
 export const DESKTOP_ERROR_CODES = Object.freeze([
   'DESKTOP_DRIVER_EXITED_BEFORE_READY',
   'DESKTOP_DRIVER_START_TIMEOUT',
   'DESKTOP_WEBDRIVER_SESSION_FAILED',
   'DESKTOP_SCENARIO_FAILED',
+  'DESKTOP_DRIVER_STOP_FAILED',
+  'DESKTOP_APPLICATION_EXITED_BEFORE_READY',
+  'DESKTOP_APPLICATION_START_TIMEOUT',
 ]);
 
-export const SAFE_DESKTOP_STAGES = Object.freeze(['driver-start', 'webdriver-session', 'scenario']);
+export const SAFE_DESKTOP_STAGES = Object.freeze([
+  'driver-start',
+  'webview-start',
+  'webdriver-session',
+  'scenario',
+]);
 export const SAFE_DESKTOP_CHECKPOINTS = Object.freeze([
   'initialize',
+  'initialize-name',
+  'initialize-password',
+  'initialize-submit',
+  'initialize-confirm',
+  'initialize-continue',
   'create-client',
   'create-case',
   'add-attachment',
@@ -50,7 +65,13 @@ function raceWithTimeout(promise, timeoutMs) {
  */
 export async function waitForDriver(
   driver,
-  { timeoutMs = 30_000, pollIntervalMs = 250, fetchFn = fetch, now = Date.now } = {},
+  {
+    timeoutMs = 30_000,
+    pollIntervalMs = 250,
+    fetchFn = fetch,
+    now = Date.now,
+    statusUrl = driverStatusUrl,
+  } = {},
 ) {
   let signalDriverFailure;
   const driverFailure = new Promise((resolve) => {
@@ -75,7 +96,7 @@ export async function waitForDriver(
       const response = await raceWithTimeout(
         Promise.race([
           Promise.resolve()
-            .then(() => fetchFn(driverStatusUrl))
+            .then(() => fetchFn(statusUrl))
             .catch(() => undefined),
           driverFailure,
         ]),
@@ -107,6 +128,22 @@ export async function waitForDriver(
   }
 }
 
+/** Wait for the directly launched Windows WebView's local debugging endpoint. */
+export async function waitForWebView(application, port, options = {}) {
+  try {
+    await waitForDriver(application, {
+      ...options,
+      statusUrl: `http://127.0.0.1:${port}/json/version`,
+    });
+  } catch (error) {
+    throw new DesktopHarnessError(
+      error.errorCode === 'DESKTOP_DRIVER_EXITED_BEFORE_READY'
+        ? 'DESKTOP_APPLICATION_EXITED_BEFORE_READY'
+        : 'DESKTOP_APPLICATION_START_TIMEOUT',
+    );
+  }
+}
+
 export function applicationDiagnostic(message) {
   return (
     {
@@ -114,6 +151,22 @@ export function applicationDiagnostic(message) {
       'تعذر إتمام العملية بأمان.': 'OPERATION_FAILED',
     }[message] || 'NO_ALLOWLISTED_DIAGNOSTIC'
   );
+}
+
+// Classify in memory; never retain raw driver messages, which may contain paths.
+export function sessionDiagnostic(error) {
+  const message = typeof error?.message === 'string' ? error.message : '';
+  for (const [pattern, diagnostic] of [
+    [/DevToolsActivePort/i, 'WEBDRIVER_DEVTOOLS_PORT_MISSING'],
+    [/only supports.*version|current browser version/i, 'WEBDRIVER_VERSION_MISMATCH'],
+    [/user data directory.*in use/i, 'WEBDRIVER_PROFILE_IN_USE'],
+    [/failed to start|exited (normally|abnormally)|crashed/i, 'WEBDRIVER_APPLICATION_EXITED'],
+    [/ECONNREFUSED|connection refused/i, 'WEBDRIVER_CONNECTION_REFUSED'],
+    [/timeout|timed out/i, 'WEBDRIVER_REQUEST_TIMEOUT'],
+  ]) {
+    if (pattern.test(message)) return diagnostic;
+  }
+  return 'NO_ALLOWLISTED_DIAGNOSTIC';
 }
 
 export function failedDesktopOutcome({
@@ -128,9 +181,11 @@ export function failedDesktopOutcome({
     ? error.errorCode
     : safeStage === 'driver-start'
       ? 'DESKTOP_DRIVER_START_TIMEOUT'
-      : safeStage === 'webdriver-session'
-        ? 'DESKTOP_WEBDRIVER_SESSION_FAILED'
-        : 'DESKTOP_SCENARIO_FAILED';
+      : safeStage === 'webview-start'
+        ? 'DESKTOP_APPLICATION_START_TIMEOUT'
+        : safeStage === 'webdriver-session'
+          ? 'DESKTOP_WEBDRIVER_SESSION_FAILED'
+          : 'DESKTOP_SCENARIO_FAILED';
 
   return {
     scenario,
@@ -138,6 +193,36 @@ export function failedDesktopOutcome({
     errorCode,
     stage: safeStage,
     ...(SAFE_DESKTOP_CHECKPOINTS.includes(checkpoint) ? { checkpoint } : {}),
-    diagnostic: applicationDiagnostic(diagnosticMessage),
+    diagnostic:
+      safeStage === 'webdriver-session'
+        ? sessionDiagnostic(error)
+        : applicationDiagnostic(diagnosticMessage),
   };
+}
+
+/** Terminate the native driver's descendants before discarding its vault marker. */
+export async function stopDriver(
+  driver,
+  { platform = process.platform, run = spawnSync, timeoutMs = 5000 } = {},
+) {
+  if (driver.exitCode !== null || !driver.pid) return;
+  let onExit;
+  const exited = new Promise((resolve) => {
+    onExit = resolve;
+    driver.once('exit', onExit);
+  });
+  try {
+    const stopped =
+      platform === 'win32'
+        ? run('taskkill.exe', ['/PID', String(driver.pid), '/T', '/F'], {
+            stdio: 'ignore',
+            timeout: timeoutMs,
+          }).status === 0
+        : driver.kill();
+    if (!stopped || (await raceWithTimeout(exited, timeoutMs)) === timedOut) {
+      throw new DesktopHarnessError('DESKTOP_DRIVER_STOP_FAILED');
+    }
+  } finally {
+    driver.off('exit', onExit);
+  }
 }
