@@ -72,6 +72,7 @@ async function scenario(name, exercise) {
   let application;
   let stage = 'driver-start';
   let checkpoint;
+  let webviewLaunch = 0;
   const launch = async () => {
     const capabilities = { 'tauri:options': { application: binary } };
     if (process.platform === 'win32') {
@@ -82,7 +83,10 @@ async function scenario(name, exercise) {
           ...process.env,
           LEGALMASTER_E2E_ROOT: root,
           LEGALMASTER_E2E_NONCE: nonce,
-          WEBVIEW2_USER_DATA_FOLDER: join(root, 'webview'),
+          // A new browser profile avoids a still-closing WebView2 child locking
+          // its previous profile during the restart-persistence journey. The
+          // application vault stays under the same marked test root.
+          WEBVIEW2_USER_DATA_FOLDER: join(root, `webview-${++webviewLaunch}`),
         },
         stdio: 'ignore',
       });
