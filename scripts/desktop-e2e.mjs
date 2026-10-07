@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { WINDOWS_WEBVIEW_DEBUG_PORT } from './desktop-e2e-build.mjs';
 import {
   failedDesktopOutcome,
+  desktopPageKind,
   selectDesktopWindow,
   stopDriver,
   waitForDriver,
@@ -83,6 +84,18 @@ async function scenario(name, exercise) {
       // Retain no process output; readiness reports only fixed startup categories.
       application.on('error', () => undefined);
       await waitForWebView(application, port);
+      const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) =>
+        response.json(),
+      );
+      console.log(
+        JSON.stringify({
+          event: 'windows-debug-targets',
+          targets: targets.map((target) => ({
+            kind: desktopPageKind(target.url),
+            type: ['page', 'webview', 'iframe'].includes(target.type) ? target.type : 'other',
+          })),
+        }),
+      );
       capabilities = {
         browserName: 'webview2',
         'ms:edgeChromium': true,

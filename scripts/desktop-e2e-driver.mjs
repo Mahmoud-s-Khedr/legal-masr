@@ -146,15 +146,34 @@ export async function waitForWebView(application, port, options = {}) {
 }
 
 /** Select the app, rather than an initial blank WebView2 debugging target. */
+export function desktopPageKind(value) {
+  try {
+    const url = new URL(value);
+    if (url.href === 'about:blank') return 'blank';
+    if (
+      url.hostname === 'tauri.localhost' ||
+      (url.protocol === 'tauri:' && url.hostname === 'localhost')
+    )
+      return 'application';
+    if (url.hostname === 'localhost' && url.port === '1420') return 'development-server';
+    if (url.protocol === 'chrome-error:') return 'navigation-error';
+    return 'other';
+  } catch {
+    return 'other';
+  }
+}
+
 export async function selectDesktopWindow(
   browser,
   { timeoutMs = 15_000, pollIntervalMs = 250, now = Date.now } = {},
 ) {
   const deadline = now() + timeoutMs;
+  const pageKinds = new Set();
   while (now() < deadline) {
     for (const handle of await browser.getWindowHandles()) {
       await browser.switchToWindow(handle);
       const url = new URL(await browser.getUrl());
+      pageKinds.add(desktopPageKind(url.href));
       if (
         ((url.protocol === 'http:' || url.protocol === 'https:') &&
           url.hostname === 'tauri.localhost') ||
@@ -165,6 +184,7 @@ export async function selectDesktopWindow(
     }
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
   }
+  console.log(JSON.stringify({ event: 'windows-window-selection', pageKinds: [...pageKinds] }));
   throw new DesktopHarnessError('DESKTOP_APPLICATION_WINDOW_MISSING');
 }
 
