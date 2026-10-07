@@ -6,17 +6,17 @@ Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
 
 # 14. Update and release system
 
-Tauri's updater can later use a signed static JSON manifest and GitHub Releases or another static host. Update manifests include platform-specific URLs and signatures. The updater plugin is not currently included or configured, so this application does not generate updater artifacts, signatures, keys, or a `latest.json` manifest.
+Tauri's native updater now uses a signed static JSON manifest on GitHub Releases. It is enabled only in builds configured with the permanent public signing key. Release CI generates signed packages and `latest.json` when real signing credentials are supplied. Automatic checks/downloads are opt-in; installation always requires a user action and a fresh validated encrypted backup. See [../UPDATES.md](../UPDATES.md) for setup, supported distributions, and validation.
 
 ## Update flow
 
 1. Check update manifest.
 2. Compare semantic version.
 3. Display release notes.
-4. Ask user to create or verify a recent backup.
+4. Ask the user to save work and acknowledge installation/restart.
 5. Download signed update.
 6. Verify update signature.
-7. Install.
+7. Create and validate a fresh encrypted backup; install only if it succeeds.
 8. Restart.
 9. Run migration process if needed.
 10. Display successful-update notice.

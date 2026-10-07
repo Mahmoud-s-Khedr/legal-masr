@@ -1,3 +1,4 @@
+import { UpdateSettings } from '../../updates/UpdateSettings';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -579,12 +580,15 @@ export function SettingsPage() {
 
           {selectedTab === 'about' && (
             <div className="settings-stack">
+              <UpdateSettings />
               <section className="settings-section about-section">
                 <img src="/logo.png" alt="" />
                 <div>
                   <h3>{t('app.brandName')}</h3>
                   <p className="about-tagline">{t('app.brandTagline')}</p>
-                  <p>{t('settings.about.version', { version: '0.1.0' })}</p>
+                  <p>
+                    {t('settings.about.version', { version: import.meta.env.VITE_APP_VERSION })}
+                  </p>
                   <p>{t('settings.about.description')}</p>
                   <span className="local-status">{t('app.localOnly')}</span>
                 </div>

@@ -396,7 +396,7 @@
       "backups": "Backups",
       "backupsValue": "In the app data folder “LegalMasterSolo”, under Backups",
       "network": "Internet connection",
-      "networkValue": "Client and case data is never sent anywhere. There is no usage tracking and no cloud sync.",
+      "networkValue": "Optional signed update checks contact GitHub; legal records remain on your device.",
       "manageBackups": "Manage backups",
       "documentsNoteTitle": "Protecting documents",
       "documentsNote": "The database is encrypted with your password. Document files are protected by your computer account password and disk encryption (BitLocker or FileVault). Full backups are encrypted."
@@ -876,5 +876,34 @@
       "lawyerName": "Lawyer name",
       "barNumber": "Bar number"
     }
+  },
+  "updates": {
+    "title": "Application updates",
+    "privacy": "Update checks contact GitHub, which receives standard network metadata such as your IP address. No case records, profile information, or installation identifier are sent. Automatic checks are off by default.",
+    "preference": "Update preference",
+    "modes": {
+      "manual": "Check manually",
+      "notify": "Check automatically and notify me",
+      "download": "Check and download automatically"
+    },
+    "check": "Check for updates",
+    "download": "Download update",
+    "install": "Back up, install and restart",
+    "available": "Version {{version}} is available",
+    "ready": "Version {{version}} is ready to install",
+    "checking": "Checking for updates…",
+    "downloading": "Downloading and verifying the update…",
+    "installing": "Creating a validated backup, then installing and restarting…",
+    "backupHint": "Installation creates a fresh encrypted backup. If backup creation or validation fails, installation stops. Save your work before continuing.",
+    "savedWork": "I have saved my work and am ready to close and restart the app.",
+    "manualInstall": "This distribution requires a manual update. Download the new portable version, or update your Linux package through your package manager.",
+    "notConfigured": "Updates are not enabled in this build. Install a release configured for signed updates.",
+    "current": "You are using the latest available version.",
+    "updated": "The application update completed successfully.",
+    "checkFailed": "Could not check for updates. Your offline workspace is still available. Try again when connected.",
+    "downloadFailed": "The update could not be downloaded or its signature could not be verified. Try downloading again.",
+    "backupFailed": "The required backup could not be created or validated. No update was installed. Unlock the vault and check available disk space before retrying.",
+    "installFailed": "The update could not be installed. Download it again and retry, or install the release manually.",
+    "preferenceFailed": "The update preference could not be saved. Your previous preference remains active."
   }
 }

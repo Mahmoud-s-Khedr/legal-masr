@@ -13,16 +13,16 @@ Release-sensitive third-party Actions are commit-pinned. Update those pins only 
 
 ## Review the draft
 
-Confirm the release contains only:
+For builds without updater signing configuration, confirm the release contains:
 
 ```text
-LegalMaster-Solo_<version>_windows_x64-setup.exe
-LegalMaster-Solo_<version>_windows_x64-portable.zip
-LegalMaster-Solo_<version>_linux_x64.deb
-LegalMaster-Solo_<version>_linux_x64.rpm
-LegalMaster-Solo_<version>_linux_x64.AppImage
-LegalMaster-Solo_<version>_macos_x64.dmg
-LegalMaster-Solo_<version>_macos_arm64.dmg
+Legal-Masr_<version>_windows_x64-setup.exe
+Legal-Masr_<version>_windows_x64-portable.zip
+Legal-Masr_<version>_linux_x64.deb
+Legal-Masr_<version>_linux_x64.rpm
+Legal-Masr_<version>_linux_x64.AppImage
+Legal-Masr_<version>_macos_x64.dmg
+Legal-Masr_<version>_macos_arm64.dmg
 SHA256SUMS.txt
 ```
 
@@ -32,4 +32,4 @@ Before publishing a beta, back up data and complete manual tests on each platfor
 
 ## Later signing work
 
-Do not add empty secrets or placeholder certificates. The future Windows signing sequence and future Apple Developer ID prerequisites are documented in [SIGNING_POLICY.md](SIGNING_POLICY.md). The Tauri updater is deliberately out of scope until it is intentionally designed and supplied with a long-lived key pair.
+Do not add empty secrets or placeholder certificates. The future Windows signing sequence and future Apple Developer ID prerequisites are documented in [SIGNING_POLICY.md](SIGNING_POLICY.md). Signed updater builds are now supported when a long-lived key pair is configured. See [UPDATES.md](UPDATES.md) for the repository variable/secrets, additional artifacts, stable/latest publication, first-install transition, and device validation. Signing setup is required before in-app updates can be activated.

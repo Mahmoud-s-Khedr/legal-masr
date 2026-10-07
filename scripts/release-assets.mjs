@@ -4,6 +4,7 @@ import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promi
 import { createHash } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertMatchingUpdaterKey } from './updater-signing.mjs';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const packageJson = JSON.parse(await readFile(join(repositoryRoot, 'package.json'), 'utf8'));
@@ -47,7 +48,7 @@ async function verifyVersion(tag) {
   process.stdout.write(`Verified release tag ${tag} for application version ${version}.\n`);
 }
 
-async function stage(input, output) {
+async function stage(input, output, updater = false) {
   if (!input || !output)
     throw new Error('stage requires --input <directory> and --output <directory>.');
   const version = applicationVersion();
@@ -89,6 +90,40 @@ async function stage(input, output) {
     [intel, `Legal-Masr_${version}_macos_x64.dmg`],
     [arm, `Legal-Masr_${version}_macos_arm64.dmg`],
   ];
+  if (updater) {
+    const updates = [
+      ['windows-x86_64', installers[0], `Legal-Masr_${version}_windows_x64-setup.exe`],
+      ['linux-x86_64', appImages[0], `Legal-Masr_${version}_linux_x64.AppImage`],
+      [
+        'darwin-x86_64',
+        oneUpdaterArchive(files, 'raw-macos-x64'),
+        `Legal-Masr_${version}_macos_x64.app.tar.gz`,
+      ],
+      [
+        'darwin-aarch64',
+        oneUpdaterArchive(files, 'raw-macos-arm64'),
+        `Legal-Masr_${version}_macos_arm64.app.tar.gz`,
+      ],
+    ];
+    const platforms = {};
+    for (const [platform, source, name] of updates) {
+      const signature = (await readFile(`${source}.sig`, 'utf8')).trim();
+      if (!signature) throw new Error(`Missing updater signature for ${platform}.`);
+      assertMatchingUpdaterKey(signature, process.env.LEGAL_MASR_UPDATER_PUBLIC_KEY);
+      if (source.endsWith('.app.tar.gz')) artifacts.push([source, name]);
+      artifacts.push([`${source}.sig`, `${name}.sig`]);
+      platforms[platform] = {
+        signature,
+        url: `https://github.com/Mahmoud-s-Khedr/legal-masr/releases/download/v${version}/${name}`,
+      };
+    }
+    const manifest = {
+      version,
+      notes: `Legal Masr ${version}. A validated encrypted backup is required before installation.`,
+      platforms,
+    };
+    await writeFile(join(output, 'latest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  }
   for (const [source, name] of artifacts) await cp(source, join(output, name));
   for (const [, name] of artifacts) {
     if (!(await stat(join(output, name))).isFile())
@@ -97,8 +132,15 @@ async function stage(input, output) {
   const checksums = await Promise.all(
     artifacts.map(async ([, name]) => `${await sha256(join(output, name))}  ${name}`),
   );
+  if (updater) checksums.push(`${await sha256(join(output, 'latest.json'))}  latest.json`);
   await writeFile(join(output, 'SHA256SUMS.txt'), `${checksums.join('\n')}\n`);
   process.stdout.write(`Staged ${artifacts.length} release artifacts for ${version}.\n`);
+}
+
+function oneUpdaterArchive(files, directory) {
+  const matches = files.filter((path) => path.includes(directory) && path.endsWith('.app.tar.gz'));
+  if (matches.length !== 1) throw new Error(`Expected one updater archive in ${directory}.`);
+  return matches[0];
 }
 
 const [command, ...args] = process.argv.slice(2);
@@ -109,6 +151,7 @@ else if (command === 'stage') {
   await stage(
     inputIndex >= 0 ? args[inputIndex + 1] : undefined,
     outputIndex >= 0 ? args[outputIndex + 1] : undefined,
+    args.includes('--updater'),
   );
 } else
   throw new Error(

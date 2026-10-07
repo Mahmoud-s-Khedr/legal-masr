@@ -14,7 +14,7 @@ Not notarized.
 Users may need to approve the app manually.
 
 Tauri updater:
-Separate signing system. Disabled unless explicitly configured.
+Separate signing system, implemented behind native backup-gated commands. Disabled unless the permanent public key is configured. Release signing requires the matching private key and password; see [UPDATES.md](UPDATES.md).
 
 `SHA256SUMS.txt` is an integrity aid only. It is not a code signature.
 
@@ -40,4 +40,4 @@ That work must use real credentials stored outside the repository, clean tempora
 
 Future macOS Developer ID distribution requires an imported `.p12` certificate, its password, a signing identity, Apple notarization credentials, notarization, stapling, and verification. It is independent of the current ad-hoc path.
 
-If automatic updates are later adopted, generate the Tauri updater key pair once outside CI, commit only the public key in updater configuration, and store the private key and password separately as GitHub secrets. Only then enable updater artifacts and use `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+For signed updates, generate the Tauri updater key pair once outside CI. Store only the public key in the `LEGAL_MASR_UPDATER_PUBLIC_KEY` repository variable, and store the private key/password separately as `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` GitHub secrets. Only then enable updater artifacts. Keep the signing key stable across releases.
