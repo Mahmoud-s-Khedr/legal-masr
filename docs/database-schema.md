@@ -1,7 +1,9 @@
 # Database schema
 
 This document describes the SQLite/SQLCipher schema created by
-[`0001_canonical_legal_masr.sql`](../src-tauri/migrations/0001_canonical_legal_masr.sql).
+[`0001_canonical_legal_masr.sql`](../src-tauri/migrations/0001_canonical_legal_masr.sql)
+and extended by
+[`0002_case_judicial_year.sql`](../src-tauri/migrations/0002_case_judicial_year.sql).
 It is a reference for the application model; the migration remains the
 authoritative executable definition.
 
@@ -39,11 +41,11 @@ and valid ranges for reminder and lock timeout settings.
 
 ## Core legal records
 
-| Table                | Purpose                                                                                                                                                                |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `clients`            | People or entities represented by the lawyer. Each has a unique internal number and can be archived.                                                                   |
-| `powers_of_attorney` | POAs with a unique internal sequence, optional official number/year/date, notary, notes, and archive timestamp.                                                        |
-| `cases`              | Legal cases with a unique internal number, optional official number/year, court and circuit details, litigation degree, status, subject, notes, and archive timestamp. |
+| Table                | Purpose                                                                                                                                                                                                                                                                            |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clients`            | People or entities represented by the lawyer. Each has a unique internal number and can be archived.                                                                                                                                                                               |
+| `powers_of_attorney` | POAs with a unique internal sequence, optional official number/year/date, notary, notes, and archive timestamp.                                                                                                                                                                    |
+| `cases`              | Legal cases with a unique internal number, optional official number, Gregorian `official_year` (1800–9999) and separate `judicial_year` (1–9999, the court year in «لسنة 89 قضائية»), court and circuit details, litigation degree, status, subject, notes, and archive timestamp. |
 
 `clients`, `powers_of_attorney`, and `cases` have search-oriented indexes on
 their identifiers and other commonly queried fields. POA official numbers are
@@ -135,6 +137,13 @@ write.
 
 ## Change policy
 
-`0001` is the sole pre-release baseline. Do not edit it. A schema change needs
-an explicit migration-policy decision before implementation; update this
-reference in the same change.
+`0001` is the pre-release baseline and `0002` adds `cases.judicial_year`. Do not
+edit an applied migration. A schema change needs an explicit migration-policy
+decision before implementation (B10/P3-03 in the remediation register recorded
+the one for `0002`); update this reference in the same change.
+
+`0002` is additive (`ALTER TABLE … ADD COLUMN`) on purpose. SQLite cannot alter a
+`CHECK` constraint, so widening `official_year` would require rebuilding `cases`,
+a parent of `ON DELETE CASCADE` tables, inside the transaction the migration
+runner uses (where `PRAGMA foreign_keys` cannot be switched off). Existing rows
+keep their Gregorian year and receive no judicial year.

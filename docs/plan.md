@@ -50,3 +50,7 @@ with [scoped contribution tasks](reviews/2026-10-08-remediation-tasks.md) and
 creation/opening, journaled replacement and snapshot-retention fixes are implemented;
 the operation/session coordinator and the remaining workflow/release work are open.
 This work does not certify phase acceptance or public-beta readiness.
+
+A later [beta-readiness pass](reviews/2026-10-08-beta-pass.md) fixed the reproducible editing, layout, theme and
+error-message defects and added migration `0002`. The recommendation is unchanged: do not give testers real client
+data until backups are portable and restore-safe (B01/B02) and the app has been run on Windows and macOS.
