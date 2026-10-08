@@ -112,6 +112,33 @@ export class CdpBrowser {
         this.#wait(visibleExpression(selector), timeout),
       click: async () => {
         await this.#wait(visibleExpression(selector));
+        // Base UI controls (comboboxes, selects, checkboxes) react to pointer events, which
+        // HTMLElement.click() never produces, so send real mouse input at the element's centre,
+        // as WebDriver does on Linux. An obscured element falls back to a plain click so a step
+        // that only needed one still behaves as before.
+        const point = await this.#evaluate(
+          `(() => { const node = ${target}; if (!node) return null; node.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }); const box = node.getBoundingClientRect(); const x = box.left + box.width / 2; const y = box.top + box.height / 2; const hit = document.elementFromPoint(x, y); return { x, y, reachable: Boolean(hit && (node === hit || node.contains(hit) || hit.contains(node))) }; })()`,
+        );
+        if (!point) throw new Error('CDP_ELEMENT_MISSING');
+        if (point.reachable) {
+          const { x, y } = point;
+          await this.#command('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+          await this.#command('Input.dispatchMouseEvent', {
+            type: 'mousePressed',
+            x,
+            y,
+            button: 'left',
+            clickCount: 1,
+          });
+          await this.#command('Input.dispatchMouseEvent', {
+            type: 'mouseReleased',
+            x,
+            y,
+            button: 'left',
+            clickCount: 1,
+          });
+          return;
+        }
         const clicked = await this.#evaluate(
           `(() => { const node = ${target}; if (!node) return false; node.click(); return true; })()`,
         );
