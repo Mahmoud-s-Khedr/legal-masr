@@ -12,7 +12,7 @@
       "file": "onboarding-ar-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "a76de5ff7119d81bc2e2a3a198efc10fb136134ace4f2b2d0f504023d9f8abe8"
+      "sha256": "eaf2dcecfaaffa2da5f5a386affb4414cc806ae49ff11b4e7605e15adc20cf2f"
     },
     {
       "route": "/?captureOnboarding=1",
@@ -21,7 +21,7 @@
       "file": "onboarding-ar-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "c98e9da79f64013065abba286851a0f76a6166fb58ad5dd2997c876210dd2830"
+      "sha256": "acc6f8de3fe6b65952478861fc2dfe5f51ebdf7de4c3dd1b52da9565e7e7eadc"
     },
     {
       "route": "/?captureOnboarding=1",
@@ -30,7 +30,7 @@
       "file": "onboarding-en-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "319ad061d513a9fc032a8b5777ccc41d93bb7338cfefe4bb54256e9d0309bb74"
+      "sha256": "24000c2e82e82fb52338602b9d77601e5d2426e8ccf06fc222d3d56eefffd06d"
     },
     {
       "route": "/?captureOnboarding=1",
@@ -39,7 +39,7 @@
       "file": "onboarding-en-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "7b2234739817cd49cfda79054bdfbad86590751f7d0b3c646ac61ad4e86268a6"
+      "sha256": "0c6d2ef98a7fc0fbc92e65567391842fc64ab0bc1ea40d1968d85cd514cabb44"
     },
     {
       "route": "/",
@@ -48,7 +48,7 @@
       "file": "dashboard-ar-1366x768.png",
       "width": 1366,
       "height": 937,
-      "sha256": "922e4f5d491d86ae75cd3cd457162824e8b355db25606b651e79d2a7d4b81fe6"
+      "sha256": "8bce23106b3ab0e6e7db4fa12ffa786025ff4db7943d475f9b8bbee133d8363e"
     },
     {
       "route": "/",
@@ -57,7 +57,7 @@
       "file": "dashboard-ar-1440x900.png",
       "width": 1440,
       "height": 937,
-      "sha256": "6051e2f90e48f98b9c439477bf9cc47307fd0228de4c4e8aa34a038b0405bc77"
+      "sha256": "dcbd7daecbc8d1e802fb77586c395dff0f5f183dfc536a72ecb7a78699d181f6"
     },
     {
       "route": "/",
@@ -66,7 +66,7 @@
       "file": "dashboard-en-1366x768.png",
       "width": 1366,
       "height": 937,
-      "sha256": "cdb9e434e9334e04e35c44fe254c6d2c50870547b413f5d48501af2c286279f0"
+      "sha256": "0cd9b1e6d05deb27054a6304dcf89777c404543f59733a1dc9760b7b5bec2ff6"
     },
     {
       "route": "/",
@@ -75,7 +75,7 @@
       "file": "dashboard-en-1440x900.png",
       "width": 1440,
       "height": 937,
-      "sha256": "d6f54215d2a289c45f05bf86f01dc954112e83c3f1bcc4f65e5a315092b6bde6"
+      "sha256": "caf69238bd03344babd8975c47fc0c1bf2fec96d92420d4b59906ea8c3480be6"
     },
     {
       "route": "/clients",
@@ -84,7 +84,7 @@
       "file": "clients-ar-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "07d15b7caec980043222fccf89da97498bb2a15e00e6f53aa93962494ef68490"
+      "sha256": "041cd6d44f462b9dd83c3505f7e311d3a87572bb0cfbe0c7cb8b52de1dde6f00"
     },
     {
       "route": "/clients",
@@ -93,7 +93,7 @@
       "file": "clients-ar-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "ad18d7abbc9a32e4643402e244977a8faa47e6d3228255c8657d8343651e0377"
+      "sha256": "9b82d94e69e6979f68f92570a013d78d716684b9f7dd11541cbc67774c466040"
     },
     {
       "route": "/clients",
@@ -102,7 +102,7 @@
       "file": "clients-en-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "4c1eccfbf05a0b86254173ca2b3a1362c79f12c21cc6f4cc5b00534a43e16894"
+      "sha256": "253f2ce148dff92f3ec4b75a1e9210436090b35808f4c81a6273386e9323a4ad"
     },
     {
       "route": "/clients",
@@ -111,7 +111,7 @@
       "file": "clients-en-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "1140a83573d4b1a073770874dabea5871a2087f7e2b890a5532b2c5b95641c09"
+      "sha256": "28200a2c2e0a8053087930978049664238c706557b6693874e78c7433486ba2f"
     },
     {
       "route": "/clients/demo-client-adel",
@@ -138,7 +138,7 @@
       "file": "client-detail-en-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "7af9da463eb856e9e448c23e1183f5bf15b4a150d89af5b52b76c545ea41407f"
+      "sha256": "87b82a92bccaea6b4e37a2fba43ebae103f35317e40fd55d5e166b2ae2009acf"
     },
     {
       "route": "/clients/demo-client-adel",
@@ -156,7 +156,7 @@
       "file": "new-client-ar-1366x768.png",
       "width": 1366,
       "height": 1039,
-      "sha256": "18c2e4b99a940f1e8c8945f97fef3a4e37f3339eaae267324dc54bed3490453d"
+      "sha256": "20b4e570370437d43bbcf794e4278c1f364d47d50a24cd06085d3287f2886053"
     },
     {
       "route": "/clients/new",
@@ -165,7 +165,7 @@
       "file": "new-client-ar-1440x900.png",
       "width": 1440,
       "height": 1039,
-      "sha256": "e1727aae737e810fb9ac56f5dfe7cc21062656840fb659359c3170b845b07693"
+      "sha256": "7fe94812de45d326b4afb10fad087c60186f63404de5305612cc8146b7846cd6"
     },
     {
       "route": "/clients/new",
@@ -174,7 +174,7 @@
       "file": "new-client-en-1366x768.png",
       "width": 1366,
       "height": 1039,
-      "sha256": "43d21cab2b8c25ea39940575663e82f662393dc49a88fe64e3cc54046e139e66"
+      "sha256": "4e1febe21badc4e134b2bd9d50ebecb0d795157c908bfcc5392311b83da4911d"
     },
     {
       "route": "/clients/new",
@@ -183,7 +183,7 @@
       "file": "new-client-en-1440x900.png",
       "width": 1440,
       "height": 1039,
-      "sha256": "665d7145bbd7e5b035d06ae9f215b26caac1c3ec1616d781a82c5217a8983abd"
+      "sha256": "0cff6576ab47f83402e43ad56fdc1b57a5a133afc1b58a5c7c5e9ada04705e5c"
     },
     {
       "route": "/powers-of-attorney",
@@ -192,7 +192,7 @@
       "file": "powers-of-attorney-ar-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "1a9db991e83ec15b06db2d2f052099aec474860f467b026eb2305c3f411885d1"
+      "sha256": "676b1c0e6c534bfc81c24c93f429b9c528d235c1b9f63e31fca2560f4e5834a1"
     },
     {
       "route": "/powers-of-attorney",
@@ -201,7 +201,7 @@
       "file": "powers-of-attorney-ar-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "53bee52c82881e19715a75cb06a4e5f5ecfb86572da309bd3cbc0e5d4ef40af0"
+      "sha256": "c107226c39abf9479a484357662fd915d0be060012c18a86169defe1c4384139"
     },
     {
       "route": "/powers-of-attorney",
@@ -210,7 +210,7 @@
       "file": "powers-of-attorney-en-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "682b19d0b6e0dcc05bef3307b5541874210896f968cb07196ad824c534796703"
+      "sha256": "e9120b3fe16f1ee6539590f02a7038039ea0cfdcdb12d4607b8154b054df900b"
     },
     {
       "route": "/powers-of-attorney",
@@ -219,7 +219,7 @@
       "file": "powers-of-attorney-en-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "412bdad3368181fb9ffff4b684c4406f8ded2fd3df57f36dea6c7f7d17f4cb19"
+      "sha256": "e7ba2f9864f56c247f40b4fd36c72d52e6ee3efe8986a9cc3ffe8943366f3fea"
     },
     {
       "route": "/powers-of-attorney/new",
@@ -228,7 +228,7 @@
       "file": "new-poa-ar-1366x768.png",
       "width": 1366,
       "height": 974,
-      "sha256": "717e5e9246ca63040e694917fad8fad9f80449985942e7194845fdebf6a7453a"
+      "sha256": "a6265b15b96e4a113f84beaadc9dc3448154f149219669516939242b92530146"
     },
     {
       "route": "/powers-of-attorney/new",
@@ -237,7 +237,7 @@
       "file": "new-poa-ar-1440x900.png",
       "width": 1440,
       "height": 974,
-      "sha256": "2e3410557fe51309a41e3fd5806e63abd938eb853cb04517d735f97b70754886"
+      "sha256": "73e9dbcc1474e562479ba6c5af6b1d0e7d6d00d4ab319b0a01753df8009a349d"
     },
     {
       "route": "/powers-of-attorney/new",
@@ -246,7 +246,7 @@
       "file": "new-poa-en-1366x768.png",
       "width": 1366,
       "height": 974,
-      "sha256": "be685279722e1533d60d429478b02edf7a2c14118f49cb2c0f9d5eab9c61ebd2"
+      "sha256": "fadbafa8b00763518a63819d78825b18ab9f016c16b03f257fafcfba194d0d69"
     },
     {
       "route": "/powers-of-attorney/new",
@@ -255,7 +255,7 @@
       "file": "new-poa-en-1440x900.png",
       "width": 1440,
       "height": 974,
-      "sha256": "cf27a5134148a1e54de8ba2a3af6d7cb31412c07059e14249ef720b978a85b3a"
+      "sha256": "1f28255fa77676d01d2a786e1a772f1553bb2d339acfc7609178203059e592c6"
     },
     {
       "route": "/powers-of-attorney/demo-poa-1",
@@ -300,7 +300,7 @@
       "file": "cases-ar-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "f3d40fea166b36cb094bb1dfc6cba22dcfa1373a2e0682353fa12de847573837"
+      "sha256": "e828129dd56cbacc76a590c0752ee234522b9083e0a36f19a89f480d979934d0"
     },
     {
       "route": "/cases",
@@ -309,7 +309,7 @@
       "file": "cases-ar-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "f475382c49406942b87310f4de05863f15c3aae1f85322bb28b60f919095adfe"
+      "sha256": "e5991508f09be43c6874f2b38412d956687b4f76a3d102e9b04d9a5e4cc42d92"
     },
     {
       "route": "/cases",
@@ -318,7 +318,7 @@
       "file": "cases-en-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "6ea74db1f4bd7e42211f99e52e43a010af4f2d4a733053bc3cf4d17ffed316cb"
+      "sha256": "9fc6f67754f38fa492549dc0508391fb0412263db82ab615f92eff5a9153d9a9"
     },
     {
       "route": "/cases",
@@ -327,7 +327,7 @@
       "file": "cases-en-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "5b8ebb6fdb27c304685caff339ef0b71c38df2e77fce34d79a97d56b1c69bcb8"
+      "sha256": "2d2cacbff69d2efcedb6b411b2ddb70b345664f9e86067894b92df4ac2af290a"
     },
     {
       "route": "/cases/demo-case-14",
@@ -408,7 +408,7 @@
       "file": "agenda-ar-1366x768.png",
       "width": 1366,
       "height": 1103,
-      "sha256": "219a6f729b113c41dcb85be4265b30ebaa21d03efe0f3b08c93bbd48c5d04984"
+      "sha256": "f578b2a2dd11b205bda732ceee786348d0f1d86b0c8dea640b1835004f6f906b"
     },
     {
       "route": "/calendar",
@@ -417,7 +417,7 @@
       "file": "agenda-ar-1440x900.png",
       "width": 1440,
       "height": 1103,
-      "sha256": "937da40b6cda0aaa8f692ef7f32841dfe75a346a6ddbf27fd667a3350035af73"
+      "sha256": "6ef6449677d86cf926e66f0efce36503ffe33c99e39ecfddd3f7f5af552054ae"
     },
     {
       "route": "/calendar",
@@ -426,7 +426,7 @@
       "file": "agenda-en-1366x768.png",
       "width": 1366,
       "height": 1103,
-      "sha256": "9a0bc9999d5ae62ea1b55b7f7060992069e16a8444e19fc030161586df10d137"
+      "sha256": "c80edb657bbe39f9217dcb1c2d3837093ecbfc820e2d1324f7d82f6356b83c03"
     },
     {
       "route": "/calendar",
@@ -435,7 +435,7 @@
       "file": "agenda-en-1440x900.png",
       "width": 1440,
       "height": 1103,
-      "sha256": "b977a02c6edada3f7cfd81fc1f3baf8354cadab0efe9ee68c168606e29397211"
+      "sha256": "e153e4c250e5123a73990fc2276736a7504cd4f075f79fd3c0986ec41f571ec6"
     },
     {
       "route": "/tasks",
@@ -552,7 +552,7 @@
       "file": "backups-ar-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "4bb4a176ad7a6827d74d9538872dbc6e47b736bce98208738594605757165ae9"
+      "sha256": "2149c8f6d38a94687a9882f455395ded9b9fae699c2d30100767d197d3715f8e"
     },
     {
       "route": "/backups",
@@ -561,7 +561,7 @@
       "file": "backups-ar-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "6d0af3c702e04ba2540872a3f91c1bf0b447ec61b91560e2c63769390bd740da"
+      "sha256": "9b01c1814a4ec559fbafd15c6d30985313ae37373596d14452bd0c4df0e32b1a"
     },
     {
       "route": "/backups",
@@ -570,7 +570,7 @@
       "file": "backups-en-1366x768.png",
       "width": 1366,
       "height": 768,
-      "sha256": "31d465162f96f73520d87f8cded4e76a82bab738174a3e711c3393a0c210b2af"
+      "sha256": "31bf50ad48bc60e5de824b318df89571d2028b9113659eccc748b6371fd2127e"
     },
     {
       "route": "/backups",
@@ -579,7 +579,7 @@
       "file": "backups-en-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "b54228b1277fae044fc2f7b4d0eef12834b89ece22f4e9810a6497452f08cae9"
+      "sha256": "f1026137f0e5d55d5606349faf9216ccdaa19dd8e79aa4312af2ed9eef792925"
     },
     {
       "route": "/settings",
