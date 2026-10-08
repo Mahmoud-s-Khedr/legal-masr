@@ -90,3 +90,29 @@ it('still rejects a two-digit value in the Gregorian case year', async () => {
   expect(await screen.findByText('تحقق من القيمة المدخلة.')).toBeInTheDocument();
   expect(onSubmit).not.toHaveBeenCalled();
 });
+
+it('asks for the case number when a year is entered without one, and keeps the draft', async () => {
+  const onSubmit = renderForm();
+  const number = screen.getByLabelText('رقم الدعوى بالمحكمة');
+  fireEvent.change(number, { target: { value: '' } });
+  fireEvent.change(screen.getByLabelText('السنة القضائية'), { target: { value: '89' } });
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
+
+  expect(await screen.findByText(i18n.t('cases.form.officialNumberRequired'))).toBeInTheDocument();
+  expect(onSubmit).not.toHaveBeenCalled();
+  expect(screen.getByLabelText('السنة القضائية')).toHaveValue(89);
+
+  fireEvent.change(number, { target: { value: '1234' } });
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
+  await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+  expect(onSubmit.mock.calls[0][0]).toMatchObject({ officialNumber: '1234', judicialYear: 89 });
+});
+
+it('saves a case with neither a number nor a year', async () => {
+  const onSubmit = renderForm();
+  fireEvent.change(screen.getByLabelText('رقم الدعوى بالمحكمة'), { target: { value: '' } });
+  fireEvent.change(screen.getByLabelText('سنة الدعوى'), { target: { value: '' } });
+  fireEvent.change(screen.getByLabelText('السنة القضائية'), { target: { value: '' } });
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
+  await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+});

@@ -633,6 +633,7 @@
       "subjectSection": "Subject and notes",
       "internalNumberHint": "A number you choose to organise your office files.",
       "officialNumberHint": "As shown on the statement of claim.",
+      "officialNumberRequired": "Enter the court case number before a year; the year is shown together with the number.",
       "caseYearHint": "Calendar year in the case number, e.g. 2026.",
       "judicialYearHint": "Optional — e.g. 89 in “of judicial year 89”.",
       "caseTypeHint": "For example: civil, family, misdemeanour appeal.",

@@ -120,7 +120,11 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
               )}
             />
           </Field>
-          <Field label={t('cases.fields.officialNumber')} hint={t('cases.form.officialNumberHint')}>
+          <Field
+            label={t('cases.fields.officialNumber')}
+            hint={t('cases.form.officialNumberHint')}
+            error={errorFor('officialNumber', t('cases.form.officialNumberRequired'))}
+          >
             <Input dir="ltr" {...register('officialNumber' as never)} />
           </Field>
           <Field
