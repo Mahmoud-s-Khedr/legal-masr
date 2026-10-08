@@ -547,6 +547,10 @@ function MonthGrid({
     </>
   );
 }
+/** A day in the week and list views holds several lines, not a one-line pill. */
+const dayRowClasses =
+  'grid h-auto justify-stretch justify-items-start gap-1 py-2 whitespace-normal';
+
 /** What a day holds, line by line: each hearing with its time, case and court, then open tasks. */
 function DayLines({
   entry,
@@ -614,7 +618,7 @@ function WeekList({
         return (
           <Button
             variant="ghost"
-            className={`agenda-item ${selectedDate === date ? 'selected-record' : ''} ${date === localDate() ? 'is-today' : ''}`}
+            className={`agenda-item ${dayRowClasses} ${selectedDate === date ? 'selected-record' : ''} ${date === localDate() ? 'is-today' : ''}`}
             type="button"
             key={date}
             onClick={() => onSelect(date)}
@@ -659,7 +663,7 @@ function AgendaList({
       {shown.map(([date, entry]) => (
         <Button
           variant="ghost"
-          className={`agenda-item ${selectedDate === date ? 'selected-record' : ''} ${date === today ? 'is-today' : ''}`}
+          className={`agenda-item ${dayRowClasses} ${selectedDate === date ? 'selected-record' : ''} ${date === today ? 'is-today' : ''}`}
           type="button"
           key={date}
           onClick={() => onSelect(date)}

@@ -56,7 +56,7 @@ export function ChooseDocumentOwner({
           event.preventDefault();
           if (!ownerId) return;
           onOpenChange(false);
-          navigate(`/documents?${kind}=${encodeURIComponent(ownerId)}&add=1`);
+          navigate(`/attachments?${kind}=${encodeURIComponent(ownerId)}&add=1`);
         }}
       >
         <p className="muted">{t('documents.chooseOwnerHint')}</p>

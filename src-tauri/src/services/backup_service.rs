@@ -236,7 +236,19 @@ pub fn restore<R: Runtime>(app: &AppHandle<R>, state: &AppState, path: &Path) ->
         }
         return Err(error);
     }
+    settle_restored_history(&active_db, &master, path);
     app_service::lock(state)
+}
+
+/// The restored database still lists its own backup as running; record it as the latest
+/// successful backup. Best effort: the restore itself already succeeded.
+fn settle_restored_history(db_path: &Path, master: &[u8; 32], backup: &Path) {
+    let size = std::fs::metadata(backup)
+        .ok()
+        .map(|metadata| metadata.len() as i64);
+    if let Ok(connection) = db::open_db(db_path, master) {
+        let _ = backup_repository::settle_restored(&connection, size);
+    }
 }
 
 /// Checks, before the picker opens, that this is a new installation with no vault yet.
@@ -308,6 +320,7 @@ pub fn restore_new_vault<R: Runtime>(
         return Err(error);
     }
     let _ = search_service::rebuild_with(&db::open_db(&active_db, &master)?);
+    settle_restored_history(&active_db, &master, path);
     drop(_attachment_guard);
     if let BackupSecret::RecoveryKey { key, new_password } = secret {
         app_service::recover_access(app, state, key, new_password)?;

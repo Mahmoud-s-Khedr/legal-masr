@@ -141,6 +141,22 @@ describe('BackupSettingsPanel', () => {
     await waitFor(() => expect(bridge.revealBackup).toHaveBeenCalledTimes(1));
   });
 
+  it('suggests saving a copy when the folder cannot be shown on this computer', async () => {
+    vi.mocked(bridge.latestSuccessfulBackup).mockResolvedValue({
+      completedAt: '2026-10-04 09:30',
+      archiveSizeBytes: null,
+    });
+    vi.mocked(bridge.revealBackup).mockRejectedValueOnce({
+      code: 'OPERATION_FAILED',
+      message: 'safe',
+      details: null,
+    });
+    renderPanel();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'إظهار في المجلد' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('حفظ نسخة في مكان آخر');
+  });
+
   it('says plainly when there is no backup file to copy', async () => {
     vi.mocked(bridge.latestSuccessfulBackup).mockResolvedValue({
       completedAt: '2026-10-04 09:30',
@@ -163,7 +179,7 @@ describe('BackupSettingsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف للفحص' }));
     const status = await screen.findByText(/الملف سليم ويمكن الاستعادة منه/);
     expect(status).toHaveTextContent('4 أكتوبر 2026');
-    expect(status).toHaveTextContent('3 مستندات');
+    expect(status).toHaveTextContent('وتضم 3 مستندات');
   });
 
   it('stays quiet when the check is cancelled, and names damage only for a damaged file', async () => {
@@ -196,7 +212,7 @@ describe('BackupSettingsPanel', () => {
     const dialog = await screen.findByRole('alertdialog');
     expect(dialog).toHaveTextContent('LegalMasr-backup-2026-10-04-0930.lmsbackup');
     expect(dialog).toHaveTextContent('4 أكتوبر 2026');
-    expect(dialog).toHaveTextContent('3 مستندات');
+    expect(dialog).toHaveTextContent('وتضم 3 مستندات');
     expect(dialog).toHaveTextContent('لن يظهر بعد الاستعادة');
     fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
 

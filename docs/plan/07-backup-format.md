@@ -108,7 +108,10 @@ of the recovery workflow.
 Attachment mutations are serialized with backup and restore, so the archive
 cannot pair a database snapshot with a different attachment-directory state.
 After a successful restore the vault locks and the UI drops its cached records;
-the lawyer unlocks it again before viewing restored data.
+the lawyer unlocks it again before viewing restored data. Because the database
+snapshot is taken while the backup's own history entry is still RUNNING, the
+restore records that newest RUNNING entry as SUCCEEDED (with the restored file's
+size), so the restored office shows its backup as the latest successful one.
 
 ## Known gaps
 

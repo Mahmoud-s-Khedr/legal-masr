@@ -383,7 +383,7 @@ it('global documents disallow additions; case scope passes only the owner ID', a
 
 it('adds a document from the all-documents page by choosing its case first', async () => {
   vi.mocked(bridge.caseList).mockResolvedValue([fixtures.caseSummary]);
-  renderWorkflow(<AttachmentsPage />, '/documents', '/documents');
+  renderWorkflow(<AttachmentsPage />, '/attachments', '/attachments');
   fireEvent.click(await screen.findByRole('button', { name: 'إضافة مستند' }));
   const dialog = await screen.findByRole('dialog', { name: 'إضافة مستند' });
   const proceed = within(dialog).getByRole('button', { name: 'متابعة' });

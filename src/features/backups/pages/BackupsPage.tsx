@@ -1,7 +1,7 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { errorMessage, isCancelled } from '../../../bridge/errors';
+import { actionableErrorMessage, errorMessage, isCancelled } from '../../../bridge/errors';
 import type { BackupSummary } from '../../../bridge/types';
 import { ConfirmDialog } from '../../../components/forms/FormDialog';
 import { Button } from '../../../components/ui/button';
@@ -21,12 +21,25 @@ import {
   useValidateBackup,
 } from '../api/backupsApi';
 
-/** A failure worth showing: closing a file dialog without choosing is not one. */
-function FailureAlert({ error, fallback }: { error: unknown; fallback: string }) {
+/**
+ * A failure worth showing: closing a file dialog without choosing is not one. `contextual`
+ * keeps the action's own wording for an unspecific failure.
+ */
+function FailureAlert({
+  error,
+  fallback,
+  contextual = false,
+}: {
+  error: unknown;
+  fallback: string;
+  contextual?: boolean;
+}) {
   if (!error || isCancelled(error)) return null;
   return (
     <Alert variant="destructive">
-      <AlertDescription>{errorMessage(error, fallback)}</AlertDescription>
+      <AlertDescription>
+        {contextual ? actionableErrorMessage(error, fallback) : errorMessage(error, fallback)}
+      </AlertDescription>
     </Alert>
   );
 }
@@ -208,7 +221,7 @@ export function BackupSettingsPanel() {
             </p>
           )}
           <FailureAlert error={saveCopy.error} fallback={t('app.defaultError')} />
-          <FailureAlert error={reveal.error} fallback={t('app.defaultError')} />
+          <FailureAlert error={reveal.error} fallback={t('backups.revealError')} contextual />
         </div>
       </Card>
 

@@ -489,6 +489,10 @@ fn a_backup_restores_on_a_new_installation_with_its_password_or_recovery_key() {
         let status = app_service::get_status(app.handle(), &state).unwrap();
         assert!(status.initialized && status.unlocked, "{secret}");
         assert_eq!(client_names(&app, &state), vec!["موكل تجريبي"]);
+        // The restored office knows it has a backup; it is not told to make its first one.
+        assert!(backup_service::latest_successful(app.handle(), &state)
+            .unwrap()
+            .is_some());
         // The office's own profile comes back, not the placeholder made for the restore.
         assert_eq!(
             settings_service::get_profile(app.handle(), &state)

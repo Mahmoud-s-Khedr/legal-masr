@@ -615,8 +615,10 @@ export function CaseDetailPage() {
                   .catch(() => undefined);
               })}
             >
-              <FieldGroup className="inline-form-row">
+              {/* The field with its button beside it, not a full-width bar under it. */}
+              <FieldGroup className="flex-row items-start gap-3 max-[760px]:flex-col max-[760px]:items-stretch">
                 <Field
+                  className="min-w-0 flex-1"
                   label={<>{t('cases.detail.feeLabel')}</>}
                   error={feeForm.formState.errors.amount ? t('cases.detail.feeInvalid') : undefined}
                 >
@@ -630,7 +632,11 @@ export function CaseDetailPage() {
                     }}
                   />
                 </Field>
-                <Button type="submit" disabled={readOnly || saveFee.isPending}>
+                <Button
+                  type="submit"
+                  className="mt-7 shrink-0 max-[760px]:mt-0"
+                  disabled={readOnly || saveFee.isPending}
+                >
                   {t('cases.detail.feeSave')}
                 </Button>
               </FieldGroup>
