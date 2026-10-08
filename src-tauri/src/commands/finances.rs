@@ -64,3 +64,11 @@ pub fn finance_client_summary(
 ) -> Result<ClientFinanceSummary, Error> {
     finance_service::client_summary(&app, &state, &id)
 }
+#[tauri::command]
+pub fn payment_delete(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
+    finance_service::delete_payment(&app, &state, &id)
+}
+#[tauri::command]
+pub fn expense_delete(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
+    finance_service::delete_expense(&app, &state, &id)
+}

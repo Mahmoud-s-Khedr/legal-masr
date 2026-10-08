@@ -10,6 +10,7 @@ use zeroize::Zeroizing;
 pub struct AppState {
     pub master_key: Mutex<Option<Zeroizing<[u8; 32]>>>,
     selected_document_sources: Mutex<HashMap<String, PathBuf>>,
+    selected_backup: Mutex<Option<(String, PathBuf)>>,
     attachment_operations: Mutex<()>,
     security_operations: Mutex<()>,
 }
@@ -56,6 +57,27 @@ impl AppState {
             .lock()
             .map_err(|_| Error::Operation)?
             .clear();
+        Ok(())
+    }
+
+    /// Remembers a backup chosen in the native picker for the restore that follows. It is
+    /// not tied to an unlocked vault because a new installation restores before it has one.
+    pub fn store_selected_backup(&self, path: PathBuf) -> Result<String, Error> {
+        let token = uuid::Uuid::new_v4().to_string();
+        *self.selected_backup.lock().map_err(|_| Error::Operation)? = Some((token.clone(), path));
+        Ok(token)
+    }
+
+    /// The backup chosen under `token`; it stays chosen so a mistyped password can be retried.
+    pub fn selected_backup(&self, token: &str) -> Result<PathBuf, Error> {
+        match &*self.selected_backup.lock().map_err(|_| Error::Operation)? {
+            Some((stored, path)) if stored == token => Ok(path.clone()),
+            _ => Err(Error::BackupInvalid),
+        }
+    }
+
+    pub fn clear_selected_backup(&self) -> Result<(), Error> {
+        *self.selected_backup.lock().map_err(|_| Error::Operation)? = None;
         Ok(())
     }
 

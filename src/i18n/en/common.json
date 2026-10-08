@@ -34,19 +34,25 @@
     "addHearing": "Add hearing",
     "addTask": "Add task",
     "searchLabel": "Global search",
-    "loadError": "Could not load the records. Please try again."
+    "loadError": "Could not load the records. Please try again.",
+    "footerSupport": "About Legal Masr and support",
+    "supportTitle": "Support"
   },
   "datePicker": {
-    "placeholder": "YYYY-MM-DD",
+    "placeholder": "e.g. 15/11/2026",
     "inputTitle": "Type a date as DD/MM/YYYY, or pick it from the calendar",
     "openCalendar": "Open calendar",
     "chooseDate": "Choose date",
     "today": "Today",
-    "clear": "Clear"
+    "clear": "Clear",
+    "placeholderYearFirst": "e.g. 2026-11-15"
   },
   "common": {
     "cancel": "Cancel",
-    "notes": "Notes"
+    "notes": "Notes",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy"
   },
   "tasks": {
     "kicker": "Daily work",
@@ -98,7 +104,8 @@
       "UPCOMING": "No upcoming tasks.",
       "COMPLETED": "No completed tasks in this view yet.",
       "ALL": "No tasks yet. Add your first follow-up for a case or client."
-    }
+    },
+    "deleteError": "Could not delete the task. Try again."
   },
   "agenda": {
     "kicker": "Daily work",
@@ -161,20 +168,44 @@
       "CANCELLED": "Cancelled"
     },
     "goToday": "Today",
-    "addOnDay": "Add a hearing on this day"
+    "addOnDay": "Add a hearing on this day",
+    "noCasesTitle": "There are no cases yet.",
+    "noCasesHint": "A hearing belongs to a case; add the case first, then come back to add the hearing.",
+    "nextHearingNotLater": "Note: this date is not after the current hearing ({{date}}). Check the year.",
+    "printRoll": "Print the hearing roll",
+    "printError": "Could not open the print window. Try again.",
+    "rollTitle": "Hearing roll",
+    "rollColumns": {
+      "time": "Time",
+      "case": "Case",
+      "clients": "Clients",
+      "court": "Court and circuit",
+      "preparation": "To prepare",
+      "decision": "Decision"
+    },
+    "showPast_zero": "Show earlier days",
+    "showPast_one": "Show the earlier day",
+    "showPast_two": "Show earlier days ({{count}})",
+    "showPast_few": "Show earlier days ({{count}})",
+    "showPast_many": "Show earlier days ({{count}})",
+    "showPast_other": "Show earlier days ({{count}})",
+    "hidePast": "Hide earlier days",
+    "noUpcoming": "No hearings or tasks from today on."
   },
   "gate": {
     "kicker": {
       "setup": "Welcome to Legal Masr",
       "recovery": "Recover access",
       "recoveryKey": "Important step",
-      "unlock": "Welcome back"
+      "unlock": "Welcome back",
+      "restore": "Restore"
     },
     "title": {
       "setup": "Set up your office",
       "recovery": "Use your recovery key",
       "recoveryKey": "Save your recovery key",
-      "unlock": "Unlock Legal Masr"
+      "unlock": "Unlock Legal Masr",
+      "restore": "Restore your office from a backup"
     },
     "recoveryKeyWarning": "This key is shown only once, and nobody can recover it for you if you lose it.",
     "recoveryKeySavedButton": "Continue to workspace",
@@ -198,14 +229,15 @@
       "setup": "Your records are kept on this computer and encrypted with your password, with no account or internet needed.",
       "unlock": "Enter your password to open your files.",
       "recovery": "Enter the recovery key you saved during setup, then choose a new password.",
-      "recoveryKey": "This key is the only way to open your files if you forget your password."
+      "recoveryKey": "This key is the only way to open your files if you forget your password.",
+      "restore": "Choose the backup file from your USB drive or disk, then open it with the password you used when it was made, or with your recovery key."
     },
     "points": {
-      "encrypted": "Your database and backups are encrypted. Managed files remain plaintext.",
+      "encrypted": "Your records and backups are encrypted with your password. Documents you attach are kept on your computer as they are.",
       "local": "They stay on your computer and are never uploaded",
       "backup": "Encrypted backups you control"
     },
-    "fullNameHint": "Shown on printed reports; you can change it later.",
+    "fullNameHint": "Shown at the top of the printed hearing roll; you can change it later.",
     "passwordHint": "At least {{count}} characters. A short sentence you remember is easier and stronger.",
     "passwordTooShort": "The password is too short; use at least {{count}} characters.",
     "passwordMismatch": "The passwords do not match.",
@@ -213,14 +245,35 @@
     "hide": "Hide",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "recoveryKeyHint": "Type it exactly, including letters and dashes.",
+    "recoveryKeyHint": "Type it as shown. Spaces don't matter.",
     "recoveryTips": {
-      "paper": "Write it on paper and keep it somewhere safe away from this computer.",
+      "paper": "Write it down or print it, and keep it somewhere safe away from this computer.",
       "separate": "Do not store it in the same folder as your backups.",
       "difference": "The password opens the app every day; the recovery key is for emergencies only."
     },
     "recoveryKeyConfirm": "I have written the key down and stored it safely",
-    "backToUnlock": "Back to password sign-in"
+    "backToUnlock": "Back to password sign-in",
+    "restore": {
+      "start": "I have a backup from another computer",
+      "choose": "Choose the backup file…",
+      "choosing": "Opening the file…",
+      "chosen": "Chosen file: {{name}}",
+      "chooseAnother": "Choose another file",
+      "openWith": "Open the backup",
+      "withPassword": "With the password",
+      "withRecoveryKey": "With the recovery key",
+      "passwordLabel": "Password when the backup was made",
+      "submit": "Restore data",
+      "busy": "Restoring…",
+      "back": "Back to creating a new workspace",
+      "notice": "The backup was restored. Enter your password to open the restored data."
+    },
+    "recoveryKeyPrint": "Print",
+    "recoveryKeySave": "Save as file…",
+    "recoveryKeySaving": "Saving…",
+    "recoveryKeySaved": "The key was saved to the file you chose. Move it to a USB drive, away from this computer.",
+    "recoveryKeyPrintTitle": "Legal Masr recovery key",
+    "recoveryKeyPrintNote": "This key opens your files if you forget your password. Keep this sheet somewhere safe, away from the computer."
   },
   "backups": {
     "kicker": "Office",
@@ -254,10 +307,29 @@
     "validateTitle": "Check an older backup",
     "validateHint": "Pick a backup file to confirm it is intact and restorable.",
     "restoreTitle": "Restore data",
-    "restoreHint": "Replaces your current data with an earlier backup; an emergency copy is kept automatically.",
+    "restoreHint": "Replaces your current data with an earlier backup. You will see the backup's date and contents before confirming; an emergency copy is kept automatically.",
     "offsiteAdvice": "Copy the backup file to a USB drive or external disk kept away from this computer; a backup on the same computer does not protect you if it is damaged or stolen.",
     "loadingLatest": "Loading the latest backup…",
-    "none": "No successful backup yet."
+    "none": "No successful backup yet.",
+    "createSuccessNamed": "Backup «{{name}}» created. Save a copy of it to a USB drive now.",
+    "offsiteTitle": "Keep a copy away from this computer",
+    "saveCopy": "Save a copy elsewhere…",
+    "savingCopy": "Saving…",
+    "saveCopySuccess": "A copy was saved as «{{name}}».",
+    "reveal": "Show in folder",
+    "noBackupToCopy": "Create a backup first, then save a copy of it here.",
+    "validateSummary": "The file is intact and can be restored. It was made {{date}} {{documents}}.",
+    "documentCount_zero": "and holds no documents",
+    "documentCount_one": "and holds 1 document",
+    "documentCount_two": "and holds {{count}} documents",
+    "documentCount_few": "and holds {{count}} documents",
+    "documentCount_many": "and holds {{count}} documents",
+    "documentCount_other": "and holds {{count}} documents",
+    "chooseToRestore": "Choose a backup to restore…",
+    "inspecting": "Checking the file…",
+    "restorePreviewTitle": "Restore this backup?",
+    "restorePreview": "«{{name}}» was made {{date}} {{documents}}. It replaces your current data: anything you added or changed after that date will not appear after the restore. Legal Masr keeps an emergency copy of your current data automatically before replacing it.",
+    "revealError": "Could not open the backups folder on this computer. Use «Save a copy elsewhere…» to put it on a USB drive."
   },
   "dashboard": {
     "today": "Today",
@@ -308,7 +380,8 @@
     "inDays_two": "In {{count}} days",
     "inDays_few": "In {{count}} days",
     "inDays_many": "In {{count}} days",
-    "inDays_other": "In {{count}} days"
+    "inDays_other": "In {{count}} days",
+    "decision": "Decision"
   },
   "settings": {
     "kicker": "Office",
@@ -340,7 +413,7 @@
     "saveError": "Could not save the settings. Please try again.",
     "profile": {
       "title": "Lawyer details",
-      "hint": "Shown only in the header of printed reports.",
+      "hint": "Your name and address appear only at the top of the printed hearing roll.",
       "fullName": "Lawyer name",
       "barNumber": "Bar registration number",
       "phone": "Phone number",
@@ -387,8 +460,14 @@
       "counters": "Turn on aggregate statistics",
       "countersDetail": "Only totals are kept, such as the number of cases or backups.",
       "countersError": "Could not save the statistics choice. Please try again.",
-      "recoveryTitle": "Your recovery key is your responsibility",
-      "recoveryHint": "Keep the key shown at setup somewhere safe, away from this computer. Nobody can recover your data without it if you forget your password."
+      "recoveryTitle": "Recovery key",
+      "recoveryHint": "It opens your files if you forget your password. If you lost it or someone else has seen it, create a new one here.",
+      "recoveryReplace": "Create a new recovery key",
+      "recoveryReplacing": "Creating…",
+      "recoveryNewWarning": "Save the new key now; it will not be shown again. The old key no longer opens the app, but backups made earlier still open with the old key or with the password in use at the time.",
+      "recoveryDone": "I saved the new key",
+      "recoveryError": "Could not create a new key. Try again.",
+      "recoveryPassword": "Current password, to confirm"
     },
     "privacy": {
       "title": "Where your data is kept",
@@ -412,9 +491,9 @@
     "about": {
       "version": "Version {{version}}",
       "description": "An app for the Egyptian solo lawyer: clients, cases, hearings, tasks and fees in one place, on your computer and without internet.",
-      "developerTitle": "About the developer",
+      "developerTitle": "Support",
       "createdBy": "Created by Mahmoud Khedr",
-      "contactHint": "Choose a contact option to get in touch with the app developer.",
+      "contactHint": "For any problem or suggestion during the trial, contact the developer the way that suits you.",
       "contactLabel": "Contact the developer",
       "email": "Email",
       "phone": "Phone",
@@ -497,7 +576,8 @@
       "internalNumberHint": "The client's file number in your office.",
       "nationalIdHint": "14 digits, as on the national ID card."
     },
-    "newTitle": "New client"
+    "newTitle": "New client",
+    "copyPhone": "Copy phone number"
   },
   "cases": {
     "title": "Cases",
@@ -513,7 +593,9 @@
       "number": "File number",
       "client": "Clients",
       "status": "Status",
-      "official": "Court case number"
+      "official": "Court case number",
+      "court": "Court",
+      "nextHearing": "Next hearing"
     },
     "fields": {
       "caseNumber": "Internal file number",
@@ -594,7 +676,11 @@
       "entryDate": "Date",
       "entryAmount": "Amount",
       "editEntryButton": "Edit entry",
-      "editData": "Edit details"
+      "editData": "Edit details",
+      "archiveTitle": "Archive case",
+      "archiveDescription": "The case leaves the usual lists and stays saved with its hearings, documents and account; it cannot be changed until you restore it.",
+      "archivedNotice": "This case is archived and read-only. Use «Restore» to edit it or add hearings, tasks and payments.",
+      "awaitingDecision": "Hearing awaiting its decision"
     },
     "clientsPanel": {
       "title": "Clients in this case",
@@ -619,7 +705,8 @@
       "removeDescription": "The opponent is removed from this case only; no other record is affected.",
       "removeError": "Could not remove the opponent. Please try again.",
       "lawyer": "Opponent's lawyer",
-      "save": "Save opponent"
+      "save": "Save opponent",
+      "noRole": "No role recorded"
     },
     "degrees": {
       "FIRST_INSTANCE": "First instance",
@@ -660,7 +747,8 @@
     "officialNumberOnly": "No. {{number}}",
     "officialReferenceJudicial": "No. {{number}} of judicial year {{judicialYear}}",
     "officialReferenceBoth": "No. {{number}} of {{year}} (judicial year {{judicialYear}})",
-    "newTitle": "New case"
+    "newTitle": "New case",
+    "pendingDecision": "decision not recorded"
   },
   "search": {
     "placeholder": "Search by name or case number…",
@@ -676,7 +764,47 @@
   "forms": {
     "required": "This field is required.",
     "invalid": "Check the value you entered.",
-    "notSpecified": "Not specified"
+    "notSpecified": "Not specified",
+    "discardTitle": "Discard what you typed?",
+    "discardDescription": "This form is not saved yet; closing it loses what you typed.",
+    "keepEditing": "Keep editing",
+    "discard": "Discard and close",
+    "invalidDate": "Type the date as day/month/year, e.g. 15/11/2026.",
+    "invalidTime": "Type the time like 9:30 am or 2:00 pm.",
+    "chooseCase": "Choose the case.",
+    "choosePayer": "Choose the paying client.",
+    "invalidYear": "Type the full Gregorian year in digits, e.g. 2026.",
+    "invalidJudicialYear": "Type the judicial year in digits, e.g. 89.",
+    "closedBeforeFiled": "The closing date is before the filing date; check both dates.",
+    "suggestedNumber": "We suggested the next number in your files' order; you can change it.",
+    "currencyShort": "EGP",
+    "standardAnswers": {
+      "legalCapacity": [
+        "Plaintiff",
+        "Defendant",
+        "Accused",
+        "Victim",
+        "Civil claimant",
+        "Civilly liable party",
+        "Appellant",
+        "Appellee",
+        "Petitioner in cassation",
+        "Respondent in cassation",
+        "Intervener",
+        "Complainant",
+        "Respondent to complaint"
+      ],
+      "hearingType": [
+        "First hearing",
+        "Pleading",
+        "Preparation",
+        "Service",
+        "Reserved for judgment",
+        "Judgment",
+        "Opposition",
+        "Appeal"
+      ]
+    }
   },
   "records": {
     "archive": "Archive",
@@ -696,7 +824,7 @@
     "INVALID_PASSWORD": "The password is incorrect. Check it and try again.",
     "APP_LOCKED": "Legal Masr is locked. Unlock it with your password to continue.",
     "ALREADY_INITIALIZED": "Legal Masr is already set up on this computer. Unlock it with your password.",
-    "RECOVERY_KEY_INVALID": "The recovery key is incorrect. Type it exactly, including letters and dashes.",
+    "RECOVERY_KEY_INVALID": "The recovery key is not correct. Check the letters and digits against the copy you saved.",
     "BACKUP_CORRUPTED": "The backup file is damaged or invalid. Your current data is unchanged.",
     "LEGACY_DATA_MIGRATION_REQUIRED": "Data from the previous version needs a special transfer before updating. Your data is unchanged.",
     "VALIDATION_FAILED": "Check the information you entered, then try again.",
@@ -718,13 +846,18 @@
     "EXPENSE_NOT_FOUND": "This expense could not be found. It may have been deleted.",
     "OPERATION_FAILED": "The action could not be completed. Your data is unchanged; please try again.",
     "OPERATION_CANCELLED": "The action was cancelled.",
-    "VAULT_MISSING": "The workspace database is missing. Preserve the remaining files and restore a verified backup.",
-    "VAULT_INCOMPLETE": "Workspace files are incomplete. Preserve them and recover the workspace before continuing.",
-    "VAULT_CORRUPT": "The workspace database cannot be read safely. Preserve it and restore a verified backup.",
-    "VAULT_NEWER_SCHEMA": "This workspace requires a newer version of Legal Masr.",
-    "VAULT_INTERRUPTED": "An interrupted workspace operation needs recovery. Keep all workspace files and retry. Setup and unlock are disabled until recovery completes.",
+    "VAULT_MISSING": "Your data file was not found on this computer. Do not delete any files from the program folder, and contact support so we can help you restore it from your backup.",
+    "VAULT_INCOMPLETE": "Some of your data files are missing. Do not delete any files or create a new workspace; contact support so we can help you recover them.",
+    "VAULT_CORRUPT": "Your data file cannot be read safely. Do not delete any files; contact support so we can help you restore it from your backup.",
+    "VAULT_NEWER_SCHEMA": "Your data was saved by a newer version of Legal Masr. Install the latest version, then open the program.",
+    "VAULT_INTERRUPTED": "An earlier operation (such as restoring a backup) stopped before it finished. Do not delete any files, and press «Retry». If this message keeps appearing, contact support.",
     "CASE_CLIENT_HAS_PAYMENTS": "This client has case payments and cannot be removed.",
-    "CLIENT_ARCHIVED": "Archived clients cannot be added."
+    "CLIENT_ARCHIVED": "Archived clients cannot be added.",
+    "CASE_ARCHIVED": "The case is archived; restore it from the case file first to change it.",
+    "BACKUP_FROM_OTHER_VAULT": "This backup comes from another computer or installation of Legal Masr, so it cannot be restored over this computer's data. To move your office to a new computer, restore it from the welcome screen before creating a workspace.",
+    "BACKUP_NOT_PORTABLE": "This backup was made by an older version of Legal Masr and opens only on the computer that made it. Create a new backup on that computer, then restore it here.",
+    "BACKUP_SECRET_INVALID": "The password or recovery key does not open this backup. Use the password that was in use when the backup was made.",
+    "BACKUP_MISSING": "There is no backup yet. Create one first."
   },
   "finances": {
     "kicker": "Office",
@@ -788,7 +921,17 @@
       "OFFICE_SUPPLIES": "Office supplies",
       "EXPERT_FEE": "Expert fee",
       "OTHER": "Other"
-    }
+    },
+    "delete": "Delete entry",
+    "deleteTitle": {
+      "payment": "Delete payment",
+      "expense": "Delete expense"
+    },
+    "deleteDescription": {
+      "payment": "This payment is deleted for good and the received and outstanding amounts are recalculated. Only delete entries made by mistake.",
+      "expense": "This expense is deleted for good and the totals are recalculated. Only delete entries made by mistake."
+    },
+    "deleteError": "Could not delete the entry. Try again."
   },
   "documents": {
     "title": "Documents",
@@ -841,9 +984,20 @@
     "pageScoped": "Record documents",
     "pageAll": "All documents",
     "pageScopedHint": "Documents linked to this record. Legal Masr keeps a copy of each file and includes it in backups.",
-    "pageAllHint": "Every document saved in your office, with the record it belongs to. To add a document, open the client, case or power of attorney.",
+    "pageAllHint": "Every document kept in your office, with the file each one belongs to.",
     "panelScoped": "Documents for this record",
-    "panelAll": "Saved documents"
+    "panelAll": "Saved documents",
+    "chooseOwnerTitle": "Add a document",
+    "chooseOwnerHint": "Every document is kept in a case, client or power of attorney file. Choose the file first.",
+    "chooseOwnerKind": "File type",
+    "ownerKinds": {
+      "case": "Case",
+      "client": "Client",
+      "powerOfAttorney": "Power of attorney"
+    },
+    "chooseOwnerPlaceholder": "Search by name or number",
+    "chooseOwnerEmpty": "No matches.",
+    "chooseOwnerContinue": "Continue"
   },
   "poa": {
     "listKicker": "Records",
@@ -897,11 +1051,16 @@
       "notaryOffice": "Notary office",
       "lawyerName": "Lawyer name",
       "barNumber": "Bar number"
-    }
+    },
+    "clientsRequired": "Choose at least one client who issued the power of attorney.",
+    "editorDescription": "Record the power of attorney's number, year and notary office, and choose its clients. You can attach a scan after saving."
   },
   "table": {
     "pagination": "Record pages",
     "previous": "Previous",
     "next": "Next"
+  },
+  "timeField": {
+    "placeholder": "e.g. 9:30 am"
   }
 }

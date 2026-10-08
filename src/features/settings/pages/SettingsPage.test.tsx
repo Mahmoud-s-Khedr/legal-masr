@@ -62,10 +62,10 @@ describe('SettingsPage', () => {
     });
   });
 
-  it('shows developer information when About is opened directly', async () => {
+  it('shows support contacts when About is opened directly', async () => {
     vi.mocked(bridge.settings).mockResolvedValue(settings);
     renderSettingsPage('/settings?tab=about');
-    expect(await screen.findByRole('heading', { name: 'عن المطوّر' })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: 'الدعم الفني' })).toBeVisible();
     expect(screen.getByText('طوّر التطبيق محمود خضر')).toBeVisible();
     expect(screen.getByRole('link', { name: 'لينكدإن' })).toHaveAttribute(
       'href',

@@ -8,11 +8,15 @@ vi.mock('../../../bridge/commands', async (importOriginal) => {
 import { bridge } from '../../../bridge/commands';
 import i18n from '../../../i18n';
 import { renderWorkflow } from '../../../test/workflow';
+import { clearRestoreNotice, markRestored } from '../../../lib/restoreNotice';
 import { OnboardingPage, type OnboardingSubGate } from './OnboardingPage';
 function mount(subGate: OnboardingSubGate) {
   const callbacks = {
     onSwitchToRecovery: vi.fn(),
     onBackToUnlock: vi.fn(),
+    onStartRestore: vi.fn(),
+    onBackToSetup: vi.fn(),
+    onRestored: vi.fn(),
     onSetupSucceeded: vi.fn(),
     onUnlocked: vi.fn(),
     onRecovered: vi.fn(),
@@ -27,6 +31,7 @@ function mount(subGate: OnboardingSubGate) {
 }
 beforeEach(async () => {
   vi.resetAllMocks();
+  clearRestoreNotice();
   await i18n.changeLanguage('ar');
 });
 describe('vault forms', () => {
@@ -178,5 +183,128 @@ describe('vault forms', () => {
     const { callbacks } = mount('recovery');
     fireEvent.click(screen.getByRole('button', { name: 'رجوع إلى الدخول بكلمة المرور' }));
     expect(callbacks.onBackToUnlock).toHaveBeenCalledOnce();
+  });
+});
+
+describe('restoring an office on a new computer', () => {
+  const choice = { token: 'choice-token', fileName: 'LegalMasr-backup-2026-10-08-1052.lmsbackup' };
+  const cancelled = { code: 'OPERATION_CANCELLED', message: 'cancelled', details: null };
+
+  it('is offered from the welcome screen and leads back to it', () => {
+    const { callbacks, unmount } = mount('setup');
+    fireEvent.click(screen.getByRole('button', { name: 'لديّ نسخة احتياطية من جهاز آخر' }));
+    expect(callbacks.onStartRestore).toHaveBeenCalledOnce();
+    unmount();
+
+    const restore = mount('restore');
+    expect(screen.getByRole('heading', { name: 'استعادة مكتبك من نسخة احتياطية' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'رجوع إلى إنشاء مساحة عمل جديدة' }));
+    expect(restore.callbacks.onBackToSetup).toHaveBeenCalledOnce();
+  });
+
+  it('stays quiet when the file dialog is closed, and explains an old backup', async () => {
+    vi.mocked(bridge.chooseBackupToRestore)
+      .mockRejectedValueOnce(cancelled)
+      .mockRejectedValueOnce({ code: 'BACKUP_NOT_PORTABLE', message: 'safe', details: null });
+    mount('restore');
+    const choose = screen.getByRole('button', { name: 'اختيار ملف النسخة الاحتياطية…' });
+
+    fireEvent.click(choose);
+    await waitFor(() => expect(bridge.chooseBackupToRestore).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(choose).toBeEnabled());
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    fireEvent.click(choose);
+    expect(await screen.findByRole('alert')).toHaveTextContent('بإصدار أقدم');
+    expect(screen.queryByLabelText('كلمة المرور وقت إنشاء النسخة')).toBeNull();
+  });
+
+  it('opens the backup with its password, and lets a wrong one be retried', async () => {
+    vi.mocked(bridge.chooseBackupToRestore).mockResolvedValue(choice);
+    vi.mocked(bridge.restoreFromBackup)
+      .mockRejectedValueOnce({ code: 'BACKUP_SECRET_INVALID', message: 'safe', details: null })
+      .mockResolvedValueOnce(undefined);
+    const { callbacks } = mount('restore');
+
+    fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف النسخة الاحتياطية…' }));
+    expect(await screen.findByText(/LegalMasr-backup-2026-10-08-1052\.lmsbackup/)).toBeVisible();
+    const password = screen.getByLabelText('كلمة المرور وقت إنشاء النسخة');
+    fireEvent.change(password, { target: { value: 'the old office password' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'استعادة البيانات' }).closest('form')!);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('لا يفتح هذه النسخة');
+    expect(password).toHaveValue('the old office password');
+    expect(callbacks.onRestored).not.toHaveBeenCalled();
+
+    fireEvent.submit(screen.getByRole('button', { name: 'استعادة البيانات' }).closest('form')!);
+    await waitFor(() => expect(callbacks.onRestored).toHaveBeenCalledOnce());
+    expect(vi.mocked(bridge.restoreFromBackup).mock.calls[1]?.[0]).toEqual({
+      token: 'choice-token',
+      language: 'ar',
+      password: 'the old office password',
+    });
+  });
+
+  it('opens the backup with the recovery key and a new password', async () => {
+    vi.mocked(bridge.chooseBackupToRestore).mockResolvedValue(choice);
+    vi.mocked(bridge.restoreFromBackup).mockResolvedValue(undefined);
+    const { callbacks } = mount('restore');
+
+    fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف النسخة الاحتياطية…' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'بمفتاح الاسترداد' }));
+    fireEvent.change(screen.getByLabelText('مفتاح الاسترداد'), {
+      target: { value: 'ABCD-EFGH-IJKL' },
+    });
+    fireEvent.change(screen.getByLabelText('كلمة المرور الجديدة'), { target: { value: 'short' } });
+    fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), { target: { value: 'short' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'استعادة البيانات' }).closest('form')!);
+    expect(await screen.findByText(/كلمة المرور قصيرة/)).toBeVisible();
+    expect(bridge.restoreFromBackup).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('كلمة المرور الجديدة'), {
+      target: { value: 'a brand new office password' },
+    });
+    fireEvent.change(screen.getByLabelText('تأكيد كلمة المرور'), {
+      target: { value: 'a brand new office password' },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'استعادة البيانات' }).closest('form')!);
+    await waitFor(() => expect(callbacks.onRestored).toHaveBeenCalledOnce());
+    expect(vi.mocked(bridge.restoreFromBackup).mock.calls[0]?.[0]).toEqual({
+      token: 'choice-token',
+      language: 'ar',
+      recoveryKey: 'ABCD-EFGH-IJKL',
+      newPassword: 'a brand new office password',
+    });
+  });
+
+  it('tells the lawyer on the password screen that a restore just finished', async () => {
+    markRestored();
+    vi.mocked(bridge.unlock).mockResolvedValue(undefined);
+    const { callbacks } = mount('unlock');
+    expect(screen.getByRole('status')).toHaveTextContent('تمت استعادة النسخة الاحتياطية');
+
+    fireEvent.change(screen.getByLabelText('كلمة المرور'), {
+      target: { value: 'fictional password 2026' },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'فتح' }).closest('form')!);
+    await waitFor(() => expect(callbacks.onUnlocked).toHaveBeenCalledOnce());
+    mount('unlock');
+    expect(screen.queryByText(/تمت استعادة النسخة الاحتياطية/)).toBeNull();
+  });
+
+  it('shows how to reach support when the vault needs help the lawyer cannot give', async () => {
+    vi.mocked(bridge.unlock).mockRejectedValue({
+      code: 'VAULT_CORRUPT',
+      message: 'safe',
+      details: null,
+    });
+    mount('unlock');
+    expect(screen.queryByText(/\+201016240934/)).toBeNull();
+    fireEvent.change(screen.getByLabelText('كلمة المرور'), {
+      target: { value: 'fictional password 2026' },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'فتح' }).closest('form')!);
+    expect(await screen.findByRole('alert')).toHaveTextContent('تواصل مع الدعم الفني');
+    expect(screen.getByRole('region', { name: 'الدعم الفني' })).toHaveTextContent('+201016240934');
   });
 });

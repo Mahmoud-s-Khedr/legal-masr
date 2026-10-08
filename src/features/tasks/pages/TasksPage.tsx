@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 
 import { Textarea } from '../../../components/ui/textarea';
 import { useCaseList } from '../../cases/api/casesApi';
+import { caseOption, clientOption } from '../../cases/components/caseOptions';
 import { useClientList } from '../../clients/api/clientsApi';
 import {
   useCompleteTask,
@@ -36,19 +37,48 @@ import { useFormat } from '../../../i18n/LocalePresentation';
 
 const localDate = () => localDateOnly();
 const views = ['TODAY', 'OVERDUE', 'UPCOMING', 'COMPLETED', 'ALL'] as const;
+// Overdue must stand out from upcoming at a glance, as it does on the Today page.
+const taskBadgeVariant = {
+  overdue: 'destructive',
+  today: 'default',
+  upcoming: 'secondary',
+  completed: 'outline',
+} as const;
 
 export function TasksPage() {
   const { t } = useTranslation();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const requestedTaskId = params.get('task');
   const createIntent = params.get('create') === 'task';
-  const requestedDate = params.get('date') ?? localDate();
+  const [newTaskDate, setNewTaskDate] = useState<string | undefined>(undefined);
   const requestedView = views.find((candidate) => candidate === params.get('view'));
   const [view, setView] = useState<(typeof views)[number]>(
     requestedTaskId ? 'ALL' : (requestedView ?? 'TODAY'),
   );
   const format = useFormat();
-  const [editing, setEditing] = useState<TaskDto | 'new' | null>(createIntent ? 'new' : null);
+  const [editing, setEditing] = useState<TaskDto | 'new' | null>(null);
+  // «إضافة مهمة» links carry ?create=task (and maybe ?date=). Treat them as a one-time
+  // request: open the form, then drop them so the same link works again from this page.
+  const [createHandled, setCreateHandled] = useState(false);
+  if (createIntent && !createHandled) {
+    setCreateHandled(true);
+    setNewTaskDate(params.get('date') ?? undefined);
+    setEditing('new');
+  } else if (!createIntent && createHandled) {
+    setCreateHandled(false);
+  }
+  useEffect(() => {
+    if (!createIntent) return;
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('create');
+        next.delete('date');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [createIntent, setParams]);
   const [removing, setRemoving] = useState<TaskDto | null>(null);
   const [dismissedUnavailableId, setDismissedUnavailableId] = useState<string | null>(null);
   const handledTaskId = useRef<string | null>(null);
@@ -98,7 +128,13 @@ export function TasksPage() {
         title={t('tasks.title')}
         description={t('tasks.description')}
         actions={
-          <Button type="button" onClick={() => setEditing('new')}>
+          <Button
+            type="button"
+            onClick={() => {
+              setNewTaskDate(undefined);
+              setEditing('new');
+            }}
+          >
             {t('tasks.add')}
           </Button>
         }
@@ -135,16 +171,12 @@ export function TasksPage() {
         <label>
           {t('tasks.case')}
           <EntityPicker
+            emptyText={t('cases.noResults')}
             value={caseId}
             onValueChange={(value) => setCaseId(value ?? '')}
             items={[
               { value: '', label: t('tasks.allCases') },
-              ...(cases.data ?? []).map((item) => ({
-                value: item.id,
-                label: item.clientNames.length
-                  ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
-                  : item.internalNumber,
-              })),
+              ...(cases.data ?? []).map(caseOption),
             ]}
             placeholder={t('tasks.allCases')}
           />
@@ -156,7 +188,7 @@ export function TasksPage() {
             onValueChange={(value) => setClientId(value ?? '')}
             items={[
               { value: '', label: t('tasks.allClients') },
-              ...(clients.data ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+              ...(clients.data ?? []).map(clientOption),
             ]}
             placeholder={t('tasks.allClients')}
           />
@@ -241,7 +273,7 @@ export function TasksPage() {
                       )}
                     </span>
                   </div>
-                  <Badge variant="secondary">{t(`tasks.${state}`)}</Badge>
+                  <Badge variant={taskBadgeVariant[state]}>{t(`tasks.${state}`)}</Badge>
                   <Button
                     type="button"
                     variant="ghost"
@@ -272,7 +304,7 @@ export function TasksPage() {
             initial={editing === 'new' ? undefined : editing}
             initialCaseId={editing === 'new' ? caseId : undefined}
             initialClientId={editing === 'new' ? clientId : undefined}
-            initialDate={editing === 'new' ? requestedDate : undefined}
+            initialDate={editing === 'new' ? newTaskDate : undefined}
             cases={cases.data ?? []}
             clients={clients.data ?? []}
             busy={save.isPending}
@@ -317,8 +349,11 @@ export function TasksPage() {
         confirmLabel={t('tasks.deleteTitle')}
         cancelLabel={t('common.cancel')}
         destructive
+        pending={remove.isPending}
+        error={remove.isError ? t('tasks.deleteError') : undefined}
         onConfirm={() => {
-          if (removing) remove.mutate(removing, { onSuccess: () => setRemoving(null) });
+          if (removing && !remove.isPending)
+            remove.mutate(removing, { onSuccess: () => setRemoving(null) });
         }}
       />
     </section>
@@ -384,16 +419,16 @@ export function TaskForm({
   return (
     <DraftForm
       className="mt-4 grid gap-3.5"
-      onSubmit={form.handleSubmit(async () => {
+      onSubmit={form.handleSubmit(async (values) => {
         try {
           await onSave({
             id: initial?.id,
-            title: title.trim(),
-            dueDate,
-            caseId: caseId || undefined,
-            clientId: clientId || undefined,
-            details: details || undefined,
-            notes: notes || undefined,
+            title: values.title.trim(),
+            dueDate: values.dueDate,
+            caseId: values.caseId || undefined,
+            clientId: values.clientId || undefined,
+            details: values.details || undefined,
+            notes: values.notes || undefined,
           });
         } catch {
           // The parent mutation exposes an in-dialog retry message.
@@ -404,7 +439,7 @@ export function TaskForm({
         <Field
           label={<>{t('tasks.task')}</>}
           required
-          error={form.formState.errors.title ? t('forms.invalid') : undefined}
+          error={form.formState.errors.title ? t('forms.required') : undefined}
         >
           <Input
             required
@@ -419,7 +454,7 @@ export function TaskForm({
           <Field
             label={<>{t('tasks.dueDate')}</>}
             required
-            error={form.formState.errors.dueDate ? t('forms.invalid') : undefined}
+            error={form.formState.errors.dueDate ? t('forms.invalidDate') : undefined}
           >
             <DatePicker
               required
@@ -434,12 +469,10 @@ export function TaskForm({
             error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
           >
             <EntityPicker
+              emptyText={t('cases.noResults')}
               value={caseId}
               onValueChange={(value) => setCaseId(value ?? '')}
-              items={[
-                { value: '', label: t('tasks.noCase') },
-                ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
-              ]}
+              items={[{ value: '', label: t('tasks.noCase') }, ...(cases ?? []).map(caseOption)]}
               placeholder={undefined}
             />
           </Field>
@@ -453,7 +486,7 @@ export function TaskForm({
             onValueChange={(value) => setClientId(value ?? '')}
             items={[
               { value: '', label: t('tasks.noClient') },
-              ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+              ...(clients ?? []).map(clientOption),
             ]}
             placeholder={undefined}
           />
@@ -496,11 +529,11 @@ export function TaskForm({
           </div>
         )}
         <FormDialogFooter>
-          <Button type="button" variant="secondary" onClick={onCancel}>
-            {t('common.cancel')}
-          </Button>
           <Button type="submit" disabled={busy}>
             {t('tasks.save')}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            {t('common.cancel')}
           </Button>
         </FormDialogFooter>
       </FieldGroup>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { caseCreateFormSchema, caseCoreSchema } from './case.schema';
+import { caseCreateFormSchema, caseCoreSchema, parseYearInput } from './case.schema';
 
 const base = { internalNumber: 'CA-1', status: 'ACTIVE' as const };
 
@@ -32,9 +32,31 @@ describe.each([
     expect(schema.safeParse(values).success).toBe(true);
   });
 
-  it('ignores the NaN an emptied number input produces', () => {
-    expect(schema.safeParse({ ...values, officialYear: NaN, judicialYear: NaN }).success).toBe(
-      true,
-    );
+  it('treats an emptied year field as no year', () => {
+    expect(
+      schema.safeParse({ ...values, officialYear: undefined, judicialYear: undefined }).success,
+    ).toBe(true);
+  });
+
+  it('reports a year typed in letters (parsed as NaN) on its own field', () => {
+    const result = schema.safeParse({ ...values, officialNumber: '1', officialYear: NaN });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.path.join('.'))).toEqual(['officialYear']);
+  });
+});
+
+describe('parseYearInput', () => {
+  it('reads digits in any script and leaves empty fields empty', () => {
+    expect(parseYearInput('2026')).toBe(2026);
+    expect(parseYearInput(' ٢٠٢٦ ')).toBe(2026);
+    expect(parseYearInput('۸۹')).toBe(89);
+    expect(parseYearInput('')).toBeUndefined();
+    expect(parseYearInput(undefined)).toBeUndefined();
+    expect(parseYearInput(2026)).toBe(2026);
+  });
+
+  it('turns anything else into NaN so validation can report it', () => {
+    expect(parseYearInput('20a6')).toBeNaN();
+    expect(parseYearInput('-3')).toBeNaN();
   });
 });

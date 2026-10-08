@@ -6,7 +6,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
 } from '../ui/alert-dialog';
-import { type ReactNode, useId } from 'react';
+import { type ReactNode, useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog as DialogRoot, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
@@ -27,10 +28,33 @@ export function FormDialog({
   labelledBy?: string;
   size?: 'sm' | 'md' | 'lg';
 }) {
+  const { t } = useTranslation();
   const generatedId = useId();
   const titleId = labelledBy ?? generatedId;
+  // A stray click beside the dialog never closes it. Escape closes it straight away
+  // only while nothing has been typed; otherwise the lawyer confirms losing the draft.
+  const [dirty, setDirty] = useState(false);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  const [openedAs, setOpenedAs] = useState(open);
+  if (open !== openedAs) {
+    setOpenedAs(open);
+    if (open) {
+      setDirty(false);
+      setConfirmingDiscard(false);
+    }
+  }
   return (
-    <DialogRoot open={open} onOpenChange={onOpenChange}>
+    <DialogRoot
+      open={open}
+      disablePointerDismissal
+      onOpenChange={(next, details) => {
+        if (!next && details.reason === 'escape-key') {
+          if (confirmingDiscard) return setConfirmingDiscard(false);
+          if (dirty) return setConfirmingDiscard(true);
+        }
+        onOpenChange(next);
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className={cn(
@@ -38,10 +62,37 @@ export function FormDialog({
           size === 'lg' ? 'sm:max-w-3xl' : size === 'md' ? 'sm:max-w-xl' : 'sm:max-w-sm',
         )}
         aria-labelledby={titleId}
+        onInputCapture={() => setDirty(true)}
       >
         <DialogHeader>
           <DialogTitle id={titleId}>{title}</DialogTitle>
         </DialogHeader>
+        {confirmingDiscard && (
+          <div
+            role="alertdialog"
+            aria-label={t('forms.discardTitle')}
+            className="discard-confirm sticky top-0 z-10"
+          >
+            <p>
+              <strong>{t('forms.discardTitle')}</strong> {t('forms.discardDescription')}
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" autoFocus onClick={() => setConfirmingDiscard(false)}>
+                {t('forms.keepEditing')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setConfirmingDiscard(false);
+                  onOpenChange(false);
+                }}
+              >
+                {t('forms.discard')}
+              </Button>
+            </div>
+          </div>
+        )}
         {children}
       </DialogContent>
     </DialogRoot>
@@ -96,15 +147,8 @@ export function ConfirmDialog({
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <AlertDialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={pending}
-            onClick={() => onOpenChange(false)}
-          >
-            {cancelLabel}
-          </Button>
+        {/* Same order as every form: the action first, then «إلغاء». */}
+        <AlertDialogFooter className="sm:justify-start">
           <Button
             type="button"
             variant={destructive ? 'destructive' : 'default'}
@@ -112,6 +156,14 @@ export function ConfirmDialog({
             onClick={onConfirm}
           >
             {confirmLabel}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={() => onOpenChange(false)}
+          >
+            {cancelLabel}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

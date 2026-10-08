@@ -1,3 +1,4 @@
+use super::threads;
 use crate::{
     dto::{
         AttachmentDto, AttachmentInput, AttachmentListInput, AttachmentSourceSelection,
@@ -7,13 +8,14 @@ use crate::{
     services::document_service,
     state::AppState,
 };
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
+/// Async so the native picker is awaited off the main thread (see `threads`).
 #[tauri::command]
-pub fn attachment_select_source(
-    app: AppHandle,
-    state: State<AppState>,
-) -> Result<AttachmentSourceSelection, Error> {
-    document_service::select_source(&app, &state)
+pub async fn attachment_select_source(app: AppHandle) -> Result<AttachmentSourceSelection, Error> {
+    app.state::<AppState>().unlocked()?;
+    let picker = app.clone();
+    let path = threads::on_worker(move || document_service::pick_source(&picker)).await?;
+    document_service::register_source(&app.state::<AppState>(), path)
 }
 #[tauri::command]
 pub fn attachment_add(

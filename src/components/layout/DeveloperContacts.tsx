@@ -15,7 +15,11 @@ const contacts: { kind: DeveloperContact; href: string; value?: string }[] = [
   { kind: 'linkedin', href: 'https://www.linkedin.com/in/mahmoud-s-khedr/' },
 ];
 
-export function DeveloperContacts() {
+/**
+ * How to reach the developer. `plain` shows the e-mail and phone as text only, for the
+ * locked and error screens, where the app does not open links.
+ */
+export function DeveloperContacts({ plain = false }: { plain?: boolean }) {
   const { t } = useTranslation();
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -31,6 +35,20 @@ export function DeveloperContacts() {
     } finally {
       setPending(false);
     }
+  }
+
+  if (plain) {
+    return (
+      <ul className="developer-contacts developer-contacts-plain">
+        {contacts
+          .filter((contact) => contact.value)
+          .map(({ kind, value }) => (
+            <li key={kind}>
+              {t(`settings.about.${kind}`)}: <bdi dir="ltr">{value}</bdi>
+            </li>
+          ))}
+      </ul>
+    );
   }
 
   return (

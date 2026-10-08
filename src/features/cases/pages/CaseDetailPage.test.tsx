@@ -63,7 +63,12 @@ it('archives an active case and restores an archived one', async () => {
   vi.mocked(bridge.caseRestore).mockResolvedValue(fixtures.caseItem);
   const view = renderWorkflow(<CaseDetailPage />, `/cases/${fixtures.caseItem.id}`, '/cases/:id');
 
+  // Archiving asks first; cancelling changes nothing.
   fireEvent.click(await screen.findByRole('button', { name: 'أرشفة' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'إلغاء' }));
+  expect(bridge.caseArchive).not.toHaveBeenCalled();
+  fireEvent.click(await screen.findByRole('button', { name: 'أرشفة' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'أرشفة القضية' }));
   await waitFor(() =>
     expect(vi.mocked(bridge.caseArchive).mock.calls[0]?.[0]).toBe(fixtures.caseItem.id),
   );
@@ -74,7 +79,11 @@ it('archives an active case and restores an archived one', async () => {
     archivedAt: '2026-10-05T10:00:00',
   });
   renderWorkflow(<CaseDetailPage />, `/cases/${fixtures.caseItem.id}`, '/cases/:id');
+  expect(await screen.findByText(/هذه القضية مؤرشفة/)).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'أرشفة' })).not.toBeInTheDocument();
+  // Read-only until restored: no edit and no new hearing.
+  expect(screen.queryByRole('button', { name: 'تعديل' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'إضافة جلسة' })).not.toBeInTheDocument();
   fireEvent.click(await screen.findByRole('button', { name: 'استعادة' }));
   await waitFor(() =>
     expect(vi.mocked(bridge.caseRestore).mock.calls[0]?.[0]).toBe(fixtures.caseItem.id),

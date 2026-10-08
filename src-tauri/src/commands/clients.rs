@@ -4,7 +4,7 @@ use crate::{
     services::client_service,
     state::AppState,
 };
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
 pub fn client_create(
@@ -56,7 +56,15 @@ pub fn client_restore(
     client_service::restore(&app, &state, &id)
 }
 
+/// Async so the native folder picker is awaited off the main thread (see `threads`).
 #[tauri::command]
-pub fn client_export(app: AppHandle, state: State<AppState>, id: String) -> Result<String, Error> {
-    client_service::export(&app, &state, &id)
+pub async fn client_export(app: AppHandle, id: String) -> Result<String, Error> {
+    app.state::<AppState>().unlocked()?;
+    let picker = app.clone();
+    let destination =
+        super::threads::on_worker(move || client_service::pick_export_folder(&picker)).await?;
+    super::threads::on_main_thread(&app, move |app| {
+        client_service::export(app, &app.state::<AppState>(), &id, &destination)
+    })
+    .await
 }

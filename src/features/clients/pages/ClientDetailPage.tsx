@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { Fact, RecordHeader } from '../../../components/layout/RecordHeader';
 import { ConfirmDialog, FormDialog } from '../../../components/forms/FormDialog';
+import { CopyButton } from '../../../components/forms/CopyButton';
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Button } from '../../../components/ui/button';
 import { useFormat } from '../../../i18n/LocalePresentation';
@@ -68,10 +69,10 @@ export function ClientDetailPage() {
               <bdi className="mono">{item.internalNumber}</bdi>
             </span>
             {item.primaryPhone && (
-              <span>
-                <a href={`tel:${item.primaryPhone}`}>
-                  <bdi className="mono">{item.primaryPhone}</bdi>
-                </a>
+              <span className="inline-flex items-center gap-1">
+                {/* Plain text: a tel: link would navigate the desktop window away. */}
+                <bdi className="mono">{item.primaryPhone}</bdi>
+                <CopyButton text={item.primaryPhone} label={t('clients.copyPhone')} />
               </span>
             )}
           </>

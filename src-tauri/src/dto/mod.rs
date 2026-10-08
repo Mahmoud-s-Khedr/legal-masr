@@ -86,6 +86,38 @@ pub struct LatestSuccessfulBackupDto {
     pub archive_size_bytes: Option<i64>,
 }
 
+/// A checked backup: when it was made and how many documents it holds. `token` names the
+/// chosen file for the following restore; the path itself never reaches the interface.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupSummaryDto {
+    pub token: Option<String>,
+    pub file_name: String,
+    pub created_at: String,
+    pub document_count: usize,
+}
+
+/// A backup chosen on a new installation, before its password is known.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupChoiceDto {
+    pub token: String,
+    pub file_name: String,
+}
+
+/// Opens a backup on a new installation with the password in use when it was made, or
+/// with the recovery key and a new password.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoreFromBackupInput {
+    pub token: String,
+    pub password: Option<String>,
+    pub recovery_key: Option<String>,
+    /// Required with the recovery key: the password the restored vault opens with from now on.
+    pub new_password: Option<String>,
+    pub language: String,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LawyerProfileDto {
@@ -381,6 +413,9 @@ pub struct CaseSummary {
     pub status: String,
     pub client_names: Vec<String>,
     pub archived_at: Option<String>,
+    pub court_name: Option<String>,
+    /// Earliest hearing still awaiting its decision (it may already be in the past).
+    pub next_hearing_date: Option<String>,
 }
 
 #[derive(Deserialize)]

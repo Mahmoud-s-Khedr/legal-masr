@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
-import type { InitializeInput } from '../../../bridge/types';
+import type { InitializeInput, RestoreFromBackupInput } from '../../../bridge/types';
 import { clearVaultCache } from '../../../lib/vaultCache';
 import { queryKeys } from '../../../lib/queryKeys';
 
@@ -33,6 +33,19 @@ export function useRecoverAccess() {
     gcTime: 0,
     mutationFn: ({ recoveryKey, newPassword }: { recoveryKey: string; newPassword: string }) =>
       bridge.recover(recoveryKey, newPassword),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: APP_STATUS_QUERY_KEY }),
+  });
+}
+
+/** On a new installation: choose a backup made on another computer. */
+export const useChooseBackup = () =>
+  useMutation({ gcTime: 0, mutationFn: bridge.chooseBackupToRestore });
+
+export function useRestoreFromBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    gcTime: 0,
+    mutationFn: (input: RestoreFromBackupInput) => bridge.restoreFromBackup(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: APP_STATUS_QUERY_KEY }),
   });
 }

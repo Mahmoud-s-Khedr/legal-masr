@@ -1,7 +1,8 @@
 import { DraftForm } from '@/components/forms/DraftForm';
 import { FieldGroup } from '@/components/ui/field';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useEffect } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../../components/ui/button';
 import { Field } from '../../../components/forms/FormField';
@@ -11,22 +12,31 @@ import { clientFormDefaults, ClientFormValues, clientFormSchema } from '../schem
 
 export function ClientForm({
   defaultValues,
+  suggestedNumber,
   busy,
   submitLabel,
   onSubmit,
   onCancel,
 }: {
   defaultValues?: Partial<ClientFormValues>;
+  /** The next free internal number, filled in while the field is still empty. */
+  suggestedNumber?: string;
   busy: boolean;
   submitLabel: string;
   onSubmit: (values: ClientFormValues) => Promise<void>;
   onCancel?: () => void;
 }) {
   const { t } = useTranslation();
-  const { register, handleSubmit, formState } = useForm<ClientFormValues>({
-    resolver: zodResolver(clientFormSchema),
-    defaultValues: { ...clientFormDefaults, ...defaultValues },
-  });
+  const { register, handleSubmit, formState, control, getValues, setValue } =
+    useForm<ClientFormValues>({
+      resolver: zodResolver(clientFormSchema),
+      defaultValues: { ...clientFormDefaults, ...defaultValues },
+    });
+  useEffect(() => {
+    if (suggestedNumber && !getValues('internalNumber'))
+      setValue('internalNumber', suggestedNumber);
+  }, [suggestedNumber, getValues, setValue]);
+  const internalNumber = useWatch({ control, name: 'internalNumber' });
   const { errors } = formState;
 
   return (
@@ -51,7 +61,11 @@ export function ClientForm({
             </Field>
             <Field
               label={t('clients.fields.internalNumber')}
-              hint={t('clients.form.internalNumberHint')}
+              hint={
+                suggestedNumber && internalNumber === suggestedNumber
+                  ? t('forms.suggestedNumber')
+                  : t('clients.form.internalNumberHint')
+              }
               error={errors.internalNumber ? t('forms.required') : undefined}
               required
             >

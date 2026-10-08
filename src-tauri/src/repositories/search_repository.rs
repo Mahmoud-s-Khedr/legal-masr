@@ -31,12 +31,20 @@ pub fn clear_all(conn: &Connection) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn search(conn: &Connection, normalized_query: &str) -> Result<Vec<SearchHit>, Error> {
-    let like = format!("%{normalized_query}%");
+/// `text` matches the normalized index text; `digits`, when given, also matches the bare
+/// phone digits stored in it. Both are `LIKE … ESCAPE '\'` patterns.
+pub fn search(
+    conn: &Connection,
+    text: &str,
+    digits: Option<&str>,
+) -> Result<Vec<SearchHit>, Error> {
     let mut stmt = conn.prepare(
-        "SELECT entity_type, entity_id, title, subtitle FROM search_index WHERE normalized_text LIKE ?1 ORDER BY entity_type, title",
+        "SELECT entity_type, entity_id, title, subtitle FROM search_index
+         WHERE normalized_text LIKE ?1 ESCAPE '\\'
+            OR (?2 IS NOT NULL AND normalized_text LIKE ?2 ESCAPE '\\')
+         ORDER BY entity_type, title",
     )?;
-    let rows = stmt.query_map([like], |row| {
+    let rows = stmt.query_map(rusqlite::params![text, digits], |row| {
         Ok(SearchHit {
             entity_type: row.get(0)?,
             entity_id: row.get(1)?,

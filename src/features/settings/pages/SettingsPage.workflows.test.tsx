@@ -12,7 +12,9 @@ vi.mock('../../../bridge/commands', () => ({
     updateSettings: vi.fn(),
     changePassword: vi.fn(),
     setAutostart: vi.fn(),
-    setUsageCounters: vi.fn(),
+    replaceRecoveryKey: vi.fn(),
+    saveRecoveryKey: vi.fn(),
+    print: vi.fn(),
     latestSuccessfulBackup: vi.fn(),
     createBackup: vi.fn(),
     validateBackup: vi.fn(),
@@ -201,23 +203,47 @@ describe('SettingsPage workflows', () => {
       expect(await screen.findByText(t('settings.security.autostartError'))).toBeVisible();
     });
 
-    it('toggles aggregate usage counters and reports a failure', async () => {
-      vi.mocked(bridge.setUsageCounters).mockRejectedValueOnce(new Error('denied'));
+    it('no longer offers the usage counters switch', async () => {
+      renderSettings('/settings?tab=security');
+      await screen.findByRole('switch', { name: t('settings.security.autostart') });
+      expect(screen.queryByText(/إحصاءات/)).toBeNull();
+    });
+
+    it('issues a new recovery key only with the current password, and offers to keep it', async () => {
+      const key = '0123456789abcdef'.repeat(4);
+      vi.mocked(bridge.replaceRecoveryKey)
+        .mockRejectedValueOnce({ code: 'INVALID_PASSWORD', message: 'safe', details: null })
+        .mockResolvedValueOnce({ recoveryKey: key });
+      vi.mocked(bridge.saveRecoveryKey).mockResolvedValue(undefined);
+      vi.mocked(bridge.print).mockResolvedValue(undefined);
       renderSettings('/settings?tab=security');
 
-      const counters = await screen.findByRole('switch', { name: t('settings.security.counters') });
-      fireEvent.click(counters);
-      expect(await screen.findByText(t('settings.security.countersError'))).toBeVisible();
-      expect(vi.mocked(bridge.setUsageCounters).mock.calls[0]?.[0]).toBe(true);
-
-      vi.mocked(bridge.setUsageCounters).mockResolvedValueOnce({
-        ...settings,
-        usageCountersEnabled: true,
+      const create = await screen.findByRole('button', {
+        name: t('settings.security.recoveryReplace'),
       });
-      fireEvent.click(screen.getByRole('switch', { name: t('settings.security.counters') }));
-      await waitFor(() =>
-        expect(screen.getByRole('switch', { name: t('settings.security.counters') })).toBeChecked(),
-      );
+      expect(create).toBeDisabled();
+      const password = screen.getByLabelText(t('settings.security.recoveryPassword'));
+      fireEvent.change(password, { target: { value: 'the current password' } });
+      fireEvent.click(create);
+      expect(await screen.findByText(t('errors.INVALID_PASSWORD'))).toBeVisible();
+
+      fireEvent.click(create);
+      expect(
+        await screen.findByText(
+          '01234567 89abcdef 01234567 89abcdef 01234567 89abcdef 01234567 89abcdef',
+        ),
+      ).toBeVisible();
+      expect(vi.mocked(bridge.replaceRecoveryKey).mock.calls[1]?.[0]).toBe('the current password');
+      expect(screen.getByText(t('settings.security.recoveryNewWarning'))).toBeVisible();
+
+      fireEvent.click(screen.getByRole('button', { name: t('gate.recoveryKeySave') }));
+      expect(await screen.findByText(t('gate.recoveryKeySaved'))).toBeVisible();
+      expect(vi.mocked(bridge.saveRecoveryKey).mock.calls[0]?.[0]).toBe(key);
+      fireEvent.click(screen.getByRole('button', { name: t('gate.recoveryKeyPrint') }));
+      await waitFor(() => expect(bridge.print).toHaveBeenCalledOnce());
+
+      fireEvent.click(screen.getByRole('button', { name: t('settings.security.recoveryDone') }));
+      expect(screen.queryByText(/01234567 89abcdef/)).toBeNull();
     });
 
     it('does not ask again once notification permission is already granted', async () => {

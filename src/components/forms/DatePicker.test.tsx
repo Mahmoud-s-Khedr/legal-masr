@@ -48,7 +48,7 @@ describe('DatePicker', () => {
         <DatePicker aria-label="Date" value="2026-10-22" onChange={onChange} />
       </LocalePresentationContext.Provider>,
     );
-    expect(screen.getByLabelText('Date')).toHaveAttribute('placeholder', 'YYYY-MM-DD');
+    expect(screen.getByLabelText('Date')).toHaveAttribute('placeholder', 'e.g. 2026-11-15');
     fireEvent.click(screen.getByRole('button', { name: 'Open calendar' }));
     expect(screen.getByRole('dialog', { name: 'Choose date' })).toHaveAttribute('dir', 'ltr');
     fireEvent.click(screen.getByRole('button', { name: /23.*2026|2026.*23/ }));
@@ -76,5 +76,22 @@ describe('DatePicker', () => {
     expect(normalizeTypedDate('31/02/2026')).toBeNull();
     expect(normalizeTypedDate('10/2026')).toBeNull();
     expect(normalizeTypedDate('')).toBeNull();
+  });
+});
+
+describe('normalizeTypedDate', () => {
+  it('waits for a four-digit year while typing but accepts two digits once typing is done', () => {
+    expect(normalizeTypedDate('3/10/26')).toBeNull();
+    expect(normalizeTypedDate('3/10/26', { lenient: true })).toBe('2026-10-03');
+    expect(normalizeTypedDate('٣/١٠/٢٦', { lenient: true })).toBe('2026-10-03');
+    expect(normalizeTypedDate('1/1/95', { lenient: true })).toBe('1995-01-01');
+    expect(normalizeTypedDate('2026-10-3', { lenient: true })).toBe('2026-10-03');
+    expect(normalizeTypedDate('3/10/2026')).toBe('2026-10-03');
+  });
+
+  it('still refuses dates that do not exist', () => {
+    expect(normalizeTypedDate('31/2/26', { lenient: true })).toBeNull();
+    expect(normalizeTypedDate('3/13/2026', { lenient: true })).toBeNull();
+    expect(normalizeTypedDate('3/10/202', { lenient: true })).toBeNull();
   });
 });

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { FormDialog } from './FormDialog';
+import '../../i18n';
 
 function DialogHarness({ onChange = vi.fn() }: { onChange?: (open: boolean) => void }) {
   const [open, setOpen] = useState(false);
@@ -58,5 +59,57 @@ describe('Dialog', () => {
     expect(onChange).toHaveBeenCalledWith(false);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it('keeps a typed draft when Escape is pressed until the lawyer confirms discarding it', async () => {
+    const onChange = vi.fn();
+    function Draft() {
+      const [open, setOpen] = useState(true);
+      return (
+        <FormDialog
+          open={open}
+          onOpenChange={(next) => {
+            onChange(next);
+            setOpen(next);
+          }}
+          title="إضافة مهمة"
+        >
+          <input aria-label="المهمة" />
+        </FormDialog>
+      );
+    }
+    render(<Draft />);
+    fireEvent.input(screen.getByRole('textbox', { name: 'المهمة' }), {
+      target: { value: 'تجهيز مذكرة' },
+    });
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(await screen.findByRole('alertdialog', { name: 'تجاهل ما كتبته؟' })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'المهمة' })).toHaveValue('تجهيز مذكرة');
+
+    fireEvent.click(screen.getByRole('button', { name: 'متابعة التعديل' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'المهمة' })).toHaveValue('تجهيز مذكرة');
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.click(await screen.findByRole('button', { name: 'تجاهل وإغلاق' }));
+    expect(onChange).toHaveBeenCalledWith(false);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('ignores a click outside the dialog', async () => {
+    const onChange = vi.fn();
+    render(
+      <FormDialog open onOpenChange={onChange} title="إضافة جلسة">
+        <input aria-label="الوقت" />
+      </FormDialog>,
+    );
+    const backdrop = document.querySelector('[data-slot="dialog-overlay"]') ?? document.body;
+    fireEvent.pointerDown(backdrop);
+    fireEvent.mouseDown(backdrop);
+    fireEvent.click(backdrop);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'إضافة جلسة' })).toBeInTheDocument();
   });
 });

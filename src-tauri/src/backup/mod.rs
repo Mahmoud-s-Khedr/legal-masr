@@ -15,11 +15,23 @@ use std::{
 };
 use zip::{write::SimpleFileOptions, ZipArchive, ZipWriter};
 
+/// Version 1 is sealed with the vault key only, so only its own installation can open it.
+/// Version 2 also carries the vault's key envelope (the same password- and recovery-key-
+/// sealed copies of the vault key kept beside the database), so a new installation can
+/// open it with the password in use when it was made, or with the recovery key.
 #[derive(Serialize, Deserialize)]
 struct BackupEnvelope {
     version: u8,
     nonce: String,
     ciphertext: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    keyring: Option<security::SecurityFile>,
+}
+
+/// What a backup holds, shown before restoring it.
+pub struct BackupSummary {
+    pub created_at: String,
+    pub document_count: usize,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -52,12 +64,19 @@ fn consistent_database_snapshot(db_path: &Path, master: &[u8; 32]) -> Result<Vec
     result
 }
 
+/// `stamp` names the file in the lawyer's local time (`2026-10-08-1052`); `keyring` makes
+/// the backup restorable on another installation (see [`BackupEnvelope`]).
 pub fn create(
     db_path: &Path,
     master: &[u8; 32],
     destination: &str,
     documents: &Path,
+    stamp: &str,
+    keyring: Option<&security::SecurityFile>,
 ) -> Result<String, Error> {
+    if !is_valid_stamp(stamp) {
+        return Err(Error::Validation);
+    }
     let destination = PathBuf::from(destination);
     fs::create_dir_all(&destination)?;
     let mut archive = ZipWriter::new(Cursor::new(Vec::new()));
@@ -108,14 +127,12 @@ pub fn create(
         .encrypt(XNonce::from_slice(&nonce[..24]), plaintext.as_ref())
         .map_err(|_| Error::BackupInvalid)?;
     let payload = serde_json::to_vec(&BackupEnvelope {
-        version: 1,
+        version: if keyring.is_some() { 2 } else { 1 },
         nonce: STANDARD.encode(&nonce[..24]),
         ciphertext: STANDARD.encode(ciphertext),
+        keyring: keyring.cloned(),
     })?;
-    let output = destination.join(format!(
-        "legalmaster-backup-{}.lmsbackup",
-        time::OffsetDateTime::now_utc().unix_timestamp_nanos()
-    ));
+    let output = available_name(&destination, stamp);
     let temp = output.with_extension("tmp");
     let mut file = fs::File::create(&temp)?;
     file.write_all(&payload)?;
@@ -129,11 +146,61 @@ pub fn create(
     Ok(output.to_string_lossy().into_owned())
 }
 
-fn decrypt(path: &str, master: &[u8; 32]) -> Result<Vec<u8>, Error> {
-    let payload: BackupEnvelope = serde_json::from_slice(&fs::read(path)?)?;
-    if payload.version != 1 {
+/// `LegalMasr-backup-2026-10-08-1052.lmsbackup`, with `-2`, `-3`… if that name is taken.
+fn available_name(destination: &Path, stamp: &str) -> PathBuf {
+    let mut candidate = destination.join(format!("LegalMasr-backup-{stamp}.lmsbackup"));
+    let mut counter = 2;
+    while candidate.exists() || candidate.with_extension("tmp").exists() {
+        candidate = destination.join(format!("LegalMasr-backup-{stamp}-{counter}.lmsbackup"));
+        counter += 1;
+    }
+    candidate
+}
+
+/// A local date and time as `YYYY-MM-DD-HHMM`.
+pub fn is_valid_stamp(stamp: &str) -> bool {
+    let bytes = stamp.as_bytes();
+    bytes.len() == 15
+        && bytes.iter().enumerate().all(|(index, byte)| match index {
+            4 | 7 | 10 => *byte == b'-',
+            _ => byte.is_ascii_digit(),
+        })
+}
+
+fn read_envelope(path: &str) -> Result<BackupEnvelope, Error> {
+    let payload: BackupEnvelope =
+        serde_json::from_slice(&fs::read(path)?).map_err(|_| Error::BackupInvalid)?;
+    if !matches!(payload.version, 1 | 2) || (payload.version == 2) != payload.keyring.is_some() {
         return Err(Error::BackupInvalid);
     }
+    Ok(payload)
+}
+
+/// The key envelope a version 2 backup carries; `None` for a version 1 backup.
+pub fn keyring(path: &str) -> Result<Option<security::SecurityFile>, Error> {
+    Ok(read_envelope(path)?.keyring)
+}
+
+/// Date and document count of a backup that `master` opens and that passes validation.
+pub fn summary(path: &str, master: &[u8; 32]) -> Result<BackupSummary, Error> {
+    validate(path, master)?;
+    let bytes = decrypt(path, master)?;
+    let mut archive = ZipArchive::new(Cursor::new(bytes)).map_err(|_| Error::BackupInvalid)?;
+    let mut manifest = String::new();
+    archive
+        .by_name("manifest.json")
+        .map_err(|_| Error::BackupInvalid)?
+        .read_to_string(&mut manifest)?;
+    let manifest: BackupManifest =
+        serde_json::from_str(&manifest).map_err(|_| Error::BackupInvalid)?;
+    Ok(BackupSummary {
+        created_at: manifest.created_at,
+        document_count: manifest.managed_document_count,
+    })
+}
+
+fn decrypt(path: &str, master: &[u8; 32]) -> Result<Vec<u8>, Error> {
+    let payload = read_envelope(path)?;
     let key = zeroize::Zeroizing::new(security::backup_key(master));
     let nonce = STANDARD
         .decode(payload.nonce)
@@ -382,6 +449,7 @@ mod tests {
             version: 1,
             nonce: STANDARD.encode(&nonce[..24]),
             ciphertext: STANDARD.encode(ciphertext),
+            keyring: None,
         };
         fs::write(path, serde_json::to_vec(&envelope).unwrap()).unwrap();
     }
@@ -405,6 +473,7 @@ mod tests {
             version: 1,
             nonce: STANDARD.encode(&nonce[..24]),
             ciphertext: STANDARD.encode(ciphertext),
+            keyring: None,
         };
         fs::write(path, serde_json::to_vec(&envelope).unwrap()).unwrap();
     }
@@ -482,6 +551,7 @@ mod tests {
             version: 1,
             nonce: STANDARD.encode(&nonce[..24]),
             ciphertext: STANDARD.encode(ciphertext),
+            keyring: None,
         };
         fs::write(path, serde_json::to_vec(&envelope).unwrap()).unwrap();
     }
@@ -514,6 +584,8 @@ mod tests {
             &master,
             &destination.to_string_lossy(),
             &source_attachments,
+            "2026-10-08-1052",
+            None,
         )
         .unwrap();
         validate(&backup, &master).unwrap();
@@ -569,6 +641,91 @@ mod tests {
     }
 
     #[test]
+    fn backups_are_named_by_local_time_and_carry_their_key_envelope() {
+        let temp = tempfile::tempdir().unwrap();
+        let master = security::random_32();
+        let source = temp.path().join("source.sqlite");
+        let attachments = temp.path().join("attachments");
+        migrated_database(&source, &master, "CL-NAMED");
+        fs::create_dir(&attachments).unwrap();
+        fs::write(attachments.join("scan.pdf"), b"scan").unwrap();
+        let destination = temp.path().join("Backups");
+        let destination_text = destination.to_string_lossy();
+        let keyring = security::SecurityFile {
+            version: 1,
+            salt: STANDARD.encode([1_u8; 16]),
+            memory_kib: 8,
+            iterations: 1,
+            parallelism: 1,
+            password_envelope: security::wrap(&[2_u8; 32], &master).unwrap(),
+            recovery_envelope: security::wrap(&[3_u8; 32], &master).unwrap(),
+        };
+
+        for stamp in ["2026-10-08 10:52", "2026-10-8-1052", "", "٢٠٢٦-10-08-1052"] {
+            assert!(matches!(
+                create(
+                    &source,
+                    &master,
+                    &destination_text,
+                    &attachments,
+                    stamp,
+                    None
+                ),
+                Err(Error::Validation)
+            ));
+        }
+        let first = create(
+            &source,
+            &master,
+            &destination_text,
+            &attachments,
+            "2026-10-08-1052",
+            Some(&keyring),
+        )
+        .unwrap();
+        let second = create(
+            &source,
+            &master,
+            &destination_text,
+            &attachments,
+            "2026-10-08-1052",
+            None,
+        )
+        .unwrap();
+        assert!(first.ends_with("LegalMasr-backup-2026-10-08-1052.lmsbackup"));
+        assert!(second.ends_with("LegalMasr-backup-2026-10-08-1052-2.lmsbackup"));
+
+        let carried = keyring_of(&first);
+        assert!(carried.recovery_envelope == keyring.recovery_envelope);
+        assert!(carried.password_envelope == keyring.password_envelope);
+        assert!(super::keyring(&second).unwrap().is_none());
+        assert_eq!(summary(&first, &master).unwrap().document_count, 1);
+        assert!(matches!(
+            summary(&first, &security::random_32()),
+            Err(Error::BackupInvalid)
+        ));
+
+        // A version that disagrees with the presence of the key envelope is refused.
+        let mut envelope: BackupEnvelope =
+            serde_json::from_slice(&fs::read(&first).unwrap()).unwrap();
+        envelope.version = 1;
+        fs::write(&first, serde_json::to_vec(&envelope).unwrap()).unwrap();
+        assert!(matches!(super::keyring(&first), Err(Error::BackupInvalid)));
+        let mut envelope: BackupEnvelope =
+            serde_json::from_slice(&fs::read(&second).unwrap()).unwrap();
+        envelope.version = 2;
+        fs::write(&second, serde_json::to_vec(&envelope).unwrap()).unwrap();
+        assert!(matches!(
+            validate(&second, &master),
+            Err(Error::BackupInvalid)
+        ));
+    }
+
+    fn keyring_of(path: &str) -> security::SecurityFile {
+        super::keyring(path).unwrap().expect("a version 2 backup")
+    }
+
+    #[test]
     fn corrupt_restore_staging_never_changes_active_data_or_leaves_staging_files() {
         let temp = tempfile::tempdir().unwrap();
         let master = security::random_32();
@@ -609,6 +766,7 @@ mod tests {
             version: 1,
             nonce: STANDARD.encode([0_u8; 23]),
             ciphertext: STANDARD.encode([0_u8; 48]),
+            keyring: None,
         };
         fs::write(&path, serde_json::to_vec(&payload).unwrap()).unwrap();
         assert!(matches!(

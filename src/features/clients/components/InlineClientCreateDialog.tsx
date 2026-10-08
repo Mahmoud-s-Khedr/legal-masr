@@ -5,7 +5,8 @@ import { FormDialog } from '@/components/forms/FormDialog';
 import { Button } from '@/components/ui/button';
 import { asAppError, errorMessage } from '@/bridge/errors';
 import type { ClientDuplicateCandidate } from '@/bridge/types';
-import { useCreateClient } from '../api/clientsApi';
+import { useClientList, useCreateClient } from '../api/clientsApi';
+import { suggestNextNumber } from '@/lib/nextNumber';
 import { ClientForm } from '../forms/ClientForm';
 import type { ClientFormValues } from '../schemas/client.schema';
 export function InlineClientCreateDialog({
@@ -21,6 +22,7 @@ export function InlineClientCreateDialog({
 }) {
   const { t } = useTranslation();
   const createClient = useCreateClient();
+  const existing = useClientList({ includeArchived: true });
   const [duplicates, setDuplicates] = useState<ClientDuplicateCandidate[] | null>(null);
   const [pendingValues, setPendingValues] = useState<ClientFormValues | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -56,6 +58,11 @@ export function InlineClientCreateDialog({
     >
       <ClientForm
         defaultValues={{ fullName: initialName }}
+        suggestedNumber={
+          existing.data
+            ? suggestNextNumber(existing.data.map((client) => client.internalNumber))
+            : undefined
+        }
         busy={createClient.isPending}
         submitLabel={t('poa.saveClientAndLink')}
         onCancel={close}

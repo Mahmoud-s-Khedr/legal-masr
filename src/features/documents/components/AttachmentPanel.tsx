@@ -91,12 +91,18 @@ export function AttachmentPanel({
   description,
   allowAdd = true,
   showOwner = false,
+  readOnly = false,
+  startAdding = false,
 }: {
   owner: AttachmentListInput;
   title?: string;
   description?: string;
   allowAdd?: boolean;
   showOwner?: boolean;
+  /** Opens the add form once, e.g. after choosing the record on the documents page. */
+  startAdding?: boolean;
+  /** Open and show-in-folder stay available; edit and remove are hidden. */
+  readOnly?: boolean;
 }) {
   const format = useFormat();
   const { t } = useTranslation();
@@ -108,6 +114,11 @@ export function AttachmentPanel({
   const open = useOpenAttachment();
   const reveal = useRevealAttachment();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [startHandled, setStartHandled] = useState(false);
+  if (startAdding && allowAdd && !readOnly && !startHandled) {
+    setStartHandled(true);
+    setDialogOpen(true);
+  }
   const [source, setSource] = useState<{ token: string; filename: string } | null>(null);
   const form = useForm<z.infer<typeof attachmentDraftSchema>>({
     resolver: zodResolver(attachmentDraftSchema),
@@ -289,30 +300,34 @@ export function AttachmentPanel({
                 >
                   {t('documents.reveal')}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-label={t('documents.editAria', { name: attachment.originalFilename })}
-                  onClick={() => {
-                    setActionError(null);
-                    setEditingId(attachment.id);
-                    setCategory(attachment.category);
-                    setDescriptionValue(attachment.description ?? '');
-                    setDocumentDate(attachment.documentDate ?? '');
-                    setDialogOpen(true);
-                  }}
-                >
-                  {t('records.edit')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  type="button"
+                {!readOnly && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      aria-label={t('documents.editAria', { name: attachment.originalFilename })}
+                      onClick={() => {
+                        setActionError(null);
+                        setEditingId(attachment.id);
+                        setCategory(attachment.category);
+                        setDescriptionValue(attachment.description ?? '');
+                        setDocumentDate(attachment.documentDate ?? '');
+                        setDialogOpen(true);
+                      }}
+                    >
+                      {t('records.edit')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      type="button"
 
-                  aria-label={t('documents.removeAria', { name: attachment.originalFilename })}
-                  onClick={() => setRemoving(attachment)}
-                >
-                  {t('documents.remove')}
-                </Button>
+                      aria-label={t('documents.removeAria', { name: attachment.originalFilename })}
+                      onClick={() => setRemoving(attachment)}
+                    >
+                      {t('documents.remove')}
+                    </Button>
+                  </>
+                )}
               </div>
             </li>
           ))}
@@ -385,7 +400,7 @@ export function AttachmentPanel({
             </Field>
             <Field
               label={<>{t('documents.date')}</>}
-              error={form.formState.errors.documentDate ? t('forms.invalid') : undefined}
+              error={form.formState.errors.documentDate ? t('forms.invalidDate') : undefined}
             >
               <DatePicker
                 ref={(node) => form.register('documentDate').ref(node)}
@@ -396,21 +411,20 @@ export function AttachmentPanel({
             </Field>
             <FormDialogFooter>
               <Button
-                type="button"
-                variant="secondary"
-
-                disabled={add.isPending || update.isPending}
-                onClick={close}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
                 type="submit"
                 disabled={
                   pickerPending || add.isPending || update.isPending || (!editingId && !source)
                 }
               >
                 {editingId ? t('records.saveEdits') : t('documents.save')}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={add.isPending || update.isPending}
+                onClick={close}
+              >
+                {t('common.cancel')}
               </Button>
             </FormDialogFooter>
           </FieldGroup>

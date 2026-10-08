@@ -8,4 +8,8 @@ if (!window.PointerEvent) {
   window.PointerEvent = MouseEvent as typeof PointerEvent;
 }
 
+// jsdom does not lay out pages, so it cannot scroll them.
+window.scrollTo = () => undefined;
+Element.prototype.scrollIntoView ??= () => undefined;
+
 afterEach(cleanup);

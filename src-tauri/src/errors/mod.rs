@@ -68,6 +68,16 @@ pub enum Error {
     CaseClientHasPayments,
     #[error("client is archived")]
     ClientArchived,
+    #[error("case is archived")]
+    CaseArchived,
+    #[error("backup belongs to another installation")]
+    BackupFromOtherVault,
+    #[error("backup cannot be opened on another installation")]
+    BackupNotPortable,
+    #[error("backup password or recovery key is wrong")]
+    BackupSecretInvalid,
+    #[error("no backup yet")]
+    BackupMissing,
     #[error("task not found")]
     TaskNotFound,
     #[error("attachment source missing")]
@@ -146,6 +156,11 @@ impl Error {
             }
             Self::CaseClientHasPayments => "CASE_CLIENT_HAS_PAYMENTS",
             Self::ClientArchived => "CLIENT_ARCHIVED",
+            Self::CaseArchived => "CASE_ARCHIVED",
+            Self::BackupFromOtherVault => "BACKUP_FROM_OTHER_VAULT",
+            Self::BackupNotPortable => "BACKUP_NOT_PORTABLE",
+            Self::BackupSecretInvalid => "BACKUP_SECRET_INVALID",
+            Self::BackupMissing => "BACKUP_MISSING",
             Self::TaskNotFound => "TASK_NOT_FOUND",
             Self::AttachmentSourceMissing => "ATTACHMENT_SOURCE_MISSING",
             Self::AttachmentNotFound => "ATTACHMENT_NOT_FOUND",
@@ -190,6 +205,13 @@ impl Error {
             }
             Self::CaseClientHasPayments => "لا يمكن إزالة موكل له دفعات مرتبطة بالقضية.",
             Self::ClientArchived => "لا يمكن إضافة موكل مؤرشف.",
+            Self::CaseArchived => "القضية مؤرشفة؛ استعدها أولًا لتعديلها.",
+            Self::BackupFromOtherVault => "هذه النسخة من تثبيت آخر لليجال مصر.",
+            Self::BackupNotPortable => {
+                "هذه النسخة من إصدار سابق ولا تُستعاد إلا على الجهاز الذي أُنشئت عليه."
+            }
+            Self::BackupSecretInvalid => "كلمة المرور أو مفتاح الاسترداد لا يفتح هذه النسخة.",
+            Self::BackupMissing => "لا توجد نسخة احتياطية بعد.",
             Self::TaskNotFound => "لم يتم العثور على المهمة.",
             Self::AttachmentSourceMissing => "تعذر العثور على الملف المصدر للمرفق.",
             Self::AttachmentNotFound => "لم يتم العثور على المرفق.",

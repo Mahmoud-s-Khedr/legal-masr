@@ -5,13 +5,15 @@ import { useTranslation } from 'react-i18next';
 import { isPermissionGranted } from '@tauri-apps/plugin-notification';
 import { errorMessage } from '../bridge/errors';
 import { bridge } from '../bridge/commands';
+import { DeveloperContacts } from '../components/layout/DeveloperContacts';
 import { LanguageSwitcher } from '../components/layout/LanguageSwitcher';
 import { Shell } from '../components/layout/Shell';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
 import { OnboardingPage, OnboardingSubGate } from '../features/onboarding/pages/OnboardingPage';
 import { useAppStatus, useLockVault } from '../features/onboarding/api/onboardingApi';
-import { useSettings } from '../features/settings/api/settingsApi';
+import { useSettings, useUpdateSettings } from '../features/settings/api/settingsApi';
+import { settingsWithLanguage, takeLanguageChoice } from '../lib/languageChoice';
 import { demoSeedEnabled, seedDemoDataOnce } from '../dev/seedDemoData';
 import { captureModeEnabled } from '../dev/captureBridge';
 import { queryKeys } from '../lib/queryKeys';
@@ -30,11 +32,19 @@ function ThemeSync() {
 
 function LocaleSync() {
   const { data: settings } = useSettings();
+  const { mutate: updateSettings } = useUpdateSettings();
   const { i18n } = useTranslation();
   useEffect(() => {
-    if (settings && i18n.language !== settings.language)
-      void i18n.changeLanguage(settings.language);
-  }, [i18n, settings]);
+    if (!settings) return;
+    // A language picked on the lock screen wins over the stored one, and is saved now.
+    const chosen = takeLanguageChoice();
+    if (chosen && chosen !== settings.language) {
+      void i18n.changeLanguage(chosen);
+      updateSettings(settingsWithLanguage(settings, chosen));
+      return;
+    }
+    if (i18n.language !== settings.language) void i18n.changeLanguage(settings.language);
+  }, [i18n, settings, updateSettings]);
   return null;
 }
 
@@ -160,6 +170,10 @@ function AppContent() {
             <Button type="button" onClick={() => void refetch()}>
               {t('app.retry')}
             </Button>
+            <section className="gate-support" aria-label={t('app.supportTitle')}>
+              <strong>{t('app.supportTitle')}</strong>
+              <DeveloperContacts plain />
+            </section>
           </div>
         </main>
       ) : gate === 'loading' ? (
@@ -173,6 +187,9 @@ function AppContent() {
           recoveryKey={recoveryKey}
           onSwitchToRecovery={() => setManualGate('recovery')}
           onBackToUnlock={() => setManualGate(null)}
+          onStartRestore={() => setManualGate('restore')}
+          onBackToSetup={() => setManualGate(null)}
+          onRestored={() => setManualGate(null)}
           onSetupSucceeded={(newRecoveryKey) => {
             setRecoveryKey(newRecoveryKey);
             setManualGate('recovery-key');

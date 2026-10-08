@@ -16,6 +16,10 @@ export type AppErrorCode =
   | 'ALREADY_INITIALIZED'
   | 'RECOVERY_KEY_INVALID'
   | 'BACKUP_CORRUPTED'
+  | 'BACKUP_FROM_OTHER_VAULT'
+  | 'BACKUP_NOT_PORTABLE'
+  | 'BACKUP_SECRET_INVALID'
+  | 'BACKUP_MISSING'
   | 'LEGACY_DATA_MIGRATION_REQUIRED'
   | 'VAULT_INTERRUPTED'
   | 'VAULT_MISSING'
@@ -34,6 +38,7 @@ export type AppErrorCode =
   | 'POWER_OF_ATTORNEY_NUMBER_TAKEN'
   | 'CASE_CLIENT_HAS_PAYMENTS'
   | 'CLIENT_ARCHIVED'
+  | 'CASE_ARCHIVED'
   | 'CASE_MUST_HAVE_CLIENT'
   | 'CASE_PRIMARY_CLIENT_REASSIGNMENT_REQUIRED'
   | 'TASK_NOT_FOUND'
@@ -65,6 +70,22 @@ export type LatestSuccessfulBackup = {
   completedAt: string;
   archiveSizeBytes: number | null;
 };
+/** A checked backup. `token` names the chosen file for the restore that follows. */
+export type BackupSummary = {
+  token: string | null;
+  fileName: string;
+  createdAt: string;
+  documentCount: number;
+};
+/** A backup chosen on a new installation, before its password is known. */
+export type BackupChoice = { token: string; fileName: string };
+export type RestoreFromBackupInput = {
+  token: string;
+  language: 'ar' | 'en';
+} & (
+  | { password: string; recoveryKey?: undefined; newPassword?: undefined }
+  | { password?: undefined; recoveryKey: string; newPassword: string }
+);
 export type LawyerProfile = {
   fullName: string;
   barNumber: string | null;
@@ -184,6 +205,9 @@ export type CaseSummary = {
   status: CaseStatus;
   clientNames: string[];
   archivedAt: string | null;
+  courtName: string | null;
+  /** Earliest hearing still awaiting its decision; it may already be in the past. */
+  nextHearingDate: string | null;
 };
 
 export type CaseCreateInput = {

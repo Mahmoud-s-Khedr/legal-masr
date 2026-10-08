@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { useDebounced } from '@/lib/useDebounced';
 import { useGlobalSearch } from '../api/searchApi';
 import type { SearchHit } from '@/bridge/types';
+
+const hitKey = (hit: SearchHit) => `${hit.entityType}:${hit.entityId}`;
 export function GlobalSearch({
   query,
   onQueryChange,
@@ -43,14 +45,16 @@ export function GlobalSearch({
         }}
         onValueChange={(next, details) => {
           if (details.reason === 'item-press') {
-            const hit = hits.find((h) => h.title === next);
+            // Several records can share a title (two clients with the same name), so the
+            // pressed item is identified by its type and id, never by the visible title.
+            const hit = hits.find((candidate) => hitKey(candidate) === next);
             if (hit) go(hit);
           } else {
             onQueryChange(next);
             setOpen(true);
           }
         }}
-        itemToStringValue={(hit) => hit.title}
+        itemToStringValue={hitKey}
         filter={null}
       >
         <Autocomplete.Input
@@ -59,6 +63,13 @@ export function GlobalSearch({
           // leave room for both (the palette has neither).
           className={palette ? undefined : 'ps-10 pe-[4.5rem]'}
           autoFocus={palette}
+          // Escape leaves the field empty, ready for the next search.
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && query) {
+              onQueryChange('');
+              setOpen(false);
+            }
+          }}
           aria-label={t('app.searchLabel')}
           placeholder={t('search.placeholder')}
         />
@@ -69,7 +80,7 @@ export function GlobalSearch({
               <Autocomplete.List>
                 {(hit: SearchHit) => (
                   <Autocomplete.Item
-                    key={`${hit.entityType}-${hit.entityId}`}
+                    key={hitKey(hit)}
                     value={hit}
                     className="cursor-default rounded-md p-2 outline-none data-highlighted:bg-accent"
                   >

@@ -69,3 +69,14 @@ it('cancelling the inline client dialog leaves the parent draft untouched and un
   expect(onSubmit).not.toHaveBeenCalled();
   expect(screen.getByLabelText('الرقم الداخلي')).toHaveValue('POA-DRAFT-8');
 });
+
+it('says a power of attorney needs a client on that field instead of failing to save', async () => {
+  const onSubmit = vi.fn().mockResolvedValue(undefined);
+  renderWorkflow(<PowerOfAttorneyForm busy={false} onSubmit={onSubmit} onCancel={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('الرقم الداخلي'), { target: { value: 'POA-1' } });
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));
+  expect(
+    await screen.findByText('اختر موكلًا واحدًا على الأقل صدر منه التوكيل.'),
+  ).toBeInTheDocument();
+  expect(onSubmit).not.toHaveBeenCalled();
+});

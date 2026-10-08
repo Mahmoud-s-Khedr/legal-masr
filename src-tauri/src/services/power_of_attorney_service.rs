@@ -6,6 +6,7 @@ use crate::{
     errors::Error,
     normalize,
     repositories::{power_of_attorney_repository, search_repository},
+    services::search_service,
     state::AppState,
 };
 use std::collections::HashSet;
@@ -34,12 +35,12 @@ fn index(conn: &rusqlite::Connection, poa: &PowerOfAttorneyDto, now: &str) -> Re
         &poa.id,
         &poa.internal_sequence,
         poa.official_number.as_deref(),
-        &normalize::normalize_text(&format!(
-            "{} {} {}",
-            poa.internal_sequence,
-            poa.official_number.clone().unwrap_or_default(),
-            client_names
-        )),
+        &search_service::power_of_attorney_index_text(
+            &poa.internal_sequence,
+            poa.official_number.as_deref(),
+            poa.notary_office.as_deref(),
+            &client_names,
+        ),
         now,
     )
 }
@@ -49,6 +50,15 @@ pub fn save<R: Runtime>(
     state: &AppState,
     input: PowerOfAttorneyInput,
 ) -> Result<PowerOfAttorneyDto, Error> {
+    // Numbers typed on an Arabic keyboard are stored with Latin digits (see clients).
+    let input = PowerOfAttorneyInput {
+        internal_sequence: normalize::ascii_digits(&input.internal_sequence),
+        official_number: input
+            .official_number
+            .as_deref()
+            .map(normalize::ascii_digits),
+        ..input
+    };
     let unique_clients = input.client_ids.iter().collect::<HashSet<_>>();
     if input.internal_sequence.trim().is_empty()
         || input.client_ids.is_empty()

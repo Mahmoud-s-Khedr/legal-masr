@@ -74,6 +74,7 @@ fn keyed_connection(path: &Path, master: &[u8; 32]) -> Result<Connection, Error>
     db.pragma_update(None, "key", format!("x'{}'", hex::encode(master)))?;
     db.busy_timeout(std::time::Duration::from_secs(10))?;
     db.execute_batch("PRAGMA cipher_memory_security = ON; PRAGMA foreign_keys = ON; SELECT count(*) FROM sqlite_master;")?;
+    crate::normalize::register_sql_functions(&db)?;
     Ok(db)
 }
 
@@ -148,6 +149,9 @@ pub fn latest_schema_version() -> i64 {
 }
 
 pub fn migrate(db: &Connection) -> Result<(), Error> {
+    // Queries use these helpers; connections opened without `keyed_connection` (such as
+    // in-memory test databases) get them here.
+    crate::normalize::register_sql_functions(db)?;
     if schema_version(db) > latest_schema_version() {
         return Err(Error::VaultNewerSchema);
     }
