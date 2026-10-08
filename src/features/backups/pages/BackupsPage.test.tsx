@@ -175,6 +175,27 @@ describe('BackupSettingsPanel', () => {
     await waitFor(() => expect(bridge.createBackup).toHaveBeenCalledTimes(2));
   });
 
+  it('offers none of the three actions while one of them is running, then all again', async () => {
+    let finish: () => void = () => undefined;
+    vi.mocked(bridge.createBackup).mockImplementation(
+      () => new Promise<string>((resolve) => (finish = () => resolve('backup-token'))),
+    );
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
+
+    expect(await screen.findByRole('button', { name: 'جارٍ إنشاء النسخة…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'اختيار ملف للفحص' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' })).toBeDisabled();
+    expect(bridge.validateBackup).not.toHaveBeenCalled();
+    expect(bridge.restoreBackup).not.toHaveBeenCalled();
+
+    finish();
+    expect(await screen.findByRole('button', { name: 'إنشاء نسخة احتياطية الآن' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'اختيار ملف للفحص' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' })).toBeEnabled();
+  });
+
   it('allows a retry after a failed backup', async () => {
     vi.mocked(bridge.createBackup).mockRejectedValueOnce(new Error('disk full'));
     renderPanel();

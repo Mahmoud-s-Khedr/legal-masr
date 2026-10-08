@@ -31,6 +31,9 @@ export function BackupSettingsPanel() {
   // `isPending` lags a render behind a click, so a quick second click would start a
   // second backup, or worse a second restore. Each action may run once at a time.
   const once = useSingleFlight();
+  // The guard is shared on purpose: a restore must never overlap a backup or a check. So while
+  // any of them runs, none of the three may be offered; otherwise a click would be dropped silently.
+  const busy = createBackup.isPending || validateBackup.isPending || restoreBackup.isPending;
   const createNow = () => once((settled) => createBackup.mutate(undefined, { onSettled: settled }));
 
   const validate = () =>
@@ -82,7 +85,7 @@ export function BackupSettingsPanel() {
           <h3>{t('backups.createTitle')}</h3>
           <p className="muted">{t('backups.createHint')}</p>
           <div className="form-actions">
-            <Button type="button" onClick={createNow} disabled={createBackup.isPending}>
+            <Button type="button" onClick={createNow} disabled={busy}>
               {createBackup.isPending ? t('backups.creating') : t('backups.createNow')}
             </Button>
           </div>
@@ -109,7 +112,7 @@ export function BackupSettingsPanel() {
               variant="secondary"
 
               onClick={validate}
-              disabled={validateBackup.isPending}
+              disabled={busy}
             >
               {validateBackup.isPending ? t('backups.validating') : t('backups.validate')}
             </Button>
@@ -135,7 +138,7 @@ export function BackupSettingsPanel() {
               variant="secondary"
               className="danger-outline"
               onClick={() => setRestoreOpen(true)}
-              disabled={restoreBackup.isPending}
+              disabled={busy}
             >
               {restoreBackup.isPending ? t('backups.restoring') : t('backups.restore')}
             </Button>
