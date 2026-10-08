@@ -647,7 +647,7 @@ async function run(language) {
           }
         });
         await button('settings.security.passwordTitle', 'form');
-        await h.wait('.error');
+        await h.wait('[role="alert"]');
         await h.browser.execute(() =>
           document.querySelectorAll('input[type="password"]').forEach((el) => (el.value = '')),
         );
@@ -693,7 +693,7 @@ async function run(language) {
         await h.selection('corrupt');
         await button('backups.restore');
         await button('backups.restoreConfirm', '.dialog-surface');
-        await h.wait('.error');
+        await h.wait('[role="alert"]');
         assert((await h.invoke('client_get', { id: client.id })).id === client.id);
         saveResult('corrupt-restore-preserves-records');
         await h.selection('backup');

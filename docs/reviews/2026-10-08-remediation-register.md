@@ -33,3 +33,5 @@ Corrections retained: picker deadlock and timeout overflow are rejected claims. 
 | H03 | 4           | open                  |
 
 No full implementation phase is marked accepted by these partial results. Physical supported-platform, cross-device and Egyptian legal-review gates remain blocking.
+
+The [UI replacement evidence](2026-10-08-ui-replacement.md) covers the shared-control and case-client work only. It closes none of the open security, backup, packaging or release items above.

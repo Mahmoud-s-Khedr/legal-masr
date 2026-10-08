@@ -83,13 +83,15 @@ must not flip (dates, identifiers, money, phones, filenames, versions) use
 
 ## Current gaps and release risks
 
-The illustrated-guide audit also confirmed that the case-client relationship
-panel is read-only: creation selects clients, but case editing preserves their
-relationships and does not expose client reassignment, legal-capacity editing,
-or POA selection. Expense-owned attachments are supported by Rust, but the
-expense dialogs do not expose an attachment-upload control. Client JSON export
-also remains a backend command without a visible UI action. The guide documents
-these limits rather than providing instructions for unavailable controls.
+Case relationships can be edited independently from the Parties tab. The editor
+requires at least one distinct existing client, preserves retained metadata,
+allows a client-owned POA, and displays archived retained selections. Removing a
+client who has case payments fails with `CASE_CLIENT_HAS_PAYMENTS`; relationships
+and the search index remain unchanged. The dedicated `case_set_clients` command
+updates relationships and indexing in one transaction without changing unrelated
+case fields. Expense-owned attachments are supported by Rust, but expense dialogs
+still do not expose attachment upload. Client JSON export remains a backend
+command without a visible UI action.
 
 - Backups are manual and saved to the app-data backup folder; there is no
   configurable destination, automatic schedule, retention policy, or history

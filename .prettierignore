@@ -6,3 +6,4 @@ pnpm-lock.yaml
 stitch_legal_masr_design_foundation/
 test-results/
 playwright-report/
+.agents/

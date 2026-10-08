@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './scripts',
   testMatch: 'visual-capture.spec.ts',
-  // 64 full-page captures run serially so that fixture data and viewport
+  // 68 full-page captures run serially so that fixture data and viewport
   // rendering remain deterministic even on a constrained CI worker.
   timeout: 180_000,
   forbidOnly: true,

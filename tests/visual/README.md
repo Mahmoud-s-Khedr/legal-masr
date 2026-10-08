@@ -10,12 +10,12 @@ so the extent is not yet established. Observed issues include Arabic content in
 English workflow pages and awkward contact-card wrapping. The candidate was
 presented for approval before a full visual audit. Treat these images as
 diagnostic review material, not an accepted design reference. Fixes are deferred;
-keep the manifest unapproved until all 64 images are audited, defects are
+keep the manifest unapproved until all 68 images are audited, defects are
 addressed and the user explicitly approves the resulting candidate. See
 [the visual follow-up](../../docs/test-hardening-handoff-2026-10-05.md#h1--first-visual-baseline-approval).
 
 Use `pnpm update:visual:canonical` with Docker to propose
-changes. Never run it in CI. The command makes all 64 assertions and then writes
+changes. Never run it in CI. The command makes all 68 assertions and then writes
 PNG dimensions and SHA-256 hashes to a candidate manifest. Review the entire
 matrix and record the approver, date, commit and design-reference limitations
 before changing status to approved. Do not accept a baseline using a copied
@@ -31,5 +31,5 @@ clock: 2026-10-03T09:00:00Z; timezone: Africa/Cairo; light theme; animations and
 caret disabled; fonts and route content loaded. PNGs are full-page, so their
 height can exceed the viewport. Width must match it exactly.
 
-Open [the offline review gallery](review.html) to inspect all 64 candidates. Original
+Open [the offline review gallery](review.html) to inspect all 68 candidates. Original
 Stitch reference assets are absent, so their pixel/design parity is unverified.

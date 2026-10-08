@@ -105,23 +105,24 @@ code, and Rust allow-listed diagnostic detail.
 `src/app/router.tsx` defines the workspace routes. `Shell` wraps the router
 once the vault is unlocked.
 
-| Route                     | Page            | Primary capabilities                                                          |
-| ------------------------- | --------------- | ----------------------------------------------------------------------------- |
-| `/`                       | Today dashboard | Today’s hearings/tasks, overdue tasks, upcoming hearings, quick actions       |
-| `/calendar`               | Agenda          | Month/week/list hearing views and hearing workflows                           |
-| `/clients`                | Client list     | Search/filter, archive state, open/create clients                             |
-| `/clients/new`            | New client      | Create a client and handle probable duplicates                                |
-| `/clients/:id`            | Client detail   | Summary, linked records, attachments, account, edit/archive/restore/export    |
-| `/powers-of-attorney`     | POA list        | List, search, create, archive/restore POAs                                    |
-| `/powers-of-attorney/:id` | POA detail      | Clients, lawyers, linked cases, attachments, edit/archive/restore             |
-| `/cases`                  | Case list       | Search/filter by status/client/archive state                                  |
-| `/cases/new`              | New case        | Create canonical case and client relationships                                |
-| `/cases/:id`              | Case detail     | Summary, parties, hearings, tasks, attachments, account, edit/archive/restore |
-| `/tasks`                  | Tasks           | Derived views and task create/edit/complete/reopen/delete workflows           |
-| `/finances`               | Finance         | Payments, expenses, filtering, add/edit workflows                             |
-| `/attachments`            | Attachment page | Managed attachment listing and operations                                     |
-| `/backups`                | Backup page     | Create, validate, and restore backups                                         |
-| `/settings`               | Settings        | Profile, preferences, security, privacy, backup, and about controls           |
+| Route                     | Page                  | Primary capabilities                                                          |
+| ------------------------- | --------------------- | ----------------------------------------------------------------------------- |
+| `/`                       | Today dashboard       | Today’s hearings/tasks, overdue tasks, upcoming hearings, quick actions       |
+| `/calendar`               | Agenda                | Month/week/list hearing views and hearing workflows                           |
+| `/clients`                | Client list           | Search/filter, archive state, open/create clients                             |
+| `/clients/new`            | New client            | Create a client and handle probable duplicates                                |
+| `/clients/:id`            | Client detail         | Summary, linked records, attachments, account, edit/archive/restore/export    |
+| `/powers-of-attorney`     | POA list              | List, search, create, archive/restore POAs                                    |
+| `/powers-of-attorney/new` | New power of attorney | Dedicated creation workflow with client chips and inline creation             |
+| `/powers-of-attorney/:id` | POA detail            | Clients, lawyers, linked cases, attachments, edit/archive/restore             |
+| `/cases`                  | Case list             | Search/filter by status/client/archive state                                  |
+| `/cases/new`              | New case              | Create canonical case and client relationships                                |
+| `/cases/:id`              | Case detail           | Summary, parties, hearings, tasks, attachments, account, edit/archive/restore |
+| `/tasks`                  | Tasks                 | Derived views and task create/edit/complete/reopen/delete workflows           |
+| `/finances`               | Finance               | Payments, expenses, filtering, add/edit workflows                             |
+| `/attachments`            | Attachment page       | Managed attachment listing and operations                                     |
+| `/backups`                | Backup page           | Create, validate, and restore backups                                         |
+| `/settings`               | Settings              | Profile, preferences, security, privacy, backup, and about controls           |
 
 ### Shell behavior
 
@@ -232,10 +233,10 @@ record can render.
 The frontend performs usability validation but does not act as the business
 authority.
 
-- Onboarding, client, case, and settings forms use React Hook Form and Zod
-  schemas.
-- Focused dialogs and simple editors also use local React state where that is
-  clearer.
+- Data-entry forms use React Hook Form and Zod schemas, including focused
+  hearing, decision, task, finance, relationship, attachment, and password editors.
+- Official Field compositions associate labels and errors; DraftForm isolates
+  nested portal submissions and holds a submission lock until the save settles.
 - Rust validates every submitted input again before persistence.
 
 Examples of frontend assistance:
@@ -247,7 +248,9 @@ Examples of frontend assistance:
   units;
 - payment forms load the selected case and show only that case's linked clients
   as possible payers;
-- date fields use native date controls but Rust also rejects invalid dates.
+- date fields use Calendar and Popover with editable date text, Arabic-digit
+  normalization, preferences for date formatting/week start, and canonical
+  timezone-free values; Rust also rejects invalid dates.
 
 ## 8. Feature modules
 
@@ -393,3 +396,27 @@ include seeded visual sign-off at the target viewports, portable cross-device
 restore validation, automatic backup/retention/history, restore preview,
 complete documented exports, permanent deletion flows, a redacted support
 bundle, physical Windows/macOS validation, and privacy legal review.
+
+## UI replacement (2026-10-08)
+
+The shared primitive directory contains official shadcn Base UI components from
+`@shadcn` using `base-nova`, Tabler icons, RTL, and semantic LegalMaster theme
+variables. The root TypeScript alias matches Vite. Application-specific
+compositions live in `src/components/forms`: FormDialog, FormField, EntityPicker,
+EntityMultiPicker, CreatableCombobox, DatePicker, TimeField, AmountInput,
+DraftForm, and RecordTable. There is no compatibility layer for old primitives.
+
+Search uses Base UI Autocomplete inside an official Dialog. Drawer and search
+roots are independent. Text searches debounce by 250 ms and result keys track
+the debounced query. Entity pickers store IDs and support name/number/phone
+matching. Payment payers are restricted to the selected case. Inline client
+creation uses a separate dialog and preserves the parent draft on cancellation
+or failure. Record tables use TanStack Table with sorting and local 25-row
+pagination; pagination does not imply backend server pagination.
+
+The `caseSetClients` mutation invalidates both previous and resulting client,
+POA, case, financial, and search query relationships after a successful commit.
+The bridge introduces no renderer permissions or generic access mechanism.
+
+See [UI replacement evidence](reviews/2026-10-08-ui-replacement.md) for validation,
+registry provenance, screenshots, and platform limitations.

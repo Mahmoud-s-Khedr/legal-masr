@@ -142,7 +142,7 @@ async function scenario(name, exercise) {
     const diagnosticMessage =
       stage === 'scenario' && browser
         ? await browser
-            .$('.error')
+            .$('[role="alert"]')
             .getText()
             .catch(() => '')
         : '';
@@ -175,8 +175,12 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.nav('/cases');
   await h.click('إضافة قضية');
   await h.input('internalNumber', 'E2E-CASE');
-  await h.browser.$('[role="checkbox"]').waitForDisplayed();
-  await h.browser.$('[role="checkbox"]').click();
+  const picker = await h.browser.$('[data-slot="combobox-chip-input"]');
+  await picker.waitForDisplayed();
+  await picker.click();
+  await picker.setValue('E2E-ORIGINAL');
+  await h.browser.$('[role="option"]').waitForDisplayed();
+  await h.browser.$('[role="option"]').click();
   await h.click('حفظ القضية');
   // Saving opens the new case file.
   await h.browser.$('h2*=E2E-CASE').waitForDisplayed({ timeout: 15000 });
@@ -234,7 +238,7 @@ for (const choice of ['cancel', 'corrupt'])
     await h.nav('/backups');
     await h.click('استعادة من نسخة احتياطية');
     await h.click('تأكيد الاستعادة');
-    await h.browser.$('.error').waitForDisplayed({ timeout: 15000 });
+    await h.browser.$('[role="alert"]').waitForDisplayed({ timeout: 15000 });
     await h.nav('/clients');
     await h.browser.$('a*=E2E-PRESERVED').waitForDisplayed();
   });
@@ -247,9 +251,10 @@ await scenario('restart-persistence', async (h) => {
   await h.nav('/clients');
   await h.browser.$('a*=E2E-PERSISTENT').waitForDisplayed();
 });
-await mkdir('test-results/desktop', { recursive: true });
+const outputDirectory = process.env.LEGALMASTER_E2E_OUTPUT_DIRECTORY ?? 'test-results/desktop';
+await mkdir(outputDirectory, { recursive: true });
 await writeFile(
-  'test-results/desktop/results.json',
+  join(outputDirectory, 'results.json'),
   JSON.stringify(
     {
       platform: process.platform,

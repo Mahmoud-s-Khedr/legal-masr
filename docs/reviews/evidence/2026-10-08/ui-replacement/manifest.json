@@ -1,0 +1,258 @@
+{
+  "fixture": "synthetic capture bridge",
+  "base": "http://127.0.0.1:4173",
+  "captures": [
+    {
+      "file": "case-new-ar-1440x900.png",
+      "route": "/cases/new",
+      "locale": "ar",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "calendar-ar-1440x900.png",
+      "route": "/cases/new",
+      "locale": "ar",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "clients-ar-1440x900.png",
+      "route": "/clients",
+      "locale": "ar",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "poa-ar-1440x900.png",
+      "route": "/powers-of-attorney",
+      "locale": "ar",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "finance-ar-1440x900.png",
+      "route": "/finances",
+      "locale": "ar",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "settings-ar-1440x900.png",
+      "route": "/settings",
+      "locale": "ar",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "case-detail-ar-1440x900.png",
+      "route": "/cases/demo-case-14",
+      "locale": "ar",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "case-new-ar-1366x768.png",
+      "route": "/cases/new",
+      "locale": "ar",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "calendar-ar-1366x768.png",
+      "route": "/cases/new",
+      "locale": "ar",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "clients-ar-1366x768.png",
+      "route": "/clients",
+      "locale": "ar",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "poa-ar-1366x768.png",
+      "route": "/powers-of-attorney",
+      "locale": "ar",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "finance-ar-1366x768.png",
+      "route": "/finances",
+      "locale": "ar",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "settings-ar-1366x768.png",
+      "route": "/settings",
+      "locale": "ar",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "case-detail-ar-1366x768.png",
+      "route": "/cases/demo-case-14",
+      "locale": "ar",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "case-new-en-1440x900.png",
+      "route": "/cases/new",
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "calendar-en-1440x900.png",
+      "route": "/cases/new",
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "clients-en-1440x900.png",
+      "route": "/clients",
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "poa-en-1440x900.png",
+      "route": "/powers-of-attorney",
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "finance-en-1440x900.png",
+      "route": "/finances",
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "settings-en-1440x900.png",
+      "route": "/settings",
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "case-detail-en-1440x900.png",
+      "route": "/cases/demo-case-14",
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "case-new-en-1366x768.png",
+      "route": "/cases/new",
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "calendar-en-1366x768.png",
+      "route": "/cases/new",
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "clients-en-1366x768.png",
+      "route": "/clients",
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "poa-en-1366x768.png",
+      "route": "/powers-of-attorney",
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "finance-en-1366x768.png",
+      "route": "/finances",
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "settings-en-1366x768.png",
+      "route": "/settings",
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "case-detail-en-1366x768.png",
+      "route": "/cases/demo-case-14",
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    }
+  ]
+}

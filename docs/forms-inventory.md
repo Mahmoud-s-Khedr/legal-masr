@@ -52,7 +52,7 @@ This inventory describes the user-facing data-entry, access, and settings forms 
 - Closing date
 - Subject / summary
 - Notes
-- Linked clients — at least one is **required** when creating a case
+- Linked clients — at least one is **required**; searchable multi-selection stores IDs
 
 **Code evidence:** [CaseCreateForm.tsx](../src/features/cases/forms/CaseCreateForm.tsx), [CaseEditForm.tsx](../src/features/cases/forms/CaseEditForm.tsx), and [CaseCoreFields.tsx](../src/features/cases/forms/CaseCoreFields.tsx)
 
@@ -206,3 +206,29 @@ Editing an attachment changes only its category, description, and document date.
 ## Other interactive controls
 
 The application also has non-data-entry controls: global search; client, case, and power-of-attorney archive filters; task and finance case/client filters; agenda date/view selection; and backup create, validate, and restore confirmation.
+
+## Shared controls and case relationship editor (2026-10-08)
+
+Data-entry forms use React Hook Form, Zod, and official Field/FieldGroup
+compositions. Failed saves retain drafts; duplicate submissions and portal child
+submissions are isolated by DraftForm. FormDialog provides size variants,
+scrolling, and a persistent action footer.
+
+Case Parties → Clients in this case → Edit exposes linked client chips and each
+relationship's legal capacity, optional client-owned POA, and notes. Archived
+retained relationships remain visible; new archived clients cannot be added.
+Removing a payer fails without changing stored links. Relationship edits use
+`case_set_clients`, independently from the core case form.
+
+POA creation lives at `/powers-of-attorney/new`; editing uses a large FormDialog.
+Case and POA client pickers search names, internal numbers, and phones. Inline
+creation prefills the typed name, supports duplicate confirmation, selects the
+created client, and leaves the parent draft intact on failure or cancellation.
+
+Date fields use Calendar/Popover with month/year selection, Today, optional
+Clear, accessible full date labels, Western-digit output, and Arabic-digit input.
+TimeField suggests 15-minute intervals and accepts exact `HH:mm`. AmountInput
+shows EGP and parses decimal text to integer minor units at submission.
+Court, circuit, case/hearing type, notary, and legal capacity use free-text
+comboboxes with suggestions from existing records. Reminder and lock presets
+retain saved custom values.

@@ -59,7 +59,7 @@ async function fixture(t) {
 }
 test('accepts every unique combination and requires explicit approval for release', async (t) => {
   const { root, manifest, save } = await fixture(t);
-  assert.equal((await verifyManifest(root)).captures.length, 64);
+  assert.equal((await verifyManifest(root)).captures.length, 68);
   await assert.rejects(verifyManifest(root, { requireApproval: true }), /approval/);
   manifest.status = 'approved';
   await save();

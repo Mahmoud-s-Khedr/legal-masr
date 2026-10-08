@@ -65,8 +65,9 @@ export async function verifyManifest(root = baselineRoot, { requireApproval = fa
     throw new Error('Visual baseline awaits user approval');
   if (!['candidate', 'approved'].includes(manifest.status))
     throw new Error('Invalid baseline status');
-  if (!Array.isArray(manifest.captures) || manifest.captures.length !== 64)
-    throw new Error('Expected 64 visual captures');
+  const expectedCount = routes.length * languages.length * viewports.length;
+  if (!Array.isArray(manifest.captures) || manifest.captures.length !== expectedCount)
+    throw new Error(`Expected ${expectedCount} visual captures`);
   const expected = new Set(
     routes.flatMap(([route]) =>
       languages.flatMap((language) =>

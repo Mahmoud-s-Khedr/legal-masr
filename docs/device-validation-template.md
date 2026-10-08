@@ -34,6 +34,16 @@
 | Windows→macOS portable restore      | blocked | Archive requires the original random master key; original password alone is insufficient |           |
 | macOS→Windows portable restore      | blocked | Repeat after portable restore redesign; copied security envelope is not a pass           |           |
 
+UI replacement checks (run on each of Windows and macOS with fictional data):
+
+| Check                                                                   | Result  | Notes |
+| ----------------------------------------------------------------------- | ------- | ----- |
+| Arabic RTL and English LTR layouts of case, POA, finance dialogs        | pending |       |
+| Arabic-digit typing in DatePicker, TimeField and AmountInput            | pending |       |
+| Entity pickers: keyboard selection, clear, inline client create, cancel | pending |       |
+| Nested overlays (search dialog, client dialog over form) restore focus  | pending |       |
+| Case client editing, including rejection when a client has payments     | pending |       |
+
 For each restore iteration record pre/post fictional record expectations,
 attachment byte checksum, original-source checksum, locked gate, and restart
 result. Keep all archives local. Do not include document paths or secrets here.
