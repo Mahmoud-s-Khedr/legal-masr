@@ -174,10 +174,16 @@ async function scenario(name, exercise) {
     await click('متابعة إلى مساحة العمل');
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
   };
-  const unlock = async () => {
+  const unlock = async (submit = 'فتح') => {
     await input('password', password);
-    await click('فتح');
+    await click(submit);
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
+  };
+  const createBackup = async () => {
+    await click('إنشاء نسخة احتياطية الآن');
+    await browser
+      .$('p.success*=تم إنشاء النسخة الاحتياطية «LegalMasr-backup-')
+      .waitForDisplayed({ timeout: 15000 });
   };
   const client = async (number) => {
     await nav('/clients');
@@ -203,6 +209,7 @@ async function scenario(name, exercise) {
       waitText,
       initialize,
       unlock,
+      createBackup,
       client,
       checkpoint(value) {
         checkpoint = value;
@@ -283,17 +290,20 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.browser.$('.attachment-rows').waitForDisplayed({ timeout: 15000 });
   h.checkpoint('create-backup');
   await h.nav('/backups');
-  await h.click('إنشاء نسخة احتياطية الآن');
-  await h.waitText('تم إنشاء النسخة الاحتياطية بنجاح.');
+  await h.createBackup();
   h.checkpoint('edit-after-backup');
   await h.client('E2E-AFTER');
   h.checkpoint('restore-backup');
   await h.selection('backup');
   await h.nav('/backups');
-  await h.click('استعادة من نسخة احتياطية');
+  await h.click('اختيار نسخة للاستعادة…');
+  // The backup's date and contents are shown before anything is replaced.
+  await h.browser.$('[role="alertdialog"]*=LegalMasr-backup-').waitForDisplayed({ timeout: 15000 });
   await h.click('تأكيد الاستعادة');
   await h.browser.$('.gate').waitForDisplayed({ timeout: 15000 });
   h.checkpoint('unlock-restored-vault');
+  // The password screen says why it appeared.
+  await h.waitText('تمت استعادة النسخة الاحتياطية. أدخل كلمة المرور لفتح البيانات المستعادة.');
   await h.unlock();
   h.checkpoint('verify-restored-records');
   await h.nav('/clients');
@@ -326,12 +336,52 @@ for (const choice of ['cancel', 'corrupt'])
     await h.client('E2E-PRESERVED');
     await h.selection(choice);
     await h.nav('/backups');
-    await h.click('استعادة من نسخة احتياطية');
-    await h.click('تأكيد الاستعادة');
-    await h.browser.$('[role="alert"]').waitForDisplayed({ timeout: 15000 });
+    await h.click('اختيار نسخة للاستعادة…');
+    if (choice === 'corrupt') {
+      await h.browser.$('[role="alert"]').waitForDisplayed({ timeout: 15000 });
+    } else {
+      // Closing the file dialog is not a failure: nothing is shown.
+      await h.browser
+        .$('//button[normalize-space(.)="اختيار نسخة للاستعادة…"]')
+        .waitForEnabled({ timeout: 15000 });
+      assert.equal(await h.browser.$('[role="alert"]').isExisting(), false);
+    }
+    // Neither file ever reaches the confirmation.
+    assert.equal(await h.browser.$('[role="alertdialog"]').isExisting(), false);
     await h.nav('/clients');
     await h.browser.$('a*=E2E-PRESERVED').waitForDisplayed();
   });
+// Moving to a new computer: the backup saved to a flash drive opens on an installation
+// that has never had a vault, with the password in use when it was made.
+await scenario('backup-moves-to-a-new-computer', async (h) => {
+  await h.initialize();
+  await h.client('E2E-MOVED');
+  await h.nav('/backups');
+  await h.createBackup();
+  h.checkpoint('save-copy');
+  await h.selection('save');
+  await h.click('حفظ نسخة في مكان آخر…');
+  await h.waitText('تم حفظ نسخة باسم «copy.lmsbackup».');
+  await h.close();
+  h.checkpoint('new-computer');
+  await rm(join(h.root, 'vault'), { recursive: true, force: true });
+  await h.selection('portable');
+  await h.launch();
+  await h.click('لديّ نسخة احتياطية من جهاز آخر');
+  await h.click('اختيار ملف النسخة الاحتياطية…');
+  await h.waitText('الملف المختار: copy.lmsbackup');
+  h.checkpoint('wrong-password');
+  await h.input('password', 'fictional incorrect password');
+  await h.click('استعادة البيانات');
+  await h.browser.$('[role="alert"]').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('restore-on-new-computer');
+  await h.unlock('استعادة البيانات');
+  await h.nav('/clients');
+  await h.browser.$('a*=E2E-MOVED').waitForDisplayed();
+  h.checkpoint('reopen-restored');
+  await h.click('قفل التطبيق');
+  await h.unlock();
+});
 // The other journeys stub the picker. This one opens the real native dialog: a picker
 // awaited on the UI thread used to freeze the window for good. Linux only, because it
 // needs xdotool to press Escape in the dialog.

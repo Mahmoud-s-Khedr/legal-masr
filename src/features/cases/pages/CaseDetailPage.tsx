@@ -615,7 +615,7 @@ export function CaseDetailPage() {
                   .catch(() => undefined);
               })}
             >
-              <FieldGroup>
+              <FieldGroup className="inline-form-row">
                 <Field
                   label={<>{t('cases.detail.feeLabel')}</>}
                   error={feeForm.formState.errors.amount ? t('cases.detail.feeInvalid') : undefined}

@@ -321,8 +321,9 @@ function HearingRow({
   t: Translate;
 }) {
   const place = [hearing.location, hearing.circuitName].filter(Boolean).join(' · ');
+  const decided = hearing.status === 'COMPLETED';
   return (
-    <li>
+    <li className={decided ? 'is-decided' : undefined}>
       <time className={time ? undefined : 'all-day'}>{time ?? t('dashboard.allDay')}</time>
       <div>
         <Link to={`/calendar?hearing=${hearing.id}`}>
@@ -330,10 +331,16 @@ function HearingRow({
         </Link>
         <span dir="auto">{caseContext(caseItem, t)}</span>
         {place && <span dir="auto">{place}</span>}
-        {hearing.requiredDocuments && (
-          <small className="preparation-context" dir="auto">
-            {t('dashboard.preparation')}: {hearing.requiredDocuments}
+        {decided ? (
+          <small className="decision-context" dir="auto">
+            {t('dashboard.decision')}: {hearing.decisionText ?? t('agenda.decisionRecorded')}
           </small>
+        ) : (
+          hearing.requiredDocuments && (
+            <small className="preparation-context" dir="auto">
+              {t('dashboard.preparation')}: {hearing.requiredDocuments}
+            </small>
+          )
         )}
       </div>
     </li>

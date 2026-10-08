@@ -282,6 +282,20 @@ export async function captureInvoke<T>(command: string): Promise<T> {
       },
     ],
     backup_latest_successful: { completedAt: stamp, archiveSizeBytes: 12000 },
+    backup_create: 'LegalMasr-backup-2026-10-08-1052.lmsbackup',
+    backup_save_copy: 'LegalMasr-backup-2026-10-08-1052.lmsbackup',
+    backup_validate: {
+      token: null,
+      fileName: 'LegalMasr-backup-2026-10-08-1052.lmsbackup',
+      createdAt: stamp,
+      documentCount: 1,
+    },
+    backup_inspect_restore: {
+      token: 'fixture-restore-token',
+      fileName: 'LegalMasr-backup-2026-10-08-1052.lmsbackup',
+      createdAt: stamp,
+      documentCount: 1,
+    },
     fee_agreement_save: {
       id: 'demo-fee-1',
       caseId: caseItem.id,

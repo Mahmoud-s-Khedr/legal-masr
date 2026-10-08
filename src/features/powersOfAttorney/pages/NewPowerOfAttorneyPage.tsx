@@ -10,23 +10,29 @@ export function NewPowerOfAttorneyPage() {
   const navigate = useNavigate();
   const save = useSavePowerOfAttorney();
   return (
-    <section className="work-page">
-      <PageHeader title={t('poa.add')} />
-      <PowerOfAttorneyForm
-        busy={save.isPending}
-        onCancel={() => navigate('/powers-of-attorney')}
-        onSubmit={async (input) => {
-          const poa = await save.mutateAsync(input);
-          navigate(`/powers-of-attorney/${poa.id}`);
-        }}
+    <section className="record-editor">
+      <PageHeader
+        kicker={t('poa.kicker')}
+        title={t('poa.add')}
+        description={t('poa.editorDescription')}
       />
-      {save.isError && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {actionableErrorMessage(save.error, t('poa.saveError'))}
-          </AlertDescription>
-        </Alert>
-      )}
+      <div className="editor-surface">
+        <PowerOfAttorneyForm
+          busy={save.isPending}
+          onCancel={() => navigate('/powers-of-attorney')}
+          onSubmit={async (input) => {
+            const poa = await save.mutateAsync(input);
+            navigate(`/powers-of-attorney/${poa.id}`);
+          }}
+        />
+        {save.isError && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {actionableErrorMessage(save.error, t('poa.saveError'))}
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
     </section>
   );
 }

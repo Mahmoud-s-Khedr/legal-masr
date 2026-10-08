@@ -144,7 +144,7 @@ export function CaseListPage() {
                     )}
                   </td>
                   <td className="cell-wrap">{caseSummary.clientNames.join('، ') || '—'}</td>
-                  <td className="cell-wrap">
+                  <td className="cell-wrap cell-narrow">
                     {caseSummary.courtName ? (
                       <bdi dir="auto">{caseSummary.courtName}</bdi>
                     ) : (
@@ -160,7 +160,7 @@ export function CaseListPage() {
                       >
                         <bdi>{format.date(caseSummary.nextHearingDate)}</bdi>
                         {caseSummary.nextHearingDate < today && (
-                          <small> · {t('cases.pendingDecision')}</small>
+                          <small>{t('cases.pendingDecision')}</small>
                         )}
                       </span>
                     ) : (

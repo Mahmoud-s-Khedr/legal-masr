@@ -10,6 +10,8 @@ pub fn summary<R: Runtime>(
     state: &AppState,
     today: &str,
 ) -> Result<DashboardSummary, Error> {
+    // A hearing whose decision is already recorded stays on today's list: the lawyer was
+    // in court today. Only cancelled hearings drop off.
     let today_hearings = hearing_service::list(
         app,
         state,
@@ -17,9 +19,12 @@ pub fn summary<R: Runtime>(
             case_id: None,
             from_date: Some(today.into()),
             to_date: Some(today.into()),
-            status: Some("SCHEDULED".into()),
+            status: None,
         },
-    )?;
+    )?
+    .into_iter()
+    .filter(|hearing| hearing.status != "CANCELLED")
+    .collect();
     let upcoming_hearings = hearing_service::list(
         app,
         state,

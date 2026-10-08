@@ -92,12 +92,15 @@ export function AttachmentPanel({
   allowAdd = true,
   showOwner = false,
   readOnly = false,
+  startAdding = false,
 }: {
   owner: AttachmentListInput;
   title?: string;
   description?: string;
   allowAdd?: boolean;
   showOwner?: boolean;
+  /** Opens the add form once, e.g. after choosing the record on the documents page. */
+  startAdding?: boolean;
   /** Open and show-in-folder stay available; edit and remove are hidden. */
   readOnly?: boolean;
 }) {
@@ -111,6 +114,11 @@ export function AttachmentPanel({
   const open = useOpenAttachment();
   const reveal = useRevealAttachment();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [startHandled, setStartHandled] = useState(false);
+  if (startAdding && allowAdd && !readOnly && !startHandled) {
+    setStartHandled(true);
+    setDialogOpen(true);
+  }
   const [source, setSource] = useState<{ token: string; filename: string } | null>(null);
   const form = useForm<z.infer<typeof attachmentDraftSchema>>({
     resolver: zodResolver(attachmentDraftSchema),
@@ -403,21 +411,20 @@ export function AttachmentPanel({
             </Field>
             <FormDialogFooter>
               <Button
-                type="button"
-                variant="secondary"
-
-                disabled={add.isPending || update.isPending}
-                onClick={close}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
                 type="submit"
                 disabled={
                   pickerPending || add.isPending || update.isPending || (!editingId && !source)
                 }
               >
                 {editingId ? t('records.saveEdits') : t('documents.save')}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={add.isPending || update.isPending}
+                onClick={close}
+              >
+                {t('common.cancel')}
               </Button>
             </FormDialogFooter>
           </FieldGroup>

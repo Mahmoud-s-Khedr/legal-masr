@@ -1,8 +1,16 @@
 use legalmaster_lib::{
     backup, db,
-    dto::{InitializeInput, LawyerProfileDto, SettingsUpdateInput},
+    dto::{
+        CaseClientInput, CaseCreateInput, ClientCreateInput, ClientListInput, HearingDecisionInput,
+        HearingInput, InitializeInput, LawyerProfileDto, SettingsUpdateInput,
+    },
+    errors::Error,
     security,
-    services::{app_service, backup_service, settings_service},
+    services::{
+        app_service,
+        backup_service::{self, BackupSecret},
+        case_service, client_service, dashboard_service, hearing_service, settings_service,
+    },
     state::AppState,
 };
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -134,10 +142,16 @@ fn onboarding_reaches_an_unlocked_ready_state_with_no_backup_gate() {
         settings_service::get(handle, &state).expect("settings should be readable once unlocked");
     assert_eq!(settings.language, "ar");
 
-    let backup_path = backup_service::create(handle, &state)
+    let backup_name = backup_service::create(handle, &state, "2026-10-08-1052")
         .expect("backup_create must succeed against the auto-computed backup directory");
-    assert!(std::path::Path::new(&backup_path).exists());
-    backup::validate(&backup_path, &state.unlocked().unwrap())
+    assert_eq!(backup_name, "LegalMasr-backup-2026-10-08-1052.lmsbackup");
+    let backup_path = db::app_dir(handle)
+        .unwrap()
+        .join("Backups")
+        .join(&backup_name);
+    assert!(backup_path.exists());
+    assert_eq!(backup_service::latest_file(handle).unwrap(), backup_path);
+    backup::validate(&backup_path.to_string_lossy(), &state.unlocked().unwrap())
         .expect("the freshly created backup must validate");
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
@@ -387,5 +401,329 @@ fn password_change_requires_an_unlocked_session_and_correct_current_password() {
     app_service::lock(&state).unwrap();
     assert!(app_service::unlock(app.handle(), &state, "a secure local password").is_err());
     app_service::unlock(app.handle(), &state, "new secure local password").unwrap();
+    std::fs::remove_dir_all(db::app_dir(app.handle()).unwrap()).unwrap();
+}
+
+fn client_names(app: &tauri::App<tauri::test::MockRuntime>, state: &AppState) -> Vec<String> {
+    client_service::list(
+        app.handle(),
+        state,
+        ClientListInput {
+            query: None,
+            include_archived: true,
+        },
+    )
+    .unwrap()
+    .into_iter()
+    .map(|client| client.full_name)
+    .collect()
+}
+
+/// An office with one client and one backup of it, copied outside the app's folder (as on
+/// a flash drive). Returns the copy and the recovery key.
+fn office_backup(outside: &std::path::Path) -> (std::path::PathBuf, String) {
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let state: State<AppState> = app.state();
+    let recovery = app_service::initialize(app.handle(), &state, setup_input())
+        .unwrap()
+        .recovery_key;
+    client_service::create(
+        app.handle(),
+        &state,
+        ClientCreateInput {
+            internal_number: "C-1".into(),
+            full_name: "موكل تجريبي".into(),
+            national_id: None,
+            primary_phone: None,
+            email: None,
+            address: None,
+            notes: None,
+            confirm_duplicate: false,
+        },
+    )
+    .unwrap();
+    let name = backup_service::create(app.handle(), &state, "2026-10-08-1052").unwrap();
+    let copy = outside.join("office.lmsbackup");
+    std::fs::copy(
+        db::app_dir(app.handle())
+            .unwrap()
+            .join("Backups")
+            .join(name),
+        &copy,
+    )
+    .unwrap();
+    std::fs::remove_dir_all(db::app_dir(app.handle()).unwrap()).unwrap();
+    (copy, recovery)
+}
+
+#[test]
+fn a_backup_restores_on_a_new_installation_with_its_password_or_recovery_key() {
+    let _guard = lock_app_dir();
+    let outside = tempfile::tempdir().unwrap();
+    let (copy, recovery) = office_backup(outside.path());
+
+    for secret in ["password", "recovery key"] {
+        let app = fresh_mock_app();
+        app.manage(AppState::default());
+        let state: State<AppState> = app.state();
+        backup_service::ensure_new_installation(app.handle()).unwrap();
+        backup_service::ensure_portable(&copy).unwrap();
+        let (opening, password) = if secret == "password" {
+            (
+                BackupSecret::Password("a secure local password"),
+                "a secure local password",
+            )
+        } else {
+            (
+                BackupSecret::RecoveryKey {
+                    key: &recovery,
+                    new_password: "a brand new office password",
+                },
+                "a brand new office password",
+            )
+        };
+        backup_service::restore_new_vault(app.handle(), &state, &copy, opening, "ar")
+            .unwrap_or_else(|error| panic!("restore with the {secret} failed: {error:?}"));
+
+        let status = app_service::get_status(app.handle(), &state).unwrap();
+        assert!(status.initialized && status.unlocked, "{secret}");
+        assert_eq!(client_names(&app, &state), vec!["موكل تجريبي"]);
+        // The office's own profile comes back, not the placeholder made for the restore.
+        assert_eq!(
+            settings_service::get_profile(app.handle(), &state)
+                .unwrap()
+                .full_name,
+            "Synthetic lawyer"
+        );
+        // The restored vault opens with the backup's password, or the new one chosen with
+        // the recovery key, from now on.
+        app_service::lock(&state).unwrap();
+        app_service::unlock(app.handle(), &state, password).unwrap();
+        assert!(matches!(
+            backup_service::ensure_new_installation(app.handle()),
+            Err(Error::Initialized)
+        ));
+    }
+    let app = fresh_mock_app();
+    std::fs::remove_dir_all(db::app_dir(app.handle()).unwrap()).unwrap();
+}
+
+#[test]
+fn a_wrong_secret_or_an_old_backup_leaves_the_new_installation_empty() {
+    let _guard = lock_app_dir();
+    let outside = tempfile::tempdir().unwrap();
+    let (copy, _) = office_backup(outside.path());
+
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let state: State<AppState> = app.state();
+    for opening in [
+        BackupSecret::Password("not the password at all"),
+        BackupSecret::RecoveryKey {
+            key: "AAAA-BBBB-CCCC-DDDD",
+            new_password: "a brand new office password",
+        },
+    ] {
+        assert!(matches!(
+            backup_service::restore_new_vault(app.handle(), &state, &copy, opening, "ar"),
+            Err(Error::BackupSecretInvalid)
+        ));
+    }
+    for opening in [
+        BackupSecret::Password(""),
+        // With the recovery key a new password of at least 12 characters is required.
+        BackupSecret::RecoveryKey {
+            key: "AAAA-BBBB-CCCC-DDDD",
+            new_password: "short",
+        },
+    ] {
+        assert!(matches!(
+            backup_service::restore_new_vault(app.handle(), &state, &copy, opening, "ar"),
+            Err(Error::Validation)
+        ));
+    }
+    let status = app_service::get_status(app.handle(), &state).unwrap();
+    assert!(!status.initialized && !status.unlocked);
+    backup_service::ensure_new_installation(app.handle()).unwrap();
+
+    // A backup made before backups carried their key envelope cannot be opened here.
+    let master = [7u8; 32];
+    let old_dir = tempfile::tempdir().unwrap();
+    let old_db = old_dir.path().join("legalmaster.sqlite");
+    db::migrate(&db::create_db(&old_db, &master).unwrap()).unwrap();
+    let documents = old_dir.path().join("attachments");
+    std::fs::create_dir(&documents).unwrap();
+    let old_backup = backup::create(
+        &old_db,
+        &master,
+        old_dir.path().to_str().unwrap(),
+        &documents,
+        "2026-10-08-1052",
+        None,
+    )
+    .unwrap();
+    assert!(matches!(
+        backup_service::ensure_portable(std::path::Path::new(&old_backup)),
+        Err(Error::BackupNotPortable)
+    ));
+    assert!(matches!(
+        backup_service::restore_new_vault(
+            app.handle(),
+            &state,
+            std::path::Path::new(&old_backup),
+            BackupSecret::Password("a secure local password"),
+            "ar"
+        ),
+        Err(Error::BackupNotPortable)
+    ));
+    assert!(
+        !app_service::get_status(app.handle(), &state)
+            .unwrap()
+            .initialized
+    );
+    std::fs::remove_dir_all(db::app_dir(app.handle()).unwrap()).ok();
+}
+
+#[test]
+fn a_backup_from_another_office_is_named_as_such_not_as_damaged() {
+    let _guard = lock_app_dir();
+    let outside = tempfile::tempdir().unwrap();
+    let (copy, _) = office_backup(outside.path());
+
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let state: State<AppState> = app.state();
+    app_service::initialize(app.handle(), &state, setup_input()).unwrap();
+    assert!(matches!(
+        backup_service::inspect(app.handle(), &state, &copy),
+        Err(Error::BackupFromOtherVault)
+    ));
+    let own = backup_service::create(app.handle(), &state, "2026-10-09-0900").unwrap();
+    let own_path = db::app_dir(app.handle())
+        .unwrap()
+        .join("Backups")
+        .join(&own);
+    let summary = backup_service::inspect(app.handle(), &state, &own_path).unwrap();
+    assert_eq!(summary.file_name, own);
+    assert_eq!(summary.document_count, 0);
+    std::fs::remove_dir_all(db::app_dir(app.handle()).unwrap()).unwrap();
+}
+
+#[test]
+fn a_new_recovery_key_replaces_the_old_one_only_with_the_current_password() {
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let state: State<AppState> = app.state();
+    let old_key = app_service::initialize(app.handle(), &state, setup_input())
+        .unwrap()
+        .recovery_key;
+
+    for wrong in ["", "not the password"] {
+        assert!(app_service::replace_recovery_key(app.handle(), &state, wrong).is_err());
+    }
+    let new_key =
+        app_service::replace_recovery_key(app.handle(), &state, "a secure local password").unwrap();
+    assert_ne!(new_key, old_key);
+    assert_eq!(new_key.len(), 64);
+
+    app_service::lock(&state).unwrap();
+    assert!(matches!(
+        app_service::replace_recovery_key(app.handle(), &state, "a secure local password"),
+        Err(Error::Locked)
+    ));
+    assert!(matches!(
+        app_service::recover_access(app.handle(), &state, &old_key, "another office password"),
+        Err(Error::InvalidRecovery)
+    ));
+    app_service::recover_access(app.handle(), &state, &new_key, "another office password").unwrap();
+    app_service::lock(&state).unwrap();
+    app_service::unlock(app.handle(), &state, "another office password").unwrap();
+    std::fs::remove_dir_all(db::app_dir(app.handle()).unwrap()).unwrap();
+}
+
+#[test]
+fn a_hearing_decided_today_stays_on_todays_dashboard() {
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let state: State<AppState> = app.state();
+    app_service::initialize(app.handle(), &state, setup_input()).unwrap();
+    let client = client_service::create(
+        app.handle(),
+        &state,
+        ClientCreateInput {
+            internal_number: "C-1".into(),
+            full_name: "موكل تجريبي".into(),
+            national_id: None,
+            primary_phone: None,
+            email: None,
+            address: None,
+            notes: None,
+            confirm_duplicate: false,
+        },
+    )
+    .unwrap();
+    let case = case_service::create(
+        app.handle(),
+        &state,
+        CaseCreateInput {
+            internal_number: "K-1".into(),
+            official_number: None,
+            official_year: None,
+            judicial_year: None,
+            case_type: None,
+            litigation_degree: None,
+            court_name: None,
+            circuit_name: None,
+            status: "ACTIVE".into(),
+            filed_on: None,
+            closed_on: None,
+            subject: None,
+            notes: None,
+            clients: vec![CaseClientInput {
+                client_id: client.id,
+                legal_capacity: None,
+                power_of_attorney_id: None,
+                notes: None,
+            }],
+        },
+    )
+    .unwrap();
+    let hearing = |date: &str| HearingInput {
+        id: None,
+        case_id: case.id.clone(),
+        hearing_date: date.into(),
+        hearing_time: Some("09:30".into()),
+        hearing_type: None,
+        location: None,
+        circuit_name: None,
+        required_documents: None,
+        notes: None,
+        reminder_minutes: None,
+    };
+    let today = hearing_service::save(app.handle(), &state, hearing("2026-10-08")).unwrap();
+    hearing_service::save(app.handle(), &state, hearing("2026-10-09")).unwrap();
+    hearing_service::record_decision(
+        app.handle(),
+        &state,
+        HearingDecisionInput {
+            id: today.id.clone(),
+            decision_text: Some("حجز للحكم".into()),
+            next_hearing: None,
+        },
+    )
+    .unwrap();
+
+    let summary = dashboard_service::summary(app.handle(), &state, "2026-10-08").unwrap();
+    assert_eq!(summary.today_hearings.len(), 1);
+    assert_eq!(summary.today_hearings[0].id, today.id);
+    assert_eq!(summary.today_hearings[0].status, "COMPLETED");
+    // Upcoming hearings still list only those awaiting a decision.
+    assert!(summary
+        .upcoming_hearings
+        .iter()
+        .all(|hearing| hearing.status == "SCHEDULED"));
     std::fs::remove_dir_all(db::app_dir(app.handle()).unwrap()).unwrap();
 }

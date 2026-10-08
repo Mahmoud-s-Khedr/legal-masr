@@ -1,7 +1,8 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { errorMessage } from '../../../bridge/errors';
+import { errorMessage, isCancelled } from '../../../bridge/errors';
+import type { BackupSummary } from '../../../bridge/types';
 import { ConfirmDialog } from '../../../components/forms/FormDialog';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
@@ -12,36 +13,78 @@ import { useFormat } from '../../../i18n/LocalePresentation';
 import { useSingleFlight } from '../../../lib/useSingleFlight';
 import {
   useCreateBackup,
+  useInspectBackupToRestore,
   useLatestSuccessfulBackup,
   useRestoreBackup,
+  useRevealBackup,
+  useSaveBackupCopy,
   useValidateBackup,
 } from '../api/backupsApi';
+
+/** A failure worth showing: closing a file dialog without choosing is not one. */
+function FailureAlert({ error, fallback }: { error: unknown; fallback: string }) {
+  if (!error || isCancelled(error)) return null;
+  return (
+    <Alert variant="destructive">
+      <AlertDescription>{errorMessage(error, fallback)}</AlertDescription>
+    </Alert>
+  );
+}
 
 export function BackupSettingsPanel() {
   const { t } = useTranslation();
   const format = useFormat();
   const createBackup = useCreateBackup();
+  const saveCopy = useSaveBackupCopy();
+  const reveal = useRevealBackup();
   const validateBackup = useValidateBackup();
+  const inspectRestore = useInspectBackupToRestore();
   const restoreBackup = useRestoreBackup();
   const latestBackup = useLatestSuccessfulBackup();
-  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [preview, setPreview] = useState<BackupSummary | null>(null);
   // Backup freshness is judged against when the panel was opened.
   const [openedAt] = useState(() => Date.now());
 
   // `isPending` lags a render behind a click, so a quick second click would start a
   // second backup, or worse a second restore. Each action may run once at a time.
   const once = useSingleFlight();
-  // The guard is shared on purpose: a restore must never overlap a backup or a check. So while
-  // any of them runs, none of the three may be offered; otherwise a click would be dropped silently.
-  const busy = createBackup.isPending || validateBackup.isPending || restoreBackup.isPending;
-  const createNow = () => once((settled) => createBackup.mutate(undefined, { onSettled: settled }));
+  // The guard is shared on purpose: a restore must never overlap a backup, a copy or a
+  // check. So while any of them runs, none is offered; otherwise a click would be dropped.
+  const busy =
+    createBackup.isPending ||
+    saveCopy.isPending ||
+    reveal.isPending ||
+    validateBackup.isPending ||
+    inspectRestore.isPending ||
+    restoreBackup.isPending;
+  const documents = (summary: BackupSummary) =>
+    t('backups.documentCount', { count: summary.documentCount });
 
+  const createNow = () => {
+    saveCopy.reset();
+    once((settled) => createBackup.mutate(undefined, { onSettled: settled }));
+  };
+  const saveCopyNow = () => {
+    reveal.reset();
+    once((settled) => saveCopy.mutate(undefined, { onSettled: settled }));
+  };
+  const revealNow = () => {
+    saveCopy.reset();
+    once((settled) => reveal.mutate(undefined, { onSettled: settled }));
+  };
   const validate = () =>
     once((settled) => validateBackup.mutate(undefined, { onSettled: settled }));
-
+  const chooseToRestore = () => {
+    restoreBackup.reset();
+    once((settled) =>
+      inspectRestore.mutate(undefined, { onSuccess: setPreview, onSettled: settled }),
+    );
+  };
   const restore = () => {
-    setRestoreOpen(false);
-    once((settled) => restoreBackup.mutate(undefined, { onSettled: settled }));
+    const token = preview?.token;
+    setPreview(null);
+    if (!token) return;
+    once((settled) => restoreBackup.mutate(token, { onSettled: settled }));
   };
 
   const latest = latestBackup.data;
@@ -91,42 +134,29 @@ export function BackupSettingsPanel() {
           </div>
           {createBackup.isSuccess && (
             <p className="success" role="status">
-              {t('backups.createSuccess')}
+              {t('backups.createSuccessNamed', { name: createBackup.data })}
             </p>
           )}
-          {createBackup.isError && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                {errorMessage(createBackup.error, t('app.defaultError'))}
-              </AlertDescription>
-            </Alert>
-          )}
+          <FailureAlert error={createBackup.error} fallback={t('app.defaultError')} />
         </Card>
 
         <Card className="panel backup-action">
           <h3>{t('backups.validateTitle')}</h3>
           <p className="muted">{t('backups.validateHint')}</p>
           <div className="form-actions">
-            <Button
-              type="button"
-              variant="secondary"
-
-              onClick={validate}
-              disabled={busy}
-            >
+            <Button type="button" variant="secondary" onClick={validate} disabled={busy}>
               {validateBackup.isPending ? t('backups.validating') : t('backups.validate')}
             </Button>
           </div>
-          {validateBackup.isSuccess && (
+          {validateBackup.data && (
             <p className="success" role="status">
-              {t('backups.validateSuccess')}
+              {t('backups.validateSummary', {
+                date: format.dateTime(validateBackup.data.createdAt),
+                documents: documents(validateBackup.data),
+              })}
             </p>
           )}
-          {validateBackup.isError && (
-            <Alert variant="destructive">
-              <AlertDescription>{t('backups.validateFailed')}</AlertDescription>
-            </Alert>
-          )}
+          <FailureAlert error={validateBackup.error} fallback={t('backups.validateFailed')} />
         </Card>
 
         <Card className="panel backup-action backup-danger">
@@ -137,35 +167,66 @@ export function BackupSettingsPanel() {
               type="button"
               variant="secondary"
               className="danger-outline"
-              onClick={() => setRestoreOpen(true)}
+              onClick={chooseToRestore}
               disabled={busy}
             >
-              {restoreBackup.isPending ? t('backups.restoring') : t('backups.restore')}
+              {inspectRestore.isPending
+                ? t('backups.inspecting')
+                : restoreBackup.isPending
+                  ? t('backups.restoring')
+                  : t('backups.chooseToRestore')}
             </Button>
           </div>
-          {restoreBackup.isSuccess && (
-            <p className="success" role="status">
-              {t('backups.restoreSuccess')}
-            </p>
-          )}
-          {restoreBackup.isError && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                {errorMessage(restoreBackup.error, t('app.defaultError'))}
-              </AlertDescription>
-            </Alert>
-          )}
+          <FailureAlert error={inspectRestore.error} fallback={t('backups.validateFailed')} />
+          <FailureAlert error={restoreBackup.error} fallback={t('app.defaultError')} />
         </Card>
       </div>
-      <p className="security-note backup-offsite">
-        <Icon name="shield" size={20} />
-        <span>{t('backups.offsiteAdvice')}</span>
-      </p>
+
+      <Card className="panel backup-offsite">
+        <span className="backup-status-icon" aria-hidden="true">
+          <Icon name="shield" size={22} />
+        </span>
+        <div>
+          <h3>{t('backups.offsiteTitle')}</h3>
+          <p className="muted">{t('backups.offsiteAdvice')}</p>
+          {latest || createBackup.isSuccess ? (
+            <div className="form-actions">
+              <Button type="button" onClick={saveCopyNow} disabled={busy}>
+                <Icon name="save" size={16} />
+                {saveCopy.isPending ? t('backups.savingCopy') : t('backups.saveCopy')}
+              </Button>
+              <Button type="button" variant="outline" onClick={revealNow} disabled={busy}>
+                {t('backups.reveal')}
+              </Button>
+            </div>
+          ) : (
+            !latestBackup.isLoading && <p className="muted">{t('backups.noBackupToCopy')}</p>
+          )}
+          {saveCopy.isSuccess && (
+            <p className="success" role="status">
+              {t('backups.saveCopySuccess', { name: saveCopy.data })}
+            </p>
+          )}
+          <FailureAlert error={saveCopy.error} fallback={t('app.defaultError')} />
+          <FailureAlert error={reveal.error} fallback={t('app.defaultError')} />
+        </div>
+      </Card>
+
       <ConfirmDialog
-        open={restoreOpen}
-        onOpenChange={setRestoreOpen}
-        title={t('backups.restore')}
-        description={t('backups.restoreWarning')}
+        open={preview !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreview(null);
+        }}
+        title={t('backups.restorePreviewTitle')}
+        description={
+          preview
+            ? t('backups.restorePreview', {
+                name: preview.fileName,
+                date: format.dateTime(preview.createdAt),
+                documents: documents(preview),
+              })
+            : ''
+        }
         confirmLabel={t('backups.restoreConfirm')}
         cancelLabel={t('backups.restoreCancel')}
         onConfirm={restore}

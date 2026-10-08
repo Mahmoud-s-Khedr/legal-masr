@@ -262,7 +262,7 @@ export function FinancesPage() {
                           </bdi>
                         </Button>
                       </td>
-                      <td>
+                      <td className="cell-wrap">
                         <Badge variant="secondary">
                           {payment
                             ? payment.paymentMethod
@@ -270,7 +270,11 @@ export function FinancesPage() {
                               : t('finances.paymentFallback')
                             : t(`finances.expenseTypes.${expense!.expenseType}`)}
                         </Badge>
-                        {record.notes && <small dir="auto">{record.notes}</small>}
+                        {record.notes && (
+                          <small className="cell-note" dir="auto">
+                            {record.notes}
+                          </small>
+                        )}
                       </td>
                       <td className="cell-wrap">
                         <bdi>{caseName ?? '—'}</bdi>

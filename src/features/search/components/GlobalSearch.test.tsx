@@ -31,6 +31,23 @@ describe('GlobalSearch', () => {
 
   afterEach(() => vi.clearAllMocks());
 
+  it('empties the field on Escape, ready for the next search', async () => {
+    vi.mocked(useGlobalSearch).mockReturnValue({ data: hits } as ReturnType<
+      typeof useGlobalSearch
+    >);
+    render(
+      <MemoryRouter>
+        <SearchHarness />
+      </MemoryRouter>,
+    );
+    const input = screen.getByRole('combobox', { name: 'البحث العام' });
+    fireEvent.change(input, { target: { value: 'أحمد' } });
+    await screen.findByRole('listbox');
+    fireEvent.keyDown(input, { key: 'Escape' });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(input).toHaveValue('');
+  });
+
   it('debounces grouped results and routes the selected record', async () => {
     vi.mocked(useGlobalSearch).mockReturnValue({ data: hits } as ReturnType<
       typeof useGlobalSearch

@@ -82,6 +82,8 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
         &master,
         backup_dir.path().to_str().unwrap(),
         &source_documents,
+        "2026-10-08-1052",
+        None,
     )
     .unwrap();
     backup::validate(&backup_path, &master).unwrap();

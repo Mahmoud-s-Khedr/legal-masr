@@ -5,15 +5,24 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { forwardRef, type InputHTMLAttributes, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { errorMessage } from '../../../bridge/errors';
-import { groupRecoveryKey } from '../../../lib/recoveryKey';
+import { asAppError, errorMessage, isCancelled } from '../../../bridge/errors';
+import { DeveloperContacts } from '../../../components/layout/DeveloperContacts';
+import type { BackupChoice } from '../../../bridge/types';
+import { clearRestoreNotice, restoreNoticePending } from '../../../lib/restoreNotice';
 import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Field } from '../../../components/forms/FormField';
 import { Input } from '../../../components/ui/input';
-import { useInitializeVault, useRecoverAccess, useUnlockVault } from '../api/onboardingApi';
+import { RecoveryKeyCard } from '../components/RecoveryKeyCard';
+import {
+  useChooseBackup,
+  useInitializeVault,
+  useRecoverAccess,
+  useRestoreFromBackup,
+  useUnlockVault,
+} from '../api/onboardingApi';
 import {
   PASSWORD_MIN_LENGTH,
   RecoveryFormValues,
@@ -24,7 +33,13 @@ import {
   unlockSchema,
 } from '../schemas/onboarding.schema';
 
-export type OnboardingSubGate = 'setup' | 'unlock' | 'recovery' | 'recovery-key';
+/** Vault problems the lawyer cannot fix alone; the message tells them to call support. */
+const needsSupport = (error: unknown) =>
+  ['VAULT_MISSING', 'VAULT_INCOMPLETE', 'VAULT_CORRUPT', 'VAULT_INTERRUPTED'].includes(
+    asAppError(error)?.code ?? '',
+  );
+
+export type OnboardingSubGate = 'setup' | 'unlock' | 'recovery' | 'recovery-key' | 'restore';
 
 export function OnboardingPage({
   subGate,
@@ -35,11 +50,17 @@ export function OnboardingPage({
   onUnlocked,
   onRecovered,
   onRecoveryKeySaved,
+  onStartRestore,
+  onBackToSetup,
+  onRestored,
 }: {
   subGate: OnboardingSubGate;
   recoveryKey: string;
   onSwitchToRecovery: () => void;
   onBackToUnlock?: () => void;
+  onStartRestore?: () => void;
+  onBackToSetup?: () => void;
+  onRestored?: () => void;
   onSetupSucceeded: (recoveryKey: string) => void;
   onUnlocked: () => void;
   onRecovered: () => void;
@@ -98,9 +119,7 @@ export function OnboardingPage({
         {subGate === 'recovery-key' ? (
           <div className="recovery-key-step">
             <p className="warning">{t('gate.recoveryKeyWarning')}</p>
-            <code className="recovery-key" dir="ltr" aria-label={t('gate.fields.recoveryKey')}>
-              {groupRecoveryKey(recoveryKey)}
-            </code>
+            <RecoveryKeyCard recoveryKey={recoveryKey} />
             <ul className="gate-tips">
               <li>{t('gate.recoveryTips.paper')}</li>
               <li>{t('gate.recoveryTips.separate')}</li>
@@ -127,15 +146,25 @@ export function OnboardingPage({
               initializeVault.reset();
             }}
           />
+        ) : subGate === 'restore' ? (
+          <RestoreFromBackup onRestored={() => onRestored?.()} />
         ) : subGate === 'unlock' ? (
-          <UnlockForm
-            busy={busy}
-            onSubmit={async (values) => {
-              await unlockVault.mutateAsync(values.password);
-              unlockVault.reset();
-              onUnlocked();
-            }}
-          />
+          <>
+            {restoreNoticePending() && (
+              <p className="success gate-notice" role="status">
+                {t('gate.restore.notice')}
+              </p>
+            )}
+            <UnlockForm
+              busy={busy}
+              onSubmit={async (values) => {
+                await unlockVault.mutateAsync(values.password);
+                unlockVault.reset();
+                clearRestoreNotice();
+                onUnlocked();
+              }}
+            />
+          </>
         ) : (
           <RecoveryForm
             busy={busy}
@@ -153,6 +182,22 @@ export function OnboardingPage({
           <Alert variant="destructive">
             <AlertDescription>{errorMessage(error, t('app.defaultError'))}</AlertDescription>
           </Alert>
+        )}
+        {needsSupport(error) && (
+          <section className="gate-support" aria-label={t('app.supportTitle')}>
+            <strong>{t('app.supportTitle')}</strong>
+            <DeveloperContacts plain />
+          </section>
+        )}
+        {subGate === 'setup' && onStartRestore && (
+          <Button variant="ghost" className="gate-link" onClick={onStartRestore}>
+            {t('gate.restore.start')}
+          </Button>
+        )}
+        {subGate === 'restore' && onBackToSetup && (
+          <Button variant="ghost" className="gate-link" onClick={onBackToSetup}>
+            {t('gate.restore.back')}
+          </Button>
         )}
         {subGate === 'unlock' && (
           <Button variant="ghost" className="gate-link" onClick={onSwitchToRecovery}>
@@ -301,9 +346,13 @@ function UnlockForm({
 function RecoveryForm({
   busy,
   onSubmit,
+  submitLabel,
+  busyLabel,
 }: {
   busy: boolean;
   onSubmit: (values: RecoveryFormValues) => Promise<void>;
+  submitLabel?: string;
+  busyLabel?: string;
 }) {
   const { t } = useTranslation();
   const { register, handleSubmit, formState } = useForm<RecoveryFormValues>({
@@ -330,7 +379,134 @@ function RecoveryForm({
           labelKey="newPassword"
         />
         <Button type="submit" disabled={busy || formState.isSubmitting}>
-          {busy ? t('gate.submit.busy') : t('gate.submit.recovery')}
+          {busy ? (busyLabel ?? t('gate.submit.busy')) : (submitLabel ?? t('gate.submit.recovery'))}
+        </Button>
+      </FieldGroup>
+    </DraftForm>
+  );
+}
+
+/**
+ * Moving to a new computer: choose the backup file, then open it with the password in use
+ * when it was made, or with the recovery key and a new password.
+ */
+function RestoreFromBackup({ onRestored }: { onRestored: () => void }) {
+  const { t, i18n } = useTranslation();
+  const chooseBackup = useChooseBackup();
+  const restore = useRestoreFromBackup();
+  const [choice, setChoice] = useState<BackupChoice | null>(null);
+  const [method, setMethod] = useState<'password' | 'recoveryKey'>('password');
+  const language = i18n.language === 'en' ? 'en' : 'ar';
+  const busy = chooseBackup.isPending || restore.isPending;
+  const choose = () => {
+    restore.reset();
+    chooseBackup.mutate(undefined, {
+      onSuccess: (chosen) => setChoice(chosen),
+    });
+  };
+  const run = async (
+    input: { password: string } | { recoveryKey: string; newPassword: string },
+  ) => {
+    if (!choice) return;
+    await restore.mutateAsync({ token: choice.token, language, ...input });
+    onRestored();
+  };
+  const failure = [chooseBackup.error, restore.error].find((error) => error && !isCancelled(error));
+
+  return (
+    <div className="gate-restore">
+      {choice ? (
+        <p className="gate-restore-file">
+          <Icon name="backup" size={18} />
+          <bdi>{t('gate.restore.chosen', { name: choice.fileName })}</bdi>
+        </p>
+      ) : null}
+      <Button
+        type="button"
+        variant={choice ? 'outline' : 'default'}
+        onClick={choose}
+        disabled={busy}
+      >
+        {chooseBackup.isPending
+          ? t('gate.restore.choosing')
+          : choice
+            ? t('gate.restore.chooseAnother')
+            : t('gate.restore.choose')}
+      </Button>
+      {choice && (
+        <>
+          <div className="gate-restore-method" role="group" aria-label={t('gate.restore.openWith')}>
+            <Button
+              type="button"
+              variant={method === 'password' ? 'default' : 'outline'}
+              aria-pressed={method === 'password'}
+              onClick={() => {
+                restore.reset();
+                setMethod('password');
+              }}
+            >
+              {t('gate.restore.withPassword')}
+            </Button>
+            <Button
+              type="button"
+              variant={method === 'recoveryKey' ? 'default' : 'outline'}
+              aria-pressed={method === 'recoveryKey'}
+              onClick={() => {
+                restore.reset();
+                setMethod('recoveryKey');
+              }}
+            >
+              {t('gate.restore.withRecoveryKey')}
+            </Button>
+          </div>
+          {method === 'password' ? (
+            <RestoreWithPasswordForm busy={busy} onSubmit={({ password }) => run({ password })} />
+          ) : (
+            <RecoveryForm
+              busy={busy}
+              submitLabel={t('gate.restore.submit')}
+              busyLabel={t('gate.restore.busy')}
+              onSubmit={({ recoveryKey, password }) => run({ recoveryKey, newPassword: password })}
+            />
+          )}
+        </>
+      )}
+      {failure ? (
+        <Alert variant="destructive">
+          <AlertDescription>{errorMessage(failure, t('app.defaultError'))}</AlertDescription>
+        </Alert>
+      ) : null}
+    </div>
+  );
+}
+
+function RestoreWithPasswordForm({
+  busy,
+  onSubmit,
+}: {
+  busy: boolean;
+  onSubmit: (values: UnlockFormValues) => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const { register, handleSubmit, formState } = useForm<UnlockFormValues>({
+    resolver: zodResolver(unlockSchema),
+    defaultValues: { password: '' },
+  });
+  return (
+    <DraftForm
+      noValidate
+      onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}
+    >
+      <FieldGroup>
+        <Field
+          label={t('gate.restore.passwordLabel')}
+          error={formState.errors.password ? t('forms.required') : undefined}
+          required
+        >
+          <PasswordInput {...register('password')} autoFocus />
+        </Field>
+        <Button type="submit" disabled={busy || formState.isSubmitting}>
+          {busy ? t('gate.restore.busy') : t('gate.restore.submit')}
         </Button>
       </FieldGroup>
     </DraftForm>

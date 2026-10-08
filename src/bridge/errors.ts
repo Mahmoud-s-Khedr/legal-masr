@@ -7,6 +7,10 @@ const appErrorCodes = new Set<AppErrorCode>([
   'ALREADY_INITIALIZED',
   'RECOVERY_KEY_INVALID',
   'BACKUP_CORRUPTED',
+  'BACKUP_FROM_OTHER_VAULT',
+  'BACKUP_NOT_PORTABLE',
+  'BACKUP_SECRET_INVALID',
+  'BACKUP_MISSING',
   'LEGACY_DATA_MIGRATION_REQUIRED',
   'VAULT_INTERRUPTED',
   'VAULT_MISSING',
@@ -48,6 +52,11 @@ export function asAppError(error: unknown): AppError | null {
     return null;
   }
   return value as AppError;
+}
+
+/** The lawyer closed a native file dialog without choosing; nothing failed. */
+export function isCancelled(error: unknown): boolean {
+  return asAppError(error)?.code === 'OPERATION_CANCELLED';
 }
 
 /**

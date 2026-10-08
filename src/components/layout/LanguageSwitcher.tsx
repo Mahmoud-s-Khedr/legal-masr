@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { useSettings, useUpdateSettings } from '../../features/settings/api/settingsApi';
+import { rememberLanguageChoice, settingsWithLanguage } from '../../lib/languageChoice';
 
 export function LanguageSwitcher({ className }: { className?: string }) {
   const { i18n } = useTranslation();
@@ -16,16 +17,9 @@ export function LanguageSwitcher({ className }: { className?: string }) {
       aria-label={label}
       onClick={() => {
         void i18n.changeLanguage(next);
-        if (settings) {
-          updateSettings.mutate({
-            language: next,
-            theme: settings.theme,
-            dateFormat: settings.dateFormat,
-            weekStartsOn: settings.weekStartsOn,
-            defaultReminderMinutes: settings.defaultReminderMinutes,
-            lockTimeoutMinutes: settings.lockTimeoutMinutes,
-          });
-        }
+        // While locked the setting cannot be saved yet; it is saved after unlocking.
+        if (settings) updateSettings.mutate(settingsWithLanguage(settings, next));
+        else rememberLanguageChoice(next);
       }}
     >
       {label}

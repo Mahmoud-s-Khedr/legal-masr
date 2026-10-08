@@ -381,6 +381,32 @@ it('global documents disallow additions; case scope passes only the owner ID', a
   });
 });
 
+it('adds a document from the all-documents page by choosing its case first', async () => {
+  vi.mocked(bridge.caseList).mockResolvedValue([fixtures.caseSummary]);
+  renderWorkflow(<AttachmentsPage />, '/documents', '/documents');
+  fireEvent.click(await screen.findByRole('button', { name: 'إضافة مستند' }));
+  const dialog = await screen.findByRole('dialog', { name: 'إضافة مستند' });
+  const proceed = within(dialog).getByRole('button', { name: 'متابعة' });
+  expect(proceed).toBeDisabled();
+  const picker = within(dialog).getByRole('combobox');
+  fireEvent.click(picker);
+  fireEvent.change(picker, { target: { value: fixtures.caseSummary.internalNumber } });
+  fireEvent.keyDown(picker, { key: 'ArrowDown' });
+  fireEvent.click(
+    await screen.findByRole('option', { name: new RegExp(fixtures.caseSummary.internalNumber) }),
+  );
+  fireEvent.click(proceed);
+
+  // The case's documents open with the add form ready.
+  expect(await screen.findByRole('dialog', { name: 'إضافة مستند' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: 'اختيار ملف' })).toBeInTheDocument();
+  await waitFor(() =>
+    expect(vi.mocked(bridge.attachmentList).mock.lastCall?.[0]).toMatchObject({
+      caseId: fixtures.caseSummary.id,
+    }),
+  );
+});
+
 it('creates a POA with multiple clients/lawyers and retains a rejected draft', async () => {
   vi.mocked(bridge.clientList).mockResolvedValue([
     fixtures.clientSummary,

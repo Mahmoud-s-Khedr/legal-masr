@@ -142,11 +142,10 @@ describe('application gate', () => {
       '/backups',
     );
     expect(document.documentElement).toHaveAttribute('data-theme', 'system');
+    // Support contacts live in Settings → About, linked from a quiet footer.
     const footer = screen.getByRole('contentinfo');
-    expect(footer).toHaveTextContent('طوّر التطبيق محمود خضر');
-    expect(footer).toHaveTextContent('Mahmoud.s.khedr.2@gmail.com');
-    expect(footer).toHaveTextContent('+201016240934');
-    expect(screen.getByRole('link', { name: 'عن ليجال مصر' })).toHaveAttribute(
+    expect(footer).not.toHaveTextContent('+201016240934');
+    expect(screen.getByRole('link', { name: 'عن ليجال مصر والدعم الفني' })).toHaveAttribute(
       'href',
       '/settings?tab=about',
     );
@@ -297,6 +296,49 @@ describe('application gate', () => {
     render(<App />);
     await waitFor(() => expect(document.documentElement).toHaveAttribute('lang', 'en'));
     expect(document.documentElement).toHaveAttribute('dir', 'ltr');
+    await i18n.changeLanguage('ar');
+  });
+
+  it('keeps the language chosen on the lock screen after unlocking, and saves it', async () => {
+    const saved = {
+      language: 'ar' as const,
+      theme: 'system' as const,
+      dateFormat: 'dd/MM/yyyy' as const,
+      weekStartsOn: 6,
+      defaultReminderMinutes: 60,
+      autostartEnabled: false,
+      lockTimeoutMinutes: 15,
+      usageCountersEnabled: false,
+    };
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: false,
+      vaultState: 'LOCKED',
+    });
+    vi.mocked(bridge.unlock).mockResolvedValue(undefined);
+    vi.mocked(bridge.updateSettings).mockImplementation(async (next) => ({ ...saved, ...next }));
+    render(<App />);
+    await screen.findByRole('heading', { name: 'افتح ليجال مصر' });
+    fireEvent.click(screen.getByRole('button', { name: 'English' }));
+    await screen.findByRole('heading', { name: 'Unlock Legal Masr' });
+
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: true,
+      vaultState: 'UNLOCKED',
+    });
+    vi.mocked(bridge.settings).mockResolvedValue(saved);
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'fictional password 2026' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(bridge.updateSettings).mock.calls[0]?.[0]).toMatchObject({
+        language: 'en',
+      }),
+    );
+    expect(i18n.language).toBe('en');
     await i18n.changeLanguage('ar');
   });
 

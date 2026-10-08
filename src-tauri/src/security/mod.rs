@@ -17,13 +17,13 @@ use uuid::Uuid;
 
 const XCHACHA_NONCE_BYTES: usize = 24;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Envelope {
     pub nonce: String,
     pub ciphertext: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SecurityFile {
     pub version: u8,
     pub salt: String,
@@ -174,6 +174,26 @@ pub fn write_security_atomically(path: &Path, file: &SecurityFile) -> Result<(),
         let _ = fs::remove_file(&temporary);
     }
     result
+}
+
+/// The vault key sealed in `file`, opened with the password it was sealed with.
+pub fn master_from_password(file: &SecurityFile, password: &str) -> Result<[u8; 32], Error> {
+    let salt = STANDARD
+        .decode(&file.salt)
+        .map_err(|_| Error::InvalidPassword)?;
+    let derived = zeroize::Zeroizing::new(derive_password(
+        password,
+        &salt,
+        file.memory_kib,
+        file.iterations,
+        file.parallelism,
+    )?);
+    unwrap(&derived, &file.password_envelope)
+}
+
+/// The vault key sealed in `file`, opened with its recovery key.
+pub fn master_from_recovery_key(file: &SecurityFile, key: &str) -> Result<[u8; 32], Error> {
+    unwrap(&recovery_key_material(key), &file.recovery_envelope)
 }
 
 pub fn backup_key(master: &[u8; 32]) -> [u8; 32] {

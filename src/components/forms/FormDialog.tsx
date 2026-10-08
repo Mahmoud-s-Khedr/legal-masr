@@ -147,15 +147,8 @@ export function ConfirmDialog({
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <AlertDialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={pending}
-            onClick={() => onOpenChange(false)}
-          >
-            {cancelLabel}
-          </Button>
+        {/* Same order as every form: the action first, then «إلغاء». */}
+        <AlertDialogFooter className="sm:justify-start">
           <Button
             type="button"
             variant={destructive ? 'destructive' : 'default'}
@@ -163,6 +156,14 @@ export function ConfirmDialog({
             onClick={onConfirm}
           >
             {confirmLabel}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={() => onOpenChange(false)}
+          >
+            {cancelLabel}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

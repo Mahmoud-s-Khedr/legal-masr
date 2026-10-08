@@ -10,9 +10,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { hearingDraftSchema, decisionDraftSchema } from '@/lib/formSchemas';
 import { EntityPicker } from '@/components/forms/EntityPicker';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { HearingDto, HearingInput, TaskDto } from '../../../bridge/types';
+import { bridge } from '../../../bridge/commands';
+import { useMutation } from '@tanstack/react-query';
+import { byHearingTime, HearingRoll } from '../components/HearingRoll';
 import { DatePicker } from '../../../components/forms/DatePicker';
 import { Button } from '../../../components/ui/button';
 import { ConfirmDialog, FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
@@ -102,6 +105,25 @@ export function AgendaPage() {
     return dates;
   }, [hearings.data, tasks.data]);
   const selected = items.get(selectedDate) ?? { hearings: [], tasks: [] };
+  const detailRef = useRef<HTMLElement>(null);
+  const print = useMutation({ gcTime: 0, mutationFn: bridge.print });
+  // The printed roll joins the page on the first request, then the print dialog opens.
+  const [printRequests, setPrintRequests] = useState(0);
+  const { mutate: printPage } = print;
+  useEffect(() => {
+    if (printRequests) printPage();
+  }, [printRequests, printPage]);
+  // On narrow windows the day's details sit below the calendar; bring them into view so
+  // choosing a day visibly does something.
+  const selectDay = (date: string) => {
+    setSelectedDate(date);
+    const detail = detailRef.current;
+    if (!detail?.previousElementSibling) return;
+    const stacked =
+      detail.getBoundingClientRect().top >=
+      detail.previousElementSibling.getBoundingClientRect().bottom;
+    if (stacked) detail.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+  };
   const label = format.monthYear(cursor);
   const caseLabel = (caseId: string) => {
     const item = cases.data?.find((candidate) => candidate.id === caseId);
@@ -222,7 +244,7 @@ export function AgendaPage() {
               cursor={cursor}
               selectedDate={selectedDate}
               items={items}
-              onSelect={setSelectedDate}
+              onSelect={selectDay}
               weekStartsOn={weekStartsOn}
               weekdayFormatter={(day) => format.weekday(day, 'short')}
               dayLabel={format.dateLong}
@@ -233,26 +255,47 @@ export function AgendaPage() {
               cursor={cursor}
               selectedDate={selectedDate}
               items={items}
-              onSelect={setSelectedDate}
+              onSelect={selectDay}
               weekStartsOn={weekStartsOn}
               dayLabel={format.dateCompact}
+              lines={(entry) => <DayLines entry={entry} caseLabel={caseLabel} />}
               t={t}
             />
           ) : (
             <AgendaList
               items={items}
-              onSelect={setSelectedDate}
+              onSelect={selectDay}
               dayLabel={format.dateLong}
               selectedDate={selectedDate}
+              lines={(entry) => <DayLines entry={entry} caseLabel={caseLabel} />}
               t={t}
             />
           )}
         </section>
-        <aside className="calendar-detail">
+        <aside className="calendar-detail" ref={detailRef}>
           <p className="kicker">{t('agenda.dayDetails')}</p>
           <h3>
             <time dateTime={selectedDate}>{format.dateLong(selectedDate)}</time>
           </h3>
+          {selected.hearings.length > 0 && (
+            <div className="calendar-detail-actions">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={print.isPending}
+                onClick={() => setPrintRequests((count) => count + 1)}
+              >
+                <Icon name="printer" size={16} />
+                {t('agenda.printRoll')}
+              </Button>
+              {print.isError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{t('agenda.printError')}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
           {unavailable && (
             <div className="record-unavailable" role="alert">
               <p>{t('agenda.recordUnavailable')}</p>
@@ -280,7 +323,7 @@ export function AgendaPage() {
               </div>
             </div>
           )}
-          {selected.hearings.map((hearing) => (
+          {[...selected.hearings].sort(byHearingTime).map((hearing) => (
             <article className="agenda-item" key={hearing.id}>
               <div className="agenda-item-head">
                 <strong dir="auto">{hearing.hearingType ?? t('agenda.hearing')}</strong>
@@ -345,6 +388,9 @@ export function AgendaPage() {
           ))}
         </aside>
       </div>
+      {printRequests > 0 && (
+        <HearingRoll date={selectedDate} hearings={selected.hearings} cases={cases.data ?? []} />
+      )}
       <ConfirmDialog
         open={Boolean(removing)}
         onOpenChange={(open) => !open && setRemoving(null)}
@@ -501,6 +547,47 @@ function MonthGrid({
     </>
   );
 }
+/** What a day holds, line by line: each hearing with its time, case and court, then open tasks. */
+function DayLines({
+  entry,
+  caseLabel,
+}: {
+  entry: CalendarDayItems | undefined;
+  caseLabel: (caseId: string) => string;
+}) {
+  const { t } = useTranslation();
+  const format = useFormat();
+  const openTasks = entry?.tasks.filter((task) => !task.completed) ?? [];
+  const completed = (entry?.tasks.length ?? 0) - openTasks.length;
+  if (!entry || (!entry.hearings.length && !openTasks.length && !completed))
+    return <span className="day-line muted">{t('agenda.noEvents')}</span>;
+  return (
+    <>
+      {[...entry.hearings].sort(byHearingTime).map((hearing) => (
+        <span className="day-line" key={hearing.id} dir="auto">
+          <span className="day-line-time">
+            {hearing.hearingTime ? format.time(hearing.hearingTime) : t('agenda.allDay')}
+          </span>
+          {[caseLabel(hearing.caseId), hearing.location].filter(Boolean).join(' · ')}
+          {hearing.status !== 'SCHEDULED' && (
+            <span className="day-line-done"> · {t('agenda.decisionRecorded')}</span>
+          )}
+        </span>
+      ))}
+      {openTasks.map((task) => (
+        <span className="day-line day-line-task" key={task.id} dir="auto">
+          {t('agenda.task')}: <bdi>{task.title}</bdi>
+        </span>
+      ))}
+      {completed > 0 && (
+        <span className="day-line muted">
+          {t('agenda.completedTaskCount', { count: completed })}
+        </span>
+      )}
+    </>
+  );
+}
+
 function WeekList({
   cursor,
   selectedDate,
@@ -508,7 +595,7 @@ function WeekList({
   onSelect,
   weekStartsOn,
   dayLabel,
-  t,
+  lines,
 }: {
   cursor: Date;
   selectedDate: string;
@@ -516,6 +603,7 @@ function WeekList({
   onSelect: (date: string) => void;
   weekStartsOn: number;
   dayLabel: (date: string) => string;
+  lines: (entry: CalendarDayItems | undefined) => ReactNode;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const start = plusDays(cursor, -((cursor.getDay() - weekStartsOn + 7) % 7));
@@ -523,71 +611,68 @@ function WeekList({
     <div className="calendar-agenda-list">
       {Array.from({ length: 7 }, (_, index) => plusDays(start, index)).map((day) => {
         const date = formatDate(day);
-        const entry = items.get(date);
         return (
           <Button
             variant="ghost"
-            className={`agenda-item ${selectedDate === date ? 'selected-record' : ''}`}
+            className={`agenda-item ${selectedDate === date ? 'selected-record' : ''} ${date === localDate() ? 'is-today' : ''}`}
             type="button"
             key={date}
             onClick={() => onSelect(date)}
           >
             <strong>{dayLabel(date)}</strong>
-            <span>
-              {entry
-                ? t('agenda.dayCounts', {
-                    hearings: entry.hearings.length,
-                    tasks: entry.tasks.filter((task) => !task.completed).length,
-                    completed: entry.tasks.filter((task) => task.completed).length,
-                  })
-                : t('agenda.noEvents')}
-            </span>
+            {lines(items.get(date))}
           </Button>
         );
       })}
     </div>
   );
 }
+
 function AgendaList({
   items,
   onSelect,
   dayLabel,
   selectedDate,
+  lines,
   t,
 }: {
   items: Map<string, CalendarDayItems>;
   onSelect: (date: string) => void;
   dayLabel: (date: string) => string;
   selectedDate: string;
+  lines: (entry: CalendarDayItems | undefined) => ReactNode;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
+  // The list starts today; earlier days are one click away.
+  const [showPast, setShowPast] = useState(false);
+  const today = localDate();
+  const entries = [...items.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const past = entries.filter(([date]) => date < today);
+  const shown = showPast ? entries : entries.filter(([date]) => date >= today);
   return (
     <div className="calendar-agenda-list">
-      {[...items.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([date, entry]) => (
-          <Button
-            variant="ghost"
-            className={`agenda-item ${selectedDate === date ? 'selected-record' : ''}`}
-            type="button"
-            key={date}
-            onClick={() => onSelect(date)}
-          >
-            <strong>{dayLabel(date)}</strong>
-            <span>
-              {entry.hearings
-                .map((hearing) => hearing.hearingType ?? t('agenda.hearing'))
-                .join('، ') || t('agenda.tasksLabel')}{' '}
-              ·{' '}
-              {t('agenda.dayCounts', {
-                hearings: entry.hearings.length,
-                tasks: entry.tasks.filter((task) => !task.completed).length,
-                completed: entry.tasks.filter((task) => task.completed).length,
-              })}
-            </span>
-          </Button>
-        ))}
-      {!items.size && <p className="empty-compact">{t('agenda.empty')}</p>}
+      {past.length > 0 && (
+        <Button type="button" variant="ghost" size="sm" onClick={() => setShowPast(!showPast)}>
+          {showPast ? t('agenda.hidePast') : t('agenda.showPast', { count: past.length })}
+        </Button>
+      )}
+      {shown.map(([date, entry]) => (
+        <Button
+          variant="ghost"
+          className={`agenda-item ${selectedDate === date ? 'selected-record' : ''} ${date === today ? 'is-today' : ''}`}
+          type="button"
+          key={date}
+          onClick={() => onSelect(date)}
+        >
+          <strong>{dayLabel(date)}</strong>
+          {lines(entry)}
+        </Button>
+      ))}
+      {!items.size ? (
+        <p className="empty-compact">{t('agenda.empty')}</p>
+      ) : (
+        !shown.length && <p className="empty-compact">{t('agenda.noUpcoming')}</p>
+      )}
     </div>
   );
 }

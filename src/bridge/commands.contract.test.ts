@@ -187,15 +187,49 @@ const contracts = [
   ],
   ['lock', 'app_lock', [], () => bridge.lock()],
   [
+    'replaceRecoveryKey',
+    'app_replace_recovery_key',
+    [{ currentPassword: 'old password' }],
+    () => bridge.replaceRecoveryKey('old password'),
+  ],
+  [
+    'saveRecoveryKey',
+    'app_save_recovery_key',
+    [{ recoveryKey: 'recovery-key' }],
+    () => bridge.saveRecoveryKey('recovery-key'),
+  ],
+  ['print', 'app_print', [], () => bridge.print()],
+  [
     'changePassword',
     'app_change_password',
     [{ currentPassword: 'old password', newPassword: 'new password' }],
     () => bridge.changePassword('old password', 'new password'),
   ],
-  ['createBackup', 'backup_create', [], () => bridge.createBackup()],
+  ['chooseBackupToRestore', 'app_choose_backup', [], () => bridge.chooseBackupToRestore()],
+  [
+    'restoreFromBackup',
+    'app_restore_from_backup',
+    [{ input: { token: 'choice-token', language: 'ar', password: 'old password' } }],
+    () =>
+      bridge.restoreFromBackup({ token: 'choice-token', language: 'ar', password: 'old password' }),
+  ],
+  [
+    'createBackup',
+    'backup_create',
+    [{ stamp: '2026-10-08-1052' }],
+    () => bridge.createBackup('2026-10-08-1052'),
+  ],
   ['latestSuccessfulBackup', 'backup_latest_successful', [], () => bridge.latestSuccessfulBackup()],
+  ['saveBackupCopy', 'backup_save_copy', [], () => bridge.saveBackupCopy()],
+  ['revealBackup', 'backup_reveal', [], () => bridge.revealBackup()],
   ['validateBackup', 'backup_validate', [], () => bridge.validateBackup()],
-  ['restoreBackup', 'backup_restore', [], () => bridge.restoreBackup()],
+  ['inspectBackupToRestore', 'backup_inspect_restore', [], () => bridge.inspectBackupToRestore()],
+  [
+    'restoreBackup',
+    'backup_restore',
+    [{ token: 'restore-token' }],
+    () => bridge.restoreBackup('restore-token'),
+  ],
   [
     'openDeveloperContact',
     'settings_open_developer_contact',
@@ -535,8 +569,8 @@ describe('canonical Tauri bridge payload contracts', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('covers every bridge method', () => {
-    expect(contracts).toHaveLength(72);
-    expect(Object.keys(bridge)).toHaveLength(72);
+    expect(contracts).toHaveLength(80);
+    expect(Object.keys(bridge)).toHaveLength(80);
   });
 
   it.each(contracts)(

@@ -1,6 +1,7 @@
 import { forwardRef, useState, type ComponentProps } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { bridge } from '@/bridge/commands';
+import i18n from '@/i18n';
 import { queryKeys } from '@/lib/queryKeys';
 import {
   Combobox,
@@ -11,7 +12,13 @@ import {
 } from '../ui/combobox';
 type Suggestion =
   'courtName' | 'circuitName' | 'caseType' | 'hearingType' | 'notaryOffice' | 'legalCapacity';
-async function suggestions(kind: Suggestion): Promise<string[]> {
+/** Ready answers offered even before the office has typed any (after its own words). */
+function standardAnswers(kind: Suggestion): string[] {
+  if (kind !== 'legalCapacity' && kind !== 'hearingType') return [];
+  const list = i18n.t(`forms.standardAnswers.${kind}`, { returnObjects: true });
+  return Array.isArray(list) ? list.map(String) : [];
+}
+async function usedAnswers(kind: Suggestion): Promise<string[]> {
   if (kind === 'hearingType') {
     const rows = await bridge.hearingList();
     return rows.map((row) => row.hearingType ?? '').filter(Boolean);
@@ -26,6 +33,9 @@ async function suggestions(kind: Suggestion): Promise<string[]> {
   return kind === 'legalCapacity'
     ? rows.flatMap((row) => row.clients.map((client) => client.legalCapacity ?? '')).filter(Boolean)
     : rows.map((row) => row[kind] ?? '').filter(Boolean);
+}
+async function suggestions(kind: Suggestion): Promise<string[]> {
+  return [...new Set([...(await usedAnswers(kind)), ...standardAnswers(kind)])];
 }
 /** Suggest existing domain text; arbitrary new text remains valid and editable. */
 export const CreatableCombobox = forwardRef<

@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { errorMessage } from '../../../bridge/errors';
 import type { AppError, ClientDuplicateCandidate } from '../../../bridge/types';
-import { useCreateClient } from '../api/clientsApi';
+import { useClientList, useCreateClient } from '../api/clientsApi';
+import { suggestNextNumber } from '../../../lib/nextNumber';
 import { ClientForm } from '../forms/ClientForm';
 import { Button } from '../../../components/ui/button';
 import { PageHeader } from '../../../components/layout/PageHeader';
@@ -14,6 +15,7 @@ export function NewClientPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const createClient = useCreateClient();
+  const existing = useClientList({ includeArchived: true });
   const [duplicates, setDuplicates] = useState<ClientDuplicateCandidate[] | null>(null);
   const [pendingValues, setPendingValues] = useState<ClientFormValues | null>(null);
   const submit = async (values: ClientFormValues, confirmDuplicate: boolean) => {
@@ -41,6 +43,11 @@ export function NewClientPage() {
       />
       <div className="editor-surface">
         <ClientForm
+          suggestedNumber={
+            existing.data
+              ? suggestNextNumber(existing.data.map((client) => client.internalNumber))
+              : undefined
+          }
           busy={createClient.isPending}
           submitLabel={t('clients.save')}
           onCancel={() => navigate('/clients')}

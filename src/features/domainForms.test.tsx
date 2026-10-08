@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('./clients/api/clientsApi', () => ({
-  useClientList: vi.fn(),
+  useClientList: vi.fn(() => ({ data: [] })),
   useCreateClient: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
 }));
 
@@ -49,6 +49,44 @@ describe('canonical domain forms', () => {
       internalNumber: 'CL-42',
       fullName: 'أحمد Smith',
     });
+  });
+
+  it('fills in the suggested next number, says so, and lets the lawyer change it', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    render(<ClientForm busy={false} submitLabel="حفظ" suggestedNumber="C-8" onSubmit={submit} />);
+
+    const number = await screen.findByDisplayValue('C-8');
+    expect(screen.getByText(i18n.t('forms.suggestedNumber'))).toBeVisible();
+    fireEvent.change(number, { target: { value: 'C-100' } });
+    expect(screen.queryByText(i18n.t('forms.suggestedNumber'))).toBeNull();
+    fireEvent.change(screen.getByLabelText('الاسم الكامل'), { target: { value: 'أحمد' } });
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+    await waitFor(() =>
+      expect(submit.mock.calls[0]?.[0]).toMatchObject({ internalNumber: 'C-100' }),
+    );
+  });
+
+  it('never replaces a number already typed with a late suggestion', async () => {
+    const { rerender } = render(
+      <ClientForm
+        busy={false}
+        submitLabel="حفظ"
+        defaultValues={{ internalNumber: 'X-1' }}
+        onSubmit={vi.fn()}
+      />,
+    );
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <ClientForm
+          busy={false}
+          submitLabel="حفظ"
+          defaultValues={{ internalNumber: 'X-1' }}
+          suggestedNumber="C-8"
+          onSubmit={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByDisplayValue('X-1')).toBeInTheDocument();
   });
 
   it('includes the optional official number and checked clients when creating a case', async () => {

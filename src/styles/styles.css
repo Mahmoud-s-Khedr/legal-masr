@@ -851,6 +851,28 @@
   .inline-form label {
     flex: 1;
   }
+  /* A single field with its button beside it, not a full-width bar under it. */
+  .inline-form-row {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+  .inline-form-row > [data-slot='field'] {
+    flex: 1 1 14rem;
+  }
+  .inline-form-row > button {
+    flex: none;
+    margin-top: 1.6rem;
+  }
+  @media (max-width: 760px) {
+    .inline-form-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .inline-form-row > button {
+      margin-top: 0;
+    }
+  }
   .entity-detail > form,
   .entity-detail form,
   .editor-surface form {
@@ -947,9 +969,13 @@
   .data-table th,
   .data-table td {
     border-bottom: 1px solid var(--line);
-    padding: 0.8rem 0.9rem;
+    padding: 0.8rem 0.75rem;
     vertical-align: middle;
     white-space: nowrap;
+  }
+  /* Short headings may wrap, so the columns, not their titles, decide the width. */
+  .data-table thead th {
+    white-space: normal;
   }
   .data-table thead th {
     background: color-mix(in srgb, var(--canvas) 70%, var(--paper));
@@ -2400,7 +2426,12 @@
     font-weight: 500;
   }
   .finance-table {
-    min-width: 760px;
+    min-width: 640px;
+  }
+  .data-table .cell-note {
+    display: block;
+    margin-top: 0.25rem;
+    overflow-wrap: anywhere;
   }
   .data-table th,
   .data-table td {
@@ -2429,6 +2460,9 @@
   .data-table .pending-decision {
     color: var(--danger);
     font-weight: 700;
+  }
+  .data-table .pending-decision small {
+    display: block;
   }
   .mono {
     font-family: var(--latin-ui);
@@ -2484,7 +2518,10 @@
   }
   .cell-wrap {
     white-space: normal !important;
-    min-width: 12rem;
+    min-width: 9rem;
+  }
+  .cell-wrap.cell-narrow {
+    min-width: 6.5rem;
   }
   .official-reference {
     white-space: nowrap;
@@ -3256,12 +3293,91 @@
   .calendar-agenda-list .agenda-item strong {
     color: var(--ink);
   }
+  .calendar-agenda-list .agenda-item.is-today {
+    border-inline-start-color: var(--gold);
+  }
+  .agenda-timeline li.is-decided time {
+    color: var(--muted);
+  }
+  .decision-context {
+    color: var(--success);
+    font-weight: 700;
+  }
+  .day-line {
+    display: block;
+    color: var(--ink);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: 1.6;
+    white-space: normal;
+  }
+  .day-line.muted,
+  .day-line-done {
+    color: var(--muted);
+  }
+  .day-line-time {
+    display: inline-block;
+    min-width: 4.5rem;
+    color: var(--accent);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .day-line-task {
+    color: var(--muted);
+  }
+  .calendar-detail-actions {
+    display: grid;
+    gap: 0.5rem;
+    margin: -0.4rem 0 0.9rem;
+  }
+  .calendar-detail-actions > button {
+    justify-self: start;
+  }
+  /* At the default window (1100 px) the day's details stay beside the month, narrower. */
   @media (max-width: 1100px) {
+    .calendar-layout {
+      grid-template-columns: minmax(0, 1fr) 270px;
+    }
+    .calendar-day {
+      min-height: 84px;
+    }
+  }
+  @media (max-width: 900px) {
     .calendar-layout {
       grid-template-columns: 1fr;
     }
     .calendar-detail {
       position: static;
+    }
+  }
+  .hearing-roll table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+  .hearing-roll th,
+  .hearing-roll td {
+    border: 1px solid #888;
+    padding: 4pt 6pt;
+    text-align: start;
+    vertical-align: top;
+  }
+  .hearing-roll h2 {
+    margin: 0 0 4pt;
+    font-size: 15pt;
+  }
+  .hearing-roll header p {
+    margin: 0 0 10pt;
+  }
+  .hearing-roll-decision {
+    width: 22%;
+  }
+  @media print {
+    .hearing-roll {
+      direction: inherit;
+    }
+    .hearing-roll tr {
+      break-inside: avoid;
     }
   }
 }
@@ -3375,14 +3491,31 @@
     background: var(--danger-bg) !important;
   }
   .backup-offsite {
-    margin: 0;
-    align-items: center;
-    color: var(--ink);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    border-color: color-mix(in srgb, var(--gold) 35%, var(--line));
+  }
+  .backup-offsite .backup-status-icon {
+    background: var(--gold-soft);
+    color: var(--gold);
+  }
+  .backup-offsite h3 {
+    font-size: 1rem;
+  }
+  .backup-offsite p {
+    margin: 0.25rem 0 0;
     font-size: var(--text-sm);
     line-height: 1.7;
   }
-  .backup-offsite .icon {
-    color: var(--gold);
+  .backup-offsite .form-actions {
+    justify-content: flex-start;
+    margin-top: 0.6rem;
+    padding: 0;
+  }
+  .backup-offsite .success,
+  .backup-action .success {
+    overflow-wrap: anywhere;
   }
 }
 
@@ -3413,6 +3546,55 @@
   }
   .gate-link {
     margin-top: 0.85rem;
+  }
+  .gate-notice {
+    margin: 0 0 1rem;
+  }
+  .developer-contacts-plain {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    user-select: text;
+  }
+  .gate-support {
+    display: grid;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--line);
+    padding-top: 0.85rem;
+    font-size: var(--text-sm);
+    text-align: start;
+  }
+  .gate-restore {
+    display: grid;
+    gap: 1rem;
+  }
+  .gate-restore > button {
+    min-height: 46px;
+  }
+  .gate-restore-file {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--sidebar-bg);
+    overflow-wrap: anywhere;
+  }
+  .gate-restore-file .icon {
+    flex: none;
+    color: var(--gold);
+  }
+  .gate-restore-method,
+  .segmented {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 0.5rem;
   }
   .gate-brand {
     gap: 0.6rem;
@@ -3489,6 +3671,47 @@
     word-break: normal;
     overflow-wrap: normal;
     user-select: all;
+  }
+  .recovery-key-sheet {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .recovery-key-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+  .print-only {
+    display: none;
+  }
+  @media print {
+    .print-only {
+      display: block;
+    }
+    /* A card marked print-focus (the recovery key, the hearing roll) prints on its own. */
+    body:has(.print-focus) * {
+      visibility: hidden;
+    }
+    body:has(.print-focus) .print-focus,
+    body:has(.print-focus) .print-focus * {
+      visibility: visible;
+    }
+    body:has(.print-focus) .print-focus {
+      position: absolute;
+      inset-inline: 0;
+      top: 0;
+      padding: 1.5cm;
+      color: #000;
+    }
+    .recovery-key-print-title {
+      font-size: 16pt;
+      font-weight: 800;
+    }
+    .recovery-key {
+      font-size: 15pt;
+      user-select: auto;
+    }
   }
   .gate-tips {
     display: grid;

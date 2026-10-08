@@ -33,11 +33,14 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
   control,
   errors,
   autoFocus = true,
+  internalNumberHint,
 }: {
   register: UseFormRegister<T>;
   control: Control<T>;
   errors?: FieldErrors<FieldValues>;
   autoFocus?: boolean;
+  /** Replaces the usual hint, e.g. to say the number was suggested. */
+  internalNumberHint?: string;
 }) {
   const { t } = useTranslation();
   const errorFor = (name: keyof CaseCoreFormValues, message = t('forms.invalid')) =>
@@ -49,7 +52,7 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
         <div className="form-grid form-grid-3">
           <Field
             label={t('cases.fields.caseNumber')}
-            hint={t('cases.form.internalNumberHint')}
+            hint={internalNumberHint ?? t('cases.form.internalNumberHint')}
             error={errorFor('internalNumber', t('forms.required'))}
             required
           >

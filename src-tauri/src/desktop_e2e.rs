@@ -50,6 +50,22 @@ pub fn selection(kind: &str) -> Result<Option<PathBuf>, Error> {
             }
             Ok(Some(path))
         }
+        // The copy saved earlier by the `save` choice, restored on a fresh installation.
+        ("backup", "portable") => {
+            let path = root.join("exported/copy.lmsbackup");
+            if path.canonicalize()?.parent() != Some(root.join("exported").as_path()) {
+                return Err(Error::Operation);
+            }
+            Ok(Some(path))
+        }
+        ("save-backup", "save") => {
+            let folder = root.join("exported");
+            fs::create_dir_all(&folder)?;
+            if folder.canonicalize()?.parent() != Some(root.as_path()) {
+                return Err(Error::Operation);
+            }
+            Ok(Some(folder.join("copy.lmsbackup")))
+        }
         ("backup", "backup") => {
             let mut backups = fs::read_dir(root.join("vault/Backups"))?
                 .filter_map(Result::ok)

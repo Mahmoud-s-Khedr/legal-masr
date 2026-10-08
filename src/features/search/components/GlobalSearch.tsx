@@ -63,6 +63,13 @@ export function GlobalSearch({
           // leave room for both (the palette has neither).
           className={palette ? undefined : 'ps-10 pe-[4.5rem]'}
           autoFocus={palette}
+          // Escape leaves the field empty, ready for the next search.
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && query) {
+              onQueryChange('');
+              setOpen(false);
+            }
+          }}
           aria-label={t('app.searchLabel')}
           placeholder={t('search.placeholder')}
         />
