@@ -27,9 +27,17 @@ fn clean(value: Option<String>) -> Option<String> {
     value.and_then(|value| (!value.trim().is_empty()).then(|| value.trim().to_owned()))
 }
 
+/// The two independent year numbers a case can carry.
+struct CaseYears {
+    /// Gregorian year in the court number, 1800-9999 («رقم 447 لسنة 2026»).
+    official: Option<i64>,
+    /// Court (judicial) year, 1-9999 («رقم 1234 لسنة 89 قضائية»).
+    judicial: Option<i64>,
+}
+
 fn validate_case(
     internal_number: &str,
-    official_year: Option<i64>,
+    years: CaseYears,
     litigation_degree: Option<&str>,
     status: &str,
     filed_on: Option<&str>,
@@ -46,7 +54,12 @@ fn validate_case(
             .iter()
             .any(|client| client.client_id.trim().is_empty())
         || unique_clients.len() != clients.len()
-        || official_year.is_some_and(|year| !(1800..=9999).contains(&year))
+        || years
+            .official
+            .is_some_and(|year| !(1800..=9999).contains(&year))
+        || years
+            .judicial
+            .is_some_and(|year| !(1..=9999).contains(&year))
         || litigation_degree.is_some_and(|degree| !VALID_LITIGATION_DEGREES.contains(&degree))
         || !VALID_STATUSES.contains(&status)
         || !valid_date(filed_on)
@@ -71,10 +84,13 @@ fn index(conn: &rusqlite::Connection, case: &CaseDto, now: &str) -> Result<(), E
         &case.internal_number,
         case.official_number.as_deref(),
         &normalize::normalize_text(&format!(
-            "{} {} {} {}",
+            "{} {} {} {} {}",
             case.internal_number,
             case.official_number.clone().unwrap_or_default(),
             case.official_year
+                .map(|year| year.to_string())
+                .unwrap_or_default(),
+            case.judicial_year
                 .map(|year| year.to_string())
                 .unwrap_or_default(),
             client_names
@@ -93,6 +109,7 @@ fn create_dto(input: CaseCreateInput, id: String, now: String) -> CaseDto {
         internal_number: input.internal_number.trim().to_owned(),
         official_number: clean(input.official_number),
         official_year: input.official_year,
+        judicial_year: input.judicial_year,
         case_type: clean(input.case_type),
         litigation_degree: input.litigation_degree,
         court_name: clean(input.court_name),
@@ -117,7 +134,10 @@ pub fn create<R: Runtime>(
 ) -> Result<CaseDto, Error> {
     validate_case(
         &input.internal_number,
-        input.official_year,
+        CaseYears {
+            official: input.official_year,
+            judicial: input.judicial_year,
+        },
         input.litigation_degree.as_deref(),
         &input.status,
         input.filed_on.as_deref(),
@@ -146,7 +166,10 @@ pub fn update<R: Runtime>(
 ) -> Result<CaseDto, Error> {
     validate_case(
         &input.internal_number,
-        input.official_year,
+        CaseYears {
+            official: input.official_year,
+            judicial: input.judicial_year,
+        },
         input.litigation_degree.as_deref(),
         &input.status,
         input.filed_on.as_deref(),
@@ -164,6 +187,7 @@ pub fn update<R: Runtime>(
         internal_number: input.internal_number.trim().to_owned(),
         official_number: clean(input.official_number),
         official_year: input.official_year,
+        judicial_year: input.judicial_year,
         case_type: clean(input.case_type),
         litigation_degree: input.litigation_degree,
         court_name: clean(input.court_name),
@@ -342,7 +366,10 @@ mod tests {
         }];
         assert!(validate_case(
             "CA-1",
-            Some(2026),
+            CaseYears {
+                official: Some(2026),
+                judicial: None,
+            },
             Some("APPEAL"),
             "ACTIVE",
             Some("2026-08-24"),
@@ -361,7 +388,10 @@ mod tests {
         };
         assert!(validate_case(
             "CA-1",
-            None,
+            CaseYears {
+                official: None,
+                judicial: None,
+            },
             None,
             "ACTIVE",
             Some("2026-02-30"),
@@ -371,7 +401,10 @@ mod tests {
         .is_err());
         assert!(validate_case(
             "CA-1",
-            None,
+            CaseYears {
+                official: None,
+                judicial: None,
+            },
             None,
             "DRAFT",
             None,
@@ -379,5 +412,47 @@ mod tests {
             &[duplicate.clone(), duplicate]
         )
         .is_err());
+    }
+
+    fn judicial_year_validation(
+        official_year: Option<i64>,
+        judicial_year: Option<i64>,
+    ) -> Result<(), Error> {
+        let client = CaseClientInput {
+            client_id: "a".into(),
+            legal_capacity: None,
+            power_of_attorney_id: None,
+            notes: None,
+        };
+        validate_case(
+            "CA-1",
+            CaseYears {
+                official: official_year,
+                judicial: judicial_year,
+            },
+            None,
+            "ACTIVE",
+            None,
+            None,
+            &[client],
+        )
+    }
+
+    #[test]
+    fn accepts_a_short_judicial_year_that_is_not_a_gregorian_year() {
+        // "رقم 1234 لسنة 89 قضائية": 89 is a court year, not a calendar year.
+        assert!(judicial_year_validation(None, Some(89)).is_ok());
+        assert!(judicial_year_validation(None, Some(1)).is_ok());
+        assert!(judicial_year_validation(None, Some(9999)).is_ok());
+        assert!(judicial_year_validation(Some(2026), Some(89)).is_ok());
+    }
+
+    #[test]
+    fn rejects_out_of_range_judicial_years_and_keeps_gregorian_years_strict() {
+        assert!(judicial_year_validation(None, Some(0)).is_err());
+        assert!(judicial_year_validation(None, Some(-5)).is_err());
+        assert!(judicial_year_validation(None, Some(10_000)).is_err());
+        // The Gregorian case year still cannot be a two-digit value.
+        assert!(judicial_year_validation(Some(89), None).is_err());
     }
 }

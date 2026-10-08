@@ -48,7 +48,7 @@ pub fn rebuild_index<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result
     }
 
     let mut case_statement = tx.prepare(
-        "SELECT id, internal_number, COALESCE(official_number, ''), COALESCE(official_year, '') FROM cases",
+        "SELECT id, internal_number, COALESCE(official_number, ''), COALESCE(CAST(official_year AS TEXT), ''), COALESCE(CAST(judicial_year AS TEXT), '') FROM cases",
     )?;
     let cases = case_statement
         .query_map([], |row| {
@@ -57,10 +57,11 @@ pub fn rebuild_index<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
                 row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()?;
-    for (id, internal_number, official_number, official_year) in &cases {
+    for (id, internal_number, official_number, official_year, judicial_year) in &cases {
         search_repository::upsert(
             &tx,
             "CASE",
@@ -68,7 +69,7 @@ pub fn rebuild_index<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result
             internal_number,
             (!official_number.is_empty()).then_some(official_number.as_str()),
             &normalize::normalize_text(&format!(
-                "{internal_number} {official_number} {official_year}"
+                "{internal_number} {official_number} {official_year} {judicial_year}"
             )),
             &now,
         )?;

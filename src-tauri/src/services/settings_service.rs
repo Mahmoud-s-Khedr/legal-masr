@@ -15,18 +15,23 @@ pub fn get<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<SettingsD
     settings_repository::get_settings(&conn)
 }
 
+/// Mirrors the database CHECK constraints so an out-of-range value is a clear
+/// validation error rather than a generic failure from the database.
+fn valid_settings(input: &SettingsUpdateInput) -> bool {
+    matches!(input.language.as_str(), "ar" | "en")
+        && matches!(input.theme.as_str(), "system" | "light" | "dark")
+        && matches!(input.date_format.as_str(), "dd/MM/yyyy" | "yyyy-MM-dd")
+        && input.week_starts_on <= 6
+        && input.default_reminder_minutes <= 10_080
+        && (1..=1440).contains(&input.lock_timeout_minutes)
+}
+
 pub fn update<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
     input: &SettingsUpdateInput,
 ) -> Result<SettingsDto, Error> {
-    if !matches!(input.language.as_str(), "ar" | "en")
-        || !matches!(input.theme.as_str(), "system" | "light" | "dark")
-        || !matches!(input.date_format.as_str(), "dd/MM/yyyy" | "yyyy-MM-dd")
-        || input.week_starts_on > 6
-        || input.default_reminder_minutes > 10_080
-        || input.lock_timeout_minutes == 0
-    {
+    if !valid_settings(input) {
         return Err(Error::Validation);
     }
     let master = state.unlocked()?;
@@ -175,5 +180,53 @@ mod contact_tests {
             dispatch_developer_contact(&unlocked_state(), "email", |_| Err(Error::Operation)),
             Err(Error::Operation)
         ));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn settings() -> SettingsUpdateInput {
+        SettingsUpdateInput {
+            language: "ar".into(),
+            theme: "system".into(),
+            date_format: "dd/MM/yyyy".into(),
+            week_starts_on: 6,
+            default_reminder_minutes: 60,
+            lock_timeout_minutes: 30,
+        }
+    }
+
+    #[test]
+    fn accepts_the_lock_timeout_range_the_database_allows() {
+        for minutes in [1, 30, 1440] {
+            let mut input = settings();
+            input.lock_timeout_minutes = minutes;
+            assert!(valid_settings(&input), "{minutes}");
+        }
+    }
+
+    #[test]
+    fn rejects_a_lock_timeout_the_database_would_refuse() {
+        for minutes in [0, 1441, u32::MAX] {
+            let mut input = settings();
+            input.lock_timeout_minutes = minutes;
+            assert!(!valid_settings(&input), "{minutes}");
+        }
+    }
+
+    #[test]
+    fn rejects_unknown_choices_and_out_of_range_numbers() {
+        let mut input = settings();
+        input.theme = "sepia".into();
+        assert!(!valid_settings(&input));
+        let mut input = settings();
+        input.week_starts_on = 7;
+        assert!(!valid_settings(&input));
+        let mut input = settings();
+        input.default_reminder_minutes = 10_081;
+        assert!(!valid_settings(&input));
+        assert!(valid_settings(&settings()));
     }
 }

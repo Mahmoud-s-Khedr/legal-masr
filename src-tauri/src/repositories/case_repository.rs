@@ -4,7 +4,7 @@ use crate::{
 };
 use rusqlite::{params, Connection, Row};
 
-const CASE_COLUMNS: &str = "id, internal_number, official_number, official_year, case_type, litigation_degree, court_name, circuit_name, status, filed_on, closed_on, subject, notes, archived_at, created_at, updated_at";
+const CASE_COLUMNS: &str = "id, internal_number, official_number, official_year, case_type, litigation_degree, court_name, circuit_name, status, filed_on, closed_on, subject, notes, archived_at, created_at, updated_at, judicial_year";
 
 fn map_case(row: &Row<'_>) -> rusqlite::Result<CaseDto> {
     Ok(CaseDto {
@@ -24,6 +24,7 @@ fn map_case(row: &Row<'_>) -> rusqlite::Result<CaseDto> {
         archived_at: row.get(13)?,
         created_at: row.get(14)?,
         updated_at: row.get(15)?,
+        judicial_year: row.get(16)?,
         clients: vec![],
         opponents: vec![],
     })
@@ -31,16 +32,16 @@ fn map_case(row: &Row<'_>) -> rusqlite::Result<CaseDto> {
 
 pub fn insert(conn: &Connection, case: &CaseDto) -> Result<(), Error> {
     conn.execute(
-        "INSERT INTO cases (id, internal_number, official_number, official_year, case_type, litigation_degree, court_name, circuit_name, status, filed_on, closed_on, subject, notes, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?14)",
-        params![case.id, case.internal_number, case.official_number, case.official_year, case.case_type, case.litigation_degree, case.court_name, case.circuit_name, case.status, case.filed_on, case.closed_on, case.subject, case.notes, case.created_at],
+        "INSERT INTO cases (id, internal_number, official_number, official_year, case_type, litigation_degree, court_name, circuit_name, status, filed_on, closed_on, subject, notes, created_at, updated_at, judicial_year) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?14, ?15)",
+        params![case.id, case.internal_number, case.official_number, case.official_year, case.case_type, case.litigation_degree, case.court_name, case.circuit_name, case.status, case.filed_on, case.closed_on, case.subject, case.notes, case.created_at, case.judicial_year],
     )?;
     Ok(())
 }
 
 pub fn update(conn: &Connection, case: &CaseDto) -> Result<(), Error> {
     if conn.execute(
-        "UPDATE cases SET internal_number = ?2, official_number = ?3, official_year = ?4, case_type = ?5, litigation_degree = ?6, court_name = ?7, circuit_name = ?8, status = ?9, filed_on = ?10, closed_on = ?11, subject = ?12, notes = ?13, updated_at = ?14 WHERE id = ?1",
-        params![case.id, case.internal_number, case.official_number, case.official_year, case.case_type, case.litigation_degree, case.court_name, case.circuit_name, case.status, case.filed_on, case.closed_on, case.subject, case.notes, case.updated_at],
+        "UPDATE cases SET internal_number = ?2, official_number = ?3, official_year = ?4, case_type = ?5, litigation_degree = ?6, court_name = ?7, circuit_name = ?8, status = ?9, filed_on = ?10, closed_on = ?11, subject = ?12, notes = ?13, updated_at = ?14, judicial_year = ?15 WHERE id = ?1",
+        params![case.id, case.internal_number, case.official_number, case.official_year, case.case_type, case.litigation_degree, case.court_name, case.circuit_name, case.status, case.filed_on, case.closed_on, case.subject, case.notes, case.updated_at, case.judicial_year],
     )? == 0 { return Err(Error::CaseNotFound); }
     Ok(())
 }
@@ -182,7 +183,7 @@ pub fn list(
 ) -> Result<Vec<CaseSummary>, Error> {
     let like = query.map(|value| format!("%{value}%"));
     let mut statement = conn.prepare(
-        "SELECT c.id, c.internal_number, c.official_number, c.official_year, c.status, c.archived_at, COALESCE(group_concat(cl.full_name, '، '), '') FROM cases c LEFT JOIN case_clients cc ON cc.case_id = c.id LEFT JOIN clients cl ON cl.id = cc.client_id WHERE (?1 OR c.archived_at IS NULL) AND (?2 IS NULL OR c.status = ?2) AND (?3 IS NULL OR EXISTS (SELECT 1 FROM case_clients filtered WHERE filtered.case_id = c.id AND filtered.client_id = ?3)) AND (?4 IS NULL OR c.internal_number LIKE ?4 OR c.official_number LIKE ?4 OR CAST(c.official_year AS TEXT) LIKE ?4) GROUP BY c.id ORDER BY c.archived_at IS NOT NULL, c.internal_number",
+        "SELECT c.id, c.internal_number, c.official_number, c.official_year, c.status, c.archived_at, COALESCE(group_concat(cl.full_name, '، '), ''), c.judicial_year FROM cases c LEFT JOIN case_clients cc ON cc.case_id = c.id LEFT JOIN clients cl ON cl.id = cc.client_id WHERE (?1 OR c.archived_at IS NULL) AND (?2 IS NULL OR c.status = ?2) AND (?3 IS NULL OR EXISTS (SELECT 1 FROM case_clients filtered WHERE filtered.case_id = c.id AND filtered.client_id = ?3)) AND (?4 IS NULL OR c.internal_number LIKE ?4 OR c.official_number LIKE ?4 OR CAST(c.official_year AS TEXT) LIKE ?4 OR CAST(c.judicial_year AS TEXT) LIKE ?4) GROUP BY c.id ORDER BY c.archived_at IS NOT NULL, c.internal_number",
     )?;
     let rows = statement
         .query_map(params![include_archived, status, client_id, like], |row| {
@@ -192,6 +193,7 @@ pub fn list(
                 internal_number: row.get(1)?,
                 official_number: row.get(2)?,
                 official_year: row.get(3)?,
+                judicial_year: row.get(7)?,
                 status: row.get(4)?,
                 archived_at: row.get(5)?,
                 client_names: if names.is_empty() {
@@ -267,6 +269,7 @@ mod tests {
             internal_number: "CA-1".into(),
             official_number: Some("42".into()),
             official_year: Some(2026),
+            judicial_year: None,
             case_type: None,
             litigation_degree: Some("APPEAL".into()),
             court_name: None,

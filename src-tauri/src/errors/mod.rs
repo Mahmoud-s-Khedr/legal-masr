@@ -48,10 +48,18 @@ pub enum Error {
     CaseNotFound,
     #[error("power of attorney not found")]
     PowerOfAttorneyNotFound,
+    #[error("power of attorney client is relied on by a case")]
+    PowerOfAttorneyClientInUse,
     #[error("hearing not found")]
     HearingNotFound,
     #[error("client is a probable duplicate")]
     ClientProbableDuplicate(Vec<ClientDuplicateCandidate>),
+    #[error("client number is already used")]
+    ClientNumberTaken,
+    #[error("case number is already used")]
+    CaseNumberTaken,
+    #[error("power of attorney number is already used")]
+    PowerOfAttorneyNumberTaken,
     #[error("case must have at least one client")]
     CaseMustHaveClient,
     #[error("case primary client must be reassigned before this client can be detached")]
@@ -77,11 +85,35 @@ pub enum Error {
     #[error("{0}")]
     Io(#[from] std::io::Error),
     #[error("{0}")]
-    Sql(#[from] rusqlite::Error),
+    Sql(rusqlite::Error),
     #[error("{0}")]
     Json(#[from] serde_json::Error),
     #[error("{0}")]
     Zip(#[from] zip::result::ZipError),
+}
+
+/// A UNIQUE rule a lawyer can run into by reusing a number. Only these are
+/// reported as their own error; any other database failure stays opaque.
+fn violated_unique_column(error: &rusqlite::Error) -> Option<&str> {
+    match error {
+        rusqlite::Error::SqliteFailure(failure, Some(message))
+            if failure.extended_code == rusqlite::ffi::SQLITE_CONSTRAINT_UNIQUE =>
+        {
+            message.strip_prefix("UNIQUE constraint failed: ")
+        }
+        _ => None,
+    }
+}
+
+impl From<rusqlite::Error> for Error {
+    fn from(error: rusqlite::Error) -> Self {
+        match violated_unique_column(&error) {
+            Some("clients.internal_number") => Self::ClientNumberTaken,
+            Some("cases.internal_number") => Self::CaseNumberTaken,
+            Some("powers_of_attorney.internal_sequence") => Self::PowerOfAttorneyNumberTaken,
+            _ => Self::Sql(error),
+        }
+    }
 }
 
 impl Error {
@@ -102,8 +134,12 @@ impl Error {
             Self::ClientNotFound => "CLIENT_NOT_FOUND",
             Self::CaseNotFound => "CASE_NOT_FOUND",
             Self::PowerOfAttorneyNotFound => "POWER_OF_ATTORNEY_NOT_FOUND",
+            Self::PowerOfAttorneyClientInUse => "POWER_OF_ATTORNEY_CLIENT_IN_USE",
             Self::HearingNotFound => "HEARING_NOT_FOUND",
             Self::ClientProbableDuplicate(_) => "CLIENT_PROBABLE_DUPLICATE",
+            Self::ClientNumberTaken => "CLIENT_NUMBER_TAKEN",
+            Self::CaseNumberTaken => "CASE_NUMBER_TAKEN",
+            Self::PowerOfAttorneyNumberTaken => "POWER_OF_ATTORNEY_NUMBER_TAKEN",
             Self::CaseMustHaveClient => "CASE_MUST_HAVE_CLIENT",
             Self::CasePrimaryClientReassignmentRequired => {
                 "CASE_PRIMARY_CLIENT_REASSIGNMENT_REQUIRED"
@@ -140,8 +176,14 @@ impl Error {
             Self::ClientNotFound => "لم يتم العثور على الموكل.",
             Self::CaseNotFound => "لم يتم العثور على القضية.",
             Self::PowerOfAttorneyNotFound => "لم يتم العثور على التوكيل.",
+            Self::PowerOfAttorneyClientInUse => {
+                "لا يمكن إزالة موكل يعتمد عليه التوكيل في إحدى القضايا."
+            }
             Self::HearingNotFound => "لم يتم العثور على الجلسة.",
             Self::ClientProbableDuplicate(_) => "يوجد موكل مشابه محتمل بالفعل.",
+            Self::ClientNumberTaken => "رقم الموكل مستخدم بالفعل.",
+            Self::CaseNumberTaken => "رقم القضية مستخدم بالفعل.",
+            Self::PowerOfAttorneyNumberTaken => "الرقم الداخلي للتوكيل مستخدم بالفعل.",
             Self::CaseMustHaveClient => "يجب أن تحتوي القضية على موكل واحد على الأقل.",
             Self::CasePrimaryClientReassignmentRequired => {
                 "يجب تعيين موكل أساسي آخر قبل إزالة هذا الموكل."
