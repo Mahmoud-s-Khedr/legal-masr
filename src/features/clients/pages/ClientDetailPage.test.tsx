@@ -33,3 +33,40 @@ it('tells the lawyer a client number is already used, in words that fix it, and 
   expect(alert).not.toHaveTextContent('أعد المحاولة');
   expect(number).toHaveValue('DEMO-DUPLICATE');
 });
+
+it('shows the phone as copyable text, never as a link that would navigate the window away', async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+  vi.mocked(bridge.clientGet).mockResolvedValue({
+    ...fixtures.client,
+    primaryPhone: '01000000009',
+  });
+  const { container } = renderWorkflow(
+    <ClientDetailPage />,
+    `/clients/${fixtures.client.id}`,
+    '/clients/:id',
+  );
+
+  fireEvent.click(await screen.findByRole('button', { name: 'نسخ رقم الهاتف' }));
+
+  expect(container.querySelector('a[href^="tel:"]')).toBeNull();
+  expect(writeText).toHaveBeenCalledWith('01000000009');
+  expect(await screen.findByText('تم النسخ')).toBeInTheDocument();
+});
+
+it('reports a failed copy instead of pretending it worked', async () => {
+  Object.defineProperty(navigator, 'clipboard', {
+    value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+    configurable: true,
+  });
+  document.execCommand = vi.fn().mockReturnValue(false);
+  vi.mocked(bridge.clientGet).mockResolvedValue({
+    ...fixtures.client,
+    primaryPhone: '01000000009',
+  });
+  renderWorkflow(<ClientDetailPage />, `/clients/${fixtures.client.id}`, '/clients/:id');
+
+  fireEvent.click(await screen.findByRole('button', { name: 'نسخ رقم الهاتف' }));
+
+  expect(await screen.findByText('تعذر النسخ')).toBeInTheDocument();
+});

@@ -46,7 +46,10 @@
   },
   "common": {
     "cancel": "إلغاء",
-    "notes": "ملاحظات"
+    "notes": "ملاحظات",
+    "copy": "نسخ",
+    "copied": "تم النسخ",
+    "copyFailed": "تعذر النسخ"
   },
   "tasks": {
     "kicker": "العمل اليومي",
@@ -497,7 +500,8 @@
       "internalNumberHint": "رقم ملف الموكل في مكتبك.",
       "nationalIdHint": "14 رقمًا كما في بطاقة الرقم القومي."
     },
-    "newTitle": "موكل جديد"
+    "newTitle": "موكل جديد",
+    "copyPhone": "نسخ رقم الهاتف"
   },
   "cases": {
     "title": "القضايا",

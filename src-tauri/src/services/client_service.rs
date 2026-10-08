@@ -167,7 +167,23 @@ pub fn restore<R: Runtime>(
     set_archived(app, state, id, false)
 }
 
-pub fn export<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<String, Error> {
+/// Shows the native folder picker. It blocks until the dialog closes, so it must run off
+/// the main thread (see `commands::threads`).
+pub fn pick_export_folder<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, Error> {
+    app.dialog()
+        .file()
+        .blocking_pick_folder()
+        .ok_or(Error::Cancelled)?
+        .into_path()
+        .map_err(|_| Error::Operation)
+}
+
+pub fn export<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: &str,
+    destination: &std::path::Path,
+) -> Result<String, Error> {
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
@@ -188,13 +204,6 @@ pub fn export<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Res
     let attachments = document_repository::list(&conn, None, Some(id), None, None)?;
     let payments = finance_repository::list_payments(&conn, Some(id), None, None, None)?;
     let expenses = finance_repository::list_expenses(&conn, Some(id), None, None, None)?;
-    let destination = app
-        .dialog()
-        .file()
-        .blocking_pick_folder()
-        .ok_or(Error::Cancelled)?
-        .into_path()
-        .map_err(|_| Error::Operation)?;
     let path = destination.join(format!("client-{}.json", client.id));
     let export = serde_json::json!({
         "formatVersion": 1,

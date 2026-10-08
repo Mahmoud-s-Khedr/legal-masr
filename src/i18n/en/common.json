@@ -46,7 +46,10 @@
   },
   "common": {
     "cancel": "Cancel",
-    "notes": "Notes"
+    "notes": "Notes",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy"
   },
   "tasks": {
     "kicker": "Daily work",
@@ -497,7 +500,8 @@
       "internalNumberHint": "The client's file number in your office.",
       "nationalIdHint": "14 digits, as on the national ID card."
     },
-    "newTitle": "New client"
+    "newTitle": "New client",
+    "copyPhone": "Copy phone number"
   },
   "cases": {
     "title": "Cases",

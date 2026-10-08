@@ -6,6 +6,7 @@ mod desktop_e2e;
 pub mod dto;
 pub mod errors;
 mod logging;
+pub mod navigation;
 pub mod normalize;
 pub mod repositories;
 pub mod security;
@@ -34,6 +35,7 @@ pub fn run() {
     }));
     let builder = builder
         .manage(AppState::default())
+        .plugin(navigation::guard())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(

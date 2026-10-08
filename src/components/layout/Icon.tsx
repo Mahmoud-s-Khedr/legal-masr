@@ -9,6 +9,8 @@ import {
   IconChevronRight,
   IconCirclePlus,
   IconClock,
+  IconCopy,
+  IconDeviceFloppy,
   IconCoins,
   IconDatabaseExport,
   IconDotsVertical,
@@ -19,6 +21,7 @@ import {
   IconLock,
   IconMenu2,
   IconPlus,
+  IconPrinter,
   IconReceipt2,
   IconSearch,
   IconSettings,
@@ -56,7 +59,10 @@ export type IconName =
   | 'chevron-left'
   | 'chevron-right'
   | 'arrow-left'
-  | 'shield';
+  | 'shield'
+  | 'copy'
+  | 'printer'
+  | 'save';
 
 const icons: Record<IconName, TablerIcon> = {
   home: IconHome,
@@ -86,6 +92,9 @@ const icons: Record<IconName, TablerIcon> = {
   'chevron-right': IconChevronRight,
   'arrow-left': IconArrowLeft,
   shield: IconShieldLock,
+  copy: IconCopy,
+  printer: IconPrinter,
+  save: IconDeviceFloppy,
 };
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {

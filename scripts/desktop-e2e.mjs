@@ -53,7 +53,10 @@ async function reserveDebuggingPort({ timeoutMs = 15_000 } = {}) {
   }
 }
 const results = [];
+// LEGALMASTER_E2E_SCENARIO runs a single journey by name (local debugging only).
+const onlyScenario = process.env.LEGALMASTER_E2E_SCENARIO;
 async function scenario(name, exercise) {
+  if (onlyScenario && name !== onlyScenario) return;
   const root = await mkdtemp(join(tmpdir(), 'legalmaster-desktop-e2e-'));
   const nonce = randomUUID();
   await writeFile(join(root, 'runner-marker'), nonce);
@@ -328,6 +331,47 @@ for (const choice of ['cancel', 'corrupt'])
     await h.browser.$('[role="alert"]').waitForDisplayed({ timeout: 15000 });
     await h.nav('/clients');
     await h.browser.$('a*=E2E-PRESERVED').waitForDisplayed();
+  });
+// The other journeys stub the picker. This one opens the real native dialog: a picker
+// awaited on the UI thread used to freeze the window for good. Linux only, because it
+// needs xdotool to press Escape in the dialog.
+if (process.platform === 'linux')
+  await scenario('native-file-picker-keeps-window-responsive', async (h) => {
+    const visibleWindows = () =>
+      spawnSync('xdotool', ['search', '--onlyvisible', '--name', ''], { encoding: 'utf8' })
+        .stdout.split('\n')
+        .filter(Boolean);
+    await h.initialize();
+    await h.client('E2E-NATIVE');
+    await h.selection('native');
+    await h.click('المستندات');
+    await h.click('إضافة مستند');
+    const before = new Set(visibleWindows());
+    await h.click('اختيار ملف');
+    h.checkpoint('native-dialog-open');
+    let dialogWindow;
+    for (let attempt = 0; attempt < 100 && !dialogWindow; attempt++) {
+      dialogWindow = visibleWindows().find((id) => !before.has(id));
+      if (!dialogWindow) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.ok(dialogWindow, 'the native file dialog did not open');
+    // The window must keep answering while the dialog is open. A frozen UI thread never
+    // answers, so fail after ten seconds instead of waiting for the driver's own timeout.
+    const answer = await Promise.race([
+      h.browser.execute(() => globalThis.document.readyState),
+      new Promise((resolve) => setTimeout(() => resolve('frozen'), 10_000)),
+    ]);
+    assert.equal(answer, 'complete', 'the window stopped responding while the dialog was open');
+    h.checkpoint('native-dialog-cancel');
+    spawnSync('xdotool', ['windowfocus', '--sync', dialogWindow]);
+    spawnSync('xdotool', ['key', 'Escape']);
+    for (let attempt = 0; attempt < 100 && visibleWindows().includes(dialogWindow); attempt++)
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(visibleWindows().includes(dialogWindow), false, 'the native dialog stayed open');
+    // Cancelling is silent and the form stays usable.
+    await h.waitText('لم تختر ملفًا بعد');
+    assert.equal(await h.browser.$('[role="dialog"] [role="alert"]').isExisting(), false);
+    await h.click('إلغاء');
   });
 await scenario('restart-persistence', async (h) => {
   await h.initialize();

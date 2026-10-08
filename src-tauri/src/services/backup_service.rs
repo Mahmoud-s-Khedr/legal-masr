@@ -3,7 +3,6 @@ use crate::{
     services::app_service, state::AppState,
 };
 use tauri::{AppHandle, Runtime};
-#[cfg(not(feature = "desktop-e2e"))]
 use tauri_plugin_dialog::DialogExt;
 
 pub fn create<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<String, Error> {
@@ -53,13 +52,13 @@ pub fn latest_successful<R: Runtime>(
     backup_repository::latest_successful(&db::open_db(&db_path, &master)?)
 }
 
-fn choose_backup<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, Error> {
+/// Shows the native picker for a backup file. It blocks until the dialog closes, so it
+/// must run off the main thread (see `commands::threads`).
+pub fn pick_backup<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, Error> {
     #[cfg(feature = "desktop-e2e")]
-    {
-        let _ = app;
-        crate::desktop_e2e::selection("backup")
+    if let Some(path) = crate::desktop_e2e::selection("backup")? {
+        return Ok(path);
     }
-    #[cfg(not(feature = "desktop-e2e"))]
     app.dialog()
         .file()
         .add_filter(
@@ -72,18 +71,28 @@ fn choose_backup<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, E
         .map_err(|_| Error::Operation)
 }
 
-pub fn validate<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<(), Error> {
-    let path = choose_backup(app)?;
+pub fn validate(state: &AppState, path: &std::path::Path) -> Result<(), Error> {
     let master = state.unlocked()?;
     backup::validate(&path.to_string_lossy(), &master)
 }
 
-pub fn restore<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<(), Error> {
+/// Checks, before the picker opens, that a restore could run at all.
+pub fn ensure_restorable<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<(), Error> {
+    state.unlocked()?;
+    let (security_path, _) = db::paths(app)?;
+    crate::security::read_security(&security_path)?;
+    Ok(())
+}
+
+pub fn restore<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    path: &std::path::Path,
+) -> Result<(), Error> {
     let master = state.unlocked()?;
     let _attachment_guard = state.lock_attachment_operations()?;
     let (security_path, active_db) = db::paths(app)?;
     crate::security::read_security(&security_path)?;
-    let path = choose_backup(app)?;
     let documents = db::app_dir(app)?.join("attachments");
     if let Err(error) = backup::restore(&active_db, &master, &path.to_string_lossy(), &documents) {
         if crate::vault_operation::pending(&db::app_dir(app)?) {
