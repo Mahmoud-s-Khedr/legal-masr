@@ -119,8 +119,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Rust now reads a recovery key in any case and with spaces, dashes, line breaks or Arabic-Indic digits; issued keys keep their exact digest (pinned by a test). Key shown in groups of eight, left-to-right. NOT done: copy/print/save controls, regeneration, post-setup acknowledgement workflow, native check."
+        }
+      ]
     },
     {
       "id": "B06",
@@ -139,8 +146,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Real PowerOfAttorneyForm tests: an inline client save or cancel never submits the parent POA draft and links the new client. The DraftForm propagation guard was already present. jsdom only; no native run of this flow."
+        }
+      ]
     },
     {
       "id": "B07",
@@ -159,8 +173,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "replace_clients diffs membership: unchanged links kept, a forbidden removal is refused before any write with POWER_OF_ATTORNEY_CLIENT_IN_USE. 4 Rust tests (fail against the old delete-all code) and 3 TS tests; POA dialogs show the translated message. Native referenced-POA edit journey not run."
+        }
+      ]
     },
     {
       "id": "B08",
@@ -179,8 +200,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Not reproducible at this revision: DatePicker is controlled since the UI replacement. 4 jsdom tests added (display, untouched save, clearing one date, typed day-first and Arabic-Indic dates). No native check."
+        }
+      ]
     },
     {
       "id": "B09",
@@ -199,8 +227,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Edit and Record-decision are no longer offered for non-scheduled hearings (Agenda, case Hearings tab, Agenda deep link); 3 tests, mutation-checked. The agreed correction of a recorded decision (P3-04) is NOT implemented."
+        }
+      ]
     },
     {
       "id": "B10",
@@ -219,8 +254,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Additive migration 0002 (cases.judicial_year 1-9999) with service, DTO, search, form, display and AR/EN copy; upgrade test on a populated version-1 vault (rows, relationships, constraints, idempotence); round-trip and search tests. Differs from the register's year-kind sketch; the rest of P3-03 stays open."
+        }
+      ]
     },
     {
       "id": "B11",
@@ -239,8 +281,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Not reproducible at this revision in Chromium at 760x560, Arabic and English: the menu opens exactly one drawer, Escape returns focus to the menu button, the palette opens alone. Not re-run in WebKitGTK, Windows or macOS."
+        }
+      ]
     },
     {
       "id": "B12",
@@ -279,8 +328,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Copy narrowed only: reminders need the app open and unlocked, and autostart still begins at the lock screen. Delivery while locked or closed is NOT implemented."
+        }
+      ]
     },
     {
       "id": "B14",
@@ -326,8 +382,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Measured with computed colours over 15 routes x light/dark x AR/EN: dark primary fills were 2.4:1, fixed with an on-accent token; light misses (4.18, 4.28, 2.79) fixed; now 0 text styles below AA. Tailwind dark: variant now follows data-theme. Not covered: non-text contrast, hover/focus/disabled states, dialogs, assistive technology."
+        }
+      ]
     },
     {
       "id": "H02",
@@ -346,8 +409,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "UNIQUE violations on client, case and POA numbers map centrally to CLIENT_NUMBER_TAKEN, CASE_NUMBER_TAKEN and POWER_OF_ATTORNEY_NUMBER_TAKEN; client, case, POA, task and hearing save dialogs show the translated message and keep the draft. 8 Rust and 6 TS tests. Not done: field-level placement, other dialogs."
+        }
+      ]
     },
     {
       "id": "H03",
@@ -366,8 +436,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "DraftForm's in-flight guard is proven by a mutation-checked double-submit test on expense save; backup create, validate and restore are single-flight (create test mutation-checked). Delete and archive actions unchanged."
+        }
+      ]
     },
     {
       "id": "M-50-1",
@@ -526,8 +603,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Backend validation now mirrors the database range (lock timeout 1-1440) and the form schema has the matching maximum; Rust unit tests. The control is a fixed-choice select, so 1441 is no longer reachable from the UI."
+        }
+      ]
     },
     {
       "id": "M-52-2",
@@ -546,8 +630,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "A value above 1440 is now a validation error in the service and schema instead of a database failure; Rust unit tests. No native check."
+        }
+      ]
     },
     {
       "id": "M-52-3",
@@ -1126,8 +1217,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Fixed: .work-page and .calendar-page use minmax(0, 1fr); Finances measured 760px wide in a 760px window in both languages, and 0 overflow over 15 routes x 2 languages at 760, 640 and 480px (Chromium). Long-unbroken-content cases are not covered."
+        }
+      ]
     },
     {
       "id": "M-59-2",
@@ -1426,8 +1524,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Light-theme contrast: the three measured misses are fixed; 0 text styles below AA in the audited states (Chromium). Not covered: non-text contrast, hover/focus states."
+        }
+      ]
     },
     {
       "id": "L-08",
@@ -8478,8 +8583,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Dark-theme primary fills measured 2.4:1 and fixed with an on-accent token; the dark: variant now follows the app theme. 0 text styles below AA in dark over 15 routes x AR/EN. Destructive buttons and non-text accents not separately measured."
+        }
+      ]
     },
     {
       "id": "shell-ui/F4/line-739",
@@ -9418,8 +9530,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Light-theme contrast: the three measured misses are fixed; 0 text styles below AA in the audited states (Chromium)."
+        }
+      ]
     },
     {
       "id": "shell-ui/F14/line-832",
@@ -16747,8 +16866,15 @@
         "Rejected/failure path preserves prior data and UI state.",
         "Native workflow evidence where the source requires it; mocks/static inspection cannot close that requirement."
       ],
-      "evidenceStatus": "open",
-      "evidence": []
+      "evidenceStatus": "partial",
+      "evidence": [
+        {
+          "kind": "executed",
+          "result": "passed",
+          "report": "2026-10-08-beta-pass.md",
+          "scope": "Frontend schema, service and database now agree on 1-1440; Rust unit tests. The control is a fixed-choice select."
+        }
+      ]
     },
     {
       "id": "finance-search-settings/S1/line-1668",

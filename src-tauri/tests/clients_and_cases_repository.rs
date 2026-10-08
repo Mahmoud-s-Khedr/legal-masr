@@ -1,8 +1,8 @@
 use legalmaster_lib::{
     db,
-    dto::{CaseClientInput, CaseDto},
+    dto::{CaseClientInput, CaseDto, PowerOfAttorneyDto},
     errors::Error,
-    repositories::{case_repository, power_of_attorney_repository},
+    repositories::{case_repository, client_repository, power_of_attorney_repository},
     security,
 };
 use rusqlite::{params, Connection};
@@ -36,6 +36,7 @@ fn canonical_case(case_id: String, internal_number: &str) -> CaseDto {
         internal_number: internal_number.into(),
         official_number: Some("42".into()),
         official_year: Some(2026),
+        judicial_year: Some(89),
         case_type: Some("مدني".into()),
         litigation_degree: Some("FIRST_INSTANCE".into()),
         court_name: Some("محكمة القاهرة".into()),
@@ -110,6 +111,8 @@ fn case_round_trips_internal_official_numbers_client_capacity_poa_and_opponents(
         case_repository::hydrate(&conn, case_repository::get(&conn, &case_id).unwrap()).unwrap();
     assert_eq!(saved.internal_number, "CA-1");
     assert_eq!(saved.official_number.as_deref(), Some("42"));
+    assert_eq!(saved.official_year, Some(2026));
+    assert_eq!(saved.judicial_year, Some(89));
     assert_eq!(saved.clients.len(), 2);
     assert_eq!(saved.clients[0].legal_capacity.as_deref(), Some("مدعٍ"));
     assert_eq!(saved.opponents[0].full_name, "الخصم");
@@ -117,6 +120,11 @@ fn case_round_trips_internal_official_numbers_client_capacity_poa_and_opponents(
         case_repository::list(&conn, Some("42"), None, None, false).unwrap()[0].id,
         case_id
     );
+    // A case is findable by its judicial year, and the summary carries it.
+    let by_judicial_year = case_repository::list(&conn, Some("89"), None, None, false).unwrap();
+    assert_eq!(by_judicial_year.len(), 1);
+    assert_eq!(by_judicial_year[0].judicial_year, Some(89));
+    assert_eq!(by_judicial_year[0].official_year, Some(2026));
 }
 
 #[test]
@@ -253,5 +261,111 @@ fn relationship_replacement_validates_before_writes_and_retains_archived_links()
             .unwrap_err()
             .code(),
         "CLIENT_ARCHIVED"
+    );
+}
+
+fn client_row(conn: &Connection, client_id: &str, number: &str) -> Result<(), Error> {
+    client_repository::insert(
+        conn, client_id, number, "موكل", None, None, None, None, None, None, "now",
+    )
+}
+
+fn poa_row(poa_id: String, sequence: &str) -> PowerOfAttorneyDto {
+    PowerOfAttorneyDto {
+        id: poa_id,
+        internal_sequence: sequence.into(),
+        official_number: None,
+        issue_year: None,
+        issue_date: None,
+        notary_office: None,
+        notes: None,
+        archived_at: None,
+        created_at: "now".into(),
+        updated_at: "now".into(),
+        clients: vec![],
+        lawyers: vec![],
+        case_ids: vec![],
+    }
+}
+
+#[test]
+fn reusing_a_client_number_is_reported_as_taken_on_create_and_on_rename() {
+    let (_dir, conn) = open_migrated_test_db();
+    let (first, second) = (id(), id());
+    client_row(&conn, &first, "CL-1").unwrap();
+    assert!(matches!(
+        client_row(&conn, &id(), "CL-1"),
+        Err(Error::ClientNumberTaken)
+    ));
+    client_row(&conn, &second, "CL-2").unwrap();
+    let rename = client_repository::update(
+        &conn, &second, "CL-1", "موكل", None, None, None, None, None, None, "later",
+    );
+    assert!(matches!(rename, Err(Error::ClientNumberTaken)));
+    // The rejected rename changed nothing.
+    let number: String = conn
+        .query_row(
+            "SELECT internal_number FROM clients WHERE id = ?1",
+            [&second],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(number, "CL-2");
+}
+
+#[test]
+fn reusing_a_case_number_is_reported_as_taken_on_create_and_on_rename() {
+    let (_dir, conn) = open_migrated_test_db();
+    case_repository::insert(&conn, &canonical_case(id(), "CA-1")).unwrap();
+    assert!(matches!(
+        case_repository::insert(&conn, &canonical_case(id(), "CA-1")),
+        Err(Error::CaseNumberTaken)
+    ));
+    let second = id();
+    case_repository::insert(&conn, &canonical_case(second.clone(), "CA-2")).unwrap();
+    assert!(matches!(
+        case_repository::update(&conn, &canonical_case(second, "CA-1")),
+        Err(Error::CaseNumberTaken)
+    ));
+}
+
+#[test]
+fn reusing_a_power_of_attorney_number_is_reported_as_taken_on_create_and_on_rename() {
+    let (_dir, conn) = open_migrated_test_db();
+    power_of_attorney_repository::insert(&conn, &poa_row(id(), "TA-1")).unwrap();
+    assert!(matches!(
+        power_of_attorney_repository::insert(&conn, &poa_row(id(), "TA-1")),
+        Err(Error::PowerOfAttorneyNumberTaken)
+    ));
+    let second = id();
+    power_of_attorney_repository::insert(&conn, &poa_row(second.clone(), "TA-2")).unwrap();
+    assert!(matches!(
+        power_of_attorney_repository::update(&conn, &poa_row(second, "TA-1")),
+        Err(Error::PowerOfAttorneyNumberTaken)
+    ));
+}
+
+#[test]
+fn other_database_failures_stay_opaque_and_keep_the_generic_code() {
+    let (_dir, conn) = open_migrated_test_db();
+    let case_id = id();
+    case_repository::insert(&conn, &canonical_case(case_id.clone(), "CA-1")).unwrap();
+    let agreement = |agreement_id: String| {
+        conn.execute(
+            "INSERT INTO case_fee_agreements (id, case_id, amount_minor, created_at, updated_at) VALUES (?1, ?2, 100, 'now', 'now')",
+            params![agreement_id, case_id],
+        )
+    };
+    agreement(id()).unwrap();
+    // A UNIQUE rule the user cannot act on (one fee agreement per case) is not
+    // dressed up as a number clash.
+    let failure = Error::from(agreement(id()).unwrap_err());
+    assert!(matches!(failure, Error::Sql(_)));
+    assert_eq!(failure.code(), "OPERATION_FAILED");
+    assert_eq!(Error::ClientNumberTaken.code(), "CLIENT_NUMBER_TAKEN");
+    assert_eq!(Error::CaseNumberTaken.code(), "CASE_NUMBER_TAKEN");
+    assert_eq!(
+        Error::PowerOfAttorneyNumberTaken.code(),
+        "POWER_OF_ATTORNEY_NUMBER_TAKEN"
     );
 }

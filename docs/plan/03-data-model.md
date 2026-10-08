@@ -77,8 +77,13 @@ the current query surface and expected local data size did not justify it.
 
 ## Migration policy
 
-- `0001` is the sole pre-release canonical migration. It creates both the
+- `0001` is the pre-release canonical migration. It creates both the
   complete domain schema and required settings singleton.
+- `0002` adds the nullable `cases.judicial_year` (1–9999) so a court year such as
+  «89 قضائية» is stored apart from the Gregorian `official_year` (1800–9999).
+  It is additive: no table is rebuilt and existing rows are unchanged. A test
+  upgrades a populated version-1 vault and checks rows, relationships and the
+  foreign-key check.
 - Startup identifies the baseline with an internal marker. It refuses every
   superseded schema with `LEGACY_DATA_MIGRATION_REQUIRED` before applying any
   SQL, so a persisted vault requires an explicit conversion decision.

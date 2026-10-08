@@ -1,4 +1,5 @@
 import { DraftForm } from '@/components/forms/DraftForm';
+import { actionableErrorMessage } from '@/bridge/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useForm, useWatch } from 'react-hook-form';
@@ -145,7 +146,11 @@ export function CaseDetailPage() {
           <>
             <span>
               {caseDto.officialNumber ? (
-                <OfficialReference number={caseDto.officialNumber} year={caseDto.officialYear} />
+                <OfficialReference
+                  number={caseDto.officialNumber}
+                  year={caseDto.officialYear}
+                  judicialYear={caseDto.judicialYear}
+                />
               ) : (
                 t('cases.detail.noOfficialNumber')
               )}
@@ -241,7 +246,11 @@ export function CaseDetailPage() {
               </Fact>
               <Fact label={t('cases.fields.officialNumber')}>
                 {caseDto.officialNumber && (
-                  <OfficialReference number={caseDto.officialNumber} year={caseDto.officialYear} />
+                  <OfficialReference
+                    number={caseDto.officialNumber}
+                    year={caseDto.officialYear}
+                    judicialYear={caseDto.judicialYear}
+                  />
                 )}
               </Fact>
               <Fact label={t('cases.fields.caseType')}>{caseDto.caseType}</Fact>
@@ -403,23 +412,23 @@ export function CaseDetailPage() {
                       </p>
                     )}
                     <div className="row-actions">
-                      <Button
-                        type="button"
-                        variant="ghost"
-
-                        onClick={() => setHearingEditor(hearing)}
-                      >
-                        {t('agenda.editHearing')}
-                      </Button>
                       {hearing.status === 'SCHEDULED' && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-
-                          onClick={() => setHearingDecision(hearing)}
-                        >
-                          {t('agenda.recordDecision')}
-                        </Button>
+                        <>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setHearingEditor(hearing)}
+                          >
+                            {t('agenda.editHearing')}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setHearingDecision(hearing)}
+                          >
+                            {t('agenda.recordDecision')}
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -654,6 +663,7 @@ export function CaseDetailPage() {
                 id,
                 ...values,
                 officialYear: Number.isNaN(values.officialYear) ? undefined : values.officialYear,
+                judicialYear: Number.isNaN(values.judicialYear) ? undefined : values.judicialYear,
                 clients: caseDto.clients.map((client) => ({
                   clientId: client.clientId,
                   legalCapacity: client.legalCapacity ?? undefined,
@@ -670,7 +680,9 @@ export function CaseDetailPage() {
         />
         {update.isError && (
           <Alert variant="destructive">
-            <AlertDescription>{t('records.saveRetry')}</AlertDescription>
+            <AlertDescription>
+              {actionableErrorMessage(update.error, t('records.saveRetry'))}
+            </AlertDescription>
           </Alert>
         )}
       </FormDialog>
@@ -708,7 +720,9 @@ export function CaseDetailPage() {
         )}
         {saveTask.isError && (
           <Alert variant="destructive">
-            <AlertDescription>{t('tasks.saveError')}</AlertDescription>
+            <AlertDescription>
+              {actionableErrorMessage(saveTask.error, t('tasks.saveError'))}
+            </AlertDescription>
           </Alert>
         )}
         {(completeTask.isError || reopenTask.isError) && (
@@ -741,7 +755,9 @@ export function CaseDetailPage() {
         )}
         {saveHearing.isError && (
           <Alert variant="destructive">
-            <AlertDescription>{t('agenda.saveError')}</AlertDescription>
+            <AlertDescription>
+              {actionableErrorMessage(saveHearing.error, t('agenda.saveError'))}
+            </AlertDescription>
           </Alert>
         )}
       </FormDialog>

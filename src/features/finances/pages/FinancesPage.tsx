@@ -156,7 +156,7 @@ export function FinancesPage() {
         </label>
         <Button
           type="button"
-
+          variant="secondary"
           onClick={() => {
             setFilterCaseId('');
             setFilterClientId('');

@@ -37,6 +37,7 @@ export function NewCasePage() {
             const created = await createCase.mutateAsync({
               ...values,
               officialYear: Number.isNaN(values.officialYear) ? undefined : values.officialYear,
+              judicialYear: Number.isNaN(values.judicialYear) ? undefined : values.judicialYear,
               clients: values.clientIds.map((clientId) => ({ clientId })),
             });
             navigate(created?.id ? `/cases/${created.id}` : '/cases');

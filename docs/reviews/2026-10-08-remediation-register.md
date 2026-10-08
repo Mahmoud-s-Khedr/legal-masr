@@ -18,20 +18,22 @@ Corrections retained: picker deadlock and timeout overflow are rejected claims. 
 | B02 | 1           | partial               |
 | B03 | 1           | partial               |
 | B04 | 2           | open                  |
-| B05 | 3           | open                  |
-| B06 | 3           | open                  |
-| B07 | 3           | open                  |
-| B08 | 3           | open                  |
-| B09 | 3           | open                  |
-| B10 | 3           | open                  |
-| B11 | 5           | open                  |
+| B05 | 3           | partial               |
+| B06 | 3           | partial               |
+| B07 | 3           | partial               |
+| B08 | 3           | partial               |
+| B09 | 3           | partial               |
+| B10 | 3           | partial               |
+| B11 | 5           | partial               |
 | B12 | 2           | reproduction-required |
-| B13 | 4           | open                  |
+| B13 | 4           | partial               |
 | B14 | 1           | partial               |
-| H01 | 5           | open                  |
-| H02 | 4           | open                  |
-| H03 | 4           | open                  |
+| H01 | 5           | partial               |
+| H02 | 4           | partial               |
+| H03 | 4           | partial               |
 
 No full implementation phase is marked accepted by these partial results. Physical supported-platform, cross-device and Egyptian legal-review gates remain blocking.
 
 The [UI replacement evidence](2026-10-08-ui-replacement.md) covers the shared-control and case-client work only. It closes none of the open security, backup, packaging or release items above.
+
+The [beta-readiness pass](2026-10-08-beta-pass.md) moved B05–B11, B13 and H01–H03 from `open` to `partial` with scoped evidence (and re-checked each against the current code; B08 and B11 did not reproduce). `partial` is deliberate: none of them has native or device evidence beyond the Linux run, and B05, B09, B10 and B13 have unimplemented remainders listed in that report.

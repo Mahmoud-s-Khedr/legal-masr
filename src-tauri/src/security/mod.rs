@@ -90,8 +90,31 @@ pub fn unwrap(key: &[u8; 32], envelope: &Envelope) -> Result<[u8; 32], Error> {
         .map_err(|_| Error::InvalidPassword)
 }
 
+/// Reduces a typed or pasted recovery key to the lowercase hex it was issued as.
+///
+/// Keys are issued as lowercase hex, but people copy them from print-outs with
+/// capital letters, spaces, dashes or line breaks between groups, or type digits
+/// on an Arabic keyboard layout. Everything that is not a hex digit is dropped
+/// and Arabic-Indic digits are read as the digits they are, so a correctly
+/// copied key always resolves to the same material as the issued one. Anything
+/// else (a wrong or truncated key) still hashes to different material and fails.
+fn normalize_recovery_key(key: &str) -> zeroize::Zeroizing<String> {
+    let mut normalized = String::with_capacity(key.len());
+    for character in key.chars() {
+        let character = match character {
+            '٠'..='٩' => char::from(b'0' + (character as u32 - '٠' as u32) as u8),
+            '۰'..='۹' => char::from(b'0' + (character as u32 - '۰' as u32) as u8),
+            other => other.to_ascii_lowercase(),
+        };
+        if character.is_ascii_hexdigit() {
+            normalized.push(character);
+        }
+    }
+    zeroize::Zeroizing::new(normalized)
+}
+
 pub fn recovery_key_material(key: &str) -> [u8; 32] {
-    let normalized = zeroize::Zeroizing::new(key.replace('-', ""));
+    let normalized = normalize_recovery_key(key);
     Sha256::digest(normalized.as_bytes()).into()
 }
 
@@ -206,6 +229,72 @@ mod tests {
         write_security_atomically(&path, &replacement).unwrap();
         assert_eq!(read_security(&path).unwrap().version, 2);
         assert!(!recovery_path(&path).exists());
+    }
+
+    const ISSUED_KEY: &str = "3fa9c0de12b4778a5e61d0c2f9b83a4417de56c0b19a2e8f40d37c61a5b9e208";
+
+    #[test]
+    fn normalizing_never_changes_the_material_of_an_issued_key_so_existing_vaults_still_recover() {
+        // A vault created before key normalization sealed its recovery envelope with the
+        // plain digest of the lowercase hex it issued. That digest must stay exactly the same.
+        let sealed_before: [u8; 32] = Sha256::digest(ISSUED_KEY.as_bytes()).into();
+        assert_eq!(recovery_key_material(ISSUED_KEY), sealed_before);
+        // And so must the dashed form the previous version already accepted.
+        let dashed = format!("{}-{}", &ISSUED_KEY[..32], &ISSUED_KEY[32..]);
+        assert_eq!(recovery_key_material(&dashed), sealed_before);
+    }
+
+    #[test]
+    fn a_copied_recovery_key_resolves_to_the_issued_material_however_it_was_formatted() {
+        let issued = recovery_key_material(ISSUED_KEY);
+        let grouped = ISSUED_KEY
+            .as_bytes()
+            .chunks(8)
+            .map(|group| std::str::from_utf8(group).unwrap())
+            .collect::<Vec<_>>();
+        for variant in [
+            ISSUED_KEY.to_uppercase(),
+            grouped.join("-"),
+            grouped.join(" "),
+            grouped.join("\n"),
+            grouped.join(" - ").to_uppercase(),
+            format!("  {ISSUED_KEY}\n"),
+            format!("\u{200f}{ISSUED_KEY}\u{200f}"),
+        ] {
+            assert_eq!(recovery_key_material(&variant), issued, "{variant:?}");
+        }
+    }
+
+    #[test]
+    fn arabic_keyboard_digits_are_read_as_the_digits_they_are() {
+        let arabic_indic = ISSUED_KEY
+            .chars()
+            .map(|c| match c.to_digit(10) {
+                Some(d) if c.is_ascii_digit() => char::from_u32('٠' as u32 + d).unwrap(),
+                _ => c,
+            })
+            .collect::<String>();
+        assert_ne!(arabic_indic, ISSUED_KEY);
+        assert_eq!(
+            recovery_key_material(&arabic_indic),
+            recovery_key_material(ISSUED_KEY)
+        );
+    }
+
+    #[test]
+    fn a_wrong_or_truncated_recovery_key_never_resolves_to_the_issued_material() {
+        let issued = recovery_key_material(ISSUED_KEY);
+        let mut changed = ISSUED_KEY.to_owned();
+        changed.replace_range(0..1, "4");
+        for wrong in [
+            changed.as_str(),
+            &ISSUED_KEY[..63],
+            &ISSUED_KEY[1..],
+            "",
+            "not a key",
+        ] {
+            assert_ne!(recovery_key_material(wrong), issued, "{wrong:?}");
+        }
     }
 
     #[test]

@@ -83,4 +83,27 @@ describe('GlobalSearch', () => {
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Escape' });
     expect(onNavigate).toHaveBeenCalledOnce();
   });
+
+  it('leaves room in the topbar field for its search icon and Ctrl K badge, but not in the palette', () => {
+    vi.mocked(useGlobalSearch).mockReturnValue({ data: [] } as unknown as ReturnType<
+      typeof useGlobalSearch
+    >);
+    const { rerender } = render(
+      <MemoryRouter>
+        <SearchHarness />
+      </MemoryRouter>,
+    );
+    // The icon is drawn over the field's start; without this padding it covers the placeholder.
+    expect(screen.getByRole('combobox', { name: 'البحث العام' })).toHaveClass(
+      'ps-10',
+      'pe-[4.5rem]',
+    );
+
+    rerender(
+      <MemoryRouter>
+        <SearchHarness palette />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('combobox', { name: 'البحث العام' })).not.toHaveClass('ps-10');
+  });
 });

@@ -1,4 +1,5 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { actionableErrorMessage } from '@/bridge/errors';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -78,7 +79,14 @@ export function ClientDetailPage() {
         actions={
           <>
             {!item.archivedAt && (
-              <Link to={`/cases/new?client=${id}`}>{t('clients.detail.newCase')}</Link>
+              <Button
+                variant="secondary"
+                nativeButton={false}
+                role="link"
+                render={<Link to={`/cases/new?client=${id}`} />}
+              >
+                {t('clients.detail.newCase')}
+              </Button>
             )}
             <Button type="button" onClick={() => setEditOpen(true)}>
               {t('records.edit')}
@@ -178,6 +186,7 @@ export function ClientDetailPage() {
                           <OfficialReference
                             number={caseItem.officialNumber}
                             year={caseItem.officialYear}
+                            judicialYear={caseItem.judicialYear}
                           />
                         </span>
                       )}
@@ -225,6 +234,7 @@ export function ClientDetailPage() {
                         <OfficialReference
                           number={caseItem.officialNumber}
                           year={caseItem.officialYear}
+                          judicialYear={caseItem.judicialYear}
                         />
                       ) : (
                         t('clients.detail.noOfficialNumber')
@@ -334,7 +344,9 @@ export function ClientDetailPage() {
         />
         {update.isError && (
           <Alert variant="destructive">
-            <AlertDescription>{t('records.saveRetry')}</AlertDescription>
+            <AlertDescription>
+              {actionableErrorMessage(update.error, t('records.saveRetry'))}
+            </AlertDescription>
           </Alert>
         )}
       </FormDialog>

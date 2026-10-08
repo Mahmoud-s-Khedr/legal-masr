@@ -21,6 +21,11 @@ matrix and record the approver, date, commit and design-reference limitations
 before changing status to approved. Do not accept a baseline using a copied
 manifest from another build.
 
+`update:visual` only rewrites an image whose difference exceeds the comparison tolerance
+(`maxDiffPixelRatio: 0.001`), so small UI changes such as an icon position leave the old image in
+place and still pass. After a UI change, delete `baseline/*.png` before updating so that every
+image reflects the current screens, then review the changed ones.
+
 `pnpm verify:visual` checks integrity; `pnpm capture:visual:canonical` compares without
 updates. `pnpm probe:visual:canonical` intentionally
 changes spacing and must fail. Actuals/diffs/traces live in ignored

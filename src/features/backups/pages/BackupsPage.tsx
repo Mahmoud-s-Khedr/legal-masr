@@ -9,6 +9,7 @@ import { Skeleton } from '../../../components/ui/skeleton';
 import { Icon } from '../../../components/layout/Icon';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { useFormat } from '../../../i18n/LocalePresentation';
+import { useSingleFlight } from '../../../lib/useSingleFlight';
 import {
   useCreateBackup,
   useLatestSuccessfulBackup,
@@ -27,17 +28,20 @@ export function BackupSettingsPanel() {
   // Backup freshness is judged against when the panel was opened.
   const [openedAt] = useState(() => Date.now());
 
-  const createNow = () => {
-    createBackup.mutate();
-  };
+  // `isPending` lags a render behind a click, so a quick second click would start a
+  // second backup, or worse a second restore. Each action may run once at a time.
+  const once = useSingleFlight();
+  // The guard is shared on purpose: a restore must never overlap a backup or a check. So while
+  // any of them runs, none of the three may be offered; otherwise a click would be dropped silently.
+  const busy = createBackup.isPending || validateBackup.isPending || restoreBackup.isPending;
+  const createNow = () => once((settled) => createBackup.mutate(undefined, { onSettled: settled }));
 
-  const validate = () => {
-    validateBackup.mutate();
-  };
+  const validate = () =>
+    once((settled) => validateBackup.mutate(undefined, { onSettled: settled }));
 
   const restore = () => {
     setRestoreOpen(false);
-    restoreBackup.mutate();
+    once((settled) => restoreBackup.mutate(undefined, { onSettled: settled }));
   };
 
   const latest = latestBackup.data;
@@ -81,7 +85,7 @@ export function BackupSettingsPanel() {
           <h3>{t('backups.createTitle')}</h3>
           <p className="muted">{t('backups.createHint')}</p>
           <div className="form-actions">
-            <Button type="button" onClick={createNow} disabled={createBackup.isPending}>
+            <Button type="button" onClick={createNow} disabled={busy}>
               {createBackup.isPending ? t('backups.creating') : t('backups.createNow')}
             </Button>
           </div>
@@ -108,7 +112,7 @@ export function BackupSettingsPanel() {
               variant="secondary"
 
               onClick={validate}
-              disabled={validateBackup.isPending}
+              disabled={busy}
             >
               {validateBackup.isPending ? t('backups.validating') : t('backups.validate')}
             </Button>
@@ -134,7 +138,7 @@ export function BackupSettingsPanel() {
               variant="secondary"
               className="danger-outline"
               onClick={() => setRestoreOpen(true)}
-              disabled={restoreBackup.isPending}
+              disabled={busy}
             >
               {restoreBackup.isPending ? t('backups.restoring') : t('backups.restore')}
             </Button>

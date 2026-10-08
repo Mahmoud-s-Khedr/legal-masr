@@ -1,4 +1,5 @@
 import { DraftForm } from '@/components/forms/DraftForm';
+import { actionableErrorMessage } from '@/bridge/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { EntityPicker } from '@/components/forms/EntityPicker';
@@ -162,7 +163,7 @@ export function TasksPage() {
         </label>
         <Button
           type="button"
-
+          variant="secondary"
           onClick={() => {
             setCaseId('');
             setClientId('');
@@ -297,7 +298,9 @@ export function TasksPage() {
         )}
         {save.isError && (
           <Alert variant="destructive">
-            <AlertDescription>{t('tasks.saveError')}</AlertDescription>
+            <AlertDescription>
+              {actionableErrorMessage(save.error, t('tasks.saveError'))}
+            </AlertDescription>
           </Alert>
         )}
         {(complete.isError || reopen.isError) && (
@@ -484,7 +487,7 @@ export function TaskForm({
             </span>
             <Button
               type="button"
-
+              variant="secondary"
               disabled={toggling}
               onClick={onToggleCompletion}
             >

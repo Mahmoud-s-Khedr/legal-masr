@@ -26,8 +26,12 @@ export type AppErrorCode =
   | 'CLIENT_NOT_FOUND'
   | 'CASE_NOT_FOUND'
   | 'POWER_OF_ATTORNEY_NOT_FOUND'
+  | 'POWER_OF_ATTORNEY_CLIENT_IN_USE'
   | 'HEARING_NOT_FOUND'
   | 'CLIENT_PROBABLE_DUPLICATE'
+  | 'CLIENT_NUMBER_TAKEN'
+  | 'CASE_NUMBER_TAKEN'
+  | 'POWER_OF_ATTORNEY_NUMBER_TAKEN'
   | 'CASE_CLIENT_HAS_PAYMENTS'
   | 'CLIENT_ARCHIVED'
   | 'CASE_MUST_HAVE_CLIENT'
@@ -154,6 +158,7 @@ export type CaseDto = {
   internalNumber: string;
   officialNumber: string | null;
   officialYear: number | null;
+  judicialYear: number | null;
   courtName: string | null;
   circuitName: string | null;
   caseType: string | null;
@@ -175,6 +180,7 @@ export type CaseSummary = {
   internalNumber: string;
   officialNumber: string | null;
   officialYear: number | null;
+  judicialYear: number | null;
   status: CaseStatus;
   clientNames: string[];
   archivedAt: string | null;
@@ -184,6 +190,7 @@ export type CaseCreateInput = {
   internalNumber: string;
   officialNumber?: string;
   officialYear?: number;
+  judicialYear?: number;
   courtName?: string;
   circuitName?: string;
   caseType?: string;
@@ -201,6 +208,7 @@ export type CaseUpdateInput = {
   internalNumber: string;
   officialNumber?: string;
   officialYear?: number;
+  judicialYear?: number;
   courtName?: string;
   circuitName?: string;
   caseType?: string;

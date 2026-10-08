@@ -131,6 +131,7 @@ export function CaseListPage() {
                       <OfficialReference
                         number={caseSummary.officialNumber}
                         year={caseSummary.officialYear}
+                        judicialYear={caseSummary.judicialYear}
                       />
                     ) : (
                       <span className="cell-muted">—</span>

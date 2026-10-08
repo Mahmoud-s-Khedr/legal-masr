@@ -37,6 +37,7 @@ import {
   useUpdateProfile,
   useUpdateSettings,
 } from '../api/settingsApi';
+import { PASSWORD_MIN_LENGTH } from '../../onboarding/schemas/onboarding.schema';
 import { SettingsFormValues, settingsSchema } from '../schemas/settings.schema';
 
 type Tab = 'profile' | 'general' | 'security' | 'backups' | 'privacy' | 'about';
@@ -87,7 +88,6 @@ export function SettingsPage() {
         officeAddress: profile.officeAddress ?? '',
       });
   }, [profile, profileForm]);
-  const [passwordError, setPasswordError] = useState('');
   const {
     control,
     handleSubmit,
@@ -149,10 +149,6 @@ export function SettingsPage() {
     setSaved(false);
   };
   const submitPassword = async () => {
-    if (passwords.next.length < 12)
-      return setPasswordError(t('gate.passwordTooShort', { count: 12 }));
-    if (passwords.next !== passwords.confirm) return setPasswordError(t('gate.passwordMismatch'));
-    setPasswordError('');
     await changePassword.mutateAsync({
       currentPassword: passwords.current,
       newPassword: passwords.next,
@@ -181,7 +177,9 @@ export function SettingsPage() {
         >
           <TabsList
             variant="line"
-            className="settings-nav"
+            // A stacked sidebar on wide windows; a compact two-column grid at <= 760px
+            // (Tailwind's max-* is strictly "less than", hence 761).
+            className="settings-nav max-[761px]:grid max-[761px]:w-full max-[761px]:grid-cols-2"
             aria-label={t('settings.sectionsLabel')}
           >
             {(
@@ -592,42 +590,49 @@ export function SettingsPage() {
                 </div>
                 <DraftForm onSubmit={passwordForm.handleSubmit(submitPassword)}>
                   <FieldGroup>
-                    <Field label={<>{t('settings.security.currentPassword')}</>}>
+                    <Field
+                      label={<>{t('settings.security.currentPassword')}</>}
+                      error={
+                        passwordForm.formState.errors.current ? t('forms.required') : undefined
+                      }
+                    >
                       <Input
                         type="password"
                         autoComplete="current-password"
                         {...passwordForm.register('current')}
-                        aria-invalid={!!passwordForm.formState.errors.current}
                       />
                     </Field>
                     <div className="settings-two-columns">
-                      <Field label={<>{t('gate.fields.newPassword')}</>}>
+                      <Field
+                        label={<>{t('gate.fields.newPassword')}</>}
+                        hint={t('gate.passwordHint', { count: PASSWORD_MIN_LENGTH })}
+                        error={
+                          passwordForm.formState.errors.next
+                            ? t('gate.passwordTooShort', { count: PASSWORD_MIN_LENGTH })
+                            : undefined
+                        }
+                      >
                         <Input
                           type="password"
                           autoComplete="new-password"
                           {...passwordForm.register('next')}
-                          aria-invalid={!!passwordForm.formState.errors.next}
                         />
                       </Field>
                       <Field
                         label={<>{t('gate.fields.confirmPassword')}</>}
                         error={
-                          passwordForm.formState.errors.confirm ? t('forms.invalid') : undefined
+                          passwordForm.formState.errors.confirm
+                            ? t('gate.passwordMismatch')
+                            : undefined
                         }
                       >
                         <Input
                           type="password"
                           autoComplete="new-password"
                           {...passwordForm.register('confirm')}
-                          aria-invalid={!!passwordForm.formState.errors.confirm}
                         />
                       </Field>
                     </div>
-                    {passwordError && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{passwordError}</AlertDescription>
-                      </Alert>
-                    )}
                     {changePassword.isError && (
                       <Alert variant="destructive">
                         <AlertDescription>{t('settings.security.passwordError')}</AlertDescription>
@@ -705,7 +710,14 @@ export function SettingsPage() {
                   </div>
                 </dl>
                 <div className="form-actions">
-                  <Link to="/backups">{t('settings.privacy.manageBackups')}</Link>
+                  <Button
+                    variant="secondary"
+                    nativeButton={false}
+                    role="link"
+                    render={<Link to="/backups" />}
+                  >
+                    {t('settings.privacy.manageBackups')}
+                  </Button>
                 </div>
               </section>
               <section className="security-note">

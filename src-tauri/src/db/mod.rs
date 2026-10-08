@@ -11,10 +11,16 @@ use tauri::{AppHandle, Runtime};
 const SECURITY_FILE: &str = "security.json";
 const DB_FILE: &str = "legalmaster.sqlite";
 
-const MIGRATIONS: &[(i64, &str)] = &[(
-    1,
-    include_str!("../../migrations/0001_canonical_legal_masr.sql"),
-)];
+const MIGRATIONS: &[(i64, &str)] = &[
+    (
+        1,
+        include_str!("../../migrations/0001_canonical_legal_masr.sql"),
+    ),
+    (
+        2,
+        include_str!("../../migrations/0002_case_judicial_year.sql"),
+    ),
+];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
     #[cfg(feature = "desktop-e2e")]
@@ -212,6 +218,98 @@ mod tests {
     use super::*;
     use rusqlite::OptionalExtension;
 
+    /// A vault exactly as the previous release left it: only migration 1 applied.
+    fn version_one_vault() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+        let (version, sql) = MIGRATIONS[0];
+        assert_eq!(version, 1);
+        let tx = conn.unchecked_transaction().unwrap();
+        tx.execute_batch(sql).unwrap();
+        tx.execute(
+            "INSERT INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
+            rusqlite::params![version, now()],
+        )
+        .unwrap();
+        tx.commit().unwrap();
+        assert_eq!(schema_version(&conn), 1);
+        conn
+    }
+
+    #[test]
+    fn upgrading_a_populated_version_one_vault_keeps_every_record_and_adds_judicial_year() {
+        let conn = version_one_vault();
+        let (client_id, case_id, hearing_id) = (
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+        );
+        conn.execute("INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, 'CL-1', 'أحمد', 'now', 'now')", [&client_id]).unwrap();
+        conn.execute("INSERT INTO cases (id, internal_number, official_number, official_year, status, created_at, updated_at) VALUES (?1, 'CA-1', '447', 2026, 'ACTIVE', 'now', 'now')", [&case_id]).unwrap();
+        conn.execute("INSERT INTO case_clients (case_id, client_id, created_at, updated_at) VALUES (?1, ?2, 'now', 'now')", rusqlite::params![case_id, client_id]).unwrap();
+        conn.execute("INSERT INTO hearings (id, case_id, hearing_date, created_at, updated_at) VALUES (?1, ?2, '2026-10-03', 'now', 'now')", rusqlite::params![hearing_id, case_id]).unwrap();
+
+        migrate(&conn).unwrap();
+
+        assert_eq!(schema_version(&conn), latest_schema_version());
+        assert!(latest_schema_version() >= 2);
+        // The case kept its Gregorian year, and no judicial year was invented.
+        let (number, year, judicial): (String, Option<i64>, Option<i64>) = conn
+            .query_row(
+                "SELECT official_number, official_year, judicial_year FROM cases WHERE id = ?1",
+                [&case_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!((number.as_str(), year, judicial), ("447", Some(2026), None));
+        // Children survived the upgrade and the relationships are still consistent.
+        for (table, expected) in [("case_clients", 1_i64), ("hearings", 1), ("clients", 1)] {
+            let count: i64 = conn
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| {
+                    row.get(0)
+                })
+                .unwrap();
+            assert_eq!(count, expected, "{table} rows were lost by the upgrade");
+        }
+        let violations: i64 = conn
+            .query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(violations, 0);
+
+        // A judicial year such as 89 is now storable; the database still bounds it.
+        conn.execute(
+            "UPDATE cases SET judicial_year = 89 WHERE id = ?1",
+            [&case_id],
+        )
+        .unwrap();
+        for invalid in [0_i64, -1, 10_000] {
+            assert!(conn
+                .execute(
+                    "UPDATE cases SET judicial_year = ?2 WHERE id = ?1",
+                    rusqlite::params![case_id, invalid]
+                )
+                .is_err());
+        }
+        // The Gregorian year constraint is unchanged.
+        assert!(conn
+            .execute(
+                "UPDATE cases SET official_year = 89 WHERE id = ?1",
+                [&case_id]
+            )
+            .is_err());
+
+        // Re-running migrations is a no-op.
+        migrate(&conn).unwrap();
+        let applied: i64 = conn
+            .query_row("SELECT COUNT(*) FROM schema_migrations", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(applied, latest_schema_version());
+    }
+
     #[test]
     fn existing_open_never_creates_a_missing_database() {
         let temp = tempfile::tempdir().unwrap();
@@ -350,7 +448,7 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(version, 1);
+        assert_eq!(version, latest_schema_version());
         assert_eq!(settings_exists, "app_settings");
         assert_eq!(clients_exists, "clients");
         assert_eq!(settings_count, 1);

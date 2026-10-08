@@ -98,6 +98,12 @@ a needless borrow, and a fixture assertion incorrectly read `security.previous`
 after its recovery rename. Those were corrected and validation rerun. The earlier
 failures are not evidence of workflow acceptance.
 
+## Later pass
+
+A [beta-readiness pass](2026-10-08-beta-pass.md) (same day, baseline `a6324c1`) re-checked and fixed the reproducible editing, layout,
+theme and error-message findings, added migration `0002`, and ran the native journeys again. It does not change the
+statement above that Phase 1 acceptance is open, and it does not certify beta readiness.
+
 ## Remaining acceptance and risks
 
 1. Phase 1 still needs the operation coordinator, bounded workers, commit/session

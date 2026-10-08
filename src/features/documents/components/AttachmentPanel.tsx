@@ -263,7 +263,7 @@ export function AttachmentPanel({
               <div className="attachment-actions">
                 <Button
                   type="button"
-
+                  variant="ghost"
                   disabled={open.isPending}
                   aria-label={t('documents.openAria', { name: attachment.originalFilename })}
                   onClick={() => {
@@ -277,7 +277,7 @@ export function AttachmentPanel({
                 </Button>
                 <Button
                   type="button"
-
+                  variant="ghost"
                   disabled={reveal.isPending}
                   aria-label={t('documents.revealAria', { name: attachment.originalFilename })}
                   onClick={() => {
@@ -291,7 +291,7 @@ export function AttachmentPanel({
                 </Button>
                 <Button
                   type="button"
-
+                  variant="ghost"
                   aria-label={t('documents.editAria', { name: attachment.originalFilename })}
                   onClick={() => {
                     setActionError(null);

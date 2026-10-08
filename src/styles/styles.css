@@ -1,4 +1,18 @@
 @import 'tailwindcss';
+
+/* The app's theme is the Settings choice on <html data-theme>, not the OS alone.
+   Without this, Tailwind's dark: utilities (every shadcn component) follow the OS
+   while the app's own colours follow the setting, giving a half-dark window. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where([data-theme='system'], [data-theme='system'] *) {
+      @slot;
+    }
+  }
+}
 @font-face {
   font-family: Cairo;
   font-style: normal;
@@ -27,6 +41,8 @@
     --accent: #004f48;
     --accent-strong: #003d38;
     --accent-soft: #dbecea;
+    /* Text on an accent-coloured fill: white on the dark green, dark on the light dark-theme teal. */
+    --on-accent: #ffffff;
     --gold: #a87316;
     --gold-soft: #fff5df;
     --danger: #b42318;
@@ -62,6 +78,7 @@
     --accent: #52b8a5;
     --accent-strong: #77d1be;
     --accent-soft: #193d35;
+    --on-accent: #06231e;
     --gold: #e1b968;
     --gold-soft: #3d321d;
     --danger: #ffb4ab;
@@ -82,6 +99,7 @@
       --accent: #52b8a5;
       --accent-strong: #77d1be;
       --accent-soft: #193d35;
+      --on-accent: #06231e;
       --gold: #e1b968;
       --gold-soft: #3d321d;
       --danger: #ffb4ab;
@@ -1474,6 +1492,9 @@
   .calendar-page {
     max-width: 1120px;
     display: grid;
+    /* minmax(0, …) stops a wide child (a table's min-width, a tab strip) from
+       stretching the single column past the window. Those scroll inside instead. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.15rem;
   }
   .work-register {
@@ -1546,7 +1567,7 @@
     height: 34px;
     border-radius: 0.65rem;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     font-size: 1.25rem;
   }
   .file-mark {
@@ -1592,7 +1613,7 @@
   }
   .finance-summary .finance-net span,
   .finance-summary .finance-net strong {
-    color: #fff;
+    color: var(--on-accent);
   }
   .finance-filters {
     display: grid;
@@ -1716,7 +1737,7 @@
     height: 24px;
     border-radius: 50%;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   .calendar-events {
     display: grid;
@@ -1845,7 +1866,7 @@
     .settings-layout,
     .settings-two-columns,
     .privacy-list div {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
     .settings-toggle-row {
       align-items: stretch;
@@ -2116,7 +2137,7 @@
     border-radius: var(--radius-md);
     padding: 0.45rem 0.85rem 0.45rem 0.95rem;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 750;
     cursor: pointer;
     transition: background var(--transition);
@@ -2857,7 +2878,7 @@
     font-weight: 500;
   }
   .fact-empty {
-    color: color-mix(in srgb, var(--muted) 70%, transparent);
+    color: var(--muted);
     font-weight: 500 !important;
   }
   .facts-compact {
@@ -3452,10 +3473,18 @@
   }
   .recovery-key {
     border: 1px dashed var(--accent);
+    padding: 0.75rem;
     font-size: 1.05rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-align: center;
+    /* A hex key is read left to right whatever the page direction, and wraps
+       only between its groups of eight (the global code rule would break mid-group). */
+    direction: ltr;
+    unicode-bidi: isolate;
+    word-break: normal;
+    overflow-wrap: normal;
+    user-select: all;
   }
   .gate-tips {
     display: grid;
@@ -3531,7 +3560,7 @@
   --color-card: var(--paper);
   --color-card-foreground: var(--ink);
   --color-primary: var(--accent);
-  --color-primary-foreground: #fff;
+  --color-primary-foreground: var(--on-accent);
   --color-secondary: var(--gold-soft);
   --color-secondary-foreground: var(--ink);
   --color-muted: var(--canvas-warm);
