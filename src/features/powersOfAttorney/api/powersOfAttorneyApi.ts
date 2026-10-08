@@ -1,14 +1,18 @@
+import { useDebounced } from '@/lib/useDebounced';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
 import type { PowerOfAttorneyInput, PowerOfAttorneyListInput } from '../../../bridge/types';
 import { queryInvalidation } from '../../../lib/queryInvalidation';
 import { queryKeys } from '../../../lib/queryKeys';
 
-export const usePowerOfAttorneyList = (input: PowerOfAttorneyListInput = {}) =>
-  useQuery({
-    queryKey: queryKeys.powersOfAttorney.list(input),
-    queryFn: () => bridge.powerOfAttorneyList(input),
+export const usePowerOfAttorneyList = (input: PowerOfAttorneyListInput = {}) => {
+  const query = useDebounced(input.query);
+  const filters = { ...input, query };
+  return useQuery({
+    queryKey: queryKeys.powersOfAttorney.list(filters),
+    queryFn: () => bridge.powerOfAttorneyList(filters),
   });
+};
 
 export const usePowerOfAttorney = (id: string) =>
   useQuery({

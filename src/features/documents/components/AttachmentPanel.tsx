@@ -1,3 +1,11 @@
+import { DraftForm } from '@/components/forms/DraftForm';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { attachmentDraftSchema } from '@/lib/formSchemas';
+import { z } from 'zod';
+import { FieldGroup } from '@/components/ui/field';
+import { Field } from '@/components/forms/FormField';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -8,11 +16,18 @@ import { useClientList } from '../../clients/api/clientsApi';
 import { asAppError } from '../../../bridge/errors';
 import { bridge } from '../../../bridge/commands';
 import type { AttachmentCategory, AttachmentDto, AttachmentListInput } from '../../../bridge/types';
-import { DatePicker } from '../../../components/ui/DatePicker';
+import { DatePicker } from '../../../components/forms/DatePicker';
 import { Button } from '../../../components/ui/button';
-import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
+import { ConfirmDialog, FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
 import { Input } from '../../../components/ui/input';
-import { Select } from '../../../components/ui/select';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from '../../../components/ui/select';
 import {
   useAddAttachment,
   useAttachments,
@@ -94,9 +109,16 @@ export function AttachmentPanel({
   const reveal = useRevealAttachment();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [source, setSource] = useState<{ token: string; filename: string } | null>(null);
-  const [category, setCategory] = useState<AttachmentCategory>('OTHER');
-  const [descriptionValue, setDescriptionValue] = useState('');
-  const [documentDate, setDocumentDate] = useState('');
+  const form = useForm<z.infer<typeof attachmentDraftSchema>>({
+    resolver: zodResolver(attachmentDraftSchema),
+    defaultValues: { category: 'OTHER', descriptionValue: '', documentDate: '' },
+  });
+  const category = useWatch({ control: form.control, name: 'category' });
+  const setCategory = (value: AttachmentCategory) => form.setValue('category', value);
+  const descriptionValue = useWatch({ control: form.control, name: 'descriptionValue' });
+  const setDescriptionValue = (value: string) => form.setValue('descriptionValue', value);
+  const documentDate = useWatch({ control: form.control, name: 'documentDate' });
+  const setDocumentDate = (value: string) => form.setValue('documentDate', value);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [removing, setRemoving] = useState<AttachmentDto | null>(null);
 
@@ -141,8 +163,7 @@ export function AttachmentPanel({
       setPickerPending(false);
     }
   };
-  const save = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const save = async () => {
     if (saving.current || picking.current || (!editingId && !source)) return;
     saving.current = true;
     setActionError(null);
@@ -191,7 +212,7 @@ export function AttachmentPanel({
         {allowAdd && (
           <Button
             type="button"
-            className="compact-button"
+
             onClick={() => {
               setActionError(null);
               setDialogOpen(true);
@@ -204,9 +225,9 @@ export function AttachmentPanel({
       {attachments.isLoading ? (
         <p className="table-message">{t('documents.loading')}</p>
       ) : attachments.isError ? (
-        <p className="error" role="alert">
-          {t('documents.loadError')}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{t('documents.loadError')}</AlertDescription>
+        </Alert>
       ) : !attachments.data?.length ? (
         <p className="empty-compact">{t('documents.empty')}</p>
       ) : (
@@ -242,7 +263,7 @@ export function AttachmentPanel({
               <div className="attachment-actions">
                 <Button
                   type="button"
-                  className="text-button"
+
                   disabled={open.isPending}
                   aria-label={t('documents.openAria', { name: attachment.originalFilename })}
                   onClick={() => {
@@ -256,7 +277,7 @@ export function AttachmentPanel({
                 </Button>
                 <Button
                   type="button"
-                  className="text-button"
+
                   disabled={reveal.isPending}
                   aria-label={t('documents.revealAria', { name: attachment.originalFilename })}
                   onClick={() => {
@@ -270,7 +291,7 @@ export function AttachmentPanel({
                 </Button>
                 <Button
                   type="button"
-                  className="text-button"
+
                   aria-label={t('documents.editAria', { name: attachment.originalFilename })}
                   onClick={() => {
                     setActionError(null);
@@ -286,7 +307,7 @@ export function AttachmentPanel({
                 <Button
                   variant="ghost"
                   type="button"
-                  className="text-button danger-button"
+
                   aria-label={t('documents.removeAria', { name: attachment.originalFilename })}
                   onClick={() => setRemoving(attachment)}
                 >
@@ -297,85 +318,108 @@ export function AttachmentPanel({
           ))}
         </ul>
       )}
-      <Dialog
+      <FormDialog
         open={dialogOpen}
         onOpenChange={(openValue) => (openValue ? setDialogOpen(true) : close())}
         title={editingId ? t('documents.editTitle') : t('documents.add')}
       >
-        <form className="dialog-form" onSubmit={(event) => void save(event)}>
-          {actionError && (
-            <p className="error" role="alert">
-              {actionError}
-            </p>
-          )}
-          {!editingId && (
-            <div className="document-pick">
-              <span className="document-glyph" aria-hidden="true">
-                <Icon name="documents" size={20} />
-              </span>
-              <div>
-                <strong>
-                  <bdi>{source?.filename ?? t('documents.noFile')}</bdi>
-                </strong>
-                <span>{t('documents.copyNote')}</span>
+        <DraftForm
+          className="mt-4 grid gap-3.5"
+          onSubmit={(event) => form.handleSubmit(() => save())(event)}
+        >
+          <FieldGroup>
+            {actionError && (
+              <Alert variant="destructive">
+                <AlertDescription>{actionError}</AlertDescription>
+              </Alert>
+            )}
+            {!editingId && (
+              <div className="document-pick">
+                <span className="document-glyph" aria-hidden="true">
+                  <Icon name="documents" size={20} />
+                </span>
+                <div>
+                  <strong>
+                    <bdi>{source?.filename ?? t('documents.noFile')}</bdi>
+                  </strong>
+                  <span>{t('documents.copyNote')}</span>
+                </div>
+                <Button
+                  variant="secondary"
+                  type="button"
+
+                  disabled={pickerPending || add.isPending || update.isPending}
+                  onClick={() => void selectSource()}
+                >
+                  {t('documents.pick')}
+                </Button>
               </div>
-              <Button
-                variant="secondary"
-                type="button"
-                className="secondary-button"
-                disabled={pickerPending || add.isPending || update.isPending}
-                onClick={() => void selectSource()}
+            )}
+            <Field label={<>{t('documents.category')}</>}>
+              <Select
+                value={category}
+                onValueChange={(value) => setCategory(value as AttachmentCategory)}
+                items={categories.map((value) => ({ value, label: categoryLabel(value) }))}
               >
-                {t('documents.pick')}
+                <SelectTrigger>
+                  <SelectValue placeholder={undefined} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {categories
+                      .map((value) => ({ value, label: categoryLabel(value) }))
+                      .map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label={<>{t('documents.description')}</>}>
+              <Input
+                value={descriptionValue}
+                onChange={(event) => setDescriptionValue(event.target.value)}
+              />
+            </Field>
+            <Field
+              label={<>{t('documents.date')}</>}
+              error={form.formState.errors.documentDate ? t('forms.invalid') : undefined}
+            >
+              <DatePicker
+                ref={(node) => form.register('documentDate').ref(node)}
+                aria-invalid={!!form.formState.errors.documentDate}
+                value={documentDate}
+                onChange={(event) => setDocumentDate(event.target.value)}
+              />
+            </Field>
+            <FormDialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+
+                disabled={add.isPending || update.isPending}
+                onClick={close}
+              >
+                {t('common.cancel')}
               </Button>
-            </div>
-          )}
-          <label>
-            {t('documents.category')}
-            <Select
-              value={category}
-              onValueChange={(value) => setCategory(value as AttachmentCategory)}
-              items={categories.map((value) => ({ value, label: categoryLabel(value) }))}
-            />
-          </label>
-          <label>
-            {t('documents.description')}
-            <Input
-              value={descriptionValue}
-              onChange={(event) => setDescriptionValue(event.target.value)}
-            />
-          </label>
-          <label>
-            {t('documents.date')}
-            <DatePicker
-              value={documentDate}
-              onChange={(event) => setDocumentDate(event.target.value)}
-            />
-          </label>
-          <div className="dialog-actions">
-            <Button
-              type="button"
-              variant="secondary"
-              className="secondary-button"
-              disabled={add.isPending || update.isPending}
-              onClick={close}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              disabled={
-                pickerPending || add.isPending || update.isPending || (!editingId && !source)
-              }
-            >
-              {editingId ? t('records.saveEdits') : t('documents.save')}
-            </Button>
-          </div>
-        </form>
-      </Dialog>
+              <Button
+                type="submit"
+                disabled={
+                  pickerPending || add.isPending || update.isPending || (!editingId && !source)
+                }
+              >
+                {editingId ? t('records.saveEdits') : t('documents.save')}
+              </Button>
+            </FormDialogFooter>
+          </FieldGroup>
+        </DraftForm>
+      </FormDialog>
       {!dialogOpen && !removing && actionError && (
-        <p className="error" role="alert">
-          {actionError}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
       )}
       <ConfirmDialog
         open={Boolean(removing)}

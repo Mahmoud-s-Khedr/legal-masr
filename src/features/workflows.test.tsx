@@ -1,3 +1,4 @@
+import { NewPowerOfAttorneyPage } from './powersOfAttorney/pages/NewPowerOfAttorneyPage';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../bridge/commands', async (importOriginal) => {
@@ -139,7 +140,7 @@ it('creates a case with its client relationship and retains a rejected draft', a
   fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), {
     target: { value: 'FICTIONAL-CASE' },
   });
-  fireEvent.click(await screen.findByRole('checkbox', { name: fixtures.client.fullName }));
+  await selectClient(fixtures.client.fullName);
   fireEvent.click(screen.getByRole('button', { name: 'حفظ القضية' }));
   await screen.findByRole('alert');
   expect(screen.getByLabelText('رقم الملف الداخلي')).toHaveValue('FICTIONAL-CASE');
@@ -195,7 +196,7 @@ for (const row of details)
       fireEvent.click(screen.getByRole('button', { name: 'أرشفة' }));
       if (row.confirm)
         fireEvent.click(
-          within(await screen.findByRole('dialog')).getByRole('button', { name: row.confirm }),
+          within(await screen.findByRole('alertdialog')).getByRole('button', { name: row.confirm }),
         );
       await waitFor(() => expect(bridge[row.archive]).toHaveBeenCalled());
       expect(vi.mocked(bridge[row.archive]).mock.calls[0][0]).toBe(row.item.id);
@@ -264,10 +265,12 @@ it('adds, edits and confirms removal of opponents and retains failed changes', a
     fullName: 'خصم معدل',
   });
   fireEvent.click(screen.getByRole('button', { name: 'إزالة' }));
-  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'إلغاء' }));
+  fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'إلغاء' }));
   expect(bridge.caseRemoveOpponent).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'إزالة' }));
-  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة الخصم' }));
+  fireEvent.click(
+    within(screen.getByRole('alertdialog')).getByRole('button', { name: 'إزالة الخصم' }),
+  );
   await waitFor(() => expect(bridge.caseRemoveOpponent).toHaveBeenCalled());
 });
 describe('dashboard and agenda', () => {
@@ -392,17 +395,15 @@ it('creates a POA with multiple clients/lawyers and retains a rejected draft', a
     .mockRejectedValueOnce(fictionalFailure)
     .mockResolvedValue(fixtures.poa);
   const { invalidate } = renderWorkflow(
-    <PowersOfAttorneyPage />,
-    '/powers-of-attorney',
-    '/powers-of-attorney',
+    <NewPowerOfAttorneyPage />,
+    '/powers-of-attorney/new',
+    '/powers-of-attorney/new',
   );
-  fireEvent.click(screen.getByRole('button', { name: 'إضافة توكيل' }));
   fireEvent.change(screen.getByLabelText('الرقم الداخلي'), { target: { value: 'FICTIONAL-POA' } });
-  for (const name of [fixtures.client.fullName, 'موكل خيالي ثانٍ'])
-    fireEvent.click(await screen.findByRole('checkbox', { name }));
+  for (const name of [fixtures.client.fullName, 'موكل خيالي ثانٍ']) await selectClient(name);
   for (const name of ['محامٍ خيالي أول', 'محامٍ خيالي ثانٍ']) {
-    fireEvent.change(screen.getByLabelText('اسم المحامي'), { target: { value: name } });
     fireEvent.click(screen.getByRole('button', { name: 'إضافة محامٍ' }));
+    fireEvent.change(screen.getAllByLabelText('اسم المحامي').at(-1)!, { target: { value: name } });
   }
   fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));
   await screen.findByRole('alert');
@@ -539,3 +540,12 @@ it('does not submit a case when client choices fail to load', async () => {
   expect(screen.getByRole('button', { name: 'حفظ القضية' })).toBeDisabled();
   expect(bridge.caseCreate).not.toHaveBeenCalled();
 });
+
+async function selectClient(name: string) {
+  const input = screen.getByPlaceholderText('ابحث عن موكل بالاسم أو الرقم');
+  input.focus();
+  fireEvent.click(input);
+  fireEvent.change(input, { target: { value: name } });
+  fireEvent.keyDown(input, { key: 'ArrowDown' });
+  fireEvent.click(await screen.findByRole('option', { name }));
+}

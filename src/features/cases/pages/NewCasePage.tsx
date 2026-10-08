@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../../components/layout/PageHeader';
@@ -23,9 +24,9 @@ export function NewCasePage() {
       <div className="editor-surface">
         {isLoading && <p role="status">{t('cases.form.loadingClients')}</p>}
         {isError && (
-          <p className="error" role="alert">
-            {t('cases.form.clientsLoadError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('cases.form.clientsLoadError')}</AlertDescription>
+          </Alert>
         )}
         <CaseCreateForm
           clients={clients ?? []}
@@ -42,9 +43,11 @@ export function NewCasePage() {
           }}
         />
         {createCase.isError && (
-          <p className="error" role="alert">
-            {errorMessage(createCase.error, t('app.defaultError'))}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>
+              {errorMessage(createCase.error, t('app.defaultError'))}
+            </AlertDescription>
+          </Alert>
         )}
       </div>
     </section>

@@ -1,7 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { Dialog } from './Dialog';
+import { FormDialog } from './FormDialog';
 
 function DialogHarness({ onChange = vi.fn() }: { onChange?: (open: boolean) => void }) {
   const [open, setOpen] = useState(false);
@@ -15,10 +15,10 @@ function DialogHarness({ onChange = vi.fn() }: { onChange?: (open: boolean) => v
       <button ref={buttonRef} type="button" onClick={() => change(true)}>
         فتح
       </button>
-      <Dialog open={open} onOpenChange={change} title="تأكيد الإجراء">
+      <FormDialog open={open} onOpenChange={change} title="تأكيد الإجراء">
         <button type="button">إلغاء</button>
         <button type="button">تأكيد</button>
-      </Dialog>
+      </FormDialog>
     </>
   );
 }
@@ -27,24 +27,24 @@ describe('Dialog', () => {
   it('preserves focus in a draft when parent state or error content changes', () => {
     const change = vi.fn();
     const { rerender } = render(
-      <Dialog open onOpenChange={change} title="تعديل">
+      <FormDialog open onOpenChange={change} title="تعديل">
         <button>إلغاء</button>
         <input aria-label="مسودة" />
-      </Dialog>,
+      </FormDialog>,
     );
     const draft = screen.getByRole('textbox', { name: 'مسودة' });
     draft.focus();
     rerender(
-      <Dialog open onOpenChange={change} title="تعديل">
+      <FormDialog open onOpenChange={change} title="تعديل">
         <button>إلغاء</button>
         <input aria-label="مسودة" />
         <p role="alert">تعذر الحفظ؛ أعد المحاولة</p>
-      </Dialog>,
+      </FormDialog>,
     );
     expect(draft).toHaveFocus();
   });
 
-  it('contains focus, closes with Escape, and returns focus to its trigger', () => {
+  it('contains focus, closes with Escape, and returns focus to its trigger', async () => {
     const onChange = vi.fn();
     render(<DialogHarness onChange={onChange} />);
     const trigger = screen.getByRole('button', { name: 'فتح' });
@@ -52,11 +52,11 @@ describe('Dialog', () => {
     fireEvent.click(trigger);
 
     expect(screen.getByRole('dialog', { name: 'تأكيد الإجراء' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'إلغاء' })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'إلغاء' })).toHaveFocus());
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onChange).toHaveBeenCalledWith(false);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 });

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -7,7 +7,27 @@ vi.mock('./clients/api/clientsApi', () => ({
   useCreateClient: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
 }));
 
-import '../i18n';
+import i18n from '../i18n';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+function render(ui: ReactNode, options?: Parameters<typeof rtlRender>[1]) {
+  return rtlRender(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      {ui}
+    </QueryClientProvider>,
+    options,
+  );
+}
+async function selectClient(name: string) {
+  const input = screen.getByPlaceholderText(i18n.t('cases.form.clientSearch'));
+  input.focus();
+  fireEvent.click(input);
+  fireEvent.change(input, { target: { value: name } });
+  fireEvent.keyDown(input, { key: 'ArrowDown' });
+  fireEvent.click(await screen.findByRole('option', { name }));
+}
 import { useClientList, useCreateClient } from './clients/api/clientsApi';
 import { ClientForm } from './clients/forms/ClientForm';
 import { CaseCreateForm } from './cases/forms/CaseCreateForm';
@@ -55,7 +75,7 @@ describe('canonical domain forms', () => {
     const officialNumber = screen.getByLabelText('رقم الدعوى بالمحكمة');
     expect(officialNumber).toHaveAttribute('dir', 'ltr');
     fireEvent.change(officialNumber, { target: { value: '2026/45' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'أحمد' }));
+    await selectClient('أحمد');
     fireEvent.click(screen.getByRole('button', { name: 'حفظ القضية' }));
 
     await waitFor(() => expect(submit).toHaveBeenCalled());
@@ -97,10 +117,7 @@ describe('canonical domain forms', () => {
       wrapper: MemoryRouter,
     });
     expect(screen.getByText('لا يوجد موكلون بعد')).toBeVisible();
-    expect(screen.getByRole('link', { name: 'إضافة موكل' })).toHaveAttribute(
-      'href',
-      '/clients/new',
-    );
+    expect(screen.getByRole('button', { name: 'إضافة موكل جديد' })).toBeVisible();
   });
 
   it('preselects the client a case is opened from', async () => {
@@ -123,7 +140,7 @@ describe('canonical domain forms', () => {
       />,
       { wrapper: MemoryRouter },
     );
-    expect(screen.getByRole('checkbox', { name: 'أحمد' })).toBeChecked();
+    expect(screen.getByText('أحمد')).toBeVisible();
     fireEvent.change(screen.getByLabelText('رقم الملف الداخلي'), { target: { value: 'CA-9' } });
     fireEvent.click(screen.getByRole('button', { name: 'حفظ القضية' }));
     await waitFor(() => expect(submit).toHaveBeenCalled());
@@ -160,10 +177,11 @@ describe('canonical domain forms', () => {
     expect(issueDate).toHaveAttribute('type', 'text');
     expect(screen.queryByLabelText('سنة الإصدار')).not.toBeInTheDocument();
     fireEvent.change(issueDate, { target: { value: '2026-10-22' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: /أحمد/ }));
+    await selectClient('أحمد');
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة محامٍ' }));
     fireEvent.change(screen.getByLabelText('اسم المحامي'), { target: { value: 'محمود' } });
     fireEvent.change(screen.getByLabelText('رقم القيد'), { target: { value: '123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'إضافة محامٍ' }));
+
     fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));
 
     await waitFor(() =>
@@ -209,6 +227,7 @@ describe('canonical domain forms', () => {
       ),
     );
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(submit).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('الرقم الداخلي'), { target: { value: 'TA-NEW' } });
     fireEvent.click(screen.getByRole('button', { name: 'حفظ التوكيل' }));

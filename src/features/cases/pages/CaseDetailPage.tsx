@@ -1,14 +1,23 @@
+import { DraftForm } from '@/components/forms/DraftForm';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { feeDraftSchema } from '@/lib/formSchemas';
+import { AmountInput } from '@/components/forms/AmountInput';
+import { FieldGroup } from '@/components/ui/field';
+import { Field } from '@/components/forms/FormField';
 import { dateOnlyToLocalDate, localDateOnly } from '../../../lib/dateOnly';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import type { ExpenseDto, HearingDto, PaymentDto, TaskDto } from '../../../bridge/types';
 import { Fact, RecordHeader } from '../../../components/layout/RecordHeader';
-import { Dialog } from '../../../components/ui/Dialog';
-import { Tabs } from '../../../components/ui/Tabs';
+import { FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
+import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Button } from '../../../components/ui/button';
 import { Checkbox } from '../../../components/ui/checkbox';
-import { Input } from '../../../components/ui/input';
+
 import { useFormat } from '../../../i18n/LocalePresentation';
 import { minorToInput, parseMoneyToMinor } from '../../../lib/money';
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
@@ -37,12 +46,6 @@ import { CaseStatusBadge, OfficialReference } from '../components/CaseIdentity';
 import { CasePartiesPanel } from '../components/CasePartiesPanel';
 import { CaseEditForm } from '../forms/CaseEditForm';
 
-const HEARING_TONE = {
-  SCHEDULED: 'tone-active',
-  COMPLETED: 'tone-muted',
-  CANCELLED: 'tone-danger',
-};
-
 export function CaseDetailPage() {
   const { t } = useTranslation();
   const format = useFormat();
@@ -60,12 +63,22 @@ export function CaseDetailPage() {
     | { type: 'expense'; value?: ExpenseDto; inspect?: boolean }
     | null
   >(null);
-  const [fee, setFee] = useState<string | null>(null);
+  const feeForm = useForm<{ amount: string }>({
+    resolver: zodResolver(feeDraftSchema),
+    defaultValues: { amount: '' },
+  });
+  const fee = useWatch({ control: feeForm.control, name: 'amount' });
   const [feeError, setFeeError] = useState('');
   const item = useCase(id);
   const hearings = useHearings({ caseId: id });
   const tasks = useTaskList({ view: 'ALL', referenceDate: '9999-12-31', caseId: id });
   const account = useCaseFinanceSummary(id);
+  useEffect(() => {
+    if (account.data && !feeForm.formState.isDirty)
+      feeForm.reset({
+        amount: account.data.agreedFeeMinor ? minorToInput(account.data.agreedFeeMinor) : '',
+      });
+  }, [account.data, feeForm]);
   const payments = usePayments({ caseId: id });
   const expenses = useExpenses({ caseId: id });
   const cases = useCaseList({});
@@ -89,9 +102,9 @@ export function CaseDetailPage() {
     );
   if (item.isError)
     return (
-      <p className="page-status error" role="alert">
-        {t('records.loadError')}
-      </p>
+      <Alert variant="destructive" className="page-status error">
+        <AlertDescription>{t('records.loadError')}</AlertDescription>
+      </Alert>
     );
   if (!item.data) return <p className="page-status">{t('cases.detail.notFound')}</p>;
   const caseDto = item.data;
@@ -114,13 +127,14 @@ export function CaseDetailPage() {
     (a, b) => Number(a.completed) - Number(b.completed) || a.dueDate.localeCompare(b.dueDate),
   );
   const agreed = account.data?.agreedFeeMinor ?? 0;
-  const feeValue = fee ?? (agreed ? minorToInput(agreed) : '');
+  const feeValue = fee;
+
   return (
     <section className="entity-detail detail-workspace">
       {(archive.isError || restore.isError) && (
-        <p className="error" role="alert">
-          {t('records.statusChangeError')}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{t('records.statusChangeError')}</AlertDescription>
+        </Alert>
       )}
       <RecordHeader
         icon="cases"
@@ -156,7 +170,7 @@ export function CaseDetailPage() {
             {caseDto.archivedAt ? (
               <Button
                 variant="secondary"
-                className="secondary-button"
+
                 disabled={restore.isPending}
                 onClick={() => restore.mutate(id)}
               >
@@ -165,7 +179,7 @@ export function CaseDetailPage() {
             ) : (
               <Button
                 variant="ghost"
-                className="quiet-button"
+
                 disabled={archive.isPending}
                 onClick={() => archive.mutate(id)}
               >
@@ -176,27 +190,32 @@ export function CaseDetailPage() {
         }
       />
       <Tabs
-        variant="underline"
-        label={t('cases.detail.sectionsLabel')}
         value={tab}
-        onChange={(value) => setTab(value as typeof tab)}
-        tabs={[
-          { id: 'summary', label: t('cases.detail.tabs.summary') },
-          {
-            id: 'relationships',
-            label: t('cases.detail.tabs.relationships'),
-            count: caseDto.clients.length + caseDto.opponents.length,
-          },
-          {
-            id: 'hearings',
-            label: t('cases.detail.tabs.hearings'),
-            count: hearings.data?.length ?? 0,
-          },
-          { id: 'tasks', label: t('cases.detail.tabs.tasks'), count: openTasks.length },
-          { id: 'attachments', label: t('cases.detail.tabs.attachments') },
-          { id: 'account', label: t('cases.detail.tabs.account') },
-        ]}
-      />
+        onValueChange={(value) => ((value) => setTab(value as typeof tab))(String(value))}
+      >
+        <TabsList activateOnFocus aria-label={t('cases.detail.sectionsLabel')} variant="line">
+          {[
+            { id: 'summary', label: t('cases.detail.tabs.summary') },
+            {
+              id: 'relationships',
+              label: t('cases.detail.tabs.relationships'),
+              count: caseDto.clients.length + caseDto.opponents.length,
+            },
+            {
+              id: 'hearings',
+              label: t('cases.detail.tabs.hearings'),
+              count: hearings.data?.length ?? 0,
+            },
+            { id: 'tasks', label: t('cases.detail.tabs.tasks'), count: openTasks.length },
+            { id: 'attachments', label: t('cases.detail.tabs.attachments') },
+            { id: 'account', label: t('cases.detail.tabs.account') },
+          ].map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       {caseFeedback && (
         <p className="success" role="status">
           {caseFeedback}
@@ -210,7 +229,7 @@ export function CaseDetailPage() {
               <Button
                 type="button"
                 variant="ghost"
-                className="text-button"
+
                 onClick={() => setEditOpen(true)}
               >
                 {t('cases.detail.editData')}
@@ -281,7 +300,7 @@ export function CaseDetailPage() {
                     <Button
                       type="button"
                       variant="secondary"
-                      className="secondary-button"
+
                       onClick={() => setHearingEditor(nextHearing)}
                     >
                       {t('agenda.editHearing')}
@@ -317,7 +336,7 @@ export function CaseDetailPage() {
                 <Button
                   type="button"
                   variant="ghost"
-                  className="text-button"
+
                   onClick={() => setTab('account')}
                 >
                   {t('dashboard.viewAll')}
@@ -370,9 +389,7 @@ export function CaseDetailPage() {
                   <div>
                     <div className="timeline-title">
                       <strong dir="auto">{hearing.hearingType ?? t('agenda.hearing')}</strong>
-                      <span className={`status-badge ${HEARING_TONE[hearing.status]}`}>
-                        {t(`agenda.status.${hearing.status}`)}
-                      </span>
+                      <Badge variant="secondary">{t(`agenda.status.${hearing.status}`)}</Badge>
                     </div>
                     {(hearing.location || hearing.circuitName) && (
                       <span dir="auto">
@@ -389,7 +406,7 @@ export function CaseDetailPage() {
                       <Button
                         type="button"
                         variant="ghost"
-                        className="text-button"
+
                         onClick={() => setHearingEditor(hearing)}
                       >
                         {t('agenda.editHearing')}
@@ -398,7 +415,7 @@ export function CaseDetailPage() {
                         <Button
                           type="button"
                           variant="ghost"
-                          className="text-button"
+
                           onClick={() => setHearingDecision(hearing)}
                         >
                           {t('agenda.recordDecision')}
@@ -459,9 +476,9 @@ export function CaseDetailPage() {
             </ul>
           )}
           {(completeTask.isError || reopenTask.isError) && !taskEditor && (
-            <p className="error" role="alert">
-              {t('tasks.statusError')}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{t('tasks.statusError')}</AlertDescription>
+            </Alert>
           )}
         </section>
       )}
@@ -503,44 +520,50 @@ export function CaseDetailPage() {
                 <p className="card-note">{t('cases.detail.feeHint')}</p>
               </div>
             </div>
-            <form
+            <DraftForm
               className="inline-form"
               noValidate
-              onSubmit={(event) => {
-                event.preventDefault();
+              onSubmit={feeForm.handleSubmit(async () => {
                 const amount = parseMoneyToMinor(feeValue);
                 if (!amount) return setFeeError(t('cases.detail.feeInvalid'));
                 setFeeError('');
-                saveFee.mutate(
-                  { caseId: id, amountMinor: amount },
-                  { onSuccess: () => setFee(null) },
-                );
-              }}
+                await saveFee
+                  .mutateAsync(
+                    { caseId: id, amountMinor: amount },
+                    { onSuccess: () => feeForm.reset({ amount: feeValue }) },
+                  )
+                  .catch(() => undefined);
+              })}
             >
-              <label>
-                {t('cases.detail.feeLabel')}
-                <Input
-                  value={feeValue}
-                  onChange={(event) => {
-                    setFee(event.target.value);
-                    saveFee.reset();
-                  }}
-                  inputMode="decimal"
-                  dir="ltr"
-                  aria-invalid={feeError ? true : undefined}
-                />
-              </label>
-              <Button disabled={saveFee.isPending}>{t('cases.detail.feeSave')}</Button>
-            </form>
+              <FieldGroup>
+                <Field
+                  label={<>{t('cases.detail.feeLabel')}</>}
+                  error={feeForm.formState.errors.amount ? t('cases.detail.feeInvalid') : undefined}
+                >
+                  <AmountInput
+                    {...feeForm.register('amount')}
+                    value={feeValue}
+                    aria-invalid={!!feeForm.formState.errors.amount}
+                    onChange={(event) => {
+                      feeForm.setValue('amount', event.target.value, { shouldDirty: true });
+                      saveFee.reset();
+                    }}
+                  />
+                </Field>
+                <Button type="submit" disabled={saveFee.isPending}>
+                  {t('cases.detail.feeSave')}
+                </Button>
+              </FieldGroup>
+            </DraftForm>
             {feeError && (
-              <p className="field-error" role="alert">
-                {feeError}
-              </p>
+              <Alert variant="destructive">
+                <AlertDescription>{feeError}</AlertDescription>
+              </Alert>
             )}
             {saveFee.isError && (
-              <p className="error" role="alert">
-                {t('cases.detail.feeSaveError')}
-              </p>
+              <Alert variant="destructive">
+                <AlertDescription>{t('cases.detail.feeSaveError')}</AlertDescription>
+              </Alert>
             )}
             {saveFee.isSuccess && (
               <p className="success" role="status">
@@ -588,7 +611,7 @@ export function CaseDetailPage() {
               <Button
                 type="button"
                 variant="secondary"
-                className="secondary-button"
+
                 onClick={() => setTransactionEditor({ type: 'expense' })}
               >
                 {t('cases.detail.addExpense')}
@@ -620,7 +643,7 @@ export function CaseDetailPage() {
           </section>
         </div>
       )}
-      <Dialog open={editOpen} onOpenChange={setEditOpen} title={t('cases.detail.editTitle')}>
+      <FormDialog open={editOpen} onOpenChange={setEditOpen} title={t('cases.detail.editTitle')}>
         <CaseEditForm
           caseDto={caseDto}
           busy={update.isPending}
@@ -646,12 +669,12 @@ export function CaseDetailPage() {
           }}
         />
         {update.isError && (
-          <p className="error" role="alert">
-            {t('records.saveRetry')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('records.saveRetry')}</AlertDescription>
+          </Alert>
         )}
-      </Dialog>
-      <Dialog
+      </FormDialog>
+      <FormDialog
         open={Boolean(taskEditor)}
         onOpenChange={(open) => !open && setTaskEditor(null)}
         title={taskEditor === 'new' ? t('tasks.add') : t('tasks.details')}
@@ -684,17 +707,17 @@ export function CaseDetailPage() {
           />
         )}
         {saveTask.isError && (
-          <p className="error" role="alert">
-            {t('tasks.saveError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('tasks.saveError')}</AlertDescription>
+          </Alert>
         )}
         {(completeTask.isError || reopenTask.isError) && (
-          <p className="error" role="alert">
-            {t('tasks.statusError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('tasks.statusError')}</AlertDescription>
+          </Alert>
         )}
-      </Dialog>
-      <Dialog
+      </FormDialog>
+      <FormDialog
         open={Boolean(hearingEditor)}
         onOpenChange={(open) => !open && setHearingEditor(null)}
         title={hearingEditor === 'new' ? t('agenda.add') : t('agenda.editHearing')}
@@ -717,12 +740,12 @@ export function CaseDetailPage() {
           />
         )}
         {saveHearing.isError && (
-          <p className="error" role="alert">
-            {t('agenda.saveError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('agenda.saveError')}</AlertDescription>
+          </Alert>
         )}
-      </Dialog>
-      <Dialog
+      </FormDialog>
+      <FormDialog
         open={Boolean(hearingDecision)}
         onOpenChange={(open) => !open && setHearingDecision(null)}
         title={t('agenda.recordDecision')}
@@ -743,12 +766,12 @@ export function CaseDetailPage() {
           />
         )}
         {recordDecision.isError && (
-          <p className="error" role="alert">
-            {t('agenda.decisionError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('agenda.decisionError')}</AlertDescription>
+          </Alert>
         )}
-      </Dialog>
-      <Dialog
+      </FormDialog>
+      <FormDialog
         open={Boolean(transactionEditor)}
         onOpenChange={(open) => !open && setTransactionEditor(null)}
         title={
@@ -815,11 +838,11 @@ export function CaseDetailPage() {
           />
         ) : null}
         {(savePayment.isError || saveExpense.isError) && (
-          <p className="error" role="alert">
-            {t('cases.detail.entrySaveError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('cases.detail.entrySaveError')}</AlertDescription>
+          </Alert>
         )}
-      </Dialog>
+      </FormDialog>
     </section>
   );
 }
@@ -844,7 +867,7 @@ function CaseTransactionInspection({
   const date =
     transaction.type === 'payment' ? transaction.value.paymentDate : transaction.value.expenseDate;
   return (
-    <div className="dialog-form">
+    <div className="mt-4 grid gap-3.5">
       <dl className="detail-definition-grid">
         <div>
           <dt>{t('cases.detail.entryDate')}</dt>
@@ -873,14 +896,14 @@ function CaseTransactionInspection({
         <strong>{t('common.notes')}</strong>
         <p>{transaction.value.notes ?? '—'}</p>
       </div>
-      <div className="dialog-actions">
-        <Button type="button" variant="secondary" className="secondary-button" onClick={onClose}>
+      <FormDialogFooter>
+        <Button type="button" variant="secondary" onClick={onClose}>
           {t('records.close')}
         </Button>
         <Button type="button" onClick={onEdit}>
           {t('cases.detail.editEntryButton')}
         </Button>
-      </div>
+      </FormDialogFooter>
     </div>
   );
 }

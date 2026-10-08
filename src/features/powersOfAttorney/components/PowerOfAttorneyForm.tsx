@@ -1,21 +1,37 @@
-import { useTranslation } from 'react-i18next';
+import { DraftForm } from '@/components/forms/DraftForm';
+import { CreatableCombobox } from '@/components/forms/CreatableCombobox';
 import { useState } from 'react';
-import { DatePicker } from '../../../components/ui/DatePicker';
-import { Button } from '../../../components/ui/button';
-import { Checkbox } from '../../../components/ui/checkbox';
-import { Dialog } from '../../../components/ui/Dialog';
-import { Input } from '../../../components/ui/input';
-import { Textarea } from '../../../components/ui/textarea';
-import { asAppError, errorMessage } from '../../../bridge/errors';
-import type {
-  ClientDuplicateCandidate,
-  PowerOfAttorneyDto,
-  PowerOfAttorneyLawyerInput,
-} from '../../../bridge/types';
-import { useClientList, useCreateClient } from '../../clients/api/clientsApi';
-import { ClientForm } from '../../clients/forms/ClientForm';
-import type { ClientFormValues } from '../../clients/schemas/client.schema';
-
+import { useTranslation } from 'react-i18next';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Field } from '@/components/forms/FormField';
+import { FieldGroup, FieldSet, FieldLegend } from '@/components/ui/field';
+import { DatePicker } from '@/components/forms/DatePicker';
+import { EntityMultiPicker } from '@/components/forms/EntityPicker';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { optionalDate, requiredText } from '@/lib/formSchemas';
+import type { PowerOfAttorneyDto, PowerOfAttorneyInput } from '@/bridge/types';
+import { useClientList } from '../../clients/api/clientsApi';
+import { InlineClientCreateDialog } from '../../clients/components/InlineClientCreateDialog';
+const schema = z.object({
+  internalSequence: requiredText,
+  officialNumber: z.string(),
+  issueDate: optionalDate,
+  notaryOffice: z.string(),
+  notes: z.string(),
+  clientIds: z.array(z.string()).refine((ids) => new Set(ids).size === ids.length),
+  lawyers: z.array(
+    z.object({
+      id: z.string().optional(),
+      fullName: requiredText,
+      barNumber: z.string().optional(),
+      notes: z.string().optional(),
+    }),
+  ),
+});
 export function PowerOfAttorneyForm({
   powerOfAttorney,
   busy,
@@ -24,287 +40,163 @@ export function PowerOfAttorneyForm({
 }: {
   powerOfAttorney?: PowerOfAttorneyDto;
   busy: boolean;
-  onSubmit: (input: {
-    internalSequence: string;
-    officialNumber?: string;
-    issueYear?: number;
-    issueDate?: string;
-    notaryOffice?: string;
-    notes?: string;
-    clientIds: string[];
-    lawyers: PowerOfAttorneyLawyerInput[];
-  }) => Promise<void>;
+  onSubmit: (input: PowerOfAttorneyInput) => Promise<void>;
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const clients = useClientList({});
-  const [selectedClientIds, setSelectedClientIds] = useState(
-    powerOfAttorney?.clients.map((client) => client.id) ?? [],
-  );
-  const [lawyers, setLawyers] = useState<PowerOfAttorneyLawyerInput[]>(
-    powerOfAttorney?.lawyers.map((lawyer) => ({
-      id: lawyer.id,
-      fullName: lawyer.fullName,
-      barNumber: lawyer.barNumber ?? undefined,
-      notes: lawyer.notes ?? undefined,
-    })) ?? [],
-  );
-  const [lawyerName, setLawyerName] = useState('');
-  const [barNumber, setBarNumber] = useState('');
-  const [lawyerNotes, setLawyerNotes] = useState('');
-  const [issueDate, setIssueDate] = useState(powerOfAttorney?.issueDate ?? '');
-  const [clientCreateOpen, setClientCreateOpen] = useState(false);
-
+  const clients = useClientList({ includeArchived: true });
+  const [clientName, setClientName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const { register, control, handleSubmit, formState, setValue, getValues } = useForm<
+    z.infer<typeof schema>
+  >({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      internalSequence: powerOfAttorney?.internalSequence ?? '',
+      officialNumber: powerOfAttorney?.officialNumber ?? '',
+      issueDate: powerOfAttorney?.issueDate ?? '',
+      notaryOffice: powerOfAttorney?.notaryOffice ?? '',
+      notes: powerOfAttorney?.notes ?? '',
+      clientIds: powerOfAttorney?.clients.map((c) => c.id) ?? [],
+      lawyers:
+        powerOfAttorney?.lawyers.map((l) => ({
+          id: l.id,
+          fullName: l.fullName,
+          barNumber: l.barNumber ?? '',
+          notes: l.notes ?? '',
+        })) ?? [],
+    },
+  });
+  const lawyers = useWatch({ control, name: 'lawyers' });
   return (
-    <form
-      onSubmit={async (event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const date = String(data.get('issueDate') ?? '').trim();
-        if (busy) return;
-        try {
-          await onSubmit({
-            internalSequence: String(data.get('internalSequence') ?? '').trim(),
-            officialNumber: String(data.get('officialNumber') ?? '').trim() || undefined,
-            // Keep the legacy summary year in sync without asking the user for the same fact twice.
-            issueYear: date ? Number(date.slice(0, 4)) : undefined,
-            issueDate: date || undefined,
-            notaryOffice: String(data.get('notaryOffice') ?? '').trim() || undefined,
-            notes: String(data.get('notes') ?? '').trim() || undefined,
-            clientIds: selectedClientIds,
-            lawyers,
-          });
-        } catch {
-          // The parent mutation displays the failure; keep all entered values.
-        }
-      }}
-    >
-      <div className="settings-two-columns">
-        <label>
-          {t('poa.fields.internalSequence')}
-          <Input
+    <>
+      <DraftForm
+        noValidate
+        onSubmit={handleSubmit(async (values) => {
+          if (busy) return;
+          try {
+            await onSubmit({
+              ...values,
+              issueDate: values.issueDate || undefined,
+              issueYear: values.issueDate ? Number(values.issueDate.slice(0, 4)) : undefined,
+            });
+          } catch {
+            /* Parent renders save errors; draft is retained. */
+          }
+        })}
+      >
+        <FieldGroup>
+          <Field
+            label={t('poa.fields.internalSequence')}
             required
-            dir="ltr"
-            name="internalSequence"
-            defaultValue={powerOfAttorney?.internalSequence ?? ''}
-          />
-        </label>
-        <label>
-          {t('poa.fields.officialNumber')}
-          <Input
-            dir="ltr"
-            name="officialNumber"
-            defaultValue={powerOfAttorney?.officialNumber ?? ''}
-          />
-        </label>
-        <label>
-          {t('poa.fields.issueDate')}
-          <DatePicker
-            name="issueDate"
-            value={issueDate}
-            onChange={(event) => setIssueDate(event.target.value)}
-          />
-        </label>
-      </div>
-      <label>
-        {t('poa.fields.notaryOffice')}
-        <Input name="notaryOffice" defaultValue={powerOfAttorney?.notaryOffice ?? ''} />
-      </label>
-      <fieldset>
-        <legend>{t('poa.tabs.clients')}</legend>
-        <Button
-          type="button"
-          variant="secondary"
-          className="secondary-button compact-button"
-          onClick={() => setClientCreateOpen(true)}
-        >
-          {t('cases.form.addClientLink')}
-        </Button>
-        {!clients.data?.length ? (
-          <p className="muted">{t('poa.clientsHint')}</p>
-        ) : (
-          clients.data.map((client) => (
-            <div className="checkbox-field" key={client.id}>
-              <Checkbox
-                aria-label={client.fullName}
-                checked={selectedClientIds.includes(client.id)}
-                onCheckedChange={(checked) =>
-                  setSelectedClientIds((current) =>
-                    checked ? [...current, client.id] : current.filter((id) => id !== client.id),
-                  )
-                }
-              />
-              {client.fullName} · <bdi>{client.internalNumber}</bdi>
-            </div>
-          ))
-        )}
-      </fieldset>
-      <InlineClientCreateDialog
-        open={clientCreateOpen}
-        onOpenChange={setClientCreateOpen}
-        onCreated={(clientId) =>
-          setSelectedClientIds((current) =>
-            current.includes(clientId) ? current : [...current, clientId],
-          )
-        }
-      />
-      <fieldset>
-        <legend>{t('poa.lawyersTitle')}</legend>
-        <div className="settings-two-columns">
-          <label>
-            {t('poa.fields.lawyerName')}
-            <Input value={lawyerName} onChange={(event) => setLawyerName(event.target.value)} />
-          </label>
-          <label>
-            {t('poa.fields.barNumber')}
-            <Input
-              dir="ltr"
-              value={barNumber}
-              onChange={(event) => setBarNumber(event.target.value)}
+            error={formState.errors.internalSequence ? t('forms.required') : undefined}
+          >
+            <Input dir="ltr" {...register('internalSequence')} autoFocus />
+          </Field>
+          <Field label={t('poa.fields.officialNumber')}>
+            <Input dir="ltr" {...register('officialNumber')} />
+          </Field>
+          <Field
+            label={t('poa.fields.issueDate')}
+            error={formState.errors.issueDate ? t('forms.invalid') : undefined}
+          >
+            <Controller
+              control={control}
+              name="issueDate"
+              render={({ field }) => <DatePicker {...field} />}
             />
-          </label>
-        </div>
-        <label>
-          {t('common.notes')}
-          <Input value={lawyerNotes} onChange={(event) => setLawyerNotes(event.target.value)} />
-        </label>
-        <Button
-          type="button"
-          variant="secondary"
-          className="secondary-button compact-button"
-          onClick={() => {
-            if (!lawyerName.trim()) return;
-            setLawyers((current) => [
-              ...current,
-              {
-                fullName: lawyerName.trim(),
-                barNumber: barNumber || undefined,
-                notes: lawyerNotes || undefined,
-              },
-            ]);
-            setLawyerName('');
-            setBarNumber('');
-            setLawyerNotes('');
-          }}
-        >
-          {t('poa.addLawyer')}
-        </Button>
-        {lawyers.length > 0 && (
-          <ul className="compact-records">
+          </Field>
+          <Field label={t('poa.fields.notaryOffice')}>
+            <CreatableCombobox suggestion="notaryOffice" {...register('notaryOffice')} />
+          </Field>
+          <Field label={t('poa.tabs.clients')}>
+            <Controller
+              control={control}
+              name="clientIds"
+              render={({ field }) => (
+                <EntityMultiPicker
+                  ref={field.ref}
+                  items={(clients.data ?? []).map((c) => ({
+                    value: c.id,
+                    label: c.fullName,
+                    searchText: `${c.internalNumber} ${c.primaryPhone ?? ''}`,
+                    disabled: !!c.archivedAt,
+                  }))}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder={t('cases.form.clientSearch')}
+                  loading={clients.isLoading}
+                  error={clients.isError ? t('clients.loadError') : undefined}
+                  onCreate={(name) => {
+                    setClientName(name);
+                    setCreating(true);
+                  }}
+                />
+              )}
+            />
+          </Field>
+          <FieldSet>
+            <FieldLegend>{t('poa.lawyersTitle')}</FieldLegend>
             {lawyers.map((lawyer, index) => (
-              <li key={`${lawyer.id ?? 'new'}-${index}`}>
-                <div className="record-copy">
-                  <strong>{lawyer.fullName}</strong>
-                  <span>
-                    {lawyer.barNumber ? <bdi>{lawyer.barNumber}</bdi> : t('poa.noBarNumber')}
-                    {lawyer.notes && ` · ${lawyer.notes}`}
-                  </span>
-                </div>
+              <FieldGroup key={lawyer.id ?? index}>
+                <Field
+                  label={t('poa.fields.lawyerName')}
+                  required
+                  error={
+                    formState.errors.lawyers?.[index]?.fullName ? t('forms.required') : undefined
+                  }
+                >
+                  <Input {...register(`lawyers.${index}.fullName`)} />
+                </Field>
+                <Field label={t('poa.fields.barNumber')}>
+                  <Input {...register(`lawyers.${index}.barNumber`)} />
+                </Field>
+                <Field label={t('common.notes')}>
+                  <Input {...register(`lawyers.${index}.notes`)} />
+                </Field>
                 <Button
                   type="button"
                   variant="destructive"
-                  className="text-button danger-button"
                   onClick={() =>
-                    setLawyers((current) =>
-                      current.filter((_, currentIndex) => currentIndex !== index),
+                    setValue(
+                      'lawyers',
+                      lawyers.filter((_, i) => i !== index),
                     )
                   }
                 >
                   {t('documents.remove')}
                 </Button>
-              </li>
+              </FieldGroup>
             ))}
-          </ul>
-        )}
-      </fieldset>
-      <label>
-        {t('common.notes')} <Textarea name="notes" defaultValue={powerOfAttorney?.notes ?? ''} />
-      </label>
-      <div className="form-actions">
-        <Button disabled={busy}>{t('poa.save')}</Button>
-        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function InlineClientCreateDialog({
-  open,
-  onOpenChange,
-  onCreated,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreated: (clientId: string) => void;
-}) {
-  const { t } = useTranslation();
-  const createClient = useCreateClient();
-  const [duplicates, setDuplicates] = useState<ClientDuplicateCandidate[] | null>(null);
-  const [pendingValues, setPendingValues] = useState<ClientFormValues | null>(null);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const close = () => {
-    setDuplicates(null);
-    setPendingValues(null);
-    setCreateError(null);
-    onOpenChange(false);
-  };
-  const submit = async (values: ClientFormValues, confirmDuplicate: boolean) => {
-    setDuplicates(null);
-    setCreateError(null);
-    try {
-      const client = await createClient.mutateAsync({ ...values, confirmDuplicate });
-      onCreated(client.id);
-      close();
-    } catch (error) {
-      const appError = asAppError(error);
-      if (appError?.code === 'CLIENT_PROBABLE_DUPLICATE') {
-        setDuplicates((appError.details as ClientDuplicateCandidate[]) ?? []);
-        setPendingValues(values);
-        return;
-      }
-      setCreateError(errorMessage(error, t('poa.clientSaveError')));
-    }
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : close())}
-      title={t('cases.form.addClientLink')}
-    >
-      <ClientForm
-        busy={createClient.isPending}
-        submitLabel={t('poa.saveClientAndLink')}
-        onCancel={close}
-        onSubmit={(values) => submit(values, false)}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setValue('lawyers', [...lawyers, { fullName: '', barNumber: '', notes: '' }])
+              }
+            >
+              {t('poa.addLawyer')}
+            </Button>
+          </FieldSet>
+          <Field label={t('common.notes')}>
+            <Textarea {...register('notes')} />
+          </Field>
+          <div className="form-actions">
+            <Button type="submit" disabled={busy || formState.isSubmitting}>
+              {t('poa.save')}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        </FieldGroup>
+      </DraftForm>
+      <InlineClientCreateDialog
+        open={creating}
+        onOpenChange={setCreating}
+        initialName={clientName}
+        onCreated={(id) => setValue('clientIds', [...new Set([...getValues('clientIds'), id])])}
       />
-      {createError && (
-        <p className="error" role="alert">
-          {createError}
-        </p>
-      )}
-      {duplicates && (
-        <div className="warning" role="alert">
-          <p>{t('clients.duplicateWarning')}</p>
-          <ul>
-            {duplicates.map((candidate) => (
-              <li key={candidate.id}>
-                {candidate.fullName}
-                {candidate.primaryPhone ? ` — ${candidate.primaryPhone}` : ''}
-              </li>
-            ))}
-          </ul>
-          <Button
-            type="button"
-            disabled={createClient.isPending}
-            onClick={() => pendingValues && submit(pendingValues, true)}
-          >
-            {t('poa.createClientAnyway')}
-          </Button>
-        </div>
-      )}
-    </Dialog>
+    </>
   );
 }

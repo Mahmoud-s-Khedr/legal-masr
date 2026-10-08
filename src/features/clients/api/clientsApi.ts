@@ -1,10 +1,17 @@
+import { useDebounced } from '@/lib/useDebounced';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
 import type { ClientCreateInput, ClientListInput, ClientUpdateInput } from '../../../bridge/types';
 import { queryKeys } from '../../../lib/queryKeys';
 
-export const useClientList = (input: ClientListInput) =>
-  useQuery({ queryKey: queryKeys.clients.list(input), queryFn: () => bridge.clientList(input) });
+export const useClientList = (input: ClientListInput) => {
+  const query = useDebounced(input.query);
+  const filters = { ...input, query };
+  return useQuery({
+    queryKey: queryKeys.clients.list(filters),
+    queryFn: () => bridge.clientList(filters),
+  });
+};
 
 export const useClient = (id: string) =>
   useQuery({ queryKey: queryKeys.clients.detail(id), queryFn: () => bridge.clientGet(id) });

@@ -1,3 +1,4 @@
+import { Field as FieldRoot, FieldLabel, FieldDescription, FieldError } from '../ui/field';
 import { cloneElement, type ReactElement, type ReactNode, useId } from 'react';
 import { cn } from '../../lib/utils';
 
@@ -34,25 +35,31 @@ export function Field({
   const errorId = error ? `${id}-error` : undefined;
   const describedBy =
     [children.props['aria-describedby'], hintId, errorId].filter(Boolean).join(' ') || undefined;
+  const accessibility = {
+    id: controlId,
+    'aria-describedby': describedBy,
+    'aria-invalid': error ? true : undefined,
+    'aria-required': required || undefined,
+  };
+  const renderControl = (
+    children.props as { render?: (args: unknown) => ReactElement<ControlProps> }
+  ).render;
+  const control = renderControl
+    ? cloneElement(
+        children as ReactElement<{ render: (args: unknown) => ReactElement<ControlProps> }>,
+        { render: (args) => cloneElement(renderControl(args), accessibility) },
+      )
+    : cloneElement(children, accessibility);
   return (
-    <div className={cn('field', required && 'is-required', error && 'has-error', className)}>
-      <label htmlFor={controlId}>{label}</label>
-      {cloneElement(children, {
-        id: controlId,
-        'aria-describedby': describedBy,
-        'aria-invalid': error ? true : undefined,
-        'aria-required': required || undefined,
-      })}
-      {hint && !error && (
-        <span className="field-hint" id={hintId}>
-          {hint}
-        </span>
-      )}
+    <FieldRoot data-invalid={!!error} className={cn(required && 'is-required', className)}>
+      <FieldLabel htmlFor={controlId}>{label}</FieldLabel>
+      {control}
+      {hint && !error && <FieldDescription id={hintId}>{hint}</FieldDescription>}
       {error && (
-        <span className="field-error" id={errorId} role="alert">
+        <FieldError id={errorId} role="alert">
           {error}
-        </span>
+        </FieldError>
       )}
-    </div>
+    </FieldRoot>
   );
 }

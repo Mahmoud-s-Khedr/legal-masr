@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -70,11 +71,20 @@ export function DashboardPage() {
         description={t('dashboard.todayDescription')}
         actions={
           <>
-            <Button asChild className="button-link">
-              <Link to={`/calendar?create=hearing&date=${date}`}>{t('dashboard.addHearing')}</Link>
+            <Button
+              nativeButton={false}
+              role="link"
+              render={<Link to={`/calendar?create=hearing&date=${date}`} />}
+            >
+              {t('dashboard.addHearing')}
             </Button>
-            <Button variant="secondary" asChild className="button-link secondary-link">
-              <Link to={`/tasks?create=task&date=${date}`}>{t('dashboard.addTask')}</Link>
+            <Button
+              variant="secondary"
+              nativeButton={false}
+              role="link"
+              render={<Link to={`/tasks?create=task&date=${date}`} />}
+            >
+              {t('dashboard.addTask')}
             </Button>
           </>
         }
@@ -190,9 +200,9 @@ export function DashboardPage() {
             />
           )}
           {complete.isError && (
-            <p className="error" role="alert">
-              {t('tasks.statusError')}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{t('tasks.statusError')}</AlertDescription>
+            </Alert>
           )}
         </section>
       </div>

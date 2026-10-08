@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -124,7 +125,11 @@ function AppContent() {
         <LocaleSync />
         <ReminderSync />
         <DemoDataSeeder />
-        {lockVault.isError && <p role="alert">{t('app.defaultError')}</p>}
+        {lockVault.isError && (
+          <Alert variant="destructive">
+            <AlertDescription>{t('app.defaultError')}</AlertDescription>
+          </Alert>
+        )}
         <Shell
           onLock={async () => {
             try {

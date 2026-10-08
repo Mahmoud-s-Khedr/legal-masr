@@ -1,3 +1,6 @@
+import { DraftForm } from '@/components/forms/DraftForm';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FieldGroup } from '@/components/ui/field';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { forwardRef, type InputHTMLAttributes, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -7,7 +10,7 @@ import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Checkbox } from '../../../components/ui/checkbox';
-import { Field } from '../../../components/ui/Field';
+import { Field } from '../../../components/forms/FormField';
 import { Input } from '../../../components/ui/input';
 import { useInitializeVault, useRecoverAccess, useUnlockVault } from '../api/onboardingApi';
 import {
@@ -106,7 +109,7 @@ export function OnboardingPage({
               <Checkbox checked={keySaved} onCheckedChange={setKeySaved} />
               {t('gate.recoveryKeyConfirm')}
             </label>
-            <Button disabled={!keySaved} onClick={onRecoveryKeySaved}>
+            <Button type="submit" disabled={!keySaved} onClick={onRecoveryKeySaved}>
               {t('gate.recoveryKeySavedButton')}
             </Button>
           </div>
@@ -146,17 +149,17 @@ export function OnboardingPage({
           />
         )}
         {error && (
-          <p className="error" role="alert">
-            {errorMessage(error, t('app.defaultError'))}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{errorMessage(error, t('app.defaultError'))}</AlertDescription>
+          </Alert>
         )}
         {subGate === 'unlock' && (
-          <Button variant="ghost" className="text-button gate-link" onClick={onSwitchToRecovery}>
+          <Button variant="ghost" className="gate-link" onClick={onSwitchToRecovery}>
             {t('gate.haveRecoveryKey')}
           </Button>
         )}
         {subGate === 'recovery' && onBackToUnlock && (
-          <Button variant="ghost" className="text-button gate-link" onClick={onBackToUnlock}>
+          <Button variant="ghost" className="gate-link" onClick={onBackToUnlock}>
             {t('gate.backToUnlock')}
           </Button>
         )}
@@ -240,20 +243,25 @@ function SetupForm({
     defaultValues: { fullName: '', password: '', confirmPassword: '' },
   });
   return (
-    <form noValidate onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
-      <Field
-        label={t('gate.fields.fullName')}
-        hint={t('gate.fullNameHint')}
-        error={formState.errors.fullName ? t('forms.required') : undefined}
-        required
-      >
-        <Input {...register('fullName')} autoFocus />
-      </Field>
-      <NewPasswordFields register={register} errors={formState.errors} labelKey="password" />
-      <Button disabled={busy || formState.isSubmitting}>
-        {busy ? t('gate.submit.busy') : t('gate.submit.setup')}
-      </Button>
-    </form>
+    <DraftForm
+      noValidate
+      onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}
+    >
+      <FieldGroup>
+        <Field
+          label={t('gate.fields.fullName')}
+          hint={t('gate.fullNameHint')}
+          error={formState.errors.fullName ? t('forms.required') : undefined}
+          required
+        >
+          <Input {...register('fullName')} autoFocus />
+        </Field>
+        <NewPasswordFields register={register} errors={formState.errors} labelKey="password" />
+        <Button type="submit" disabled={busy || formState.isSubmitting}>
+          {busy ? t('gate.submit.busy') : t('gate.submit.setup')}
+        </Button>
+      </FieldGroup>
+    </DraftForm>
   );
 }
 
@@ -270,17 +278,22 @@ function UnlockForm({
     defaultValues: { password: '' },
   });
   return (
-    <form noValidate onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
-      <Field
-        label={t('gate.fields.password')}
-        error={formState.errors.password ? t('forms.required') : undefined}
-      >
-        <PasswordInput {...register('password')} autoFocus />
-      </Field>
-      <Button disabled={busy || formState.isSubmitting}>
-        {busy ? t('gate.submit.busy') : t('gate.submit.unlock')}
-      </Button>
-    </form>
+    <DraftForm
+      noValidate
+      onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}
+    >
+      <FieldGroup>
+        <Field
+          label={t('gate.fields.password')}
+          error={formState.errors.password ? t('forms.required') : undefined}
+        >
+          <PasswordInput {...register('password')} autoFocus />
+        </Field>
+        <Button type="submit" disabled={busy || formState.isSubmitting}>
+          {busy ? t('gate.submit.busy') : t('gate.submit.unlock')}
+        </Button>
+      </FieldGroup>
+    </DraftForm>
   );
 }
 
@@ -297,23 +310,28 @@ function RecoveryForm({
     defaultValues: { recoveryKey: '', password: '', confirmPassword: '' },
   });
   return (
-    <form noValidate onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}>
-      <Field
-        label={t('gate.fields.recoveryKey')}
-        hint={t('gate.recoveryKeyHint')}
-        error={formState.errors.recoveryKey ? t('forms.required') : undefined}
-        required
-      >
-        <Input dir="ltr" {...register('recoveryKey')} autoFocus spellCheck={false} />
-      </Field>
-      <NewPasswordFields
-        register={register as unknown as ReturnType<typeof useForm<SetupFormValues>>['register']}
-        errors={formState.errors}
-        labelKey="newPassword"
-      />
-      <Button disabled={busy || formState.isSubmitting}>
-        {busy ? t('gate.submit.busy') : t('gate.submit.recovery')}
-      </Button>
-    </form>
+    <DraftForm
+      noValidate
+      onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}
+    >
+      <FieldGroup>
+        <Field
+          label={t('gate.fields.recoveryKey')}
+          hint={t('gate.recoveryKeyHint')}
+          error={formState.errors.recoveryKey ? t('forms.required') : undefined}
+          required
+        >
+          <Input dir="ltr" {...register('recoveryKey')} autoFocus spellCheck={false} />
+        </Field>
+        <NewPasswordFields
+          register={register as unknown as ReturnType<typeof useForm<SetupFormValues>>['register']}
+          errors={formState.errors}
+          labelKey="newPassword"
+        />
+        <Button type="submit" disabled={busy || formState.isSubmitting}>
+          {busy ? t('gate.submit.busy') : t('gate.submit.recovery')}
+        </Button>
+      </FieldGroup>
+    </DraftForm>
   );
 }

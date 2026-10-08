@@ -1,3 +1,4 @@
+import { NewPowerOfAttorneyPage } from '../features/powersOfAttorney/pages/NewPowerOfAttorneyPage';
 import { Route, Routes } from 'react-router-dom';
 import { AgendaPage } from '../features/hearings/pages/AgendaPage';
 import { TasksPage } from '../features/tasks/pages/TasksPage';
@@ -58,6 +59,7 @@ export function AppRoutes() {
       <Route path="/clients/new" element={<NewClientPage />} />
       <Route path="/clients/:id" element={<ClientDetailPage />} />
       <Route path="/powers-of-attorney" element={<PowersOfAttorneyPage />} />
+      <Route path="/powers-of-attorney/new" element={<NewPowerOfAttorneyPage />} />
       <Route path="/powers-of-attorney/:id" element={<PowerOfAttorneyDetailPage />} />
       <Route path="/cases" element={<CaseListPage />} />
       <Route path="/cases/new" element={<NewCasePage />} />

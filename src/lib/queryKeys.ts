@@ -1,5 +1,6 @@
 /** Canonical query-key factories. Feature hooks use these instead of ad-hoc arrays. */
 export const queryKeys = {
+  suggestions: (kind: string) => ['form-suggestions', kind] as const,
   appStatus: ['app-status'] as const,
   settings: ['settings'] as const,
   profile: ['profile'] as const,

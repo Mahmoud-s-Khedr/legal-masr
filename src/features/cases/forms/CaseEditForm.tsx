@@ -1,3 +1,5 @@
+import { DraftForm } from '@/components/forms/DraftForm';
+import { FieldGroup } from '@/components/ui/field';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '../../../components/ui/button';
@@ -38,20 +40,24 @@ export function CaseEditForm({
   });
 
   return (
-    <form
+    <DraftForm
       noValidate
       className="dialog-wide-form"
       onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}
     >
-      <CaseCoreFields register={register} control={control} errors={formState.errors} />
-      <div className="form-actions">
-        <Button disabled={busy || formState.isSubmitting}>{t('records.saveEdits')}</Button>
-        {onCancel && (
-          <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-            {t('cases.cancel')}
+      <FieldGroup>
+        <CaseCoreFields register={register} control={control} errors={formState.errors} />
+        <div className="form-actions">
+          <Button type="submit" disabled={busy || formState.isSubmitting}>
+            {t('records.saveEdits')}
           </Button>
-        )}
-      </div>
-    </form>
+          {onCancel && (
+            <Button type="button" variant="secondary" onClick={onCancel}>
+              {t('cases.cancel')}
+            </Button>
+          )}
+        </div>
+      </FieldGroup>
+    </DraftForm>
   );
 }

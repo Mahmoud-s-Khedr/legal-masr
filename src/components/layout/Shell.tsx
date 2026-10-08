@@ -3,9 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Link, NavLink } from 'react-router-dom';
 import { AppRoutes, NAV_GROUPS } from '../../app/router';
 import { GlobalSearch } from '../../features/search/components/GlobalSearch';
-import { DropdownMenu } from '../ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+} from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
-import { Sheet } from '../ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetClose } from '../ui/sheet';
+import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { useSettings } from '../../features/settings/api/settingsApi';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Icon } from './Icon';
@@ -88,146 +95,145 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
 
   return (
     <BrowserRouter>
-      <Sheet.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <Sheet.Root open={searchPaletteOpen} onOpenChange={setSearchPaletteOpen}>
-          <div className="app-shell">
-            <aside className="sidebar">
-              <div className="sidebar-brand brand-block">
-                <img src="/logo.png" alt="" />
-                <div>
-                  <strong>{t('app.brandName')}</strong>
-                  <span>{t('app.brandTagline')}</span>
-                </div>
-              </div>
-              {navigation()}
-              <div className="sidebar-footer">
-                <span>{t('app.localOnly')}</span>
-                <Button className="sidebar-lock" type="button" variant="ghost" onClick={onLock}>
-                  <Icon name="lock" size={17} />
-                  {t('nav.lock')}
-                </Button>
-              </div>
-            </aside>
-            <header className="topbar">
-              <div className="topbar-main">
-                <Sheet.Trigger className="menu-button" aria-label={t('app.openMenu')}>
-                  <Icon name="menu" size={21} />
-                </Sheet.Trigger>
-                <div className="search-wrap">
-                  <Icon name="search" size={19} />
-                  <GlobalSearch query={searchQuery} onQueryChange={setSearchQuery} />
-                  <kbd className="search-shortcut" aria-hidden="true">
-                    Ctrl K
-                  </kbd>
-                </div>
-                <Sheet.Trigger
-                  className="search-palette-trigger icon-button"
-                  aria-label={t('search.openPalette')}
-                >
-                  <Icon name="search" size={18} />
-                </Sheet.Trigger>
-              </div>
-              <div className="topbar-actions">
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger className="create-button">
-                    <Icon name="plus" size={18} />
-                    <span>{t('app.add')}</span>
-                    <Icon name="chevron-down" size={16} />
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Portal>
-                    <DropdownMenu.Positioner side="bottom" align="end" sideOffset={8}>
-                      <DropdownMenu.Popup className="create-menu" aria-label={t('app.add')}>
-                        <DropdownMenu.LinkItem render={<Link to="/clients/new" />} closeOnClick>
-                          <Icon name="clients" size={18} />
-                          {t('dashboard.addClient')}
-                        </DropdownMenu.LinkItem>
-                        <DropdownMenu.LinkItem render={<Link to="/cases/new" />} closeOnClick>
-                          <Icon name="cases" size={18} />
-                          {t('dashboard.addCase')}
-                        </DropdownMenu.LinkItem>
-                        <DropdownMenu.LinkItem
-                          render={<Link to="/calendar?create=hearing" />}
-                          closeOnClick
-                        >
-                          <Icon name="calendar" size={18} />
-                          {t('app.addHearing')}
-                        </DropdownMenu.LinkItem>
-                        <DropdownMenu.LinkItem
-                          render={<Link to="/tasks?create=task" />}
-                          closeOnClick
-                        >
-                          <Icon name="tasks" size={18} />
-                          {t('app.addTask')}
-                        </DropdownMenu.LinkItem>
-                      </DropdownMenu.Popup>
-                    </DropdownMenu.Positioner>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Root>
-                <LanguageSwitcher className="topbar-language" />
-                <Button
-                  className="lock-button icon-button"
-                  variant="ghost"
-                  type="button"
-                  onClick={onLock}
-                  aria-label={t('app.lockButton')}
-                >
-                  <Icon name="lock" size={17} />
-                </Button>
-              </div>
-            </header>
-            <main className="workspace">
-              <AppRoutes />
-            </main>
-            <footer className="app-footer no-print">
-              <Link to="/settings?tab=about">{t('settings.tabs.about')}</Link>
-              <DeveloperContacts />
-            </footer>
-            <Sheet.Portal>
-              <Sheet.Backdrop className="drawer-backdrop" />
-              <Sheet.Viewport className="mobile-drawer">
-                <Sheet.Popup className="drawer-panel" aria-label={t('app.workspaceKicker')}>
-                  <div className="drawer-header">
-                    <Sheet.Title>{t('app.brandName')}</Sheet.Title>
-                    <Sheet.Close className="drawer-close" aria-label={t('app.closeMenu')}>
-                      <Icon name="close" size={20} />
-                    </Sheet.Close>
-                  </div>
-                  {navigation(() => setDrawerOpen(false))}
-                  <div className="sidebar-footer">
-                    <span>{t('app.localOnly')}</span>
-                    <Button
-                      className="sidebar-lock"
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        setDrawerOpen(false);
-                        onLock();
-                      }}
-                    >
-                      <Icon name="lock" size={17} />
-                      {t('nav.lock')}
-                    </Button>
-                  </div>
-                </Sheet.Popup>
-              </Sheet.Viewport>
-            </Sheet.Portal>
-            <Sheet.Portal>
-              <Sheet.Backdrop className="dialog-backdrop" />
-              <Sheet.Viewport className="dialog-viewport">
-                <Sheet.Popup className="command-palette" aria-label={t('search.paletteTitle')}>
-                  <Sheet.Title>{t('search.paletteTitle')}</Sheet.Title>
-                  <GlobalSearch
-                    palette
-                    query={searchQuery}
-                    onQueryChange={setSearchQuery}
-                    onNavigate={() => setSearchPaletteOpen(false)}
-                  />
-                </Sheet.Popup>
-              </Sheet.Viewport>
-            </Sheet.Portal>
+      <div className="app-shell">
+        <aside className="sidebar">
+          <div className="sidebar-brand brand-block">
+            <img src="/logo.png" alt="" />
+            <div>
+              <strong>{t('app.brandName')}</strong>
+              <span>{t('app.brandTagline')}</span>
+            </div>
           </div>
-        </Sheet.Root>
-      </Sheet.Root>
+          {navigation()}
+          <div className="sidebar-footer">
+            <span>{t('app.localOnly')}</span>
+            <Button className="sidebar-lock" type="button" variant="ghost" onClick={onLock}>
+              <Icon name="lock" size={17} />
+              {t('nav.lock')}
+            </Button>
+          </div>
+        </aside>
+        <header className="topbar">
+          <div className="topbar-main">
+            <Button
+              variant="ghost"
+              onClick={() => setDrawerOpen(true)}
+              className="menu-button min-[981px]:hidden"
+              aria-label={t('app.openMenu')}
+            >
+              <Icon name="menu" size={21} />
+            </Button>
+            <div className="search-wrap">
+              <Icon name="search" size={19} />
+              <GlobalSearch query={searchQuery} onQueryChange={setSearchQuery} />
+              <kbd className="search-shortcut" aria-hidden="true">
+                Ctrl K
+              </kbd>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setSearchPaletteOpen(true)}
+              className="search-palette-trigger icon-button min-[761px]:hidden"
+              aria-label={t('search.openPalette')}
+            >
+              <Icon name="search" size={18} />
+            </Button>
+          </div>
+          <div className="topbar-actions">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="create-button">
+                <Icon name="plus" size={18} />
+                <span>{t('app.add')}</span>
+                <Icon name="chevron-down" size={16} />
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent className="create-menu" aria-label={t('app.add')}>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem render={<Link to="/clients/new" />}>
+                    <Icon name="clients" size={18} />
+                    {t('dashboard.addClient')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem render={<Link to="/cases/new" />}>
+                    <Icon name="cases" size={18} />
+                    {t('dashboard.addCase')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem render={<Link to="/calendar?create=hearing" />}>
+                    <Icon name="calendar" size={18} />
+                    {t('app.addHearing')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem render={<Link to="/tasks?create=task" />}>
+                    <Icon name="tasks" size={18} />
+                    {t('app.addTask')}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <LanguageSwitcher className="topbar-language" />
+            <Button
+              className="lock-button icon-button"
+              variant="ghost"
+              type="button"
+              onClick={onLock}
+              aria-label={t('app.lockButton')}
+            >
+              <Icon name="lock" size={17} />
+            </Button>
+          </div>
+        </header>
+        <main className="workspace">
+          <AppRoutes />
+        </main>
+        <footer className="app-footer no-print">
+          <Link to="/settings?tab=about">{t('settings.tabs.about')}</Link>
+          <DeveloperContacts />
+        </footer>
+
+        <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <SheetContent
+            showCloseButton={false}
+            className="drawer-panel"
+            aria-label={t('app.workspaceKicker')}
+          >
+            <div className="drawer-header">
+              <SheetTitle>{t('app.brandName')}</SheetTitle>
+              <SheetClose className="drawer-close" aria-label={t('app.closeMenu')}>
+                <Icon name="close" size={20} />
+              </SheetClose>
+            </div>
+            {navigation(() => setDrawerOpen(false))}
+            <div className="sidebar-footer">
+              <span>{t('app.localOnly')}</span>
+              <Button
+                className="sidebar-lock"
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  onLock();
+                }}
+              >
+                <Icon name="lock" size={17} />
+                {t('nav.lock')}
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+        <Dialog open={searchPaletteOpen} onOpenChange={setSearchPaletteOpen}>
+          <DialogContent
+            showCloseButton={false}
+            className="command-palette"
+            aria-label={t('search.paletteTitle')}
+          >
+            <DialogTitle>{t('search.paletteTitle')}</DialogTitle>
+            <GlobalSearch
+              palette
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              onNavigate={() => setSearchPaletteOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
     </BrowserRouter>
   );
 }

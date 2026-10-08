@@ -1,16 +1,30 @@
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DraftForm } from '@/components/forms/DraftForm';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { z } from 'zod';
+import { profileDraftSchema, passwordDraftSchema } from '@/lib/formSchemas';
+import { FieldGroup } from '@/components/ui/field';
+import { Field } from '@/components/forms/FormField';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { DeveloperContacts } from '../../../components/layout/DeveloperContacts';
 import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
-import { Switch } from '../../../components/ui/Switch';
+import { Switch } from '../../../components/ui/switch';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { Input } from '../../../components/ui/input';
-import { Select } from '../../../components/ui/select';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
 import { BackupSettingsPanel } from '../../backups/pages/BackupsPage';
 import { developerDiagnostic } from '../../../bridge/devDiagnostics';
@@ -47,10 +61,34 @@ export function SettingsPage() {
     'unknown',
   );
   const [saved, setSaved] = useState(false);
-  const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
+  const passwordForm = useForm<z.infer<typeof passwordDraftSchema>>({
+    resolver: zodResolver(passwordDraftSchema),
+    defaultValues: { current: '', next: '', confirm: '' },
+  });
+  const passwordDraft = useWatch({ control: passwordForm.control });
+  const passwords = {
+    current: passwordDraft.current ?? '',
+    next: passwordDraft.next ?? '',
+    confirm: passwordDraft.confirm ?? '',
+  };
+  const setPasswords = (
+    next: typeof passwords | ((current: typeof passwords) => typeof passwords),
+  ) => passwordForm.reset(typeof next === 'function' ? next(passwordForm.getValues()) : next);
+  const profileForm = useForm<z.infer<typeof profileDraftSchema>>({
+    resolver: zodResolver(profileDraftSchema),
+    defaultValues: { fullName: '', barNumber: '', phone: '', officeAddress: '' },
+  });
+  useEffect(() => {
+    if (profile && !profileForm.formState.isDirty)
+      profileForm.reset({
+        fullName: profile.fullName,
+        barNumber: profile.barNumber ?? '',
+        phone: profile.phone ?? '',
+        officeAddress: profile.officeAddress ?? '',
+      });
+  }, [profile, profileForm]);
   const [passwordError, setPasswordError] = useState('');
   const {
-    register,
     control,
     handleSubmit,
     reset,
@@ -83,9 +121,9 @@ export function SettingsPage() {
     return (
       <section className="settings settings-workspace">
         <div className="settings-section">
-          <p className="error" role="alert">
-            {t('settings.loadError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('settings.loadError')}</AlertDescription>
+          </Alert>
           {diagnostic && (
             <pre className="developer-diagnostic" aria-label={t('settings.developerDiagnostic')}>
               {diagnostic}
@@ -110,8 +148,7 @@ export function SettingsPage() {
     setSearchParams(tab === 'profile' ? {} : { tab });
     setSaved(false);
   };
-  const submitPassword = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const submitPassword = async () => {
     if (passwords.next.length < 12)
       return setPasswordError(t('gate.passwordTooShort', { count: 12 }));
     if (passwords.next !== passwords.confirm) return setPasswordError(t('gate.passwordMismatch'));
@@ -137,28 +174,33 @@ export function SettingsPage() {
         description={t('settings.description')}
       />
       <div className="settings-layout">
-        <nav className="settings-nav" aria-label={t('settings.sectionsLabel')}>
-          {(
-            [
-              ['profile', 'clients'],
-              ['general', 'settings'],
-              ['security', 'shield'],
-              ['backups', 'backup'],
-              ['privacy', 'lock'],
-              ['about', 'documents'],
-            ] as const
-          ).map(([value, icon]) => (
-            <Button
-              type="button"
-              key={value}
-              className={selectedTab === value ? 'active' : ''}
-              onClick={() => chooseTab(value)}
-            >
-              <Icon name={icon} size={19} />
-              {t(`settings.tabs.${value}`)}
-            </Button>
-          ))}
-        </nav>
+        <Tabs
+          value={selectedTab}
+          onValueChange={(value) => chooseTab(value as Tab)}
+          orientation="vertical"
+        >
+          <TabsList
+            variant="line"
+            className="settings-nav"
+            aria-label={t('settings.sectionsLabel')}
+          >
+            {(
+              [
+                ['profile', 'clients'],
+                ['general', 'settings'],
+                ['security', 'shield'],
+                ['backups', 'backup'],
+                ['privacy', 'lock'],
+                ['about', 'documents'],
+              ] as const
+            ).map(([value, icon]) => (
+              <TabsTrigger key={value} value={value}>
+                <Icon name={icon} size={19} />
+                {t(`settings.tabs.${value}`)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         <div className="settings-content">
           {selectedTab === 'profile' && (
@@ -169,57 +211,59 @@ export function SettingsPage() {
                   <p>{t('settings.profile.hint')}</p>
                 </div>
               </div>
-              <form
+              <DraftForm
                 key={profile?.fullName ?? 'profile-loading'}
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  const values = new FormData(event.currentTarget);
-                  const text = (name: string) => String(values.get(name) ?? '').trim();
-                  if (!text('fullName')) return;
-                  await updateProfile.mutateAsync({
-                    fullName: text('fullName'),
-                    barNumber: text('barNumber') || null,
-                    phone: text('phone') || null,
-                    officeAddress: text('officeAddress') || null,
-                    defaultCurrency: 'EGP',
-                  });
-                  setSaved(true);
-                }}
+                onSubmit={profileForm.handleSubmit(async (values) => {
+                  try {
+                    await updateProfile.mutateAsync({
+                      fullName: values.fullName,
+                      barNumber: values.barNumber || null,
+                      phone: values.phone || null,
+                      officeAddress: values.officeAddress || null,
+                      defaultCurrency: 'EGP',
+                    });
+                    setSaved(true);
+                  } catch {
+                    /* Keep draft for retry. */
+                  }
+                })}
               >
-                <label>
-                  {t('settings.profile.fullName')}
-                  <Input required name="fullName" defaultValue={profile?.fullName ?? ''} />
-                </label>
-                <div className="settings-two-columns">
-                  <label>
-                    {t('settings.profile.barNumber')}
-                    <Input name="barNumber" defaultValue={profile?.barNumber ?? ''} />
-                  </label>
-                  <label>
-                    {t('settings.profile.phone')}
-                    <Input dir="ltr" name="phone" defaultValue={profile?.phone ?? ''} />
-                  </label>
-                </div>
-                <label>
-                  {t('settings.profile.officeAddress')}
-                  <Textarea name="officeAddress" defaultValue={profile?.officeAddress ?? ''} />
-                </label>
-                <div className="form-actions">
-                  <Button disabled={!profile || updateProfile.isPending}>
-                    {t('settings.profile.save')}
-                  </Button>
-                </div>
-                {updateProfile.isError && (
-                  <p className="error" role="alert">
-                    {t('settings.profile.saveError')}
-                  </p>
-                )}
-                {saved && updateProfile.isSuccess && (
-                  <p className="success" role="status">
-                    {t('settings.profile.saved')}
-                  </p>
-                )}
-              </form>
+                <FieldGroup>
+                  <Field
+                    label={<>{t('settings.profile.fullName')}</>}
+                    required
+                    error={profileForm.formState.errors.fullName ? t('forms.required') : undefined}
+                  >
+                    <Input required {...profileForm.register('fullName')} />
+                  </Field>
+                  <div className="settings-two-columns">
+                    <Field label={<>{t('settings.profile.barNumber')}</>}>
+                      <Input {...profileForm.register('barNumber')} />
+                    </Field>
+                    <Field label={<>{t('settings.profile.phone')}</>}>
+                      <Input dir="ltr" {...profileForm.register('phone')} />
+                    </Field>
+                  </div>
+                  <Field label={<>{t('settings.profile.officeAddress')}</>}>
+                    <Textarea {...profileForm.register('officeAddress')} />
+                  </Field>
+                  <div className="form-actions">
+                    <Button type="submit" disabled={!profile || updateProfile.isPending}>
+                      {t('settings.profile.save')}
+                    </Button>
+                  </div>
+                  {updateProfile.isError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{t('settings.profile.saveError')}</AlertDescription>
+                    </Alert>
+                  )}
+                  {saved && updateProfile.isSuccess && (
+                    <p className="success" role="status">
+                      {t('settings.profile.saved')}
+                    </p>
+                  )}
+                </FieldGroup>
+              </DraftForm>
             </section>
           )}
 
@@ -231,7 +275,7 @@ export function SettingsPage() {
                   <p>{t('settings.display.hint')}</p>
                 </div>
               </div>
-              <form
+              <DraftForm
                 onSubmit={handleSubmit(async (values) => {
                   await updateSettings.mutateAsync({
                     ...values,
@@ -240,103 +284,195 @@ export function SettingsPage() {
                   setSaved(true);
                 })}
               >
-                <div className="settings-two-columns">
-                  <label>
-                    {t('settings.language')}
-                    <Controller
-                      control={control}
-                      name="language"
-                      render={({ field }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          items={[
-                            { value: 'ar', label: t('gate.fields.languageAr') },
-                            { value: 'en', label: t('gate.fields.languageEn') },
-                          ]}
-                        />
-                      )}
-                    />
-                  </label>
-                  <label>
-                    {t('settings.theme')}
-                    <Controller
-                      control={control}
-                      name="theme"
-                      render={({ field }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          items={['system', 'light', 'dark'].map((value) => ({
-                            value,
-                            label: t(`settings.themes.${value}`),
-                          }))}
-                        />
-                      )}
-                    />
-                  </label>
-                  <label>
-                    {t('settings.display.dateFormat')}
-                    <Controller
-                      control={control}
-                      name="dateFormat"
-                      render={({ field }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          items={[
-                            { value: 'dd/MM/yyyy', label: t('settings.display.dayFirst') },
-                            { value: 'yyyy-MM-dd', label: t('settings.display.yearFirst') },
-                          ]}
-                        />
-                      )}
-                    />
-                  </label>
-                  <label>
-                    {t('settings.display.weekStart')}
-                    <Controller
-                      control={control}
-                      name="weekStartsOn"
-                      render={({ field }) => (
-                        <Select
-                          value={String(field.value)}
-                          onValueChange={(value) => field.onChange(Number(value))}
-                          items={[
-                            { value: '6', label: t('settings.display.saturday') },
-                            { value: '0', label: t('settings.display.sunday') },
-                            { value: '1', label: t('settings.display.monday') },
-                          ]}
-                        />
-                      )}
-                    />
-                  </label>
-                  <label>
-                    {t('settings.display.reminder')}
-                    <Input
-                      type="number"
-                      min="0"
-                      max="10080"
-                      {...register('defaultReminderMinutes', { valueAsNumber: true })}
-                    />
-                  </label>
-                </div>
-                {Object.keys(errors).length > 0 && (
-                  <p className="error" role="alert">
-                    {t('settings.display.invalid')}
-                  </p>
-                )}
-                <div className="form-actions">
-                  <Button disabled={updateSettings.isPending}>{t('settings.save')}</Button>
-                </div>
-                {updateSettings.isError && (
-                  <p className="error" role="alert">
-                    {t('settings.saveError')}
-                  </p>
-                )}
-                {saved && updateSettings.isSuccess && (
-                  <p className="success">{t('settings.saved')}</p>
-                )}
-              </form>
+                <FieldGroup>
+                  <div className="settings-two-columns">
+                    <Field label={t('settings.language')}>
+                      <Controller
+                        control={control}
+                        name="language"
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            items={[
+                              { value: 'ar', label: t('gate.fields.languageAr') },
+                              { value: 'en', label: t('gate.fields.languageEn') },
+                            ]}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={undefined} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                {[
+                                  { value: 'ar', label: t('gate.fields.languageAr') },
+                                  { value: 'en', label: t('gate.fields.languageEn') },
+                                ].map((item) => (
+                                  <SelectItem key={item.value} value={item.value}>
+                                    {item.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </Field>
+                    <Field label={t('settings.theme')}>
+                      <Controller
+                        control={control}
+                        name="theme"
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            items={['system', 'light', 'dark'].map((value) => ({
+                              value,
+                              label: t(`settings.themes.${value}`),
+                            }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={undefined} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                {['system', 'light', 'dark']
+                                  .map((value) => ({
+                                    value,
+                                    label: t(`settings.themes.${value}`),
+                                  }))
+                                  .map((item) => (
+                                    <SelectItem key={item.value} value={item.value}>
+                                      {item.label}
+                                    </SelectItem>
+                                  ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </Field>
+                    <Field label={t('settings.display.dateFormat')}>
+                      <Controller
+                        control={control}
+                        name="dateFormat"
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            items={[
+                              { value: 'dd/MM/yyyy', label: t('settings.display.dayFirst') },
+                              { value: 'yyyy-MM-dd', label: t('settings.display.yearFirst') },
+                            ]}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={undefined} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                {[
+                                  { value: 'dd/MM/yyyy', label: t('settings.display.dayFirst') },
+                                  { value: 'yyyy-MM-dd', label: t('settings.display.yearFirst') },
+                                ].map((item) => (
+                                  <SelectItem key={item.value} value={item.value}>
+                                    {item.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </Field>
+                    <Field label={t('settings.display.weekStart')}>
+                      <Controller
+                        control={control}
+                        name="weekStartsOn"
+                        render={({ field }) => (
+                          <Select
+                            value={String(field.value)}
+                            onValueChange={(value) => field.onChange(Number(value))}
+                            items={[
+                              { value: '6', label: t('settings.display.saturday') },
+                              { value: '0', label: t('settings.display.sunday') },
+                              { value: '1', label: t('settings.display.monday') },
+                            ]}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={undefined} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                {[
+                                  { value: '6', label: t('settings.display.saturday') },
+                                  { value: '0', label: t('settings.display.sunday') },
+                                  { value: '1', label: t('settings.display.monday') },
+                                ].map((item) => (
+                                  <SelectItem key={item.value} value={item.value}>
+                                    {item.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </Field>
+                    <Field label={<>{t('settings.display.reminder')}</>}>
+                      <Controller
+                        control={control}
+                        name="defaultReminderMinutes"
+                        render={({ field }) => {
+                          const values = [
+                            ...new Set(
+                              [...[0, 15, 30, 60, 120, 1440], field.value].filter(
+                                (value) => value !== undefined,
+                              ),
+                            ),
+                          ];
+                          return (
+                            <Select
+                              value={String(field.value)}
+                              onValueChange={(value) => field.onChange(Number(value))}
+                            >
+                              <SelectTrigger ref={field.ref}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectGroup>
+                                  {values.map((value) => (
+                                    <SelectItem key={value} value={String(value)}>
+                                      {value} {t('settings.minutes')}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          );
+                        }}
+                      />
+                    </Field>
+                  </div>
+                  {Object.keys(errors).length > 0 && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{t('settings.display.invalid')}</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="form-actions">
+                    <Button type="submit" disabled={updateSettings.isPending}>
+                      {t('settings.save')}
+                    </Button>
+                  </div>
+                  {updateSettings.isError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{t('settings.saveError')}</AlertDescription>
+                    </Alert>
+                  )}
+                  {saved && updateSettings.isSuccess && (
+                    <p className="success">{t('settings.saved')}</p>
+                  )}
+                </FieldGroup>
+              </DraftForm>
             </section>
           )}
 
@@ -349,7 +485,7 @@ export function SettingsPage() {
                     <p>{t('settings.security.lockHint')}</p>
                   </div>
                 </div>
-                <form
+                <DraftForm
                   onSubmit={handleSubmit(async (values) => {
                     await updateSettings.mutateAsync({
                       ...values,
@@ -357,18 +493,48 @@ export function SettingsPage() {
                     setSaved(true);
                   })}
                 >
-                  <label>
-                    {t('settings.lockTimeout')}
-                    <Input
-                      type="number"
-                      min="1"
-                      {...register('lockTimeoutMinutes', { valueAsNumber: true })}
-                    />
-                  </label>
-                  <div className="form-actions">
-                    <Button>{t('settings.security.lockSave')}</Button>
-                  </div>
-                </form>
+                  <FieldGroup>
+                    <Field label={<>{t('settings.lockTimeout')}</>}>
+                      <Controller
+                        control={control}
+                        name="lockTimeoutMinutes"
+                        render={({ field }) => {
+                          const values = [
+                            ...new Set(
+                              [...[1, 5, 10, 15, 30, 60], field.value].filter(
+                                (value) => value !== undefined,
+                              ),
+                            ),
+                          ];
+                          return (
+                            <Select
+                              value={String(field.value)}
+                              onValueChange={(value) => field.onChange(Number(value))}
+                            >
+                              <SelectTrigger ref={field.ref}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectGroup>
+                                  {values.map((value) => (
+                                    <SelectItem key={value} value={String(value)}>
+                                      {value} {t('settings.minutes')}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          );
+                        }}
+                      />
+                    </Field>
+                    <div className="form-actions">
+                      <Button type="submit" disabled={updateSettings.isPending}>
+                        {t('settings.security.lockSave')}
+                      </Button>
+                    </div>
+                  </FieldGroup>
+                </DraftForm>
               </section>
               <section className="settings-section">
                 <div className="card-title">
@@ -383,7 +549,7 @@ export function SettingsPage() {
                     <span>{t('settings.security.autostartHint')}</span>
                   </div>
                   <Switch
-                    label={t('settings.security.autostart')}
+                    aria-label={t('settings.security.autostart')}
                     checked={settings.autostartEnabled}
                     disabled={setAutostart.isPending}
                     onCheckedChange={(checked) => setAutostart.mutate(checked)}
@@ -397,7 +563,7 @@ export function SettingsPage() {
                   <Button
                     type="button"
                     variant="secondary"
-                    className="secondary-button"
+
                     onClick={enableNotifications}
                   >
                     {notificationStatus === 'granted'
@@ -409,9 +575,9 @@ export function SettingsPage() {
                   <p className="warning">{t('settings.security.notificationsDenied')}</p>
                 )}
                 {setAutostart.isError && (
-                  <p className="error" role="alert">
-                    {t('settings.security.autostartError')}
-                  </p>
+                  <Alert variant="destructive">
+                    <AlertDescription>{t('settings.security.autostartError')}</AlertDescription>
+                  </Alert>
                 )}
                 <p className="muted reminder-disclosure">
                   {t('settings.security.remindersDisclosure')}
@@ -424,63 +590,61 @@ export function SettingsPage() {
                     <p>{t('settings.security.passwordHint')}</p>
                   </div>
                 </div>
-                <form onSubmit={submitPassword}>
-                  <label>
-                    {t('settings.security.currentPassword')}
-                    <Input
-                      type="password"
-                      autoComplete="current-password"
-                      value={passwords.current}
-                      onChange={(event) =>
-                        setPasswords((current) => ({ ...current, current: event.target.value }))
-                      }
-                    />
-                  </label>
-                  <div className="settings-two-columns">
-                    <label>
-                      {t('gate.fields.newPassword')}
+                <DraftForm onSubmit={passwordForm.handleSubmit(submitPassword)}>
+                  <FieldGroup>
+                    <Field label={<>{t('settings.security.currentPassword')}</>}>
                       <Input
                         type="password"
-                        autoComplete="new-password"
-                        value={passwords.next}
-                        onChange={(event) =>
-                          setPasswords((current) => ({ ...current, next: event.target.value }))
-                        }
+                        autoComplete="current-password"
+                        {...passwordForm.register('current')}
+                        aria-invalid={!!passwordForm.formState.errors.current}
                       />
-                    </label>
-                    <label>
-                      {t('gate.fields.confirmPassword')}
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        value={passwords.confirm}
-                        onChange={(event) =>
-                          setPasswords((current) => ({ ...current, confirm: event.target.value }))
+                    </Field>
+                    <div className="settings-two-columns">
+                      <Field label={<>{t('gate.fields.newPassword')}</>}>
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          {...passwordForm.register('next')}
+                          aria-invalid={!!passwordForm.formState.errors.next}
+                        />
+                      </Field>
+                      <Field
+                        label={<>{t('gate.fields.confirmPassword')}</>}
+                        error={
+                          passwordForm.formState.errors.confirm ? t('forms.invalid') : undefined
                         }
-                      />
-                    </label>
-                  </div>
-                  {passwordError && (
-                    <p className="error" role="alert">
-                      {passwordError}
-                    </p>
-                  )}
-                  {changePassword.isError && (
-                    <p className="error" role="alert">
-                      {t('settings.security.passwordError')}
-                    </p>
-                  )}
-                  {changePassword.isSuccess && (
-                    <p className="success" role="status">
-                      {t('settings.security.passwordChanged')}
-                    </p>
-                  )}
-                  <div className="form-actions">
-                    <Button disabled={changePassword.isPending}>
-                      {t('settings.security.passwordTitle')}
-                    </Button>
-                  </div>
-                </form>
+                      >
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          {...passwordForm.register('confirm')}
+                          aria-invalid={!!passwordForm.formState.errors.confirm}
+                        />
+                      </Field>
+                    </div>
+                    {passwordError && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{passwordError}</AlertDescription>
+                      </Alert>
+                    )}
+                    {changePassword.isError && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{t('settings.security.passwordError')}</AlertDescription>
+                      </Alert>
+                    )}
+                    {changePassword.isSuccess && (
+                      <p className="success" role="status">
+                        {t('settings.security.passwordChanged')}
+                      </p>
+                    )}
+                    <div className="form-actions">
+                      <Button type="submit" disabled={changePassword.isPending}>
+                        {t('settings.security.passwordTitle')}
+                      </Button>
+                    </div>
+                  </FieldGroup>
+                </DraftForm>
               </section>
               <section className="settings-section">
                 <div className="card-title">
@@ -495,16 +659,16 @@ export function SettingsPage() {
                     <span>{t('settings.security.countersDetail')}</span>
                   </div>
                   <Switch
-                    label={t('settings.security.counters')}
+                    aria-label={t('settings.security.counters')}
                     checked={settings.usageCountersEnabled}
                     disabled={setUsageCounters.isPending}
                     onCheckedChange={(checked) => setUsageCounters.mutate(checked)}
                   />
                 </div>
                 {setUsageCounters.isError && (
-                  <p className="error" role="alert">
-                    {t('settings.security.countersError')}
-                  </p>
+                  <Alert variant="destructive">
+                    <AlertDescription>{t('settings.security.countersError')}</AlertDescription>
+                  </Alert>
                 )}
               </section>
               <section className="security-note">
@@ -541,9 +705,7 @@ export function SettingsPage() {
                   </div>
                 </dl>
                 <div className="form-actions">
-                  <Link className="button-link" to="/backups">
-                    {t('settings.privacy.manageBackups')}
-                  </Link>
+                  <Link to="/backups">{t('settings.privacy.manageBackups')}</Link>
                 </div>
               </section>
               <section className="security-note">

@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { bridge, type DeveloperContact } from '../../bridge/commands';
@@ -55,7 +56,11 @@ export function DeveloperContacts() {
           </a>
         ))}
       </nav>
-      {failed && <p role="alert">{t('settings.about.openError')}</p>}
+      {failed && (
+        <Alert variant="destructive">
+          <AlertDescription>{t('settings.about.openError')}</AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

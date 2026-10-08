@@ -1,3 +1,13 @@
+import { DraftForm } from '@/components/forms/DraftForm';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { EntityPicker } from '@/components/forms/EntityPicker';
+import { FieldGroup } from '@/components/ui/field';
+import { Field } from '@/components/forms/FormField';
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { paymentDraftSchema, expenseDraftSchema } from '@/lib/formSchemas';
 import { useState } from 'react';
 import { minorToInput, parseMoneyToMinor } from '../../../lib/money';
 import { useTranslation } from 'react-i18next';
@@ -5,13 +15,20 @@ import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { useFormat } from '../../../i18n/LocalePresentation';
 import type { ExpenseDto, ExpenseType, PaymentDto, PaymentMethod } from '../../../bridge/types';
-import { DatePicker } from '../../../components/ui/DatePicker';
+import { DatePicker } from '../../../components/forms/DatePicker';
 import { Button } from '../../../components/ui/button';
-import { Dialog } from '../../../components/ui/Dialog';
+import { FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
 import { Input } from '../../../components/ui/input';
-import { Tabs } from '../../../components/ui/Tabs';
-import { Select } from '../../../components/ui/select';
-import { Table } from '../../../components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from '../../../components/ui/select';
+import { RecordTable } from '@/components/forms/RecordTable';
 import { Textarea } from '../../../components/ui/textarea';
 import { useCase, useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
@@ -88,22 +105,27 @@ export function FinancesPage() {
         }
       />
       <Tabs
-        label={t('finances.tabsLabel')}
         value={tab}
-        onChange={(value) => setTab(value as typeof tab)}
-        tabs={[
-          { id: 'payment', label: t('finances.payments') },
-          { id: 'expense', label: t('finances.expenses') },
-        ]}
-      />
+        onValueChange={(value) => ((value) => setTab(value as typeof tab))(String(value))}
+      >
+        <TabsList activateOnFocus aria-label={t('finances.tabsLabel')} variant={'default'}>
+          {[
+            { id: 'payment', label: t('finances.payments') },
+            { id: 'expense', label: t('finances.expenses') },
+          ].map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       <div className="finance-filters">
         <label>
           {t('finances.case')}
-          <Select
+          <EntityPicker
             value={filterCaseId}
-            placeholder={t('tasks.allCases')}
             onValueChange={(value) => {
-              setFilterCaseId(value);
+              setFilterCaseId(value ?? '');
               setFilterClientId('');
             }}
             items={[
@@ -115,25 +137,26 @@ export function FinancesPage() {
                   : item.internalNumber,
               })),
             ]}
+            placeholder={t('tasks.allCases')}
           />
         </label>
         <label>
           {t('finances.client')}
-          <Select
+          <EntityPicker
             value={filterClientId}
-            onValueChange={setFilterClientId}
-            placeholder={t('tasks.allClients')}
+            onValueChange={(value) => setFilterClientId(value ?? '')}
             items={[
               { value: '', label: t('tasks.allClients') },
               ...(tab === 'payment' && filterCaseId ? payerOptions : (clients.data ?? [])).map(
                 (item) => ({ value: item.id, label: item.fullName }),
               ),
             ]}
+            placeholder={t('tasks.allClients')}
           />
         </label>
         <Button
           type="button"
-          className="secondary-button"
+
           onClick={() => {
             setFilterCaseId('');
             setFilterClientId('');
@@ -183,14 +206,14 @@ export function FinancesPage() {
           </div>
         </div>
         {(tab === 'payment' ? payments.isError : expenses.isError) ? (
-          <p className="error" role="alert">
-            {t('finances.loadError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('finances.loadError')}</AlertDescription>
+          </Alert>
         ) : !records.length ? (
           <p className="empty-compact">{t(`finances.empty.${tab}`)}</p>
         ) : (
           <div className="data-table-scroll">
-            <Table className="data-table finance-table">
+            <RecordTable className="data-table finance-table">
               <caption>{t('finances.caption')}</caption>
               <thead>
                 <tr>
@@ -219,7 +242,7 @@ export function FinancesPage() {
                         <Button
                           variant="ghost"
                           type="button"
-                          className="text-button"
+
                           aria-label={t(`finances.viewAria.${payment ? 'payment' : 'expense'}`, {
                             date: format.dateLong(
                               payment?.paymentDate ?? expense?.expenseDate ?? '',
@@ -239,13 +262,13 @@ export function FinancesPage() {
                         </Button>
                       </td>
                       <td>
-                        <span className={`transaction-badge ${payment ? 'income' : 'expense'}`}>
+                        <Badge variant="secondary">
                           {payment
                             ? payment.paymentMethod
                               ? t(`finances.methods.${payment.paymentMethod}`)
                               : t('finances.paymentFallback')
                             : t(`finances.expenseTypes.${expense!.expenseType}`)}
-                        </span>
+                        </Badge>
                         {record.notes && <small dir="auto">{record.notes}</small>}
                       </td>
                       <td className="cell-wrap">
@@ -259,7 +282,7 @@ export function FinancesPage() {
                         <Button
                           variant="ghost"
                           type="button"
-                          className="text-button"
+
                           onClick={() => {
                             setEntry(
                               payment
@@ -275,11 +298,11 @@ export function FinancesPage() {
                   );
                 })}
               </tbody>
-            </Table>
+            </RecordTable>
           </div>
         )}
       </section>
-      <Dialog
+      <FormDialog
         open={Boolean(entry)}
         onOpenChange={(open) => !open && closeEntry()}
         title={
@@ -335,11 +358,11 @@ export function FinancesPage() {
           />
         ) : null}
         {(savePayment.isError || saveExpense.isError) && (
-          <p className="error" role="alert">
-            {t('cases.detail.entrySaveError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('cases.detail.entrySaveError')}</AlertDescription>
+          </Alert>
         )}
-      </Dialog>
+      </FormDialog>
     </section>
   );
 }
@@ -363,7 +386,7 @@ function TransactionInspection({
   const record = entry.value;
   const date = isPayment ? (record as PaymentDto).paymentDate : (record as ExpenseDto).expenseDate;
   return (
-    <div className="dialog-form transaction-inspection">
+    <div className="mt-4 grid gap-3.5 transaction-inspection">
       <dl className="detail-definition-grid">
         <div>
           <dt>{t('cases.detail.entryDate')}</dt>
@@ -392,14 +415,14 @@ function TransactionInspection({
         <strong>{t('common.notes')}</strong>
         <p>{record.notes ?? '—'}</p>
       </div>
-      <div className="dialog-actions">
-        <Button type="button" variant="secondary" className="secondary-button" onClick={onClose}>
+      <FormDialogFooter>
+        <Button type="button" variant="secondary" onClick={onClose}>
           {t('records.close')}
         </Button>
         <Button type="button" onClick={onEdit}>
           {t('cases.detail.editEntryButton')}
         </Button>
-      </div>
+      </FormDialogFooter>
     </div>
   );
 }
@@ -420,19 +443,42 @@ export function PaymentForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
+  const form = useForm<z.infer<typeof paymentDraftSchema>>({
+    resolver: zodResolver(paymentDraftSchema),
+    defaultValues: {
+      caseId: initial?.caseId ?? initialCaseId ?? '',
+      payerClientId: initial?.payerClientId ?? '',
+      amount: initial ? minorToInput(initial.amountMinor) : '',
+      date: initial?.paymentDate ?? today(),
+      method: initial?.paymentMethod ?? '',
+      notes: initial?.notes ?? '',
+    },
+  });
+
+  const caseId = useWatch({ control: form.control, name: 'caseId' });
+  const setCaseId = (value: string) =>
+    form.setValue('caseId', value, { shouldValidate: form.formState.isSubmitted });
   const caseDetail = useCase(caseId);
-  const [payerClientId, setPayerClientId] = useState(initial?.payerClientId ?? '');
-  const [amount, setAmount] = useState(initial ? minorToInput(initial.amountMinor) : '');
-  const [date, setDate] = useState(initial?.paymentDate ?? today());
-  const [method, setMethod] = useState<PaymentMethod | ''>(initial?.paymentMethod ?? '');
-  const [notes, setNotes] = useState(initial?.notes ?? '');
+  const payerClientId = useWatch({ control: form.control, name: 'payerClientId' });
+  const setPayerClientId = (value: string) =>
+    form.setValue('payerClientId', value, { shouldValidate: form.formState.isSubmitted });
+  const amount = useWatch({ control: form.control, name: 'amount' });
+  const setAmount = (value: string) =>
+    form.setValue('amount', value, { shouldValidate: form.formState.isSubmitted });
+  const date = useWatch({ control: form.control, name: 'date' });
+  const setDate = (value: string) =>
+    form.setValue('date', value, { shouldValidate: form.formState.isSubmitted });
+  const method = useWatch({ control: form.control, name: 'method' });
+  const setMethod = (value: PaymentMethod | '') =>
+    form.setValue('method', value, { shouldValidate: form.formState.isSubmitted });
+  const notes = useWatch({ control: form.control, name: 'notes' });
+  const setNotes = (value: string) =>
+    form.setValue('notes', value, { shouldValidate: form.formState.isSubmitted });
   const [error, setError] = useState('');
   return (
-    <form
-      className="dialog-form"
-      onSubmit={async (event) => {
-        event.preventDefault();
+    <DraftForm
+      className="mt-4 grid gap-3.5"
+      onSubmit={form.handleSubmit(async () => {
         const amountMinor = parseMoneyToMinor(amount);
         if (!amountMinor || !caseId || !payerClientId)
           return setError(t('finances.paymentInvalid'));
@@ -449,73 +495,128 @@ export function PaymentForm({
         } catch {
           // The parent mutation exposes an in-dialog retry message.
         }
-      }}
+      })}
     >
-      <label>
-        {t('finances.case')}
-        <Select
+      <FieldGroup>
+        <Field
+          label={<>{t('finances.case')}</>}
           required
-          value={caseId}
-          onValueChange={(value) => {
-            setCaseId(value);
-            setPayerClientId('');
-          }}
-          placeholder={t('agenda.fields.casePlaceholder')}
-          items={(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber }))}
-        />
-      </label>
-      <label>
-        {t('finances.payer')}
-        <Select
-          required
-          disabled={!caseId}
-          value={payerClientId}
-          onValueChange={setPayerClientId}
-          placeholder={t('finances.payerPlaceholder')}
-          items={(caseDetail.data?.clients ?? []).map((item) => ({
-            value: item.clientId,
-            label: item.fullName,
-          }))}
-        />
-      </label>
-      <div className="settings-two-columns">
-        <label>
-          {t('finances.amount')}
-          <Input
+          error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
+        >
+          <EntityPicker
+            ref={(node) => form.register('caseId').ref(node)}
             required
-            inputMode="decimal"
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
+            value={caseId}
+            onValueChange={(value) => {
+              setCaseId(value ?? '');
+              setPayerClientId('');
+            }}
+            items={(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber }))}
+            placeholder={t('agenda.fields.casePlaceholder')}
           />
-        </label>
-        <label>
-          {t('finances.paymentDate')}
-          <DatePicker required value={date} onChange={(event) => setDate(event.target.value)} />
-        </label>
-      </div>
-      <label>
-        {t('finances.method')}
-        <Select
-          value={method}
-          onValueChange={(value) => setMethod(value as PaymentMethod | '')}
-          items={[
-            { value: '', label: t('forms.notSpecified') },
-            ...methods.map((value) => ({ value, label: t(`finances.methods.${value}`) })),
-          ]}
-        />
-      </label>
-      <label>
-        {t('common.notes')}{' '}
-        <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
-      </label>
-      {error && <p className="error">{error}</p>}
-      <div className="dialog-actions">
-        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-        <Button disabled={busy}>{t('finances.savePayment')}</Button>
-      </div>
-    </form>
+        </Field>
+        <Field
+          label={<>{t('finances.payer')}</>}
+          required
+          error={form.formState.errors.payerClientId ? t('forms.invalid') : undefined}
+        >
+          <EntityPicker
+            ref={(node) => form.register('payerClientId').ref(node)}
+            required
+            disabled={!caseId}
+            value={payerClientId}
+            onValueChange={(value) => setPayerClientId(value ?? '')}
+            items={(caseDetail.data?.clients ?? []).map((item) => ({
+              value: item.clientId,
+              label: item.fullName,
+            }))}
+            placeholder={t('finances.payerPlaceholder')}
+          />
+        </Field>
+        <div className="settings-two-columns">
+          <Field
+            label={<>{t('finances.amount')}</>}
+            required
+            error={form.formState.errors.amount ? t('forms.invalid') : undefined}
+          >
+            <Input
+              required
+              inputMode="decimal"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              ref={(node) => form.register('amount').ref(node)}
+              aria-invalid={!!form.formState.errors.amount}
+            />
+          </Field>
+          <Field
+            label={<>{t('finances.paymentDate')}</>}
+            required
+            error={form.formState.errors.date ? t('forms.invalid') : undefined}
+          >
+            <DatePicker
+              required
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              ref={(node) => form.register('date').ref(node)}
+              aria-invalid={!!form.formState.errors.date}
+            />
+          </Field>
+        </div>
+        <Field
+          label={<>{t('finances.method')}</>}
+          error={form.formState.errors.method ? t('forms.invalid') : undefined}
+        >
+          <Select
+            value={method}
+            onValueChange={(value) => setMethod(value as PaymentMethod | '')}
+            items={[
+              { value: '', label: t('forms.notSpecified') },
+              ...methods.map((value) => ({ value, label: t(`finances.methods.${value}`) })),
+            ]}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={undefined} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {[
+                  { value: '', label: t('forms.notSpecified') },
+                  ...methods.map((value) => ({ value, label: t(`finances.methods.${value}`) })),
+                ].map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field
+          label={<>{t('common.notes')}</>}
+          error={form.formState.errors.notes ? t('forms.invalid') : undefined}
+        >
+          <Textarea
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            ref={(node) => form.register('notes').ref(node)}
+            aria-invalid={!!form.formState.errors.notes}
+          />
+        </Field>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <FormDialogFooter>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" disabled={busy}>
+            {t('finances.savePayment')}
+          </Button>
+        </FormDialogFooter>
+      </FieldGroup>
+    </DraftForm>
   );
 }
 
@@ -537,18 +638,41 @@ export function ExpenseForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
-  const [clientId, setClientId] = useState(initial?.clientId ?? '');
-  const [amount, setAmount] = useState(initial ? minorToInput(initial.amountMinor) : '');
-  const [date, setDate] = useState(initial?.expenseDate ?? today());
-  const [type, setType] = useState<ExpenseType>(initial?.expenseType ?? 'COURT_FEE');
-  const [notes, setNotes] = useState(initial?.notes ?? '');
+  const form = useForm<z.infer<typeof expenseDraftSchema>>({
+    resolver: zodResolver(expenseDraftSchema),
+    defaultValues: {
+      caseId: initial?.caseId ?? initialCaseId ?? '',
+      clientId: initial?.clientId ?? '',
+      amount: initial ? minorToInput(initial.amountMinor) : '',
+      date: initial?.expenseDate ?? today(),
+      type: initial?.expenseType ?? 'COURT_FEE',
+      notes: initial?.notes ?? '',
+    },
+  });
+
+  const caseId = useWatch({ control: form.control, name: 'caseId' });
+  const setCaseId = (value: string) =>
+    form.setValue('caseId', value, { shouldValidate: form.formState.isSubmitted });
+  const clientId = useWatch({ control: form.control, name: 'clientId' });
+  const setClientId = (value: string) =>
+    form.setValue('clientId', value, { shouldValidate: form.formState.isSubmitted });
+  const amount = useWatch({ control: form.control, name: 'amount' });
+  const setAmount = (value: string) =>
+    form.setValue('amount', value, { shouldValidate: form.formState.isSubmitted });
+  const date = useWatch({ control: form.control, name: 'date' });
+  const setDate = (value: string) =>
+    form.setValue('date', value, { shouldValidate: form.formState.isSubmitted });
+  const type = useWatch({ control: form.control, name: 'type' });
+  const setType = (value: ExpenseType) =>
+    form.setValue('type', value, { shouldValidate: form.formState.isSubmitted });
+  const notes = useWatch({ control: form.control, name: 'notes' });
+  const setNotes = (value: string) =>
+    form.setValue('notes', value, { shouldValidate: form.formState.isSubmitted });
   const [error, setError] = useState('');
   return (
-    <form
-      className="dialog-form"
-      onSubmit={async (event) => {
-        event.preventDefault();
+    <DraftForm
+      className="mt-4 grid gap-3.5"
+      onSubmit={form.handleSubmit(async () => {
         const amountMinor = parseMoneyToMinor(amount);
         if (!amountMinor) return setError(t('finances.amountInvalid'));
         try {
@@ -564,70 +688,125 @@ export function ExpenseForm({
         } catch {
           // The parent mutation exposes an in-dialog retry message.
         }
-      }}
+      })}
     >
-      <p className="muted">{t('finances.expenseHint')}</p>
-      <div className="settings-two-columns">
-        <label>
-          {t('finances.case')}
-          <Select
-            value={caseId}
-            onValueChange={setCaseId}
-            items={[
-              { value: '', label: t('tasks.noCase') },
-              ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
-            ]}
-          />
-        </label>
-        <label>
-          {t('finances.client')}
-          <Select
-            value={clientId}
-            onValueChange={setClientId}
-            items={[
-              { value: '', label: t('tasks.noClient') },
-              ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
-            ]}
-          />
-        </label>
-      </div>
-      <div className="settings-two-columns">
-        <label>
-          {t('finances.amount')}
-          <Input
+      <FieldGroup>
+        <p className="muted">{t('finances.expenseHint')}</p>
+        <div className="settings-two-columns">
+          <Field
+            label={<>{t('finances.case')}</>}
+            error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
+          >
+            <EntityPicker
+              value={caseId}
+              onValueChange={(value) => setCaseId(value ?? '')}
+              items={[
+                { value: '', label: t('tasks.noCase') },
+                ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
+              ]}
+              placeholder={undefined}
+            />
+          </Field>
+          <Field
+            label={<>{t('finances.client')}</>}
+            error={form.formState.errors.clientId ? t('forms.invalid') : undefined}
+          >
+            <EntityPicker
+              value={clientId}
+              onValueChange={(value) => setClientId(value ?? '')}
+              items={[
+                { value: '', label: t('tasks.noClient') },
+                ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+              ]}
+              placeholder={undefined}
+            />
+          </Field>
+        </div>
+        <div className="settings-two-columns">
+          <Field
+            label={<>{t('finances.amount')}</>}
             required
-            inputMode="decimal"
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
+            error={form.formState.errors.amount ? t('forms.invalid') : undefined}
+          >
+            <Input
+              required
+              inputMode="decimal"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              ref={(node) => form.register('amount').ref(node)}
+              aria-invalid={!!form.formState.errors.amount}
+            />
+          </Field>
+          <Field
+            label={<>{t('finances.expenseDate')}</>}
+            required
+            error={form.formState.errors.date ? t('forms.invalid') : undefined}
+          >
+            <DatePicker
+              required
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              ref={(node) => form.register('date').ref(node)}
+              aria-invalid={!!form.formState.errors.date}
+            />
+          </Field>
+        </div>
+        <Field
+          label={<>{t('finances.expenseType')}</>}
+          error={form.formState.errors.type ? t('forms.invalid') : undefined}
+        >
+          <Select
+            value={type}
+            onValueChange={(value) => setType(value as ExpenseType)}
+            items={expenseTypes.map((value) => ({
+              value,
+              label: t(`finances.expenseTypes.${value}`),
+            }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={undefined} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {expenseTypes
+                  .map((value) => ({
+                    value,
+                    label: t(`finances.expenseTypes.${value}`),
+                  }))
+                  .map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field
+          label={<>{t('common.notes')}</>}
+          error={form.formState.errors.notes ? t('forms.invalid') : undefined}
+        >
+          <Textarea
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            ref={(node) => form.register('notes').ref(node)}
+            aria-invalid={!!form.formState.errors.notes}
           />
-        </label>
-        <label>
-          {t('finances.expenseDate')}
-          <DatePicker required value={date} onChange={(event) => setDate(event.target.value)} />
-        </label>
-      </div>
-      <label>
-        {t('finances.expenseType')}
-        <Select
-          value={type}
-          onValueChange={(value) => setType(value as ExpenseType)}
-          items={expenseTypes.map((value) => ({
-            value,
-            label: t(`finances.expenseTypes.${value}`),
-          }))}
-        />
-      </label>
-      <label>
-        {t('common.notes')}{' '}
-        <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
-      </label>
-      {error && <p className="error">{error}</p>}
-      <div className="dialog-actions">
-        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-        <Button disabled={busy}>{t('finances.saveExpense')}</Button>
-      </div>
-    </form>
+        </Field>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <FormDialogFooter>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" disabled={busy}>
+            {t('finances.saveExpense')}
+          </Button>
+        </FormDialogFooter>
+      </FieldGroup>
+    </DraftForm>
   );
 }

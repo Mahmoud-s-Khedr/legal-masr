@@ -1,3 +1,5 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
@@ -5,8 +7,8 @@ import { Fact, RecordHeader } from '../../../components/layout/RecordHeader';
 import { useFormat } from '../../../i18n/LocalePresentation';
 import { useCaseList } from '../../cases/api/casesApi';
 import { CaseStatusBadge } from '../../cases/components/CaseIdentity';
-import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
-import { Tabs } from '../../../components/ui/Tabs';
+import { ConfirmDialog, FormDialog } from '../../../components/forms/FormDialog';
+import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Button } from '../../../components/ui/button';
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
 import { PowerOfAttorneyForm } from '../components/PowerOfAttorneyForm';
@@ -39,28 +41,24 @@ export function PowerOfAttorneyDetailPage() {
     );
   if (power.isError)
     return (
-      <p className="page-status error" role="alert">
-        {t('records.loadError')}
-      </p>
+      <Alert variant="destructive" className="page-status error">
+        <AlertDescription>{t('records.loadError')}</AlertDescription>
+      </Alert>
     );
   if (!power.data) return <p className="page-status">{t('poa.notFound')}</p>;
   const item = power.data;
   return (
     <section className="entity-detail detail-workspace">
       {(restore.isError || (archive.isError && !archiveOpen)) && (
-        <p className="error" role="alert">
-          {t('records.statusChangeError')}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{t('records.statusChangeError')}</AlertDescription>
+        </Alert>
       )}
       <RecordHeader
         icon="poa"
         kicker={t('poa.kicker')}
         title={<bdi>{item.internalSequence}</bdi>}
-        badges={
-          item.archivedAt && (
-            <span className="status-badge tone-muted">{t('records.archived')}</span>
-          )
-        }
+        badges={item.archivedAt && <Badge variant="secondary">{t('records.archived')}</Badge>}
         meta={
           <>
             <span>
@@ -100,7 +98,7 @@ export function PowerOfAttorneyDetailPage() {
               <Button
                 type="button"
                 variant="secondary"
-                className="secondary-button"
+
                 disabled={restore.isPending}
                 onClick={() => restore.mutate(id)}
               >
@@ -110,7 +108,7 @@ export function PowerOfAttorneyDetailPage() {
               <Button
                 type="button"
                 variant="ghost"
-                className="quiet-button"
+
                 onClick={() => setArchiveOpen(true)}
               >
                 {t('records.archive')}
@@ -120,18 +118,23 @@ export function PowerOfAttorneyDetailPage() {
         }
       />
       <Tabs
-        variant="underline"
-        label={t('poa.sectionsLabel')}
         value={tab}
-        onChange={(value) => setTab(value as typeof tab)}
-        tabs={[
-          { id: 'summary', label: t('poa.tabs.summary') },
-          { id: 'clients', label: t('poa.tabs.clients'), count: item.clients.length },
-          { id: 'lawyers', label: t('poa.tabs.lawyers'), count: item.lawyers.length },
-          { id: 'cases', label: t('poa.tabs.cases'), count: item.caseIds.length },
-          { id: 'attachments', label: t('poa.tabs.documents') },
-        ]}
-      />
+        onValueChange={(value) => ((value) => setTab(value as typeof tab))(String(value))}
+      >
+        <TabsList activateOnFocus aria-label={t('poa.sectionsLabel')} variant="line">
+          {[
+            { id: 'summary', label: t('poa.tabs.summary') },
+            { id: 'clients', label: t('poa.tabs.clients'), count: item.clients.length },
+            { id: 'lawyers', label: t('poa.tabs.lawyers'), count: item.lawyers.length },
+            { id: 'cases', label: t('poa.tabs.cases'), count: item.caseIds.length },
+            { id: 'attachments', label: t('poa.tabs.documents') },
+          ].map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       {tab === 'summary' && (
         <div className="detail-grid">
           <section className="detail-card">
@@ -254,7 +257,7 @@ export function PowerOfAttorneyDetailPage() {
       {tab === 'attachments' && (
         <AttachmentPanel owner={{ powerOfAttorneyId: id }} title={t('poa.documentsTitle')} />
       )}
-      <Dialog open={editOpen} onOpenChange={setEditOpen} title={t('poa.editTitle')}>
+      <FormDialog open={editOpen} onOpenChange={setEditOpen} title={t('poa.editTitle')}>
         <PowerOfAttorneyForm
           powerOfAttorney={item}
           busy={save.isPending}
@@ -269,11 +272,11 @@ export function PowerOfAttorneyDetailPage() {
           }}
         />
         {save.isError && (
-          <p className="error" role="alert">
-            {t('poa.saveError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('poa.saveError')}</AlertDescription>
+          </Alert>
         )}
-      </Dialog>
+      </FormDialog>
       <ConfirmDialog
         open={archiveOpen}
         onOpenChange={setArchiveOpen}

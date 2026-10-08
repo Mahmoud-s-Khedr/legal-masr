@@ -63,8 +63,16 @@ describe('FinancesPage', () => {
       ]);
       renderPage(language);
       const table = await screen.findByRole('table');
-      await waitFor(() => expect(within(table).getAllByRole('button')).toHaveLength(2));
-      fireEvent.click(within(table).getAllByRole('button')[0]);
+      await waitFor(() =>
+        expect(
+          within(table).getAllByRole('button', {
+            name: /24 أغسطس 2026|August 24, 2026|24 August 2026/,
+          }),
+        ).toHaveLength(1),
+      );
+      fireEvent.click(
+        within(table).getByRole('button', { name: /24 أغسطس 2026|August 24, 2026|24 August 2026/ }),
+      );
       const dialog = await screen.findByRole('dialog');
       expect(within(dialog).getByText('24/08/2026')).toBeVisible();
       const amount = within(dialog).getByText(/1,500.25/);
@@ -160,10 +168,14 @@ describe('FinancesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'إضافة دفعة' }));
     const paymentDialog = await screen.findByRole('dialog', { name: 'إضافة دفعة' });
     const caseSelect = within(paymentDialog).getByRole('combobox', { name: 'القضية' });
+    caseSelect.focus();
     fireEvent.click(caseSelect);
+    fireEvent.keyDown(caseSelect, { key: 'ArrowDown' });
     fireEvent.click(await screen.findByRole('option', { name: 'CA-1' }));
     const payer = await within(paymentDialog).findByRole('combobox', { name: 'الموكل الدافع' });
+    payer.focus();
     fireEvent.click(payer);
+    fireEvent.keyDown(payer, { key: 'ArrowDown' });
     await screen.findByRole('option', { name: 'أحمد' });
     expect(screen.queryByRole('option', { name: 'منى' })).not.toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });

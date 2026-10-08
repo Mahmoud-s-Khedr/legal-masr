@@ -14,7 +14,7 @@ describe('DatePicker', () => {
     expect(input).toHaveAttribute('type', 'text');
     fireEvent.click(screen.getByRole('button', { name: 'فتح التقويم' }));
     expect(screen.getByRole('dialog', { name: 'اختيار التاريخ' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: '23' }));
+    fireEvent.click(screen.getByRole('button', { name: /23.*2026|2026.*23/ }));
 
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ target: expect.objectContaining({ value: '2026-10-23' }) }),
@@ -51,7 +51,7 @@ describe('DatePicker', () => {
     expect(screen.getByLabelText('Date')).toHaveAttribute('placeholder', 'YYYY-MM-DD');
     fireEvent.click(screen.getByRole('button', { name: 'Open calendar' }));
     expect(screen.getByRole('dialog', { name: 'Choose date' })).toHaveAttribute('dir', 'ltr');
-    fireEvent.click(screen.getByRole('button', { name: '23' }));
+    fireEvent.click(screen.getByRole('button', { name: /23.*2026|2026.*23/ }));
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ target: expect.objectContaining({ value: '2026-10-23' }) }),
     );

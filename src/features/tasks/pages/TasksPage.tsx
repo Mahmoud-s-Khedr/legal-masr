@@ -1,13 +1,23 @@
+import { DraftForm } from '@/components/forms/DraftForm';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { EntityPicker } from '@/components/forms/EntityPicker';
+import { FieldGroup } from '@/components/ui/field';
+import { Field } from '@/components/forms/FormField';
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { taskDraftSchema } from '@/lib/formSchemas';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { TaskDto, TaskInput } from '../../../bridge/types';
-import { DatePicker } from '../../../components/ui/DatePicker';
+import { DatePicker } from '../../../components/forms/DatePicker';
 import { Button } from '../../../components/ui/button';
 import { Checkbox } from '../../../components/ui/checkbox';
-import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
+import { ConfirmDialog, FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
 import { Input } from '../../../components/ui/input';
-import { Tabs } from '../../../components/ui/Tabs';
-import { Select } from '../../../components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+
 import { Textarea } from '../../../components/ui/textarea';
 import { useCaseList } from '../../cases/api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
@@ -25,12 +35,6 @@ import { useFormat } from '../../../i18n/LocalePresentation';
 
 const localDate = () => localDateOnly();
 const views = ['TODAY', 'OVERDUE', 'UPCOMING', 'COMPLETED', 'ALL'] as const;
-const TASK_TONE = {
-  completed: 'tone-muted',
-  overdue: 'tone-danger',
-  today: 'tone-warning',
-  upcoming: 'tone-active',
-} as const;
 
 export function TasksPage() {
   const { t } = useTranslation();
@@ -99,11 +103,21 @@ export function TasksPage() {
         }
       />
       <Tabs
-        label={t('tasks.filter')}
         value={view}
-        onChange={(value) => setView(value as (typeof views)[number])}
-        tabs={views.map((id) => ({ id, label: t(`tasks.views.${id}`) }))}
-      />
+        onValueChange={(value) =>
+          ((value) => setView(value as (typeof views)[number]))(String(value))
+        }
+      >
+        <TabsList activateOnFocus aria-label={t('tasks.filter')} variant={'default'}>
+          {views
+            .map((id) => ({ id, label: t(`tasks.views.${id}`) }))
+            .map((tab) => (
+              <TabsTrigger key={tab.id} value={tab.id}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+        </TabsList>
+      </Tabs>
       {unavailable && (
         <div className="record-unavailable" role="alert">
           <p>{t('tasks.recordUnavailable')}</p>
@@ -119,10 +133,9 @@ export function TasksPage() {
       <div className="finance-filters">
         <label>
           {t('tasks.case')}
-          <Select
+          <EntityPicker
             value={caseId}
-            onValueChange={setCaseId}
-            placeholder={t('tasks.allCases')}
+            onValueChange={(value) => setCaseId(value ?? '')}
             items={[
               { value: '', label: t('tasks.allCases') },
               ...(cases.data ?? []).map((item) => ({
@@ -132,23 +145,24 @@ export function TasksPage() {
                   : item.internalNumber,
               })),
             ]}
+            placeholder={t('tasks.allCases')}
           />
         </label>
         <label>
           {t('tasks.client')}
-          <Select
+          <EntityPicker
             value={clientId}
-            onValueChange={setClientId}
-            placeholder={t('tasks.allClients')}
+            onValueChange={(value) => setClientId(value ?? '')}
             items={[
               { value: '', label: t('tasks.allClients') },
               ...(clients.data ?? []).map((item) => ({ value: item.id, label: item.fullName })),
             ]}
+            placeholder={t('tasks.allClients')}
           />
         </label>
         <Button
           type="button"
-          className="secondary-button"
+
           onClick={() => {
             setCaseId('');
             setClientId('');
@@ -165,9 +179,9 @@ export function TasksPage() {
           </div>
         </div>
         {tasks.isError ? (
-          <p className="error" role="alert">
-            {t('app.loadError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('app.loadError')}</AlertDescription>
+          </Alert>
         ) : !tasks.data?.length ? (
           <p className="empty-compact">{t(`tasks.emptyViews.${view}`)}</p>
         ) : (
@@ -226,11 +240,11 @@ export function TasksPage() {
                       )}
                     </span>
                   </div>
-                  <span className={`status-badge ${TASK_TONE[state]}`}>{t(`tasks.${state}`)}</span>
+                  <Badge variant="secondary">{t(`tasks.${state}`)}</Badge>
                   <Button
                     type="button"
                     variant="ghost"
-                    className="text-button quiet-button"
+
                     aria-label={t('tasks.deleteAria', { title: task.title })}
                     onClick={() => setRemoving(task)}
                   >
@@ -242,12 +256,12 @@ export function TasksPage() {
           </ul>
         )}
         {(complete.isError || reopen.isError) && !editing && (
-          <p className="error" role="alert">
-            {t('tasks.statusError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('tasks.statusError')}</AlertDescription>
+          </Alert>
         )}
       </section>
-      <Dialog
+      <FormDialog
         open={Boolean(editing)}
         onOpenChange={(open) => !open && setEditing(null)}
         title={editing === 'new' ? t('tasks.add') : t('tasks.details')}
@@ -282,16 +296,16 @@ export function TasksPage() {
           />
         )}
         {save.isError && (
-          <p className="error" role="alert">
-            {t('tasks.saveError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('tasks.saveError')}</AlertDescription>
+          </Alert>
         )}
         {(complete.isError || reopen.isError) && (
-          <p className="error" role="alert">
-            {t('tasks.statusError')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('tasks.statusError')}</AlertDescription>
+          </Alert>
         )}
-      </Dialog>
+      </FormDialog>
       <ConfirmDialog
         open={Boolean(removing)}
         onOpenChange={(open) => !open && setRemoving(null)}
@@ -334,17 +348,40 @@ export function TaskForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const [title, setTitle] = useState(initial?.title ?? '');
-  const [dueDate, setDueDate] = useState(initial?.dueDate ?? initialDate ?? localDate());
-  const [caseId, setCaseId] = useState(initial?.caseId ?? initialCaseId ?? '');
-  const [clientId, setClientId] = useState(initial?.clientId ?? initialClientId ?? '');
-  const [details, setDetails] = useState(initial?.details ?? '');
-  const [notes, setNotes] = useState(initial?.notes ?? '');
+  const form = useForm<z.infer<typeof taskDraftSchema>>({
+    resolver: zodResolver(taskDraftSchema),
+    defaultValues: {
+      title: initial?.title ?? '',
+      dueDate: initial?.dueDate ?? initialDate ?? localDate(),
+      caseId: initial?.caseId ?? initialCaseId ?? '',
+      clientId: initial?.clientId ?? initialClientId ?? '',
+      details: initial?.details ?? '',
+      notes: initial?.notes ?? '',
+    },
+  });
+
+  const title = useWatch({ control: form.control, name: 'title' });
+  const setTitle = (value: string) =>
+    form.setValue('title', value, { shouldValidate: form.formState.isSubmitted });
+  const dueDate = useWatch({ control: form.control, name: 'dueDate' });
+  const setDueDate = (value: string) =>
+    form.setValue('dueDate', value, { shouldValidate: form.formState.isSubmitted });
+  const caseId = useWatch({ control: form.control, name: 'caseId' });
+  const setCaseId = (value: string) =>
+    form.setValue('caseId', value, { shouldValidate: form.formState.isSubmitted });
+  const clientId = useWatch({ control: form.control, name: 'clientId' });
+  const setClientId = (value: string) =>
+    form.setValue('clientId', value, { shouldValidate: form.formState.isSubmitted });
+  const details = useWatch({ control: form.control, name: 'details' });
+  const setDetails = (value: string) =>
+    form.setValue('details', value, { shouldValidate: form.formState.isSubmitted });
+  const notes = useWatch({ control: form.control, name: 'notes' });
+  const setNotes = (value: string) =>
+    form.setValue('notes', value, { shouldValidate: form.formState.isSubmitted });
   return (
-    <form
-      className="dialog-form"
-      onSubmit={async (event) => {
-        event.preventDefault();
+    <DraftForm
+      className="mt-4 grid gap-3.5"
+      onSubmit={form.handleSubmit(async () => {
         try {
           await onSave({
             id: initial?.id,
@@ -358,78 +395,112 @@ export function TaskForm({
         } catch {
           // The parent mutation exposes an in-dialog retry message.
         }
-      }}
+      })}
     >
-      <label>
-        {t('tasks.task')}{' '}
-        <Input
+      <FieldGroup>
+        <Field
+          label={<>{t('tasks.task')}</>}
           required
-          autoFocus
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-        />
-      </label>
-      <div className="settings-two-columns">
-        <label>
-          {t('tasks.dueDate')}{' '}
-          <DatePicker
+          error={form.formState.errors.title ? t('forms.invalid') : undefined}
+        >
+          <Input
             required
-            value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
+            autoFocus
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            ref={(node) => form.register('title').ref(node)}
+            aria-invalid={!!form.formState.errors.title}
           />
-        </label>
-        <label>
-          {t('tasks.case')}
-          <Select
-            value={caseId}
-            onValueChange={setCaseId}
-            items={[
-              { value: '', label: t('tasks.noCase') },
-              ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
-            ]}
-          />
-        </label>
-      </div>
-      <label>
-        {t('tasks.client')}
-        <Select
-          value={clientId}
-          onValueChange={setClientId}
-          items={[
-            { value: '', label: t('tasks.noClient') },
-            ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
-          ]}
-        />
-      </label>
-      <label>
-        {t('tasks.fieldDetails')}{' '}
-        <Textarea value={details} onChange={(event) => setDetails(event.target.value)} />
-      </label>
-      <label>
-        {t('common.notes')}{' '}
-        <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
-      </label>
-      {initial && onToggleCompletion && (
-        <div className="dialog-inline-action">
-          <span>
-            {t('tasks.status')}: {initial.completed ? t('tasks.completed') : t('tasks.open')}
-          </span>
-          <Button
-            type="button"
-            className="secondary-button"
-            disabled={toggling}
-            onClick={onToggleCompletion}
+        </Field>
+        <div className="settings-two-columns">
+          <Field
+            label={<>{t('tasks.dueDate')}</>}
+            required
+            error={form.formState.errors.dueDate ? t('forms.invalid') : undefined}
           >
-            {initial.completed ? t('tasks.reopen') : t('tasks.complete')}
-          </Button>
+            <DatePicker
+              required
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+              ref={(node) => form.register('dueDate').ref(node)}
+              aria-invalid={!!form.formState.errors.dueDate}
+            />
+          </Field>
+          <Field
+            label={<>{t('tasks.case')}</>}
+            error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
+          >
+            <EntityPicker
+              value={caseId}
+              onValueChange={(value) => setCaseId(value ?? '')}
+              items={[
+                { value: '', label: t('tasks.noCase') },
+                ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
+              ]}
+              placeholder={undefined}
+            />
+          </Field>
         </div>
-      )}
-      <div className="dialog-actions">
-        <Button type="button" variant="secondary" className="secondary-button" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-        <Button disabled={busy}>{t('tasks.save')}</Button>
-      </div>
-    </form>
+        <Field
+          label={<>{t('tasks.client')}</>}
+          error={form.formState.errors.clientId ? t('forms.invalid') : undefined}
+        >
+          <EntityPicker
+            value={clientId}
+            onValueChange={(value) => setClientId(value ?? '')}
+            items={[
+              { value: '', label: t('tasks.noClient') },
+              ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+            ]}
+            placeholder={undefined}
+          />
+        </Field>
+        <Field
+          label={<>{t('tasks.fieldDetails')}</>}
+          error={form.formState.errors.details ? t('forms.invalid') : undefined}
+        >
+          <Textarea
+            value={details}
+            onChange={(event) => setDetails(event.target.value)}
+            ref={(node) => form.register('details').ref(node)}
+            aria-invalid={!!form.formState.errors.details}
+          />
+        </Field>
+        <Field
+          label={<>{t('common.notes')}</>}
+          error={form.formState.errors.notes ? t('forms.invalid') : undefined}
+        >
+          <Textarea
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            ref={(node) => form.register('notes').ref(node)}
+            aria-invalid={!!form.formState.errors.notes}
+          />
+        </Field>
+        {initial && onToggleCompletion && (
+          <div className="dialog-inline-action">
+            <span>
+              {t('tasks.status')}: {initial.completed ? t('tasks.completed') : t('tasks.open')}
+            </span>
+            <Button
+              type="button"
+
+              disabled={toggling}
+              onClick={onToggleCompletion}
+            >
+              {initial.completed ? t('tasks.reopen') : t('tasks.complete')}
+            </Button>
+          </div>
+        )}
+        <FormDialogFooter>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" disabled={busy}>
+            {t('tasks.save')}
+          </Button>
+        </FormDialogFooter>
+      </FieldGroup>
+    </DraftForm>
   );
 }

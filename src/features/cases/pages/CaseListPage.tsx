@@ -1,13 +1,24 @@
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from '@/components/ui/select';
+
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
-import { Card } from '../../../components/ui/card';
+
 import { Input } from '../../../components/ui/input';
 import { Checkbox } from '../../../components/ui/checkbox';
-import { Select } from '../../../components/ui/select';
+
 import { Skeleton } from '../../../components/ui/skeleton';
-import { Table } from '../../../components/ui/table';
+import { RecordTable } from '@/components/forms/RecordTable';
 import { useCaseList } from '../api/casesApi';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { CASE_STATUSES } from '../schemas/case.schema';
@@ -48,16 +59,29 @@ export function CaseListPage() {
           aria-label={t('cases.searchPlaceholder')}
         />
         <Select
-          className="toolbar-select"
           value={status}
-          onValueChange={setStatus}
-          aria-label={t('cases.statusFilter')}
-          placeholder={t('cases.allStatuses')}
+          onValueChange={(value) => setStatus(value ?? '')}
           items={[
             { value: '', label: t('cases.allStatuses') },
             ...CASE_STATUSES.map((value) => ({ value, label: t(`cases.status.${value}`) })),
           ]}
-        />
+        >
+          <SelectTrigger aria-label={t('cases.statusFilter')}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {[
+                { value: '', label: t('cases.allStatuses') },
+                ...CASE_STATUSES.map((value) => ({ value, label: t(`cases.status.${value}`) })),
+              ].map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
         <label className="checkbox-field">
           <Checkbox checked={includeArchived} onCheckedChange={setIncludeArchived} />
           {t('cases.showArchived')}
@@ -67,20 +91,24 @@ export function CaseListPage() {
       {isLoading ? (
         <Skeleton className="table-message h-24" aria-label={t('cases.loading')} />
       ) : isError ? (
-        <p className="error" role="alert">
-          {t('app.loadError')}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{t('app.loadError')}</AlertDescription>
+        </Alert>
       ) : !cases?.length ? (
-        <Card className="empty-state-card">
-          <strong>{filtered ? t('cases.noResults') : t('cases.empty')}</strong>
-          <span>{filtered ? t('cases.noResultsHint') : t('cases.emptyHint')}</span>
-          {!filtered && (
-            <Button onClick={() => navigate('/cases/new')}>{t('cases.newButton')}</Button>
-          )}
-        </Card>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{filtered ? t('cases.noResults') : t('cases.empty')}</EmptyTitle>
+            <EmptyDescription>
+              {filtered ? t('cases.noResultsHint') : t('cases.emptyHint')}
+            </EmptyDescription>
+            {!filtered && (
+              <Button onClick={() => navigate('/cases/new')}>{t('cases.newButton')}</Button>
+            )}
+          </EmptyHeader>
+        </Empty>
       ) : (
         <div className="data-table-scroll">
-          <Table className="data-table">
+          <RecordTable className="data-table">
             <caption>{t('cases.tableCaption')}</caption>
             <thead>
               <tr>
@@ -118,7 +146,7 @@ export function CaseListPage() {
                 </tr>
               ))}
             </tbody>
-          </Table>
+          </RecordTable>
         </div>
       )}
     </section>

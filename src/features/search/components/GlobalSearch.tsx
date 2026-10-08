@@ -1,24 +1,16 @@
-import { useEffect, useId, useState } from 'react';
+import { useState } from 'react';
+import { Autocomplete } from '@base-ui/react/autocomplete';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { useDebounced } from '@/lib/useDebounced';
 import { useGlobalSearch } from '../api/searchApi';
-import type { SearchEntityType, SearchHit } from '../../../bridge/types';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-
-const entityTypes: SearchEntityType[] = ['CLIENT', 'CASE', 'POWER_OF_ATTORNEY'];
-
-function recordPath(entityType: SearchEntityType, entityId: string) {
-  if (entityType === 'CLIENT') return `/clients/${entityId}`;
-  if (entityType === 'CASE') return `/cases/${entityId}`;
-  return `/powers-of-attorney/${entityId}`;
-}
-
+import type { SearchHit } from '@/bridge/types';
 export function GlobalSearch({
   query,
   onQueryChange,
   palette = false,
-  onNavigate: afterNavigate,
+  onNavigate,
 }: {
   query: string;
   onQueryChange: (value: string) => void;
@@ -27,112 +19,74 @@ export function GlobalSearch({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const resultsId = useId();
-  const [debounced, setDebounced] = useState(query);
-  const [open, setOpen] = useState(palette);
-  const [activeIndex, setActiveIndex] = useState(-1);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(query), 250);
-    return () => clearTimeout(timer);
-  }, [query]);
-  const { data: hits = [] } = useGlobalSearch(debounced);
-  const grouped = Object.fromEntries(
-    entityTypes.map((type) => [type, hits.filter((hit) => hit.entityType === type)]),
-  ) as Record<SearchEntityType, SearchHit[]>;
-
-  const goTo = (hit: SearchHit) => {
+  const [open, setOpen] = useState(!!query);
+  const debounced = useDebounced(query);
+  const search = useGlobalSearch(debounced);
+  const hits = debounced === query ? (search.data ?? []) : [];
+  const go = (hit: SearchHit) => {
     setOpen(false);
     onQueryChange('');
-    afterNavigate?.();
-    navigate(recordPath(hit.entityType, hit.entityId));
+    onNavigate?.();
+    navigate(
+      `/${hit.entityType === 'CLIENT' ? 'clients' : hit.entityType === 'CASE' ? 'cases' : 'powers-of-attorney'}/${hit.entityId}`,
+    );
   };
-  const selectableHits = entityTypes.flatMap((entityType) => grouped[entityType]);
-
   return (
     <section className={palette ? 'global-search global-search-palette' : 'global-search'}>
-      <Input
-        autoFocus={palette}
-        role="combobox"
-        aria-autocomplete="list"
-        aria-controls={resultsId}
-        aria-expanded={(palette || open) && Boolean(debounced)}
-        aria-activedescendant={activeIndex >= 0 ? `${resultsId}-option-${activeIndex}` : undefined}
-        aria-label={t('app.searchLabel')}
-        placeholder={t('search.placeholder')}
+      <Autocomplete.Root
+        items={hits}
         value={query}
-        onChange={(event) => {
-          onQueryChange(event.target.value);
-          setOpen(true);
-          setActiveIndex(-1);
+        open={open && !!query && debounced === query}
+        onOpenChange={(next, details) => {
+          setOpen(next);
+          if (details.reason === 'escape-key') onNavigate?.();
         }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => !palette && setTimeout(() => setOpen(false), 150)}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            event.preventDefault();
-            setOpen(false);
-            setActiveIndex(-1);
-            afterNavigate?.();
-            return;
-          }
-          if (!selectableHits.length) return;
-          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            event.preventDefault();
+        onValueChange={(next, details) => {
+          if (details.reason === 'item-press') {
+            const hit = hits.find((h) => h.title === next);
+            if (hit) go(hit);
+          } else {
+            onQueryChange(next);
             setOpen(true);
-            const direction = event.key === 'ArrowDown' ? 1 : -1;
-            setActiveIndex(
-              (index) => (index + direction + selectableHits.length) % selectableHits.length,
-            );
-          }
-          if (event.key === 'Enter' && activeIndex >= 0) {
-            event.preventDefault();
-            goTo(selectableHits[activeIndex]);
           }
         }}
-      />
-      {(palette || open) && debounced && (
-        <div id={resultsId} className="global-search-results" role="listbox">
-          {!hits.length ? (
-            <p>{t('search.noResults')}</p>
-          ) : (
-            entityTypes.map((entityType) =>
-              grouped[entityType].length ? (
-                <section key={entityType}>
-                  <p className="kicker">{t(`search.groups.${entityType.toLowerCase()}`)}</p>
-                  <ul>
-                    {grouped[entityType].map((hit) => {
-                      const hitIndex = selectableHits.indexOf(hit);
-                      return (
-                        <li key={hit.entityId}>
-                          <Button
-                            id={`${resultsId}-option-${hitIndex}`}
-                            type="button"
-                            role="option"
-                            aria-selected={activeIndex === hitIndex}
-                            variant="ghost"
-                            className={activeIndex === hitIndex ? 'active' : undefined}
-                            onMouseEnter={() => setActiveIndex(hitIndex)}
-                            onClick={() => goTo(hit)}
-                          >
-                            <bdi>{hit.title}</bdi>
-                            {hit.subtitle && (
-                              <span className="muted">
-                                {' '}
-                                — <bdi>{hit.subtitle}</bdi>
-                              </span>
-                            )}
-                          </Button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              ) : null,
-            )
-          )}
-        </div>
-      )}
+        itemToStringValue={(hit) => hit.title}
+        filter={null}
+      >
+        <Autocomplete.Input
+          render={<Input />}
+          autoFocus={palette}
+          aria-label={t('app.searchLabel')}
+          placeholder={t('search.placeholder')}
+        />
+        <Autocomplete.Portal>
+          <Autocomplete.Positioner sideOffset={6} className="isolate z-50">
+            <Autocomplete.Popup className="max-h-80 w-(--anchor-width) overflow-auto rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-lg">
+              <Autocomplete.Empty>{t('search.noResults')}</Autocomplete.Empty>
+              <Autocomplete.List>
+                {(hit: SearchHit) => (
+                  <Autocomplete.Item
+                    key={`${hit.entityType}-${hit.entityId}`}
+                    value={hit}
+                    className="cursor-default rounded-md p-2 outline-none data-highlighted:bg-accent"
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {t(`search.groups.${hit.entityType.toLowerCase()}`)}
+                    </span>
+                    <bdi>{hit.title}</bdi>
+                    {hit.subtitle && (
+                      <span>
+                        {' '}
+                        — <bdi>{hit.subtitle}</bdi>
+                      </span>
+                    )}
+                  </Autocomplete.Item>
+                )}
+              </Autocomplete.List>
+            </Autocomplete.Popup>
+          </Autocomplete.Positioner>
+        </Autocomplete.Portal>
+      </Autocomplete.Root>
     </section>
   );
 }

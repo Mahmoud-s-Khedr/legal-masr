@@ -1,24 +1,25 @@
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Dialog } from '../../../components/ui/Dialog';
+
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { Button } from '../../../components/ui/button';
-import { Card } from '../../../components/ui/card';
+
 import { Input } from '../../../components/ui/input';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Skeleton } from '../../../components/ui/skeleton';
-import { Table } from '../../../components/ui/table';
-import { PowerOfAttorneyForm } from '../components/PowerOfAttorneyForm';
-import { usePowerOfAttorneyList, useSavePowerOfAttorney } from '../api/powersOfAttorneyApi';
+import { RecordTable } from '@/components/forms/RecordTable';
+
+import { usePowerOfAttorneyList } from '../api/powersOfAttorneyApi';
 
 export function PowersOfAttorneyPage() {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
-  const [adding, setAdding] = useState(false);
   const powers = usePowerOfAttorneyList({ query: query || undefined, includeArchived });
-  const save = useSavePowerOfAttorney();
   const navigate = useNavigate();
   return (
     <section className="entity-list">
@@ -27,7 +28,7 @@ export function PowersOfAttorneyPage() {
         title={t('poa.title')}
         description={t('poa.description')}
         actions={
-          <Button type="button" onClick={() => setAdding(true)}>
+          <Button type="button" onClick={() => navigate('/powers-of-attorney/new')}>
             {t('poa.add')}
           </Button>
         }
@@ -48,22 +49,26 @@ export function PowersOfAttorneyPage() {
       {powers.isLoading ? (
         <Skeleton className="table-message h-24" aria-label={t('poa.loading')} />
       ) : powers.isError ? (
-        <p className="error" role="alert">
-          {t('poa.loadError')}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{t('poa.loadError')}</AlertDescription>
+        </Alert>
       ) : !powers.data?.length ? (
-        <Card className="empty-state-card">
-          <strong>{query ? t('poa.noResults') : t('poa.empty')}</strong>
-          <span>{query ? t('poa.noResultsHint') : t('poa.emptyHint')}</span>
-          {!query && (
-            <Button type="button" onClick={() => setAdding(true)}>
-              {t('poa.add')}
-            </Button>
-          )}
-        </Card>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{query ? t('poa.noResults') : t('poa.empty')}</EmptyTitle>
+            <EmptyDescription>
+              {query ? t('poa.noResultsHint') : t('poa.emptyHint')}
+            </EmptyDescription>
+            {!query && (
+              <Button type="button" onClick={() => navigate('/powers-of-attorney/new')}>
+                {t('poa.add')}
+              </Button>
+            )}
+          </EmptyHeader>
+        </Empty>
       ) : (
         <div className="data-table-scroll">
-          <Table className="data-table">
+          <RecordTable className="data-table">
             <caption>{t('poa.title')}</caption>
             <thead>
               <tr>
@@ -90,34 +95,16 @@ export function PowersOfAttorneyPage() {
                   </td>
                   <td className="cell-wrap">{power.clientNames.join('، ') || '—'}</td>
                   <td>
-                    <span
-                      className={`status-badge ${power.archivedAt ? 'tone-muted' : 'tone-active'}`}
-                    >
+                    <Badge variant="secondary">
                       {power.archivedAt ? t('records.archived') : t('clients.active')}
-                    </span>
+                    </Badge>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </Table>
+          </RecordTable>
         </div>
       )}
-      <Dialog open={adding} onOpenChange={setAdding} title={t('poa.add')}>
-        <PowerOfAttorneyForm
-          busy={save.isPending}
-          onCancel={() => setAdding(false)}
-          onSubmit={async (input) => {
-            const power = await save.mutateAsync(input);
-            setAdding(false);
-            navigate(`/powers-of-attorney/${power.id}`);
-          }}
-        />
-        {save.isError && (
-          <p className="error" role="alert">
-            {t('poa.saveError')}
-          </p>
-        )}
-      </Dialog>
     </section>
   );
 }

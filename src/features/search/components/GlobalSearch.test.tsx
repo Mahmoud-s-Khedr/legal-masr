@@ -54,7 +54,7 @@ describe('GlobalSearch', () => {
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     const selected = screen.getByRole('option', { name: /أحمد علي.*C-1/ });
     expect(input).toHaveAttribute('aria-activedescendant', selected.id);
-    expect(selected).toHaveAttribute('aria-selected', 'true');
+    expect(selected).toHaveAttribute('data-highlighted');
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(screen.getByTestId('location')).toHaveTextContent('/cases/case-1');

@@ -1,13 +1,16 @@
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { Button } from '../../../components/ui/button';
-import { Card } from '../../../components/ui/card';
+
 import { Input } from '../../../components/ui/input';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Skeleton } from '../../../components/ui/skeleton';
-import { Table } from '../../../components/ui/table';
+import { RecordTable } from '@/components/forms/RecordTable';
 import { useClientList } from '../api/clientsApi';
 
 export function ClientListPage() {
@@ -50,20 +53,24 @@ export function ClientListPage() {
       {isLoading ? (
         <Skeleton className="table-message h-24" aria-label={t('clients.loading')} />
       ) : isError ? (
-        <p className="error" role="alert">
-          {t('app.loadError')}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{t('app.loadError')}</AlertDescription>
+        </Alert>
       ) : !clients?.length ? (
-        <Card className="empty-state-card">
-          <strong>{query ? t('clients.noResults') : t('clients.empty')}</strong>
-          <span>{query ? t('clients.noResultsHint') : t('clients.emptyHint')}</span>
-          {!query && (
-            <Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>
-          )}
-        </Card>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{query ? t('clients.noResults') : t('clients.empty')}</EmptyTitle>
+            <EmptyDescription>
+              {query ? t('clients.noResultsHint') : t('clients.emptyHint')}
+            </EmptyDescription>
+            {!query && (
+              <Button onClick={() => navigate('/clients/new')}>{t('clients.newButton')}</Button>
+            )}
+          </EmptyHeader>
+        </Empty>
       ) : (
         <div className="data-table-scroll">
-          <Table className="data-table">
+          <RecordTable className="data-table">
             <caption>{t('clients.tableCaption')}</caption>
             <thead>
               <tr>
@@ -92,16 +99,14 @@ export function ClientListPage() {
                     )}
                   </td>
                   <td>
-                    <span
-                      className={`status-badge ${client.archivedAt ? 'tone-muted' : 'tone-active'}`}
-                    >
+                    <Badge variant="secondary">
                       {client.archivedAt ? t('clients.archivedBadge') : t('clients.active')}
-                    </span>
+                    </Badge>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </Table>
+          </RecordTable>
         </div>
       )}
     </section>

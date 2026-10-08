@@ -40,7 +40,9 @@
     "placeholder": "YYYY-MM-DD",
     "inputTitle": "Type a date as DD/MM/YYYY, or pick it from the calendar",
     "openCalendar": "Open calendar",
-    "chooseDate": "Choose date"
+    "chooseDate": "Choose date",
+    "today": "Today",
+    "clear": "Clear"
   },
   "common": {
     "cancel": "Cancel",
@@ -420,7 +422,8 @@
       "telegram": "Telegram",
       "linkedin": "LinkedIn",
       "openError": "Could not open this contact option. Try again or use the contact details shown."
-    }
+    },
+    "minutes": "minutes"
   },
   "clients": {
     "kicker": "Records",
@@ -596,7 +599,9 @@
       "title": "Clients in this case",
       "noCapacity": "Capacity not set",
       "poaLinked": "Power of attorney linked",
-      "noPoa": "No power of attorney"
+      "noPoa": "No power of attorney",
+      "capacity": "Legal capacity",
+      "poa": "Power of attorney"
     },
     "parties": {
       "title": "Opponents",
@@ -707,7 +712,9 @@
     "VAULT_INCOMPLETE": "Workspace files are incomplete. Preserve them and recover the workspace before continuing.",
     "VAULT_CORRUPT": "The workspace database cannot be read safely. Preserve it and restore a verified backup.",
     "VAULT_NEWER_SCHEMA": "This workspace requires a newer version of Legal Masr.",
-    "VAULT_INTERRUPTED": "An interrupted workspace operation needs recovery. Keep all workspace files and retry. Setup and unlock are disabled until recovery completes."
+    "VAULT_INTERRUPTED": "An interrupted workspace operation needs recovery. Keep all workspace files and retry. Setup and unlock are disabled until recovery completes.",
+    "CASE_CLIENT_HAS_PAYMENTS": "This client has case payments and cannot be removed.",
+    "CLIENT_ARCHIVED": "Archived clients cannot be added."
   },
   "finances": {
     "kicker": "Office",
@@ -881,5 +888,10 @@
       "lawyerName": "Lawyer name",
       "barNumber": "Bar number"
     }
+  },
+  "table": {
+    "pagination": "Record pages",
+    "previous": "Previous",
+    "next": "Next"
   }
 }

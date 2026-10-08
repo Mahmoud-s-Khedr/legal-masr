@@ -1,9 +1,11 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { Fact, RecordHeader } from '../../../components/layout/RecordHeader';
-import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
-import { Tabs } from '../../../components/ui/Tabs';
+import { ConfirmDialog, FormDialog } from '../../../components/forms/FormDialog';
+import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Button } from '../../../components/ui/button';
 import { useFormat } from '../../../i18n/LocalePresentation';
 import { useCaseList } from '../../cases/api/casesApi';
@@ -38,9 +40,9 @@ export function ClientDetailPage() {
     );
   if (client.isError)
     return (
-      <p className="page-status error" role="alert">
-        {t('records.loadError')}
-      </p>
+      <Alert variant="destructive" className="page-status error">
+        <AlertDescription>{t('records.loadError')}</AlertDescription>
+      </Alert>
     );
   if (!client.data) return <p className="page-status">{t('clients.detail.notFound')}</p>;
   const item = client.data;
@@ -50,19 +52,15 @@ export function ClientDetailPage() {
   return (
     <section className="entity-detail detail-workspace">
       {(restore.isError || (archive.isError && !confirmArchive)) && (
-        <p className="error" role="alert">
-          {t('records.statusChangeError')}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{t('records.statusChangeError')}</AlertDescription>
+        </Alert>
       )}
       <RecordHeader
         initial={item.fullName.trim().slice(0, 1)}
         kicker={t('clients.detail.kicker')}
         title={item.fullName}
-        badges={
-          item.archivedAt && (
-            <span className="status-badge tone-muted">{t('clients.archivedBadge')}</span>
-          )
-        }
+        badges={item.archivedAt && <Badge variant="secondary">{t('clients.archivedBadge')}</Badge>}
         meta={
           <>
             <span>
@@ -80,9 +78,7 @@ export function ClientDetailPage() {
         actions={
           <>
             {!item.archivedAt && (
-              <Link className="button-link secondary-link" to={`/cases/new?client=${id}`}>
-                {t('clients.detail.newCase')}
-              </Link>
+              <Link to={`/cases/new?client=${id}`}>{t('clients.detail.newCase')}</Link>
             )}
             <Button type="button" onClick={() => setEditOpen(true)}>
               {t('records.edit')}
@@ -91,7 +87,7 @@ export function ClientDetailPage() {
               <Button
                 type="button"
                 variant="secondary"
-                className="secondary-button"
+
                 disabled={restore.isPending}
                 onClick={() => restore.mutate(id)}
               >
@@ -101,7 +97,7 @@ export function ClientDetailPage() {
               <Button
                 type="button"
                 variant="ghost"
-                className="quiet-button"
+
                 onClick={() => setConfirmArchive(true)}
               >
                 {t('records.archive')}
@@ -111,18 +107,23 @@ export function ClientDetailPage() {
         }
       />
       <Tabs
-        variant="underline"
-        label={t('clients.detail.sectionsLabel')}
         value={tab}
-        onChange={(value) => setTab(value as typeof tab)}
-        tabs={[
-          { id: 'summary', label: t('clients.detail.tabs.summary') },
-          { id: 'cases', label: t('clients.detail.tabs.cases'), count: linkedCases.length },
-          { id: 'poas', label: t('clients.detail.tabs.poas'), count: linkedPowers.length },
-          { id: 'account', label: t('clients.detail.tabs.account') },
-          { id: 'attachments', label: t('clients.detail.tabs.attachments') },
-        ]}
-      />
+        onValueChange={(value) => ((value) => setTab(value as typeof tab))(String(value))}
+      >
+        <TabsList activateOnFocus aria-label={t('clients.detail.sectionsLabel')} variant="line">
+          {[
+            { id: 'summary', label: t('clients.detail.tabs.summary') },
+            { id: 'cases', label: t('clients.detail.tabs.cases'), count: linkedCases.length },
+            { id: 'poas', label: t('clients.detail.tabs.poas'), count: linkedPowers.length },
+            { id: 'account', label: t('clients.detail.tabs.account') },
+            { id: 'attachments', label: t('clients.detail.tabs.attachments') },
+          ].map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       {tab === 'summary' && (
         <div className="detail-grid">
           <section className="detail-card">
@@ -158,7 +159,7 @@ export function ClientDetailPage() {
               <Button
                 type="button"
                 variant="ghost"
-                className="text-button"
+
                 onClick={() => setTab('cases')}
               >
                 {t('dashboard.viewAll')}
@@ -246,9 +247,9 @@ export function ClientDetailPage() {
             </Link>
           </div>
           {powersOfAttorney.isError ? (
-            <p className="error" role="alert">
-              {t('app.loadError')}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{t('app.loadError')}</AlertDescription>
+            </Alert>
           ) : !linkedPowers.length ? (
             <p className="empty-compact">{t('clients.detail.noPoas')}</p>
           ) : (
@@ -267,9 +268,7 @@ export function ClientDetailPage() {
                       )}
                     </span>
                   </div>
-                  {poa.archivedAt && (
-                    <span className="status-badge tone-muted">{t('records.archived')}</span>
-                  )}
+                  {poa.archivedAt && <Badge variant="secondary">{t('records.archived')}</Badge>}
                 </li>
               ))}
             </ul>
@@ -310,7 +309,7 @@ export function ClientDetailPage() {
       {tab === 'attachments' && (
         <AttachmentPanel owner={{ clientId: id }} title={t('clients.detail.attachmentsTitle')} />
       )}
-      <Dialog open={editOpen} onOpenChange={setEditOpen} title={t('clients.detail.editTitle')}>
+      <FormDialog open={editOpen} onOpenChange={setEditOpen} title={t('clients.detail.editTitle')}>
         <ClientForm
           defaultValues={{
             internalNumber: item.internalNumber,
@@ -334,11 +333,11 @@ export function ClientDetailPage() {
           }}
         />
         {update.isError && (
-          <p className="error" role="alert">
-            {t('records.saveRetry')}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{t('records.saveRetry')}</AlertDescription>
+          </Alert>
         )}
-      </Dialog>
+      </FormDialog>
       <ConfirmDialog
         open={confirmArchive}
         onOpenChange={setConfirmArchive}

@@ -203,14 +203,14 @@ describe('managed attachments with real query hooks', () => {
     expect(bridge.attachmentRemove).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'إزالة fictional.pdf' }));
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة المستند' }),
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'إزالة المستند' }),
     );
     expect(await screen.findByRole('alert')).toHaveTextContent('تعذر إزالة');
     expect(invalidate).not.toHaveBeenCalled();
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'إزالة المستند' }),
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'إزالة المستند' }),
     );
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     expect(invalidate).toHaveBeenCalled();
   });
 });

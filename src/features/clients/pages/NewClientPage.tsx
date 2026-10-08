@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
@@ -46,9 +47,11 @@ export function NewClientPage() {
           onSubmit={(values) => submit(values, false)}
         />
         {createClient.isError && !duplicates && (
-          <p className="error" role="alert">
-            {errorMessage(createClient.error, t('app.defaultError'))}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>
+              {errorMessage(createClient.error, t('app.defaultError'))}
+            </AlertDescription>
+          </Alert>
         )}
         {duplicates && (
           <div className="warning duplicate-warning" role="alert">
@@ -68,6 +71,7 @@ export function NewClientPage() {
               ))}
             </ul>
             <Button
+              type="submit"
               disabled={createClient.isPending}
               onClick={() => pendingValues && void submit(pendingValues, true)}
             >

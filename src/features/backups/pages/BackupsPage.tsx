@@ -1,7 +1,8 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../../../bridge/errors';
-import { ConfirmDialog } from '../../../components/ui/Dialog';
+import { ConfirmDialog } from '../../../components/forms/FormDialog';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Skeleton } from '../../../components/ui/skeleton';
@@ -90,9 +91,11 @@ export function BackupSettingsPanel() {
             </p>
           )}
           {createBackup.isError && (
-            <p className="error" role="alert">
-              {errorMessage(createBackup.error, t('app.defaultError'))}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>
+                {errorMessage(createBackup.error, t('app.defaultError'))}
+              </AlertDescription>
+            </Alert>
           )}
         </Card>
 
@@ -103,7 +106,7 @@ export function BackupSettingsPanel() {
             <Button
               type="button"
               variant="secondary"
-              className="secondary-button"
+
               onClick={validate}
               disabled={validateBackup.isPending}
             >
@@ -116,9 +119,9 @@ export function BackupSettingsPanel() {
             </p>
           )}
           {validateBackup.isError && (
-            <p className="error" role="alert">
-              {t('backups.validateFailed')}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{t('backups.validateFailed')}</AlertDescription>
+            </Alert>
           )}
         </Card>
 
@@ -129,7 +132,7 @@ export function BackupSettingsPanel() {
             <Button
               type="button"
               variant="secondary"
-              className="secondary-button danger-outline"
+              className="danger-outline"
               onClick={() => setRestoreOpen(true)}
               disabled={restoreBackup.isPending}
             >
@@ -142,9 +145,11 @@ export function BackupSettingsPanel() {
             </p>
           )}
           {restoreBackup.isError && (
-            <p className="error" role="alert">
-              {errorMessage(restoreBackup.error, t('app.defaultError'))}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>
+                {errorMessage(restoreBackup.error, t('app.defaultError'))}
+              </AlertDescription>
+            </Alert>
           )}
         </Card>
       </div>

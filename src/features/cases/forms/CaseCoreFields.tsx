@@ -1,4 +1,14 @@
 import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from '@/components/ui/select';
+import { CreatableCombobox } from '@/components/forms/CreatableCombobox';
+
+import {
   Controller,
   type Control,
   type FieldErrors,
@@ -6,10 +16,10 @@ import {
   type UseFormRegister,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { DatePicker } from '../../../components/ui/DatePicker';
-import { Field } from '../../../components/ui/Field';
+import { DatePicker } from '../../../components/forms/DatePicker';
+import { Field } from '../../../components/forms/FormField';
 import { Input } from '../../../components/ui/input';
-import { Select } from '../../../components/ui/select';
+
 import { Textarea } from '../../../components/ui/textarea';
 import { CASE_STATUSES, CaseCoreFormValues, LITIGATION_DEGREES } from '../schemas/case.schema';
 
@@ -54,7 +64,7 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
             />
           </Field>
           <Field label={t('cases.fields.caseType')} hint={t('cases.form.caseTypeHint')}>
-            <Input {...register('caseType' as never)} />
+            <CreatableCombobox suggestion="caseType" {...register('caseType' as never)} />
           </Field>
           <Field label={t('cases.fields.litigationDegree')}>
             <Controller
@@ -64,7 +74,6 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
                 <Select
                   value={field.value ?? ''}
                   onValueChange={(value) => field.onChange(value || undefined)}
-                  placeholder={t('forms.notSpecified')}
                   items={[
                     { value: '', label: t('forms.notSpecified') },
                     ...LITIGATION_DEGREES.map((degree) => ({
@@ -72,7 +81,26 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
                       label: t(`cases.degrees.${degree}`),
                     })),
                   ]}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {[
+                        { value: '', label: t('forms.notSpecified') },
+                        ...LITIGATION_DEGREES.map((degree) => ({
+                          value: degree,
+                          label: t(`cases.degrees.${degree}`),
+                        })),
+                      ].map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               )}
             />
           </Field>
@@ -88,7 +116,23 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
                     value: status,
                     label: t(`cases.status.${status}`),
                   }))}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {CASE_STATUSES.map((status) => ({
+                        value: status,
+                        label: t(`cases.status.${status}`),
+                      })).map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               )}
             />
           </Field>
@@ -98,19 +142,28 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
         <legend className="form-section-title">{t('cases.form.courtSection')}</legend>
         <div className="form-grid">
           <Field label={t('cases.fields.courtName')}>
-            <Input
+            <CreatableCombobox
+              suggestion="courtName"
               {...register('courtName' as never)}
               placeholder={t('cases.form.courtPlaceholder')}
             />
           </Field>
           <Field label={t('cases.fields.circuitName')}>
-            <Input {...register('circuitName' as never)} />
+            <CreatableCombobox suggestion="circuitName" {...register('circuitName' as never)} />
           </Field>
           <Field label={t('cases.fields.filedOn')} error={errorFor('filedOn')}>
-            <DatePicker {...register('filedOn' as never)} />
+            <Controller
+              control={control}
+              name={'filedOn' as never}
+              render={({ field }) => <DatePicker {...field} value={field.value ?? ''} />}
+            />
           </Field>
           <Field label={t('cases.fields.closedOn')} error={errorFor('closedOn')}>
-            <DatePicker {...register('closedOn' as never)} />
+            <Controller
+              control={control}
+              name={'closedOn' as never}
+              render={({ field }) => <DatePicker {...field} value={field.value ?? ''} />}
+            />
           </Field>
         </div>
       </fieldset>
