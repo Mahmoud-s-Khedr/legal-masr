@@ -54,3 +54,8 @@ This work does not certify phase acceptance or public-beta readiness.
 A later [beta-readiness pass](reviews/2026-10-08-beta-pass.md) fixed the reproducible editing, layout, theme and
 error-message defects and added migration `0002`. The recommendation is unchanged: do not give testers real client
 data until backups are portable and restore-safe (B01/B02) and the app has been run on Windows and macOS.
+
+A second [functionality and UX review](reviews/2026-10-08-beta-readiness-review.md) ran the real (non-test) build and
+found that the native file picker deadlocks the app (Add document, Check backup, Restore backup), that a client's phone
+link blanks the window, that backups cannot be located or moved, and that list search misses common Arabic spellings.
+It lists the high and medium items and a fix order.
