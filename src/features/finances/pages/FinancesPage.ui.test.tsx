@@ -12,6 +12,8 @@ vi.mock('../../../bridge/commands', () => ({
     expenseList: vi.fn(),
     paymentSave: vi.fn(),
     expenseSave: vi.fn(),
+    paymentDelete: vi.fn(),
+    expenseDelete: vi.fn(),
   },
 }));
 
@@ -201,6 +203,128 @@ describe('FinancesPage', () => {
         expect.objectContaining({ caseId: undefined, clientId: undefined, amountMinor: 1_250 }),
       ),
     );
+  });
+
+  it('chooses the payer for a case with a single client and saves the payment', async () => {
+    vi.mocked(bridge.paymentSave).mockResolvedValue({
+      id: 'payment-1',
+      caseId: 'case-1',
+      payerClientId: 'client-1',
+      amountMinor: 150_000,
+      paymentDate: '2026-08-24',
+      paymentMethod: null,
+      notes: null,
+      createdAt: 'now',
+      updatedAt: 'now',
+    });
+    renderPage();
+    await screen.findByRole('combobox', { name: 'القضية' });
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة دفعة' }));
+    const dialog = await screen.findByRole('dialog', { name: 'إضافة دفعة' });
+    const caseSelect = within(dialog).getByRole('combobox', { name: 'القضية' });
+    caseSelect.focus();
+    fireEvent.click(caseSelect);
+    fireEvent.keyDown(caseSelect, { key: 'ArrowDown' });
+    fireEvent.click(await screen.findByRole('option', { name: /^CA-1( —|$)/ }));
+    await waitFor(() =>
+      expect(within(dialog).getByRole('combobox', { name: 'الموكل الدافع' })).toHaveValue('أحمد'),
+    );
+    fireEvent.change(within(dialog).getByLabelText('المبلغ (ج.م)'), { target: { value: '1500' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'حفظ الدفعة' }));
+    await waitFor(() =>
+      expect(bridge.paymentSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          caseId: 'case-1',
+          payerClientId: 'client-1',
+          amountMinor: 150_000,
+        }),
+      ),
+    );
+  });
+
+  it('asks for the case and an amount on their own fields', async () => {
+    renderPage();
+    await screen.findByRole('combobox', { name: 'القضية' });
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة دفعة' }));
+    const dialog = await screen.findByRole('dialog', { name: 'إضافة دفعة' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'حفظ الدفعة' }));
+    expect(await within(dialog).findByText('اختر القضية.')).toBeInTheDocument();
+    expect(within(dialog).getByText('اختر الموكل الدافع.')).toBeInTheDocument();
+    expect(
+      within(dialog).getByText('اكتب مبلغًا صحيحًا أكبر من صفر، مثل 250 أو 250.50.'),
+    ).toBeInTheDocument();
+    expect(bridge.paymentSave).not.toHaveBeenCalled();
+  });
+
+  it('explains that a payment needs a case when there is none yet', async () => {
+    vi.mocked(bridge.caseList).mockResolvedValue([]);
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'إضافة دفعة' }));
+    const dialog = await screen.findByRole('dialog', { name: 'إضافة دفعة' });
+    expect(await within(dialog).findByText('لا توجد قضايا بعد.')).toBeInTheDocument();
+  });
+
+  it('deletes a payment entered by mistake only after confirmation', async () => {
+    const payment = {
+      id: 'payment-1',
+      caseId: 'case-1',
+      payerClientId: 'client-1',
+      amountMinor: 12_500,
+      paymentDate: '2026-08-24',
+      paymentMethod: 'CASH' as const,
+      notes: 'مكررة بالخطأ',
+      createdAt: 'now',
+      updatedAt: 'now',
+    };
+    vi.mocked(bridge.paymentList).mockResolvedValue([payment]);
+    vi.mocked(bridge.paymentDelete).mockResolvedValue(undefined);
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /24 أغسطس 2026/ }));
+    const inspection = await screen.findByRole('dialog', { name: 'تفاصيل الدفعة' });
+
+    fireEvent.click(within(inspection).getByRole('button', { name: 'حذف السجل' }));
+    const confirm = await screen.findByRole('alertdialog', { name: 'حذف الدفعة' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'إلغاء' }));
+    expect(bridge.paymentDelete).not.toHaveBeenCalled();
+
+    fireEvent.click(within(inspection).getByRole('button', { name: 'حذف السجل' }));
+    fireEvent.click(
+      within(await screen.findByRole('alertdialog', { name: 'حذف الدفعة' })).getByRole('button', {
+        name: 'حذف الدفعة',
+      }),
+    );
+    await waitFor(() => expect(bridge.paymentDelete).toHaveBeenCalledWith('payment-1'));
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'تفاصيل الدفعة' })).not.toBeInTheDocument(),
+    );
+  });
+
+  it('keeps the payment and explains why when the case is archived', async () => {
+    vi.mocked(bridge.paymentList).mockResolvedValue([
+      {
+        id: 'payment-2',
+        caseId: 'case-1',
+        payerClientId: 'client-1',
+        amountMinor: 100,
+        paymentDate: '2026-08-24',
+        paymentMethod: null,
+        notes: null,
+        createdAt: 'now',
+        updatedAt: 'now',
+      },
+    ]);
+    vi.mocked(bridge.paymentDelete).mockRejectedValue({
+      code: 'CASE_ARCHIVED',
+      message: 'safe',
+      details: null,
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /24 أغسطس 2026/ }));
+    const inspection = await screen.findByRole('dialog', { name: 'تفاصيل الدفعة' });
+    fireEvent.click(within(inspection).getByRole('button', { name: 'حذف السجل' }));
+    const confirm = await screen.findByRole('alertdialog', { name: 'حذف الدفعة' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'حذف الدفعة' }));
+    expect(await within(confirm).findByText(/القضية مؤرشفة/)).toBeInTheDocument();
   });
 
   it('opens a keyboard-accessible transaction inspection before editing a ledger item', async () => {

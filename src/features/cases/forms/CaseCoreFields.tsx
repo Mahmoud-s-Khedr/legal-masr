@@ -21,7 +21,12 @@ import { Field } from '../../../components/forms/FormField';
 import { Input } from '../../../components/ui/input';
 
 import { Textarea } from '../../../components/ui/textarea';
-import { CASE_STATUSES, CaseCoreFormValues, LITIGATION_DEGREES } from '../schemas/case.schema';
+import {
+  CASE_STATUSES,
+  CaseCoreFormValues,
+  LITIGATION_DEGREES,
+  parseYearInput,
+} from '../schemas/case.schema';
 
 export function CaseCoreFields<T extends CaseCoreFormValues>({
   register,
@@ -130,29 +135,25 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
           <Field
             label={t('cases.fields.caseYear')}
             hint={t('cases.form.caseYearHint')}
-            error={errorFor('officialYear')}
+            error={errorFor('officialYear', t('forms.invalidYear'))}
           >
             <Input
-              type="number"
               dir="ltr"
               inputMode="numeric"
-              min={1800}
-              max={9999}
-              {...register('officialYear' as never, { valueAsNumber: true })}
+              autoComplete="off"
+              {...register('officialYear' as never, { setValueAs: parseYearInput })}
             />
           </Field>
           <Field
             label={t('cases.fields.judicialYear')}
             hint={t('cases.form.judicialYearHint')}
-            error={errorFor('judicialYear')}
+            error={errorFor('judicialYear', t('forms.invalidJudicialYear'))}
           >
             <Input
-              type="number"
               dir="ltr"
               inputMode="numeric"
-              min={1}
-              max={9999}
-              {...register('judicialYear' as never, { valueAsNumber: true })}
+              autoComplete="off"
+              {...register('judicialYear' as never, { setValueAs: parseYearInput })}
             />
           </Field>
           <Field label={t('cases.fields.caseType')} hint={t('cases.form.caseTypeHint')}>
@@ -173,14 +174,24 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
           <Field label={t('cases.fields.circuitName')}>
             <CreatableCombobox suggestion="circuitName" {...register('circuitName' as never)} />
           </Field>
-          <Field label={t('cases.fields.filedOn')} error={errorFor('filedOn')}>
+          <Field
+            label={t('cases.fields.filedOn')}
+            error={errorFor('filedOn', t('forms.invalidDate'))}
+          >
             <Controller
               control={control}
               name={'filedOn' as never}
               render={({ field }) => <DatePicker {...field} value={field.value ?? ''} />}
             />
           </Field>
-          <Field label={t('cases.fields.closedOn')} error={errorFor('closedOn')}>
+          <Field
+            label={t('cases.fields.closedOn')}
+            error={
+              errors?.closedOn?.message === 'CLOSED_BEFORE_FILED'
+                ? t('forms.closedBeforeFiled')
+                : errorFor('closedOn', t('forms.invalidDate'))
+            }
+          >
             <Controller
               control={control}
               name={'closedOn' as never}

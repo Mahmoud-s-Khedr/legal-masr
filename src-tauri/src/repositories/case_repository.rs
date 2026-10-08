@@ -237,6 +237,19 @@ pub fn list(
     Ok(rows)
 }
 
+/// An archived case is read-only until it is restored.
+pub fn ensure_active(conn: &Connection, id: &str) -> Result<(), Error> {
+    let archived: Option<String> = conn
+        .query_row("SELECT archived_at FROM cases WHERE id = ?1", [id], |row| {
+            row.get(0)
+        })
+        .map_err(|_| Error::CaseNotFound)?;
+    if archived.is_some() {
+        return Err(Error::CaseArchived);
+    }
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn insert_opponent(
     conn: &Connection,
@@ -539,5 +552,25 @@ mod tests {
                 .as_deref(),
             Some("2026-10-20")
         );
+    }
+
+    #[test]
+    fn an_archived_case_is_read_only_until_restored() {
+        let conn = Connection::open_in_memory().unwrap();
+        db::migrate(&conn).unwrap();
+        let client = seed_client(&conn, "1", "أحمد");
+        let case_id = seed_case(&conn, "1", None, &client);
+        assert!(ensure_active(&conn, &case_id).is_ok());
+        set_archived(&conn, &case_id, true, "now").unwrap();
+        assert!(matches!(
+            ensure_active(&conn, &case_id),
+            Err(Error::CaseArchived)
+        ));
+        set_archived(&conn, &case_id, false, "now").unwrap();
+        assert!(ensure_active(&conn, &case_id).is_ok());
+        assert!(matches!(
+            ensure_active(&conn, &id()),
+            Err(Error::CaseNotFound)
+        ));
     }
 }

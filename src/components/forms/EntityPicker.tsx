@@ -64,9 +64,15 @@ export function EntityPicker({
         openOnInputClick
         items={options}
         value={selected}
-        onValueChange={(item) => onValueChange(item?.value ?? '')}
+        // Base UI clears the selection when Escape is pressed with the list closed. A
+        // lawyer presses Escape to close things, never to erase a choice, so ignore it.
+        onValueChange={(item, details) => {
+          if (details.reason !== 'escape-key') onValueChange(item?.value ?? '');
+        }}
         inputValue={query}
-        onInputValueChange={setQuery}
+        onInputValueChange={(next, details) => {
+          if (details.reason !== 'escape-key') setQuery(next);
+        }}
         itemToStringLabel={(item) => String(item.label)}
         itemToStringValue={(item) => item.value}
         filter={(item, needle) => matchesSearch(`${item.label} ${item.searchText ?? ''}`, needle)}
@@ -126,7 +132,10 @@ export function EntityMultiPicker({
         onOpenChange={setOpen}
         items={items}
         value={selected}
-        onValueChange={(items) => onValueChange(items.map((item) => item.value))}
+        // See EntityPicker: Escape must never remove the chosen clients.
+        onValueChange={(items, details) => {
+          if (details.reason !== 'escape-key') onValueChange(items.map((item) => item.value));
+        }}
         inputValue={query}
         onInputValueChange={setQuery}
         itemToStringLabel={(item) => String(item.label)}

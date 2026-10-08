@@ -118,8 +118,10 @@ pub fn run() {
             commands::finances::fee_agreement_save,
             commands::finances::payment_save,
             commands::finances::payment_list,
+            commands::finances::payment_delete,
             commands::finances::expense_save,
             commands::finances::expense_list,
+            commands::finances::expense_delete,
             commands::finances::finance_case_summary,
             commands::finances::finance_client_summary,
             commands::reminders::reminders_refresh

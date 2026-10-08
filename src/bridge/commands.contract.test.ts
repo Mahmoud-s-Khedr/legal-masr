@@ -485,6 +485,18 @@ const contracts = [
   ],
   ['expenseSave', 'expense_save', [{ input: expense }], () => bridge.expenseSave(expense)],
   [
+    'paymentDelete',
+    'payment_delete',
+    [{ id: 'payment-1' }],
+    () => bridge.paymentDelete('payment-1'),
+  ],
+  [
+    'expenseDelete',
+    'expense_delete',
+    [{ id: 'expense-1' }],
+    () => bridge.expenseDelete('expense-1'),
+  ],
+  [
     'expenseList',
     'expense_list',
     [
@@ -523,8 +535,8 @@ describe('canonical Tauri bridge payload contracts', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('covers every bridge method', () => {
-    expect(contracts).toHaveLength(70);
-    expect(Object.keys(bridge)).toHaveLength(70);
+    expect(contracts).toHaveLength(72);
+    expect(Object.keys(bridge)).toHaveLength(72);
   });
 
   it.each(contracts)(

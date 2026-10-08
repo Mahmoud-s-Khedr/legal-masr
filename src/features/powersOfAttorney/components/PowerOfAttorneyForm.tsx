@@ -22,7 +22,10 @@ const schema = z.object({
   issueDate: optionalDate,
   notaryOffice: z.string(),
   notes: z.string(),
-  clientIds: z.array(z.string()).refine((ids) => new Set(ids).size === ids.length),
+  clientIds: z
+    .array(z.string())
+    .min(1)
+    .refine((ids) => new Set(ids).size === ids.length),
   lawyers: z.array(
     z.object({
       id: z.string().optional(),
@@ -98,7 +101,7 @@ export function PowerOfAttorneyForm({
           </Field>
           <Field
             label={t('poa.fields.issueDate')}
-            error={formState.errors.issueDate ? t('forms.invalid') : undefined}
+            error={formState.errors.issueDate ? t('forms.invalidDate') : undefined}
           >
             <Controller
               control={control}
@@ -109,7 +112,12 @@ export function PowerOfAttorneyForm({
           <Field label={t('poa.fields.notaryOffice')}>
             <CreatableCombobox suggestion="notaryOffice" {...register('notaryOffice')} />
           </Field>
-          <Field label={t('poa.tabs.clients')}>
+          <Field
+            label={t('poa.tabs.clients')}
+            required
+            hint={t('poa.clientsHint')}
+            error={formState.errors.clientIds ? t('poa.clientsRequired') : undefined}
+          >
             <Controller
               control={control}
               name="clientIds"
@@ -124,6 +132,7 @@ export function PowerOfAttorneyForm({
                   }))}
                   value={field.value}
                   onValueChange={field.onChange}
+                  aria-invalid={!!formState.errors.clientIds}
                   placeholder={t('cases.form.clientSearch')}
                   loading={clients.isLoading}
                   error={clients.isError ? t('clients.loadError') : undefined}

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeTypedDate } from '@/components/forms/DatePicker';
 import type { CaseStatus } from '../../../bridge/types';
 
 export const CASE_STATUSES = [
@@ -8,31 +9,41 @@ export const CASE_STATUSES = [
 ] as const satisfies readonly CaseStatus[];
 export const LITIGATION_DEGREES = ['FIRST_INSTANCE', 'APPEAL', 'CASSATION', 'OTHER'] as const;
 
+const optionalDateOnly = z
+  .string()
+  .trim()
+  .transform((value) => value || undefined)
+  .optional()
+  .refine((value) => !value || normalizeTypedDate(value) === value, 'INVALID_DATE');
+
 const caseCoreObject = z.object({
   internalNumber: z.string().trim().min(1),
   officialNumber: z.string().trim().optional(),
-  // Gregorian case year, e.g. 2026 in «رقم 447 لسنة 2026».
-  officialYear: z.union([z.number().int().min(1800).max(9999), z.nan()]).optional(),
+  // Gregorian case year, e.g. 2026 in «رقم 447 لسنة 2026». Empty is undefined; anything
+  // typed that is not a year arrives as NaN (see parseYearInput) and is reported.
+  officialYear: z.number().int().min(1800).max(9999).optional(),
   // Court year, e.g. 89 in «رقم 1234 لسنة 89 قضائية». Not a calendar year.
-  judicialYear: z.union([z.number().int().min(1).max(9999), z.nan()]).optional(),
+  judicialYear: z.number().int().min(1).max(9999).optional(),
   courtName: z.string().trim().optional(),
   circuitName: z.string().trim().optional(),
   caseType: z.string().trim().optional(),
   litigationDegree: z.enum(LITIGATION_DEGREES).optional(),
   status: z.enum(CASE_STATUSES),
-  filedOn: z
-    .string()
-    .trim()
-    .transform((value) => value || undefined)
-    .optional(),
-  closedOn: z
-    .string()
-    .trim()
-    .transform((value) => value || undefined)
-    .optional(),
+  filedOn: optionalDateOnly,
+  closedOn: optionalDateOnly,
   subject: z.string().trim().optional(),
   notes: z.string().trim().optional(),
 });
+
+/** Reads a year field: digits in any script, empty as undefined, anything else as NaN. */
+export function parseYearInput(value: unknown): number | undefined {
+  if (typeof value === 'number') return value;
+  const text = String(value ?? '')
+    .trim()
+    .replace(/[٠-٩۰-۹]/g, (digit) => String(digit.charCodeAt(0) & 0xf));
+  if (!text) return undefined;
+  return /^\d+$/.test(text) ? Number(text) : Number.NaN;
+}
 
 const isYear = (value: number | undefined) => typeof value === 'number' && !Number.isNaN(value);
 
@@ -48,6 +59,8 @@ function requireNumberWithYear(values: z.infer<typeof caseCoreObject>, context: 
       path: ['officialNumber'],
       message: 'NUMBER_REQUIRED_WITH_YEAR',
     });
+  if (values.filedOn && values.closedOn && values.closedOn < values.filedOn)
+    context.addIssue({ code: 'custom', path: ['closedOn'], message: 'CLOSED_BEFORE_FILED' });
 }
 
 export const caseCoreSchema = caseCoreObject.superRefine(requireNumberWithYear);

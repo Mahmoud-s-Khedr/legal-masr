@@ -3637,6 +3637,17 @@
   }
 }
 @layer components {
+  .discard-confirm {
+    display: grid;
+    gap: 0.75rem;
+    margin-block: 0.5rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--gold);
+    border-radius: var(--radius-md);
+    background: var(--gold-soft);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
   .form-dialog .form-actions {
     position: sticky;
     bottom: -1rem;

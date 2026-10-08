@@ -67,7 +67,7 @@ it('shows the stored judicial year when a case is opened for editing', () => {
   renderWorkflow(
     <CaseEditForm caseDto={{ ...stored, judicialYear: 89 }} busy={false} onSubmit={vi.fn()} />,
   );
-  expect(screen.getByLabelText('السنة القضائية')).toHaveValue(89);
+  expect(screen.getByLabelText('السنة القضائية')).toHaveValue('89');
 });
 
 it.each(['0', '10000', '-3'])(
@@ -77,9 +77,9 @@ it.each(['0', '10000', '-3'])(
     const field = screen.getByLabelText('السنة القضائية');
     fireEvent.change(field, { target: { value: bad } });
     fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
-    expect(await screen.findByText('تحقق من القيمة المدخلة.')).toBeInTheDocument();
+    expect(await screen.findByText('اكتب السنة القضائية بالأرقام، مثل 89.')).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(field).toHaveValue(Number(bad));
+    expect(field).toHaveValue(bad);
   },
 );
 
@@ -87,7 +87,9 @@ it('still rejects a two-digit value in the Gregorian case year', async () => {
   const onSubmit = renderForm();
   fireEvent.change(screen.getByLabelText('سنة الدعوى'), { target: { value: '89' } });
   fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
-  expect(await screen.findByText('تحقق من القيمة المدخلة.')).toBeInTheDocument();
+  expect(
+    await screen.findByText('اكتب السنة الميلادية كاملة بالأرقام، مثل 2026.'),
+  ).toBeInTheDocument();
   expect(onSubmit).not.toHaveBeenCalled();
 });
 
@@ -100,7 +102,7 @@ it('asks for the case number when a year is entered without one, and keeps the d
 
   expect(await screen.findByText(i18n.t('cases.form.officialNumberRequired'))).toBeInTheDocument();
   expect(onSubmit).not.toHaveBeenCalled();
-  expect(screen.getByLabelText('السنة القضائية')).toHaveValue(89);
+  expect(screen.getByLabelText('السنة القضائية')).toHaveValue('89');
 
   fireEvent.change(number, { target: { value: '1234' } });
   fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
@@ -115,4 +117,55 @@ it('saves a case with neither a number nor a year', async () => {
   fireEvent.change(screen.getByLabelText('السنة القضائية'), { target: { value: '' } });
   fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
   await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+});
+
+it('reads a year typed with Arabic-Indic digits instead of silently dropping it', async () => {
+  const onSubmit = renderForm();
+  fireEvent.change(screen.getByLabelText('رقم الدعوى بالمحكمة'), { target: { value: '447' } });
+  fireEvent.change(screen.getByLabelText('سنة الدعوى'), { target: { value: '٢٠٢٦' } });
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
+  await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+  expect(onSubmit.mock.calls[0][0].officialYear).toBe(2026);
+});
+
+it('reports a year typed in letters instead of dropping it', async () => {
+  const onSubmit = renderForm();
+  fireEvent.change(screen.getByLabelText('سنة الدعوى'), { target: { value: 'ألفين' } });
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
+  expect(
+    await screen.findByText('اكتب السنة الميلادية كاملة بالأرقام، مثل 2026.'),
+  ).toBeInTheDocument();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+it('finishes a two-digit year when the date field is left, and saves it', async () => {
+  const onSubmit = renderForm();
+  const filed = screen.getByLabelText('تاريخ القيد');
+  fireEvent.change(filed, { target: { value: '3/1/26' } });
+  expect(filed).toHaveValue('3/1/26');
+  fireEvent.blur(filed);
+  expect(filed).toHaveValue('03/01/2026');
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
+  await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+  expect(onSubmit.mock.calls[0][0].filedOn).toBe('2026-01-03');
+});
+
+it('marks a date that is not a real date on the field itself', async () => {
+  const onSubmit = renderForm();
+  fireEvent.change(screen.getByLabelText('تاريخ القيد'), { target: { value: '31/2/2026' } });
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
+  expect(
+    await screen.findByText('اكتب التاريخ يومًا/شهرًا/سنة، مثل 15/11/2026.'),
+  ).toBeInTheDocument();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+it('refuses a closing date before the filing date', async () => {
+  const onSubmit = renderForm();
+  fireEvent.change(screen.getByLabelText('تاريخ الانتهاء'), { target: { value: '1/1/2026' } });
+  fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
+  expect(
+    await screen.findByText('تاريخ الانتهاء قبل تاريخ القيد؛ راجع التاريخين.'),
+  ).toBeInTheDocument();
+  expect(onSubmit).not.toHaveBeenCalled();
 });

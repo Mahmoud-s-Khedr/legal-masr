@@ -16,7 +16,13 @@ import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { useAddOpponent, useRemoveOpponent, useUpdateOpponent } from '../api/casesApi';
 
-export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
+export function CasePartiesPanel({
+  caseDto,
+  readOnly = false,
+}: {
+  caseDto: CaseDto;
+  readOnly?: boolean;
+}) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState<CaseOpponentDto | 'new' | null>(null);
   const [removing, setRemoving] = useState<CaseOpponentDto | null>(null);
@@ -27,14 +33,11 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
     <section className="detail-card">
       <div className="card-title">
         <h3>{t('cases.parties.title')}</h3>
-        <Button
-          type="button"
-          variant="secondary"
-
-          onClick={() => setEditing('new')}
-        >
-          {t('cases.parties.add')}
-        </Button>
+        {!readOnly && (
+          <Button type="button" variant="secondary" onClick={() => setEditing('new')}>
+            {t('cases.parties.add')}
+          </Button>
+        )}
       </div>
       {!caseDto.opponents.length ? (
         <p className="empty-compact">{t('cases.parties.empty')}</p>
@@ -51,7 +54,7 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
                       t('cases.parties.lawyerLine', { name: opponent.lawyerName }),
                   ]
                     .filter(Boolean)
-                    .join(' · ') || 'دون صفة مسجلة'}
+                    .join(' · ') || t('cases.parties.noRole')}
                   {opponent.phone && (
                     <>
                       {' · '}
@@ -60,24 +63,16 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
                   )}
                 </span>
               </div>
-              <div className="row-actions">
-                <Button
-                  type="button"
-                  variant="ghost"
-
-                  onClick={() => setEditing(opponent)}
-                >
-                  {t('records.edit')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-
-                  onClick={() => setRemoving(opponent)}
-                >
-                  {t('documents.remove')}
-                </Button>
-              </div>
+              {!readOnly && (
+                <div className="row-actions">
+                  <Button type="button" variant="ghost" onClick={() => setEditing(opponent)}>
+                    {t('records.edit')}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setRemoving(opponent)}>
+                    {t('documents.remove')}
+                  </Button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -190,7 +185,11 @@ function OpponentForm({
       })}
     >
       <FieldGroup>
-        <Field label={<>{t('cases.parties.name')}</>} required>
+        <Field
+          label={<>{t('cases.parties.name')}</>}
+          required
+          error={form.formState.errors.fullName ? t('forms.required') : undefined}
+        >
           <Input
             required
             autoFocus
@@ -244,11 +243,11 @@ function OpponentForm({
           />
         </Field>
         <FormDialogFooter>
-          <Button type="button" variant="secondary" onClick={onCancel}>
-            {t('common.cancel')}
-          </Button>
           <Button type="submit" disabled={busy}>
             {t('cases.parties.save')}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            {t('common.cancel')}
           </Button>
         </FormDialogFooter>
       </FieldGroup>

@@ -144,8 +144,10 @@ export const bridge = {
     invoke<FeeAgreementDto>('fee_agreement_save', { input }),
   paymentSave: (input: PaymentInput) => invoke<PaymentDto>('payment_save', { input }),
   paymentList: (input: PaymentListInput = {}) => invoke<PaymentDto[]>('payment_list', { input }),
+  paymentDelete: (id: string) => invoke<void>('payment_delete', { id }),
   expenseSave: (input: ExpenseInput) => invoke<ExpenseDto>('expense_save', { input }),
   expenseList: (input: ExpenseListInput = {}) => invoke<ExpenseDto[]>('expense_list', { input }),
+  expenseDelete: (id: string) => invoke<void>('expense_delete', { id }),
   financeCaseSummary: (id: string) => invoke<CaseFinanceSummary>('finance_case_summary', { id }),
   financeClientSummary: (id: string) =>
     invoke<ClientFinanceSummary>('finance_client_summary', { id }),

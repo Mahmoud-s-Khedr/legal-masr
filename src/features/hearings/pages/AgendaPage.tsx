@@ -24,7 +24,8 @@ import { Icon } from '../../../components/layout/Icon';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { useFormat, useLocalePresentation } from '../../../i18n/LocalePresentation';
 import { dateOnlyToLocalDate, localDateOnly } from '../../../lib/dateOnly';
-import { useCaseList } from '../../cases/api/casesApi';
+import { useCase, useCaseList } from '../../cases/api/casesApi';
+import { NoCasesYet } from '../../cases/components/NoCasesYet';
 import { caseOption } from '../../cases/components/caseOptions';
 import { useTaskList } from '../../tasks/api/tasksApi';
 import {
@@ -45,13 +46,38 @@ export function AgendaPage() {
   const { weekStartsOn, direction } = useLocalePresentation();
   const format = useFormat();
   const cases = useCaseList({ includeArchived: true });
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const requestedHearingId = params.get('hearing');
   const createIntent = params.get('create') === 'hearing';
   const [view, setView] = useState<'month' | 'week' | 'list'>('month');
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(params.get('date') ?? localDate());
-  const [editing, setEditing] = useState<HearingDto | 'new' | null>(createIntent ? 'new' : null);
+  const [editing, setEditing] = useState<HearingDto | 'new' | null>(null);
+  // «إضافة جلسة» links carry ?create=hearing. Treat it as a one-time request: open the
+  // form, then drop it from the address so the same link works again from this page.
+  const [createHandled, setCreateHandled] = useState(false);
+  if (createIntent && !createHandled) {
+    setCreateHandled(true);
+    setEditing('new');
+    const requestedDate = params.get('date');
+    if (requestedDate) {
+      setSelectedDate(requestedDate);
+      setCursor(dateOnlyToLocalDate(requestedDate));
+    }
+  } else if (!createIntent && createHandled) {
+    setCreateHandled(false);
+  }
+  useEffect(() => {
+    if (!createIntent) return;
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('create');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [createIntent, setParams]);
   const [removing, setRemoving] = useState<HearingDto | null>(null);
   const [dismissedUnavailableId, setDismissedUnavailableId] = useState<string | null>(null);
   const handledHearingId = useRef<string | null>(null);
@@ -596,45 +622,51 @@ export function HearingForm({
   });
 
   const cases = useCaseList({});
-  const caseId = useWatch({ control: form.control, name: 'caseId' });
-  const setCaseId = (value: string) =>
-    form.setValue('caseId', value, { shouldValidate: form.formState.isSubmitted });
-  const date = useWatch({ control: form.control, name: 'date' });
-  const setDate = (value: string) =>
-    form.setValue('date', value, { shouldValidate: form.formState.isSubmitted });
-  const time = useWatch({ control: form.control, name: 'time' });
-  const setTime = (value: string) =>
-    form.setValue('time', value, { shouldValidate: form.formState.isSubmitted });
-  const type = useWatch({ control: form.control, name: 'type' });
-  const setType = (value: string) =>
-    form.setValue('type', value, { shouldValidate: form.formState.isSubmitted });
-  const location = useWatch({ control: form.control, name: 'location' });
-  const setLocation = (value: string) =>
-    form.setValue('location', value, { shouldValidate: form.formState.isSubmitted });
-  const circuit = useWatch({ control: form.control, name: 'circuit' });
-  const setCircuit = (value: string) =>
-    form.setValue('circuit', value, { shouldValidate: form.formState.isSubmitted });
-  const requiredDocuments = useWatch({ control: form.control, name: 'requiredDocuments' });
-  const setRequiredDocuments = (value: string) =>
-    form.setValue('requiredDocuments', value, { shouldValidate: form.formState.isSubmitted });
-  const notes = useWatch({ control: form.control, name: 'notes' });
-  const setNotes = (value: string) =>
-    form.setValue('notes', value, { shouldValidate: form.formState.isSubmitted });
+  const errors = form.formState.errors;
+  const draft = useWatch({ control: form.control });
+  const bind = <K extends keyof z.infer<typeof hearingDraftSchema>>(name: K) => ({
+    value: draft[name] ?? '',
+    set: (value: string) =>
+      form.setValue(name, value as never, {
+        shouldDirty: true,
+        shouldValidate: form.formState.isSubmitted,
+      }),
+  });
+  const caseId = bind('caseId');
+  const date = bind('date');
+  const time = bind('time');
+  const type = bind('type');
+  const location = bind('location');
+  const circuit = bind('circuit');
+  const requiredDocuments = bind('requiredDocuments');
+  const notes = bind('notes');
+  // A new hearing usually sits where its case sits: offer the case's court and circuit.
+  const chosenCase = useCase(initial ? '' : caseId.value);
+  useEffect(() => {
+    if (initial || !chosenCase.data) return;
+    if (!form.getValues('location') && chosenCase.data.courtName)
+      form.setValue('location', chosenCase.data.courtName);
+    if (!form.getValues('circuit') && chosenCase.data.circuitName)
+      form.setValue('circuit', chosenCase.data.circuitName);
+  }, [chosenCase.data, form, initial]);
+
+  if (cases.isSuccess && !cases.data.length && !initial) return <NoCasesYet onCancel={onCancel} />;
+
   return (
     <DraftForm
       className="mt-4 grid gap-3.5"
-      onSubmit={form.handleSubmit(async () => {
+      onSubmit={form.handleSubmit(async (values) => {
         try {
           await onSave({
             id: initial?.id,
-            caseId,
-            hearingDate: date,
-            hearingTime: time || undefined,
-            hearingType: type || undefined,
-            location: location || undefined,
-            circuitName: circuit || undefined,
-            requiredDocuments: requiredDocuments || undefined,
-            notes: notes || undefined,
+            caseId: values.caseId,
+            hearingDate: values.date,
+            hearingTime: values.time || undefined,
+            hearingType: values.type || undefined,
+            location: values.location || undefined,
+            circuitName: values.circuit || undefined,
+            requiredDocuments: values.requiredDocuments || undefined,
+            notes: values.notes || undefined,
           });
         } catch {
           // The parent mutation exposes an in-dialog retry message.
@@ -645,117 +677,98 @@ export function HearingForm({
         <Field
           label={<>{t('agenda.fields.case')}</>}
           required
-          error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
+          error={errors.caseId ? t('forms.chooseCase') : undefined}
         >
           <EntityPicker
             emptyText={t('cases.noResults')}
             ref={(node) => form.register('caseId').ref(node)}
             required
-            value={caseId}
-            onValueChange={(value) => setCaseId(value ?? '')}
+            value={caseId.value}
+            onValueChange={(value) => caseId.set(value ?? '')}
             items={(cases.data ?? []).map(caseOption)}
             placeholder={t('agenda.fields.casePlaceholder')}
-            aria-invalid={!!form.formState.errors.caseId}
+            aria-invalid={!!errors.caseId}
           />
         </Field>
         <div className="settings-two-columns">
           <Field
             label={<>{t('agenda.fields.date')}</>}
             required
-            error={form.formState.errors.date ? t('forms.invalid') : undefined}
+            error={errors.date ? t('forms.invalidDate') : undefined}
           >
             <DatePicker
               required
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
+              value={date.value}
+              onChange={(event) => date.set(event.target.value)}
               ref={(node) => form.register('date').ref(node)}
-              aria-invalid={!!form.formState.errors.date}
+              aria-invalid={!!errors.date}
             />
           </Field>
           <Field
             label={<>{t('agenda.fields.time')}</>}
-            error={form.formState.errors.time ? t('forms.invalid') : undefined}
+            error={errors.time ? t('forms.invalidTime') : undefined}
           >
             <TimeField
-              value={time}
-              onChange={(event) => setTime(event.target.value)}
+              value={time.value}
+              onChange={(event) => time.set(event.target.value)}
               ref={(node) => form.register('time').ref(node)}
-              aria-invalid={!!form.formState.errors.time}
+              aria-invalid={!!errors.time}
             />
           </Field>
         </div>
         <div className="settings-two-columns">
-          <Field
-            label={<>{t('agenda.fields.type')}</>}
-            error={form.formState.errors.type ? t('forms.invalid') : undefined}
-          >
+          <Field label={<>{t('agenda.fields.type')}</>}>
             <CreatableCombobox
               suggestion="hearingType"
-              value={type}
-              onChange={(event) => setType(event.target.value)}
+              value={type.value}
+              onChange={(event) => type.set(event.target.value)}
               ref={(node) => form.register('type').ref(node)}
-              aria-invalid={!!form.formState.errors.type}
             />
           </Field>
-          <Field
-            label={<>{t('agenda.fields.location')}</>}
-            error={form.formState.errors.location ? t('forms.invalid') : undefined}
-          >
+          <Field label={<>{t('agenda.fields.location')}</>}>
             <CreatableCombobox
               suggestion="courtName"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
+              value={location.value}
+              onChange={(event) => location.set(event.target.value)}
               ref={(node) => form.register('location').ref(node)}
-              aria-invalid={!!form.formState.errors.location}
             />
           </Field>
         </div>
-        <Field
-          label={<>{t('agenda.fields.circuit')}</>}
-          error={form.formState.errors.circuit ? t('forms.invalid') : undefined}
-        >
+        <Field label={<>{t('agenda.fields.circuit')}</>}>
           <CreatableCombobox
             suggestion="circuitName"
-            value={circuit}
-            onChange={(event) => setCircuit(event.target.value)}
+            value={circuit.value}
+            onChange={(event) => circuit.set(event.target.value)}
             ref={(node) => form.register('circuit').ref(node)}
-            aria-invalid={!!form.formState.errors.circuit}
           />
         </Field>
-        <Field
-          label={<>{t('agenda.fields.requiredDocuments')}</>}
-          error={form.formState.errors.requiredDocuments ? t('forms.invalid') : undefined}
-        >
+        <Field label={<>{t('agenda.fields.requiredDocuments')}</>}>
           <Textarea
-            value={requiredDocuments}
-            onChange={(event) => setRequiredDocuments(event.target.value)}
+            value={requiredDocuments.value}
+            onChange={(event) => requiredDocuments.set(event.target.value)}
             ref={(node) => form.register('requiredDocuments').ref(node)}
-            aria-invalid={!!form.formState.errors.requiredDocuments}
           />
         </Field>
-        <Field
-          label={<>{t('common.notes')}</>}
-          error={form.formState.errors.notes ? t('forms.invalid') : undefined}
-        >
+        <Field label={<>{t('common.notes')}</>}>
           <Textarea
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
+            value={notes.value}
+            onChange={(event) => notes.set(event.target.value)}
             ref={(node) => form.register('notes').ref(node)}
-            aria-invalid={!!form.formState.errors.notes}
           />
         </Field>
         <FormDialogFooter>
-          <Button type="button" variant="secondary" onClick={onCancel}>
-            {t('common.cancel')}
-          </Button>
           <Button type="submit" disabled={busy}>
             {t('agenda.save')}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            {t('common.cancel')}
           </Button>
         </FormDialogFooter>
       </FieldGroup>
     </DraftForm>
   );
 }
+
 export function DecisionForm({
   hearing,
   busy,
@@ -772,29 +785,28 @@ export function DecisionForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const form = useForm<z.infer<typeof decisionDraftSchema>>({
     resolver: zodResolver(decisionDraftSchema),
     defaultValues: { decisionText: hearing.decisionText ?? '', nextDate: '' },
   });
-
   const decisionText = useWatch({ control: form.control, name: 'decisionText' });
-  const setDecisionText = (value: string) =>
-    form.setValue('decisionText', value, { shouldValidate: form.formState.isSubmitted });
   const nextDate = useWatch({ control: form.control, name: 'nextDate' });
-  const setNextDate = (value: string) =>
-    form.setValue('nextDate', value, { shouldValidate: form.formState.isSubmitted });
+  const set = (name: 'decisionText' | 'nextDate', value: string) =>
+    form.setValue(name, value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
+  const nextIsNotLater = Boolean(nextDate && nextDate <= hearing.hearingDate);
   return (
     <DraftForm
       className="mt-4 grid gap-3.5"
-      onSubmit={form.handleSubmit(async () => {
+      onSubmit={form.handleSubmit(async (values) => {
         try {
           await onSave({
             id: hearing.id,
-            decisionText: decisionText || undefined,
-            nextHearing: nextDate
+            decisionText: values.decisionText?.trim() || undefined,
+            nextHearing: values.nextDate
               ? {
                   caseId: hearing.caseId,
-                  hearingDate: nextDate,
+                  hearingDate: values.nextDate,
                   hearingTime: hearing.hearingTime ?? undefined,
                   hearingType: hearing.hearingType ?? undefined,
                   location: hearing.location ?? undefined,
@@ -811,36 +823,37 @@ export function DecisionForm({
       })}
     >
       <FieldGroup>
-        <Field
-          label={<>{t('agenda.fields.decisionText')}</>}
-          error={form.formState.errors.decisionText ? t('forms.invalid') : undefined}
-        >
+        <Field label={<>{t('agenda.fields.decisionText')}</>}>
           <Textarea
             autoFocus
             value={decisionText}
-            onChange={(event) => setDecisionText(event.target.value)}
+            onChange={(event) => set('decisionText', event.target.value)}
             ref={(node) => form.register('decisionText').ref(node)}
-            aria-invalid={!!form.formState.errors.decisionText}
           />
         </Field>
         <Field
           label={<>{t('agenda.fields.nextHearing')}</>}
-          error={form.formState.errors.nextDate ? t('forms.invalid') : undefined}
+          hint={
+            nextIsNotLater
+              ? t('agenda.nextHearingNotLater', { date: format.date(hearing.hearingDate) })
+              : undefined
+          }
+          error={form.formState.errors.nextDate ? t('forms.invalidDate') : undefined}
         >
           <DatePicker
             value={nextDate}
-            onChange={(event) => setNextDate(event.target.value)}
+            onChange={(event) => set('nextDate', event.target.value)}
             ref={(node) => form.register('nextDate').ref(node)}
             aria-invalid={!!form.formState.errors.nextDate}
           />
         </Field>
         <p className="muted">{t('agenda.nextHearingHint')}</p>
         <FormDialogFooter>
-          <Button type="button" variant="secondary" onClick={onCancel}>
-            {t('common.cancel')}
-          </Button>
           <Button type="submit" disabled={busy}>
             {t('agenda.recordDecision')}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            {t('common.cancel')}
           </Button>
         </FormDialogFooter>
       </FieldGroup>

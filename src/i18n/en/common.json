@@ -37,12 +37,13 @@
     "loadError": "Could not load the records. Please try again."
   },
   "datePicker": {
-    "placeholder": "YYYY-MM-DD",
+    "placeholder": "e.g. 15/11/2026",
     "inputTitle": "Type a date as DD/MM/YYYY, or pick it from the calendar",
     "openCalendar": "Open calendar",
     "chooseDate": "Choose date",
     "today": "Today",
-    "clear": "Clear"
+    "clear": "Clear",
+    "placeholderYearFirst": "e.g. 2026-11-15"
   },
   "common": {
     "cancel": "Cancel",
@@ -101,7 +102,8 @@
       "UPCOMING": "No upcoming tasks.",
       "COMPLETED": "No completed tasks in this view yet.",
       "ALL": "No tasks yet. Add your first follow-up for a case or client."
-    }
+    },
+    "deleteError": "Could not delete the task. Try again."
   },
   "agenda": {
     "kicker": "Daily work",
@@ -164,7 +166,10 @@
       "CANCELLED": "Cancelled"
     },
     "goToday": "Today",
-    "addOnDay": "Add a hearing on this day"
+    "addOnDay": "Add a hearing on this day",
+    "noCasesTitle": "There are no cases yet.",
+    "noCasesHint": "A hearing belongs to a case; add the case first, then come back to add the hearing.",
+    "nextHearingNotLater": "Note: this date is not after the current hearing ({{date}}). Check the year."
   },
   "gate": {
     "kicker": {
@@ -600,7 +605,11 @@
       "entryDate": "Date",
       "entryAmount": "Amount",
       "editEntryButton": "Edit entry",
-      "editData": "Edit details"
+      "editData": "Edit details",
+      "archiveTitle": "Archive case",
+      "archiveDescription": "The case leaves the usual lists and stays saved with its hearings, documents and account; it cannot be changed until you restore it.",
+      "archivedNotice": "This case is archived and read-only. Use «Restore» to edit it or add hearings, tasks and payments.",
+      "awaitingDecision": "Hearing awaiting its decision"
     },
     "clientsPanel": {
       "title": "Clients in this case",
@@ -625,7 +634,8 @@
       "removeDescription": "The opponent is removed from this case only; no other record is affected.",
       "removeError": "Could not remove the opponent. Please try again.",
       "lawyer": "Opponent's lawyer",
-      "save": "Save opponent"
+      "save": "Save opponent",
+      "noRole": "No role recorded"
     },
     "degrees": {
       "FIRST_INSTANCE": "First instance",
@@ -683,7 +693,18 @@
   "forms": {
     "required": "This field is required.",
     "invalid": "Check the value you entered.",
-    "notSpecified": "Not specified"
+    "notSpecified": "Not specified",
+    "discardTitle": "Discard what you typed?",
+    "discardDescription": "This form is not saved yet; closing it loses what you typed.",
+    "keepEditing": "Keep editing",
+    "discard": "Discard and close",
+    "invalidDate": "Type the date as day/month/year, e.g. 15/11/2026.",
+    "invalidTime": "Type the time like 9:30 am or 2:00 pm.",
+    "chooseCase": "Choose the case.",
+    "choosePayer": "Choose the paying client.",
+    "invalidYear": "Type the full Gregorian year in digits, e.g. 2026.",
+    "invalidJudicialYear": "Type the judicial year in digits, e.g. 89.",
+    "closedBeforeFiled": "The closing date is before the filing date; check both dates."
   },
   "records": {
     "archive": "Archive",
@@ -731,7 +752,8 @@
     "VAULT_NEWER_SCHEMA": "This workspace requires a newer version of Legal Masr.",
     "VAULT_INTERRUPTED": "An interrupted workspace operation needs recovery. Keep all workspace files and retry. Setup and unlock are disabled until recovery completes.",
     "CASE_CLIENT_HAS_PAYMENTS": "This client has case payments and cannot be removed.",
-    "CLIENT_ARCHIVED": "Archived clients cannot be added."
+    "CLIENT_ARCHIVED": "Archived clients cannot be added.",
+    "CASE_ARCHIVED": "The case is archived; restore it from the case file first to change it."
   },
   "finances": {
     "kicker": "Office",
@@ -795,7 +817,17 @@
       "OFFICE_SUPPLIES": "Office supplies",
       "EXPERT_FEE": "Expert fee",
       "OTHER": "Other"
-    }
+    },
+    "delete": "Delete entry",
+    "deleteTitle": {
+      "payment": "Delete payment",
+      "expense": "Delete expense"
+    },
+    "deleteDescription": {
+      "payment": "This payment is deleted for good and the received and outstanding amounts are recalculated. Only delete entries made by mistake.",
+      "expense": "This expense is deleted for good and the totals are recalculated. Only delete entries made by mistake."
+    },
+    "deleteError": "Could not delete the entry. Try again."
   },
   "documents": {
     "title": "Documents",
@@ -904,11 +936,15 @@
       "notaryOffice": "Notary office",
       "lawyerName": "Lawyer name",
       "barNumber": "Bar number"
-    }
+    },
+    "clientsRequired": "Choose at least one client who issued the power of attorney."
   },
   "table": {
     "pagination": "Record pages",
     "previous": "Previous",
     "next": "Next"
+  },
+  "timeField": {
+    "placeholder": "e.g. 9:30 am"
   }
 }

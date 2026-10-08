@@ -5,7 +5,7 @@ use crate::{
         AttachmentUpdateInput,
     },
     errors::Error,
-    repositories::document_repository,
+    repositories::{case_repository, document_repository},
     state::AppState,
 };
 use sha2::{Digest, Sha256};
@@ -229,6 +229,9 @@ pub fn add<R: Runtime>(
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
     validate_owners(&conn, &input)?;
+    if let Some(case_id) = &input.case_id {
+        case_repository::ensure_active(&conn, case_id)?;
+    }
     let root = root(app)?;
     let id = Uuid::new_v4().to_string();
     let extension = source
@@ -295,6 +298,9 @@ pub fn update<R: Runtime>(
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
     let mut attachment = document_repository::get(&conn, &input.id)?;
+    if let Some(case_id) = &attachment.case_id {
+        case_repository::ensure_active(&conn, case_id)?;
+    }
     attachment.category = input.category;
     attachment.description = clean(input.description);
     attachment.document_date = input.document_date;
@@ -343,6 +349,9 @@ pub fn remove<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Res
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
+    if let Some(case_id) = document_repository::get(&conn, id)?.case_id {
+        case_repository::ensure_active(&conn, &case_id)?;
+    }
     remove_managed_attachment_with(&NativeFiles, &conn, &root(app)?, id)
 }
 #[cfg(test)]

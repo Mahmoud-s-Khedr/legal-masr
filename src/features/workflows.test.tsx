@@ -173,7 +173,7 @@ const details = [
     restore: 'caseRestore',
     item: fixtures.caseItem,
     label: fixtures.caseItem.internalNumber,
-    confirm: null,
+    confirm: 'أرشفة القضية',
   },
   {
     Page: PowerOfAttorneyDetailPage,

@@ -91,12 +91,15 @@ export function AttachmentPanel({
   description,
   allowAdd = true,
   showOwner = false,
+  readOnly = false,
 }: {
   owner: AttachmentListInput;
   title?: string;
   description?: string;
   allowAdd?: boolean;
   showOwner?: boolean;
+  /** Open and show-in-folder stay available; edit and remove are hidden. */
+  readOnly?: boolean;
 }) {
   const format = useFormat();
   const { t } = useTranslation();
@@ -289,30 +292,34 @@ export function AttachmentPanel({
                 >
                   {t('documents.reveal')}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-label={t('documents.editAria', { name: attachment.originalFilename })}
-                  onClick={() => {
-                    setActionError(null);
-                    setEditingId(attachment.id);
-                    setCategory(attachment.category);
-                    setDescriptionValue(attachment.description ?? '');
-                    setDocumentDate(attachment.documentDate ?? '');
-                    setDialogOpen(true);
-                  }}
-                >
-                  {t('records.edit')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  type="button"
+                {!readOnly && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      aria-label={t('documents.editAria', { name: attachment.originalFilename })}
+                      onClick={() => {
+                        setActionError(null);
+                        setEditingId(attachment.id);
+                        setCategory(attachment.category);
+                        setDescriptionValue(attachment.description ?? '');
+                        setDocumentDate(attachment.documentDate ?? '');
+                        setDialogOpen(true);
+                      }}
+                    >
+                      {t('records.edit')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      type="button"
 
-                  aria-label={t('documents.removeAria', { name: attachment.originalFilename })}
-                  onClick={() => setRemoving(attachment)}
-                >
-                  {t('documents.remove')}
-                </Button>
+                      aria-label={t('documents.removeAria', { name: attachment.originalFilename })}
+                      onClick={() => setRemoving(attachment)}
+                    >
+                      {t('documents.remove')}
+                    </Button>
+                  </>
+                )}
               </div>
             </li>
           ))}
@@ -385,7 +392,7 @@ export function AttachmentPanel({
             </Field>
             <Field
               label={<>{t('documents.date')}</>}
-              error={form.formState.errors.documentDate ? t('forms.invalid') : undefined}
+              error={form.formState.errors.documentDate ? t('forms.invalidDate') : undefined}
             >
               <DatePicker
                 ref={(node) => form.register('documentDate').ref(node)}
