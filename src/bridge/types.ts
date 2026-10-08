@@ -1,4 +1,8 @@
-export type AppStatus = { initialized: boolean; unlocked: boolean };
+export type AppStatus = {
+  initialized: boolean;
+  unlocked: boolean;
+  vaultState: 'EMPTY' | 'LOCKED' | 'UNLOCKED' | 'INCOMPLETE' | 'INTERRUPTED';
+};
 export type AppDiagnostic = { kind: string; detail: string };
 export type AppError = {
   code: AppErrorCode;
@@ -13,6 +17,11 @@ export type AppErrorCode =
   | 'RECOVERY_KEY_INVALID'
   | 'BACKUP_CORRUPTED'
   | 'LEGACY_DATA_MIGRATION_REQUIRED'
+  | 'VAULT_INTERRUPTED'
+  | 'VAULT_MISSING'
+  | 'VAULT_INCOMPLETE'
+  | 'VAULT_CORRUPT'
+  | 'VAULT_NEWER_SCHEMA'
   | 'VALIDATION_FAILED'
   | 'CLIENT_NOT_FOUND'
   | 'CASE_NOT_FOUND'

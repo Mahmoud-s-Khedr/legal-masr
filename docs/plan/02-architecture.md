@@ -52,9 +52,8 @@ views after writes.
 
 ## Data and security boundary
 
-Every opened database connection enables foreign keys. Schema changes are
-the sole pre-release migration and migration `0001` is the canonical domain
-baseline. Legal dates remain `YYYY-MM-DD` text values; EGP amounts are integer
+Every opened database connection enables foreign keys. Schema changes require new immutable numbered migrations; migration `0001`
+remains the canonical domain baseline. Legal dates remain `YYYY-MM-DD` text values; EGP amounts are integer
 minor units. Multi-record writes use a database transaction. Managed-copy
 attachment operations add compensating cleanup for a failed copy or deletion.
 

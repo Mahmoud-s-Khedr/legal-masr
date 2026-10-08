@@ -199,7 +199,7 @@
       "recoveryKey": "This key is the only way to open your files if you forget your password."
     },
     "points": {
-      "encrypted": "Your files are encrypted with your password",
+      "encrypted": "Your database and backups are encrypted. Managed files remain plaintext.",
       "local": "They stay on your computer and are never uploaded",
       "backup": "Encrypted backups you control"
     },
@@ -399,7 +399,7 @@
       "networkValue": "Client and case data is never sent anywhere. There is no usage tracking and no cloud sync.",
       "manageBackups": "Manage backups",
       "documentsNoteTitle": "Protecting documents",
-      "documentsNote": "The database is encrypted with your password. Document files are protected by your computer account password and disk encryption (BitLocker or FileVault). Full backups are encrypted."
+      "documentsNote": "The database and full backups are encrypted. Managed document files are stored as plaintext. You can protect them with device access controls and disk encryption such as BitLocker or FileVault."
     },
     "backups": {
       "title": "Manual backup",
@@ -702,7 +702,12 @@
     "PAYMENT_NOT_FOUND": "This payment could not be found. It may have been deleted.",
     "EXPENSE_NOT_FOUND": "This expense could not be found. It may have been deleted.",
     "OPERATION_FAILED": "The action could not be completed. Your data is unchanged; please try again.",
-    "OPERATION_CANCELLED": "The action was cancelled."
+    "OPERATION_CANCELLED": "The action was cancelled.",
+    "VAULT_MISSING": "The workspace database is missing. Preserve the remaining files and restore a verified backup.",
+    "VAULT_INCOMPLETE": "Workspace files are incomplete. Preserve them and recover the workspace before continuing.",
+    "VAULT_CORRUPT": "The workspace database cannot be read safely. Preserve it and restore a verified backup.",
+    "VAULT_NEWER_SCHEMA": "This workspace requires a newer version of Legal Masr.",
+    "VAULT_INTERRUPTED": "An interrupted workspace operation needs recovery. Keep all workspace files and retry. Setup and unlock are disabled until recovery completes."
   },
   "finances": {
     "kicker": "Office",

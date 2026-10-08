@@ -1,5 +1,5 @@
 use crate::errors::Error;
-use rusqlite::Connection;
+use rusqlite::{Connection, OpenFlags};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -43,12 +43,89 @@ pub fn now() -> String {
         .unwrap_or_default()
 }
 
-pub fn open_db(path: &Path, master: &[u8; 32]) -> Result<Connection, Error> {
-    let db = Connection::open(path)?;
+/// Creation is an explicit setup/test operation. Reserve the filename without
+/// replacement before SQLite opens it; ordinary opens never have CREATE rights.
+pub fn create_db(path: &Path, master: &[u8; 32]) -> Result<Connection, Error> {
+    let file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)?;
+    drop(file);
+    match keyed_connection(path, master) {
+        Ok(db) => Ok(db),
+        Err(error) => {
+            let _ = fs::remove_file(path);
+            Err(error)
+        }
+    }
+}
+
+fn keyed_connection(path: &Path, master: &[u8; 32]) -> Result<Connection, Error> {
+    let db = Connection::open_with_flags(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )?;
     db.pragma_update(None, "key", format!("x'{}'", hex::encode(master)))?;
     db.busy_timeout(std::time::Duration::from_secs(10))?;
     db.execute_batch("PRAGMA cipher_memory_security = ON; PRAGMA foreign_keys = ON; SELECT count(*) FROM sqlite_master;")?;
     Ok(db)
+}
+
+/// Existing vault access must not turn missing or partial artifacts into a new
+/// workspace. Credentials are authenticated separately before this call.
+pub fn open_db(path: &Path, master: &[u8; 32]) -> Result<Connection, Error> {
+    match fs::metadata(path) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Err(Error::VaultMissing)
+        }
+        Err(error) => return Err(error.into()),
+        Ok(metadata) if !metadata.is_file() || metadata.len() == 0 => {
+            return Err(Error::VaultIncomplete)
+        }
+        Ok(_) => (),
+    }
+    let db = keyed_connection(path, master).map_err(|error| match error {
+        Error::Sql(rusqlite::Error::SqliteFailure(code, _))
+            if matches!(
+                code.code,
+                rusqlite::ErrorCode::DatabaseCorrupt | rusqlite::ErrorCode::NotADatabase
+            ) =>
+        {
+            Error::VaultCorrupt
+        }
+        other => other,
+    })?;
+    if !migration_is_applied(&db, 1) {
+        return if pre_reset_schema_exists(&db)? {
+            Err(Error::LegacyDataMigrationRequired)
+        } else {
+            Err(Error::VaultIncomplete)
+        };
+    }
+    if schema_version(&db) > latest_schema_version() {
+        return Err(Error::VaultNewerSchema);
+    }
+    Ok(db)
+}
+
+/// Include interrupted setup/security/restore files and SQLite sidecars. Empty
+/// directories made during setup are also artifacts: setup may never overwrite
+/// a prior attempt or stranded attachments. Logs are not vault contents.
+pub fn has_vault_artifacts(root: &Path) -> Result<bool, Error> {
+    for entry in fs::read_dir(root)? {
+        let name = entry?.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with("legalmaster.")
+            || name.starts_with("security.")
+            || name.starts_with("attachments")
+            || name == "Backups"
+            || name == "vault-operation.json"
+            || name == "EmergencySnapshots"
+        {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 pub fn schema_version(db: &Connection) -> i64 {
@@ -65,6 +142,9 @@ pub fn latest_schema_version() -> i64 {
 }
 
 pub fn migrate(db: &Connection) -> Result<(), Error> {
+    if schema_version(db) > latest_schema_version() {
+        return Err(Error::VaultNewerSchema);
+    }
     for (version, migration) in MIGRATIONS {
         if migration_is_applied(db, *version) {
             continue;
@@ -131,6 +211,118 @@ fn pre_reset_schema_exists(db: &Connection) -> Result<bool, Error> {
 mod tests {
     use super::*;
     use rusqlite::OptionalExtension;
+
+    #[test]
+    fn existing_open_never_creates_a_missing_database() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("legalmaster.sqlite");
+        assert!(matches!(open_db(&path, &[7; 32]), Err(Error::VaultMissing)));
+        assert!(!path.exists());
+    }
+
+    #[test]
+    fn explicit_creation_refuses_existing_contents() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("legalmaster.sqlite");
+        fs::write(&path, b"preserve stranded vault").unwrap();
+        assert!(create_db(&path, &[7; 32]).is_err());
+        assert_eq!(fs::read(path).unwrap(), b"preserve stranded vault");
+    }
+
+    #[test]
+    fn existing_open_rejects_empty_corrupt_legacy_and_newer_vaults() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("legalmaster.sqlite");
+        let master = [7; 32];
+        fs::write(&path, []).unwrap();
+        assert!(matches!(
+            open_db(&path, &master),
+            Err(Error::VaultIncomplete)
+        ));
+        fs::write(&path, b"not a database").unwrap();
+        assert!(matches!(open_db(&path, &master), Err(Error::VaultCorrupt)));
+        assert_eq!(fs::read(&path).unwrap(), b"not a database");
+        fs::remove_file(&path).unwrap();
+        {
+            let conn = create_db(&path, &master).unwrap();
+            conn.execute_batch("CREATE TABLE legacy_records (id TEXT)")
+                .unwrap();
+        }
+        assert!(matches!(
+            open_db(&path, &master),
+            Err(Error::LegacyDataMigrationRequired)
+        ));
+        fs::remove_file(&path).unwrap();
+        {
+            let conn = create_db(&path, &master).unwrap();
+            migrate(&conn).unwrap();
+            conn.execute("INSERT INTO schema_migrations VALUES (999, 'future')", [])
+                .unwrap();
+        }
+        let before = fs::read(&path).unwrap();
+        assert!(matches!(
+            open_db(&path, &master),
+            Err(Error::VaultNewerSchema)
+        ));
+        assert_eq!(fs::read(&path).unwrap(), before);
+    }
+
+    #[test]
+    fn creation_migration_and_existing_open_round_trip() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("legalmaster.sqlite");
+        let master = [7; 32];
+        {
+            let conn = create_db(&path, &master).unwrap();
+            migrate(&conn).unwrap();
+        }
+        let conn = open_db(&path, &master).unwrap();
+        assert_eq!(schema_version(&conn), latest_schema_version());
+        migrate(&conn).unwrap();
+    }
+
+    #[test]
+    fn setup_guard_includes_stranded_files_and_directories() {
+        let temp = tempfile::tempdir().unwrap();
+        assert!(!has_vault_artifacts(temp.path()).unwrap());
+        fs::create_dir(temp.path().join("logs")).unwrap();
+        assert!(!has_vault_artifacts(temp.path()).unwrap());
+        for name in [
+            "legalmaster.sqlite",
+            "legalmaster.sqlite-wal",
+            "legalmaster.tmp",
+            "security.json",
+            "security.previous",
+            "security.write-test.tmp",
+            "vault-operation.json",
+        ] {
+            let path = temp.path().join(name);
+            fs::write(&path, b"stranded artifact").unwrap();
+            assert!(has_vault_artifacts(temp.path()).unwrap(), "{name}");
+            fs::remove_file(path).unwrap();
+        }
+        for name in [
+            "attachments",
+            "attachments.restore.tmp",
+            "Backups",
+            "EmergencySnapshots",
+        ] {
+            let path = temp.path().join(name);
+            fs::create_dir(&path).unwrap();
+            assert!(has_vault_artifacts(temp.path()).unwrap(), "{name}");
+            fs::remove_dir(path).unwrap();
+        }
+    }
+
+    #[test]
+    fn migration_refuses_newer_version_without_changes() {
+        let conn = Connection::open_in_memory().unwrap();
+        migrate(&conn).unwrap();
+        conn.execute("INSERT INTO schema_migrations VALUES (999, 'future')", [])
+            .unwrap();
+        assert!(matches!(migrate(&conn), Err(Error::VaultNewerSchema)));
+        assert_eq!(schema_version(&conn), 999);
+    }
 
     #[test]
     fn migrations_create_foundation_tables_and_schema_version() {

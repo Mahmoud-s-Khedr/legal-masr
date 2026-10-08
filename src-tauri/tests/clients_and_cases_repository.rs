@@ -11,7 +11,7 @@ use uuid::Uuid;
 fn open_migrated_test_db() -> (tempfile::TempDir, Connection) {
     let dir = tempfile::tempdir().unwrap();
     let master = security::random_32();
-    let conn = db::open_db(&dir.path().join("legalmaster.sqlite"), &master).unwrap();
+    let conn = db::create_db(&dir.path().join("legalmaster.sqlite"), &master).unwrap();
     db::migrate(&conn).unwrap();
     (dir, conn)
 }

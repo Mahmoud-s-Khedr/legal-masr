@@ -4,22 +4,23 @@ use std::{
     path::PathBuf,
     sync::{Mutex, MutexGuard},
 };
+use zeroize::Zeroizing;
 
 #[derive(Default)]
 pub struct AppState {
-    pub master_key: Mutex<Option<[u8; 32]>>,
+    pub master_key: Mutex<Option<Zeroizing<[u8; 32]>>>,
     selected_document_sources: Mutex<HashMap<String, PathBuf>>,
     attachment_operations: Mutex<()>,
     security_operations: Mutex<()>,
 }
 
 impl AppState {
-    pub fn unlocked(&self) -> Result<[u8; 32], Error> {
+    pub fn unlocked(&self) -> Result<Zeroizing<[u8; 32]>, Error> {
         self.master_key
             .lock()
             .map_err(|_| Error::Locked)?
             .as_ref()
-            .copied()
+            .cloned()
             .ok_or(Error::Locked)
     }
 
@@ -83,7 +84,7 @@ mod tests {
     #[test]
     fn document_source_tokens_are_one_time_capabilities() {
         let state = AppState::default();
-        *state.master_key.lock().unwrap() = Some([7; 32]);
+        *state.master_key.lock().unwrap() = Some(zeroize::Zeroizing::new([7; 32]));
         let path = PathBuf::from("/selected-by-native-dialog.pdf");
         let token = state.store_document_source(path.clone()).unwrap();
         assert_eq!(state.take_document_source(&token).unwrap(), path);
@@ -94,7 +95,7 @@ mod tests {
     #[test]
     fn clearing_removes_unconsumed_document_source_tokens() {
         let state = AppState::default();
-        *state.master_key.lock().unwrap() = Some([7; 32]);
+        *state.master_key.lock().unwrap() = Some(zeroize::Zeroizing::new([7; 32]));
         let token = state
             .store_document_source(PathBuf::from("/selected-by-native-dialog.pdf"))
             .unwrap();
@@ -113,7 +114,7 @@ mod tests {
     #[test]
     fn locking_rejects_existing_tokens_and_late_picker_results() {
         let state = AppState::default();
-        *state.master_key.lock().unwrap() = Some([7; 32]);
+        *state.master_key.lock().unwrap() = Some(zeroize::Zeroizing::new([7; 32]));
         let token = state
             .store_document_source(PathBuf::from("fictional.pdf"))
             .unwrap();
@@ -122,7 +123,7 @@ mod tests {
         assert!(state
             .store_document_source(PathBuf::from("fictional.pdf"))
             .is_err());
-        *state.master_key.lock().unwrap() = Some([7; 32]);
+        *state.master_key.lock().unwrap() = Some(zeroize::Zeroizing::new([7; 32]));
         assert!(state.take_document_source(&token).is_err());
     }
 }

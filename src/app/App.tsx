@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { isPermissionGranted } from '@tauri-apps/plugin-notification';
+import { errorMessage } from '../bridge/errors';
 import { bridge } from '../bridge/commands';
 import { LanguageSwitcher } from '../components/layout/LanguageSwitcher';
 import { Shell } from '../components/layout/Shell';
@@ -96,7 +97,7 @@ function DemoDataSeeder() {
 
 function AppContent() {
   const { t } = useTranslation();
-  const { data: status, isLoading, isError, refetch } = useAppStatus();
+  const { data: status, isLoading, isError, error, refetch } = useAppStatus();
   const lockVault = useLockVault();
   const [manualGate, setManualGate] = useState<Gate | null>(null);
   const [recoveryKey, setRecoveryKey] = useState('');
@@ -141,10 +142,16 @@ function AppContent() {
   return (
     <>
       <LanguageSwitcher className="language-switcher-fixed" />
-      {isError ? (
+      {isError || status?.vaultState === 'INCOMPLETE' || status?.vaultState === 'INTERRUPTED' ? (
         <main className="gate loading" role="alert">
           <div>
-            <p>{t('app.startupError')}</p>
+            <p>
+              {status?.vaultState === 'INTERRUPTED'
+                ? t('errors.VAULT_INTERRUPTED')
+                : status?.vaultState === 'INCOMPLETE'
+                  ? t('errors.VAULT_INCOMPLETE')
+                  : errorMessage(error, t('app.startupError'))}
+            </p>
             <Button type="button" onClick={() => void refetch()}>
               {t('app.retry')}
             </Button>
@@ -156,6 +163,7 @@ function AppContent() {
         </main>
       ) : (
         <OnboardingPage
+          key={gate}
           subGate={gate}
           recoveryKey={recoveryKey}
           onSwitchToRecovery={() => setManualGate('recovery')}
@@ -166,7 +174,10 @@ function AppContent() {
           }}
           onUnlocked={() => setManualGate(null)}
           onRecovered={() => setManualGate(null)}
-          onRecoveryKeySaved={() => setManualGate(null)}
+          onRecoveryKeySaved={() => {
+            setRecoveryKey('');
+            setManualGate(null);
+          }}
         />
       )}
     </>

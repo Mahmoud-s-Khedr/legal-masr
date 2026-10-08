@@ -196,3 +196,30 @@ Every dependency requires:
 - Platform compatibility
 - Acceptable binary-size impact
 - Security review for privileged plugins
+
+## Vault lifecycle remediation — 2026-10-08
+
+Database creation uses a separate native `create_db` function that refuses an
+existing filename. All ordinary opens use SQLite flags without CREATE and refuse
+missing, empty, corrupt, legacy or newer-schema databases. Setup refuses existing
+database/security artifacts, managed-file directories, backup/snapshot directories
+and interrupted-operation artifacts. Status returns `vaultState` (`EMPTY`,
+`LOCKED`, `UNLOCKED`, `INCOMPLETE`, `INTERRUPTED`) alongside compatibility flags.
+Incomplete and interrupted states cannot show setup or unlock forms.
+
+Setup installs a flushed staged database/security pair through the same durable
+intent mechanism used by restore. See [07-backup-format.md](07-backup-format.md)
+for recovery and remaining platform limitations. Native session keys and owned
+worker key copies use `Zeroizing` buffers. Authentication command strings and
+initialization DTOs clear their owned buffers on drop; this is not a guarantee
+that a runtime/compiler created no transient copies. Password changes require an
+unlocked session and authenticate the current password before rewriting security.
+
+The renderer clears the recovery-key state after acknowledgment, resets successful
+authentication mutation observers and uses immediate garbage collection for
+unobserved auth mutations. Idle locking uses a 30-minute fallback on settings
+load failure, tracks scroll/wheel activity, and keeps a stable callback reference.
+The existing delayed-timer lifecycle-gap heuristic remains; replacing it with a
+native resume signal and reproducing target-device throttling are open tasks.
+Operation admission/session epochs and late-result cache protection remain open;
+commands have not been made asynchronous in this remediation slice.

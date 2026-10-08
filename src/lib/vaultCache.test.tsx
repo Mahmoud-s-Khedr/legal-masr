@@ -21,10 +21,18 @@ describe('active security gate observers', () => {
   it.each(['lock', 'restore'] as const)(
     '%s updates a mounted gate and drops all legal caches',
     async (action) => {
-      vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+      vi.mocked(bridge.status).mockResolvedValue({
+        initialized: true,
+        unlocked: true,
+        vaultState: 'UNLOCKED',
+      });
       vi.mocked(action === 'restore' ? bridge.restoreBackup : bridge.lock).mockImplementation(
         async () => {
-          vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: false });
+          vi.mocked(bridge.status).mockResolvedValue({
+            initialized: true,
+            unlocked: false,
+            vaultState: 'LOCKED',
+          });
         },
       );
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -39,6 +47,7 @@ describe('active security gate observers', () => {
         expect(client.getQueryData(queryKeys.appStatus)).toEqual({
           initialized: true,
           unlocked: false,
+          vaultState: 'LOCKED',
         }),
       );
       expect(await screen.findByText('مقفل')).toBeVisible();

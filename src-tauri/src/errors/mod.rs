@@ -30,6 +30,16 @@ pub enum Error {
     BackupInvalid,
     #[error("a populated legacy vault needs an explicit conversion")]
     LegacyDataMigrationRequired,
+    #[error("vault operation interrupted; recovery required")]
+    VaultInterrupted,
+    #[error("vault database missing")]
+    VaultMissing,
+    #[error("vault artifacts incomplete")]
+    VaultIncomplete,
+    #[error("vault database corrupt")]
+    VaultCorrupt,
+    #[error("vault requires a newer application")]
+    VaultNewerSchema,
     #[error("validation failed")]
     Validation,
     #[error("client not found")]
@@ -79,6 +89,11 @@ impl Error {
             Self::InvalidRecovery => "RECOVERY_KEY_INVALID",
             Self::BackupInvalid => "BACKUP_CORRUPTED",
             Self::LegacyDataMigrationRequired => "LEGACY_DATA_MIGRATION_REQUIRED",
+            Self::VaultInterrupted => "VAULT_INTERRUPTED",
+            Self::VaultMissing => "VAULT_MISSING",
+            Self::VaultIncomplete => "VAULT_INCOMPLETE",
+            Self::VaultCorrupt => "VAULT_CORRUPT",
+            Self::VaultNewerSchema => "VAULT_NEWER_SCHEMA",
             Self::Validation => "VALIDATION_FAILED",
             Self::ClientNotFound => "CLIENT_NOT_FOUND",
             Self::CaseNotFound => "CASE_NOT_FOUND",
@@ -110,6 +125,11 @@ impl Error {
             Self::LegacyDataMigrationRequired => {
                 "تحتوي قاعدة البيانات القديمة على سجلات وتحتاج إلى ترحيل مخصص قبل التحديث."
             }
+            Self::VaultInterrupted => "عملية مساحة العمل غير مكتملة وتحتاج إلى الاسترداد.",
+            Self::VaultMissing => "قاعدة بيانات مساحة العمل غير موجودة.",
+            Self::VaultIncomplete => "ملفات مساحة العمل غير مكتملة.",
+            Self::VaultCorrupt => "تعذر قراءة قاعدة بيانات مساحة العمل بأمان.",
+            Self::VaultNewerSchema => "تحتاج مساحة العمل إلى إصدار أحدث من التطبيق.",
             Self::Validation => "تحقق من البيانات المدخلة.",
             Self::ClientNotFound => "لم يتم العثور على الموكل.",
             Self::CaseNotFound => "لم يتم العثور على القضية.",

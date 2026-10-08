@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { asAppError } from '../../../bridge/errors';
 import { bridge } from '../../../bridge/commands';
 import { clearVaultCache } from '../../../lib/vaultCache';
 import { queryKeys } from '../../../lib/queryKeys';
@@ -24,6 +25,9 @@ export const useRestoreBackup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: bridge.restoreBackup,
+    onError: async (error) => {
+      if (asAppError(error)?.code === 'VAULT_INTERRUPTED') await clearVaultCache(queryClient);
+    },
     onSuccess: async () => {
       // Restore replaces the entire vault. Drop every record derived from the
       // previous vault before the locked gate can render again.

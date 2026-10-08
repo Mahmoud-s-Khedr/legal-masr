@@ -15,7 +15,7 @@ fn id() -> String {
 
 fn connection() -> (tempfile::TempDir, Connection) {
     let directory = tempfile::tempdir().unwrap();
-    let connection = db::open_db(
+    let connection = db::create_db(
         &directory.path().join("vault.sqlite"),
         &security::random_32(),
     )

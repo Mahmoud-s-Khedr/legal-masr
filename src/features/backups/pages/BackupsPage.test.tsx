@@ -38,7 +38,11 @@ describe('BackupSettingsPanel', () => {
     vi.mocked(bridge.createBackup).mockResolvedValue('backup-token');
     vi.mocked(bridge.validateBackup).mockResolvedValue(undefined);
     vi.mocked(bridge.restoreBackup).mockResolvedValue(undefined);
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: false });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: false,
+      vaultState: 'LOCKED',
+    });
   });
 
   it('shows a loading state while the latest backup record is requested', () => {
@@ -132,6 +136,7 @@ describe('BackupSettingsPanel', () => {
     expect(queryClient.getQueryData(queryKeys.appStatus)).toEqual({
       initialized: true,
       unlocked: false,
+      vaultState: 'LOCKED',
     });
   });
 

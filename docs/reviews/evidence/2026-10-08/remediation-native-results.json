@@ -1,0 +1,26 @@
+{
+  "platform": "linux",
+  "binarySha256": "d2540e7d5d18102b1bc16275a642a38d262d4cf80ededae7ee99052dfcdf7261",
+  "results": [
+    {
+      "scenario": "initialize-client-case-attachment-backup-restore",
+      "result": "passed"
+    },
+    {
+      "scenario": "wrong-password-refusal",
+      "result": "passed"
+    },
+    {
+      "scenario": "cancel-restore-preserves-active-data",
+      "result": "passed"
+    },
+    {
+      "scenario": "corrupt-restore-preserves-active-data",
+      "result": "passed"
+    },
+    {
+      "scenario": "restart-persistence",
+      "result": "passed"
+    }
+  ]
+}

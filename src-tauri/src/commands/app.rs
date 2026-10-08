@@ -5,6 +5,7 @@ use crate::{
     state::AppState,
 };
 use tauri::{AppHandle, State};
+use zeroize::Zeroizing;
 
 #[tauri::command]
 pub fn app_get_status(app: AppHandle, state: State<AppState>) -> Result<Status, Error> {
@@ -22,7 +23,7 @@ pub fn app_initialize(
 
 #[tauri::command]
 pub fn app_unlock(app: AppHandle, state: State<AppState>, password: String) -> Result<(), Error> {
-    app_service::unlock(&app, &state, &password)
+    app_service::unlock(&app, &state, &Zeroizing::new(password))
 }
 
 #[tauri::command]
@@ -37,7 +38,12 @@ pub fn app_change_password(
     current_password: String,
     new_password: String,
 ) -> Result<(), Error> {
-    app_service::change_password(&app, &state, &current_password, &new_password)
+    app_service::change_password(
+        &app,
+        &state,
+        &Zeroizing::new(current_password),
+        &Zeroizing::new(new_password),
+    )
 }
 
 #[tauri::command]
@@ -47,5 +53,10 @@ pub fn app_recover_access(
     recovery_key: String,
     new_password: String,
 ) -> Result<(), Error> {
-    app_service::recover_access(&app, &state, &recovery_key, &new_password)
+    app_service::recover_access(
+        &app,
+        &state,
+        &Zeroizing::new(recovery_key),
+        &Zeroizing::new(new_password),
+    )
 }

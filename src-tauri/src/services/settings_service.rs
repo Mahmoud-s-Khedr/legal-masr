@@ -124,7 +124,7 @@ mod contact_tests {
 
     fn unlocked_state() -> AppState {
         let state = AppState::default();
-        *state.master_key.lock().unwrap() = Some([7; 32]);
+        *state.master_key.lock().unwrap() = Some(zeroize::Zeroizing::new([7; 32]));
         state
     }
 

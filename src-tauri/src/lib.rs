@@ -11,6 +11,7 @@ pub mod repositories;
 pub mod security;
 pub mod services;
 pub mod state;
+pub mod vault_operation;
 
 use state::AppState;
 use tauri::Manager;
@@ -22,7 +23,16 @@ pub fn run() {
         eprintln!("DESKTOP_E2E_ISOLATION_REQUIRED");
         std::process::exit(2);
     }
-    let builder = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(not(feature = "desktop-e2e"))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _, _| {
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    }));
+    let builder = builder
         .manage(AppState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
@@ -32,9 +42,7 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_opener::init());
     #[cfg(not(feature = "desktop-e2e"))]
-    let builder = builder
-        .plugin(tauri_plugin_window_state::Builder::default().build())
-        .plugin(tauri_plugin_single_instance::init(|_, _, _| {}));
+    let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
     builder
         .setup(|app| {
             let data_dir = db::app_dir(app.handle())?;

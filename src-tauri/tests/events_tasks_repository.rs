@@ -2,7 +2,7 @@ use legalmaster_lib::{db, security};
 use rusqlite::Connection;
 fn conn() -> (tempfile::TempDir, Connection) {
     let dir = tempfile::tempdir().unwrap();
-    let c = db::open_db(&dir.path().join("vault.sqlite"), &security::random_32()).unwrap();
+    let c = db::create_db(&dir.path().join("vault.sqlite"), &security::random_32()).unwrap();
     db::migrate(&c).unwrap();
     (dir, c)
 }

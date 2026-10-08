@@ -1,4 +1,4 @@
-use crate::{db, errors::Error, security};
+use crate::{db, errors::Error, security, vault_operation};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use chacha20poly1305::{
     aead::{Aead, KeyInit},
@@ -41,7 +41,7 @@ fn consistent_database_snapshot(db_path: &Path, master: &[u8; 32]) -> Result<Vec
     let snapshot_path = db_path.with_extension(format!("backup-{}.tmp", uuid::Uuid::new_v4()));
     let result = (|| {
         let source = db::open_db(db_path, master)?;
-        let mut destination = db::open_db(&snapshot_path, master)?;
+        let mut destination = db::create_db(&snapshot_path, master)?;
         let backup = rusqlite::backup::Backup::new(&source, &mut destination)?;
         backup.run_to_completion(64, Duration::from_millis(2), None)?;
         drop(backup);
@@ -100,9 +100,10 @@ pub fn create(
     archive.start_file("checksums.json", SimpleFileOptions::default())?;
     archive.write_all(&serde_json::to_vec(&checksums)?)?;
     let plaintext = archive.finish()?.into_inner();
-    let key = security::backup_key(master);
+    let key = zeroize::Zeroizing::new(security::backup_key(master));
     let nonce = security::random_32();
-    let cipher = XChaCha20Poly1305::new_from_slice(&key).map_err(|_| Error::BackupInvalid)?;
+    let cipher =
+        XChaCha20Poly1305::new_from_slice(key.as_slice()).map_err(|_| Error::BackupInvalid)?;
     let ciphertext = cipher
         .encrypt(XNonce::from_slice(&nonce[..24]), plaintext.as_ref())
         .map_err(|_| Error::BackupInvalid)?;
@@ -133,7 +134,7 @@ fn decrypt(path: &str, master: &[u8; 32]) -> Result<Vec<u8>, Error> {
     if payload.version != 1 {
         return Err(Error::BackupInvalid);
     }
-    let key = security::backup_key(master);
+    let key = zeroize::Zeroizing::new(security::backup_key(master));
     let nonce = STANDARD
         .decode(payload.nonce)
         .map_err(|_| Error::BackupInvalid)?;
@@ -143,7 +144,7 @@ fn decrypt(path: &str, master: &[u8; 32]) -> Result<Vec<u8>, Error> {
     if nonce.len() != 24 {
         return Err(Error::BackupInvalid);
     }
-    XChaCha20Poly1305::new_from_slice(&key)
+    XChaCha20Poly1305::new_from_slice(key.as_slice())
         .map_err(|_| Error::BackupInvalid)?
         .decrypt(XNonce::from_slice(&nonce), ciphertext.as_ref())
         .map_err(|_| Error::BackupInvalid)
@@ -283,6 +284,7 @@ pub fn restore(
             let target = documents_staging.join(relative);
             let mut output = fs::File::create(target)?;
             std::io::copy(&mut entry, &mut output)?;
+            output.sync_all()?;
         }
         fs::write(&staging, db_bytes)?;
         let restored = db::open_db(&staging, master).map_err(|_| Error::BackupInvalid)?;
@@ -301,40 +303,11 @@ pub fn restore(
                 }
             })?;
         drop(restored);
-        let restore_id = time::OffsetDateTime::now_utc().unix_timestamp_nanos();
-        let emergency = active_db.with_extension(format!("pre-restore-{restore_id}.bak"));
-        let documents_emergency = documents_root.with_extension("pre-restore");
-        if documents_emergency.exists() {
-            fs::remove_dir_all(&documents_emergency)?;
-        }
-        fs::rename(active_db, &emergency)?;
-        if documents_root.exists() {
-            if let Err(error) = fs::rename(documents_root, &documents_emergency) {
-                let _ = fs::rename(&emergency, active_db);
-                return Err(error.into());
-            }
-        }
-        if let Err(error) = fs::rename(&documents_staging, documents_root) {
-            if documents_emergency.exists() {
-                let _ = fs::rename(&documents_emergency, documents_root);
-            }
-            let _ = fs::rename(&emergency, active_db);
-            return Err(error.into());
-        }
-        if let Err(error) = fs::rename(&staging, active_db) {
-            let _ = fs::remove_dir_all(documents_root);
-            if documents_emergency.exists() {
-                let _ = fs::rename(&documents_emergency, documents_root);
-            }
-            let _ = fs::rename(&emergency, active_db);
-            return Err(error.into());
-        }
-        if documents_emergency.exists() {
-            let _ = fs::remove_dir_all(documents_emergency);
-        }
+        vault_operation::sync_file(&staging)?;
+        vault_operation::install_restore(active_db, documents_root)?;
         Ok(())
     })();
-    if result.is_err() {
+    if result.is_err() && !vault_operation::pending(active_db.parent().ok_or(Error::Operation)?) {
         let _ = fs::remove_dir_all(&documents_staging);
         let _ = fs::remove_file(&staging);
     }
@@ -347,7 +320,7 @@ mod tests {
     use rusqlite::params;
 
     fn migrated_database(path: &Path, master: &[u8; 32], client_number: &str) {
-        let connection = db::open_db(path, master).unwrap();
+        let connection = db::create_db(path, master).unwrap();
         db::migrate(&connection).unwrap();
         connection
             .execute(
@@ -400,8 +373,8 @@ mod tests {
             .unwrap();
         let plaintext = archive.finish().unwrap().into_inner();
         let nonce = security::random_32();
-        let key = security::backup_key(master);
-        let ciphertext = XChaCha20Poly1305::new_from_slice(&key)
+        let key = zeroize::Zeroizing::new(security::backup_key(master));
+        let ciphertext = XChaCha20Poly1305::new_from_slice(key.as_slice())
             .unwrap()
             .encrypt(XNonce::from_slice(&nonce[..24]), plaintext.as_ref())
             .unwrap();
@@ -423,8 +396,8 @@ mod tests {
         }
         let plaintext = archive.finish().unwrap().into_inner();
         let nonce = security::random_32();
-        let key = security::backup_key(master);
-        let ciphertext = XChaCha20Poly1305::new_from_slice(&key)
+        let key = zeroize::Zeroizing::new(security::backup_key(master));
+        let ciphertext = XChaCha20Poly1305::new_from_slice(key.as_slice())
             .unwrap()
             .encrypt(XNonce::from_slice(&nonce[..24]), plaintext.as_ref())
             .unwrap();
@@ -500,8 +473,8 @@ mod tests {
         archive.extend_from_slice(&0_u16.to_le_bytes());
 
         let nonce = security::random_32();
-        let key = security::backup_key(master);
-        let ciphertext = XChaCha20Poly1305::new_from_slice(&key)
+        let key = zeroize::Zeroizing::new(security::backup_key(master));
+        let ciphertext = XChaCha20Poly1305::new_from_slice(key.as_slice())
             .unwrap()
             .encrypt(XNonce::from_slice(&nonce[..24]), archive.as_ref())
             .unwrap();
@@ -569,6 +542,30 @@ mod tests {
             b"durable copy"
         );
         assert!(!active_attachments.join("old.pdf").exists());
+        drop(connection);
+        let snapshots = temp.path().join("EmergencySnapshots");
+        let snapshot = fs::read_dir(&snapshots)
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .path();
+        assert_eq!(
+            fs::read(snapshot.join("attachments/old.pdf")).unwrap(),
+            b"old"
+        );
+        let old = db::open_db(&snapshot.join("database.sqlite"), &master).unwrap();
+        let previous: String = old
+            .query_row("SELECT internal_number FROM clients", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(previous, "CL-OLD");
+        drop(old);
+        restore(&active, &master, &backup, &active_attachments).unwrap();
+        assert_eq!(fs::read_dir(snapshots).unwrap().count(), 2);
+        assert_eq!(
+            fs::read(snapshot.join("attachments/old.pdf")).unwrap(),
+            b"old"
+        );
     }
 
     #[test]

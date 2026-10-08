@@ -33,7 +33,11 @@ describe('application gate', () => {
     // this file; without clearing it, cached data from one test (e.g. an
     // "unlocked" app-status) leaks into the next test's fresh render.
     queryClient.clear();
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: false, unlocked: false });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: false,
+      unlocked: false,
+      vaultState: 'EMPTY',
+    });
     vi.mocked(bridge.settings).mockRejectedValue({
       code: 'APP_LOCKED',
       message: 'التطبيق مقفل.',
@@ -65,6 +69,25 @@ describe('application gate', () => {
     expect(bridge.status).toHaveBeenCalledTimes(2);
   });
 
+  it.each(['INCOMPLETE', 'INTERRUPTED'] as const)(
+    'blocks setup and unlock for a %s workspace',
+    async (vaultState) => {
+      vi.mocked(bridge.status).mockResolvedValue({
+        initialized: true,
+        unlocked: false,
+        vaultState,
+      });
+      render(<App />);
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        i18n.t(`errors.VAULT_${vaultState}`),
+      );
+      expect(screen.queryByLabelText('اسم المحامي')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('كلمة المرور')).not.toBeInTheDocument();
+      expect(bridge.initialize).not.toHaveBeenCalled();
+      expect(bridge.unlock).not.toHaveBeenCalled();
+    },
+  );
+
   it('displays the recovery key returned by vault initialization', async () => {
     vi.mocked(bridge.initialize).mockResolvedValue({ recoveryKey: 'test-recovery-key' });
     render(<App />);
@@ -84,13 +107,21 @@ describe('application gate', () => {
   });
 
   it('shows the lock form for an initialized vault', async () => {
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: false });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: false,
+      vaultState: 'LOCKED',
+    });
     render(<App />);
     expect(await screen.findByRole('heading', { name: 'افتح ليجال مصر' })).toBeInTheDocument();
   });
 
   it('goes straight to the dashboard once unlocked, with no backup gate', async () => {
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: true,
+      vaultState: 'UNLOCKED',
+    });
     vi.mocked(bridge.settings).mockResolvedValue({
       language: 'ar',
       theme: 'system',
@@ -122,7 +153,11 @@ describe('application gate', () => {
   });
 
   it('removes cached legal records from the renderer when the vault locks', async () => {
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: true,
+      vaultState: 'UNLOCKED',
+    });
     vi.mocked(bridge.settings).mockResolvedValue({
       language: 'ar',
       theme: 'system',
@@ -143,7 +178,11 @@ describe('application gate', () => {
       },
     ]);
     vi.mocked(bridge.lock).mockImplementation(async () => {
-      vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: false });
+      vi.mocked(bridge.status).mockResolvedValue({
+        initialized: true,
+        unlocked: false,
+        vaultState: 'LOCKED',
+      });
     });
 
     render(<App />);
@@ -161,7 +200,11 @@ describe('application gate', () => {
   });
 
   it('renders compact local record tables when summaries are available', async () => {
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: true,
+      vaultState: 'UNLOCKED',
+    });
     vi.mocked(bridge.settings).mockResolvedValue({
       language: 'ar',
       theme: 'system',
@@ -201,7 +244,11 @@ describe('application gate', () => {
   });
 
   it('keeps dashboard empty states compact when local record lists are empty', async () => {
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: true,
+      vaultState: 'UNLOCKED',
+    });
     vi.mocked(bridge.settings).mockResolvedValue({
       language: 'ar',
       theme: 'system',
@@ -229,7 +276,11 @@ describe('application gate', () => {
   });
 
   it('restores the saved interface language after the vault is unlocked', async () => {
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: true,
+      vaultState: 'UNLOCKED',
+    });
     vi.mocked(bridge.settings).mockResolvedValue({
       language: 'en',
       theme: 'system',
@@ -247,7 +298,11 @@ describe('application gate', () => {
   });
 
   it('never calls settings_get while the vault is locked', async () => {
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: false });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: false,
+      vaultState: 'LOCKED',
+    });
     render(<App />);
     // settings_get requires an unlocked vault; calling it while locked used to
     // permanently poison the query cache (retry is disabled) with no later
@@ -259,7 +314,11 @@ describe('application gate', () => {
 });
 
 it('keeps the unlocked gate and records when the native lock fails', async () => {
-  vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+  vi.mocked(bridge.status).mockResolvedValue({
+    initialized: true,
+    unlocked: true,
+    vaultState: 'UNLOCKED',
+  });
   vi.mocked(bridge.settings).mockResolvedValue({
     language: 'ar',
     theme: 'light',

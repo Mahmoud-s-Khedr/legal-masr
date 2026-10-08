@@ -223,7 +223,11 @@ export async function captureInvoke<T>(command: string): Promise<T> {
     upcomingHearings: [{ ...hearing, id: 'demo-upcoming-hearing', hearingDate: '2026-10-10' }],
   };
   const values: Record<string, unknown> = {
-    app_get_status: { initialized: true, unlocked: true } satisfies AppStatus,
+    app_get_status: {
+      initialized: true,
+      unlocked: true,
+      vaultState: 'UNLOCKED',
+    } satisfies AppStatus,
     settings_get: settings(),
     profile_get: profile,
     client_list: [clientSummary],

@@ -3,7 +3,7 @@ use rusqlite::Connection;
 fn db_conn() -> (tempfile::TempDir, Connection) {
     let dir = tempfile::tempdir().unwrap();
     let master = security::random_32();
-    let conn = db::open_db(&dir.path().join("vault.sqlite"), &master).unwrap();
+    let conn = db::create_db(&dir.path().join("vault.sqlite"), &master).unwrap();
     db::migrate(&conn).unwrap();
     (dir, conn)
 }

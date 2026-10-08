@@ -74,15 +74,23 @@ fn choose_backup<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, E
 
 pub fn validate<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<(), Error> {
     let path = choose_backup(app)?;
-    backup::validate(&path.to_string_lossy(), &state.unlocked()?)
+    let master = state.unlocked()?;
+    backup::validate(&path.to_string_lossy(), &master)
 }
 
 pub fn restore<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<(), Error> {
     let master = state.unlocked()?;
     let _attachment_guard = state.lock_attachment_operations()?;
-    let (_, active_db) = db::paths(app)?;
+    let (security_path, active_db) = db::paths(app)?;
+    crate::security::read_security(&security_path)?;
     let path = choose_backup(app)?;
     let documents = db::app_dir(app)?.join("attachments");
-    backup::restore(&active_db, &master, &path.to_string_lossy(), &documents)?;
+    if let Err(error) = backup::restore(&active_db, &master, &path.to_string_lossy(), &documents) {
+        if crate::vault_operation::pending(&db::app_dir(app)?) {
+            app_service::lock(state)?;
+            return Err(Error::VaultInterrupted);
+        }
+        return Err(error);
+    }
     app_service::lock(state)
 }

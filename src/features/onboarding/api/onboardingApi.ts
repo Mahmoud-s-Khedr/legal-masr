@@ -12,6 +12,7 @@ export const useAppStatus = () =>
 export function useInitializeVault() {
   const queryClient = useQueryClient();
   return useMutation({
+    gcTime: 0,
     mutationFn: (input: InitializeInput) => bridge.initialize(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: APP_STATUS_QUERY_KEY }),
   });
@@ -20,6 +21,7 @@ export function useInitializeVault() {
 export function useUnlockVault() {
   const queryClient = useQueryClient();
   return useMutation({
+    gcTime: 0,
     mutationFn: (password: string) => bridge.unlock(password),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: APP_STATUS_QUERY_KEY }),
   });
@@ -28,6 +30,7 @@ export function useUnlockVault() {
 export function useRecoverAccess() {
   const queryClient = useQueryClient();
   return useMutation({
+    gcTime: 0,
     mutationFn: ({ recoveryKey, newPassword }: { recoveryKey: string; newPassword: string }) =>
       bridge.recover(recoveryKey, newPassword),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: APP_STATUS_QUERY_KEY }),
@@ -37,6 +40,7 @@ export function useRecoverAccess() {
 export function useLockVault() {
   const queryClient = useQueryClient();
   return useMutation({
+    gcTime: 0,
     mutationFn: () => bridge.lock(),
     onSuccess: async () => {
       // A lock must also remove record data that was already delivered to the

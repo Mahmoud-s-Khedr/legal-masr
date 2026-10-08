@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Link, NavLink } from 'react-router-dom';
 import { AppRoutes, NAV_GROUPS } from '../../app/router';
@@ -15,7 +15,11 @@ import { shouldLockForLifecycleGap } from '../../lib/lifecycleLock';
 export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
-  const lockTimeoutMinutes = settings?.lockTimeoutMinutes;
+  const lockTimeoutMinutes = settings?.lockTimeoutMinutes ?? 30;
+  const onLockRef = useRef(onLock);
+  useEffect(() => {
+    onLockRef.current = onLock;
+  }, [onLock]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchPaletteOpen, setSearchPaletteOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,7 +31,7 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
     let lockingForLifecycleGap = false;
     const reset = () => {
       clearTimeout(timer);
-      timer = setTimeout(onLock, lockTimeoutMinutes * 60_000);
+      timer = setTimeout(() => void onLockRef.current(), lockTimeoutMinutes * 60_000);
     };
     const detectLifecycleGap = () => {
       const now = Date.now();
@@ -35,21 +39,25 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
       lifecycleCheckAt = now;
       if (!shouldLock || lockingForLifecycleGap) return;
       lockingForLifecycleGap = true;
-      void Promise.resolve(onLock()).finally(() => {
+      void Promise.resolve(onLockRef.current()).finally(() => {
         lockingForLifecycleGap = false;
       });
     };
     reset();
     window.addEventListener('pointerdown', reset);
     window.addEventListener('keydown', reset);
+    window.addEventListener('wheel', reset, { passive: true });
+    window.addEventListener('scroll', reset, { passive: true, capture: true });
     const lifecycleInterval = window.setInterval(detectLifecycleGap, 1_000);
     return () => {
       clearTimeout(timer);
       window.clearInterval(lifecycleInterval);
       window.removeEventListener('pointerdown', reset);
       window.removeEventListener('keydown', reset);
+      window.removeEventListener('wheel', reset);
+      window.removeEventListener('scroll', reset, true);
     };
-  }, [lockTimeoutMinutes, onLock]);
+  }, [lockTimeoutMinutes]);
 
   useEffect(() => {
     const openSearchPalette = (event: KeyboardEvent) => {

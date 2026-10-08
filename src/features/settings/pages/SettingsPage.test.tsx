@@ -48,7 +48,11 @@ function renderSettingsPage(route = '/settings') {
 describe('SettingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(bridge.status).mockResolvedValue({ initialized: true, unlocked: true });
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: true,
+      vaultState: 'UNLOCKED',
+    });
     vi.mocked(bridge.profile).mockResolvedValue({
       fullName: 'أحمد علي',
       barNumber: null,

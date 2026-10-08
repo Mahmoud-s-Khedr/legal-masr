@@ -1,9 +1,21 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Status {
     pub initialized: bool,
     pub unlocked: bool,
+    pub vault_state: VaultState,
+}
+
+#[derive(Serialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum VaultState {
+    Empty,
+    Locked,
+    Unlocked,
+    Incomplete,
+    Interrupted,
 }
 
 #[derive(Serialize)]
@@ -29,7 +41,7 @@ mod tests {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, zeroize::Zeroize, zeroize::ZeroizeOnDrop)]
 #[serde(rename_all = "camelCase")]
 pub struct InitializeInput {
     pub password: String,

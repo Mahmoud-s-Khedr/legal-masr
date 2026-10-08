@@ -43,11 +43,26 @@ attachments into a staging directory, writes the database to a staging file,
 opens it with SQLCipher, rejects newer schemas, applies compatible migrations,
 and runs SQLite integrity_check.
 
-Only then does it replace the live database and attachment directory. It
-renames the active database to a pre-restore emergency file, swaps staged
-attachments/database, and rolls back the live files if either replacement
-fails. A corrupt restore therefore leaves the active vault and attachments
-unchanged.
+Only after validation does the replacement operation flush its staged database,
+attachment files and (on Unix) directory entries, then write and flush an
+immutable `vault-operation.json` intent. It moves the previous database and
+attachment directory into a unique `EmergencySnapshots/<operation-id>/`
+directory together with a copy of the current `security.json`. These snapshots
+are retained; later restores never reuse or prune earlier generations.
+
+Replacement is idempotent and rolls forward after interruption. Startup status,
+unlock and recovery finish a valid pending operation before accessing the vault.
+A blocked rename retains the intent, old generation and remaining staged data;
+startup reports `INTERRUPTED` and disables setup/unlock if recovery cannot
+complete. Corrupt archives fail before replacement and leave the active vault
+unchanged. Windows directory durability and actual sharing violations still
+require physical-device evidence; file contents are flushed on every platform.
+The instrumentation tests simulate failure after each transition, not OS process
+kills or power loss.
+
+Emergency-snapshot selection, authenticated restore/export and confirmed deletion
+are not yet exposed in the UI. Do not treat snapshot retention alone as completion
+of the recovery workflow.
 
 Attachment mutations are serialized with backup and restore, so the archive
 cannot pair a database snapshot with a different attachment-directory state.

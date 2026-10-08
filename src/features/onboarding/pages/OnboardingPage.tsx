@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { forwardRef, type InputHTMLAttributes, useState } from 'react';
+import { forwardRef, type InputHTMLAttributes, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../../../bridge/errors';
@@ -46,6 +46,14 @@ export function OnboardingPage({
   const unlockVault = useUnlockVault();
   const recoverAccess = useRecoverAccess();
   const [keySaved, setKeySaved] = useState(false);
+  const resetInitialize = initializeVault.reset;
+  const resetUnlock = unlockVault.reset;
+  const resetRecovery = recoverAccess.reset;
+  useEffect(() => {
+    resetInitialize();
+    resetUnlock();
+    resetRecovery();
+  }, [subGate, resetInitialize, resetUnlock, resetRecovery]);
 
   const busy = initializeVault.isPending || unlockVault.isPending || recoverAccess.isPending;
   const error =
@@ -112,6 +120,7 @@ export function OnboardingPage({
                 language: i18n.language === 'en' ? 'en' : 'ar',
               });
               onSetupSucceeded(result.recoveryKey);
+              initializeVault.reset();
             }}
           />
         ) : subGate === 'unlock' ? (
@@ -119,6 +128,7 @@ export function OnboardingPage({
             busy={busy}
             onSubmit={async (values) => {
               await unlockVault.mutateAsync(values.password);
+              unlockVault.reset();
               onUnlocked();
             }}
           />
@@ -130,6 +140,7 @@ export function OnboardingPage({
                 recoveryKey: values.recoveryKey,
                 newPassword: values.password,
               });
+              recoverAccess.reset();
               onRecovered();
             }}
           />

@@ -11,7 +11,7 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
 
     let master = security::random_32();
     {
-        let conn = db::open_db(&db_path, &master).unwrap();
+        let conn = db::create_db(&db_path, &master).unwrap();
         db::migrate(&conn).unwrap();
         conn.execute(
             "INSERT INTO spike_records (id, value, created_at) VALUES (lower(hex(randomblob(16))), ?1, ?2)",

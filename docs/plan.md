@@ -40,3 +40,13 @@ validation remain release risks. The authoritative correction decision record
 is [finalized-domain-correction-plan.md](finalized-domain-correction-plan.md);
 its evidence and risks are recorded in
 [finalized-domain-phase-7-report.md](finalized-domain-phase-7-report.md).
+
+## Pre-launch remediation — 2026-10-08
+
+The current review remains **do not launch**. The complete issue/coverage
+inventory is tracked in the [remediation register](reviews/2026-10-08-remediation-register.md),
+with [scoped contribution tasks](reviews/2026-10-08-remediation-tasks.md) and
+[execution evidence](reviews/2026-10-08-remediation-progress.md). Initial vault
+creation/opening, journaled replacement and snapshot-retention fixes are implemented;
+the operation/session coordinator and the remaining workflow/release work are open.
+This work does not certify phase acceptance or public-beta readiness.

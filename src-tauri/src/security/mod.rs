@@ -79,14 +79,20 @@ pub fn unwrap(key: &[u8; 32], envelope: &Envelope) -> Result<[u8; 32], Error> {
         return Err(Error::InvalidPassword);
     }
     let cipher = XChaCha20Poly1305::new_from_slice(key).map_err(|_| Error::InvalidPassword)?;
-    let bytes = cipher
-        .decrypt(XNonce::from_slice(&nonce), ciphertext.as_ref())
-        .map_err(|_| Error::InvalidPassword)?;
-    bytes.try_into().map_err(|_| Error::InvalidPassword)
+    let bytes = zeroize::Zeroizing::new(
+        cipher
+            .decrypt(XNonce::from_slice(&nonce), ciphertext.as_ref())
+            .map_err(|_| Error::InvalidPassword)?,
+    );
+    bytes
+        .as_slice()
+        .try_into()
+        .map_err(|_| Error::InvalidPassword)
 }
 
 pub fn recovery_key_material(key: &str) -> [u8; 32] {
-    Sha256::digest(key.replace('-', "").as_bytes()).into()
+    let normalized = zeroize::Zeroizing::new(key.replace('-', ""));
+    Sha256::digest(normalized.as_bytes()).into()
 }
 
 pub fn read_security(path: &Path) -> Result<SecurityFile, Error> {
