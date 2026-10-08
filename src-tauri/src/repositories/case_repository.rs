@@ -99,6 +99,51 @@ pub fn replace_clients(
     clients: &[CaseClientInput],
     now: &str,
 ) -> Result<(), Error> {
+    // Validate every relationship before writes, including calls from case_update.
+    if clients.is_empty() {
+        return Err(Error::CaseMustHaveClient);
+    }
+    let unique: std::collections::HashSet<_> = clients.iter().map(|c| &c.client_id).collect();
+    if unique.len() != clients.len() {
+        return Err(Error::Validation);
+    }
+    for client in clients {
+        let archived = conn
+            .query_row(
+                "SELECT archived_at IS NOT NULL FROM clients WHERE id = ?1",
+                [&client.client_id],
+                |row| row.get::<_, bool>(0),
+            )
+            .map_err(|err| match err {
+                rusqlite::Error::QueryReturnedNoRows => Error::ClientNotFound,
+                other => Error::from(other),
+            })?;
+        let retained: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM case_clients WHERE case_id = ?1 AND client_id = ?2)",
+            params![case_id, client.client_id],
+            |row| row.get(0),
+        )?;
+        if archived && !retained {
+            return Err(Error::ClientArchived);
+        }
+        if let Some(poa) = &client.power_of_attorney_id {
+            let owned: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM power_of_attorney_clients WHERE power_of_attorney_id = ?1 AND client_id = ?2)", params![poa, client.client_id], |row| row.get(0))?;
+            if !owned {
+                return Err(Error::Validation);
+            }
+        }
+    }
+    let mut payers =
+        conn.prepare("SELECT DISTINCT payer_client_id FROM payments WHERE case_id = ?1")?;
+    let payers = payers
+        .query_map([case_id], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    if payers
+        .iter()
+        .any(|payer| !clients.iter().any(|c| &c.client_id == payer))
+    {
+        return Err(Error::CaseClientHasPayments);
+    }
     for client in clients {
         conn.execute(
             "INSERT INTO case_clients (case_id, client_id, legal_capacity, power_of_attorney_id, notes, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6) ON CONFLICT(case_id, client_id) DO UPDATE SET legal_capacity = excluded.legal_capacity, power_of_attorney_id = excluded.power_of_attorney_id, notes = excluded.notes, updated_at = excluded.updated_at",

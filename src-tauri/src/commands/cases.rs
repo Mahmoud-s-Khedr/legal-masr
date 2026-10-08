@@ -1,7 +1,7 @@
 use crate::{
     dto::{
         CaseCreateInput, CaseDto, CaseListInput, CaseOpponentDto, CaseOpponentInput,
-        CaseOpponentUpdateInput, CaseSummary, CaseUpdateInput,
+        CaseOpponentUpdateInput, CaseSetClientsInput, CaseSummary, CaseUpdateInput,
     },
     errors::Error,
     services::case_service,
@@ -76,4 +76,13 @@ pub fn case_remove_opponent(
     id: String,
 ) -> Result<(), Error> {
     case_service::remove_opponent(&app, &state, &id)
+}
+
+#[tauri::command]
+pub fn case_set_clients(
+    app: AppHandle,
+    state: State<AppState>,
+    input: CaseSetClientsInput,
+) -> Result<CaseDto, Error> {
+    case_service::set_clients(&app, &state, input)
 }

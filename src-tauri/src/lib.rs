@@ -89,6 +89,7 @@ pub fn run() {
             commands::hearings::hearing_delete,
             commands::cases::case_create,
             commands::cases::case_update,
+            commands::cases::case_set_clients,
             commands::cases::case_get,
             commands::cases::case_list,
             commands::cases::case_archive,

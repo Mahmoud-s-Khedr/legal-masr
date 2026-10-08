@@ -196,3 +196,62 @@ fn power_of_attorney_list_filters_by_client_identity_not_name() {
     assert!(ids(Some("missing-client"), true).is_empty());
     assert_eq!(ids(None, false).len(), 2);
 }
+
+#[test]
+fn relationship_replacement_validates_before_writes_and_retains_archived_links() {
+    let (_dir, conn) = open_migrated_test_db();
+    let a = seed_client(&conn, "CL-A", "DEMO A");
+    let b = seed_client(&conn, "CL-B", "DEMO B");
+    let case_id = id();
+    case_repository::insert(&conn, &canonical_case(case_id.clone(), "CA-EDIT")).unwrap();
+    let rel = |id: &str| CaseClientInput {
+        client_id: id.into(),
+        legal_capacity: Some("capacity".into()),
+        power_of_attorney_id: None,
+        notes: Some("DEMO note".into()),
+    };
+    case_repository::replace_clients(&conn, &case_id, &[rel(&a)], "now").unwrap();
+    conn.execute("UPDATE clients SET archived_at = 'now' WHERE id = ?1", [&a])
+        .unwrap();
+    case_repository::replace_clients(&conn, &case_id, &[rel(&a), rel(&b)], "later").unwrap();
+    conn.execute("INSERT INTO payments (id,case_id,payer_client_id,amount_minor,payment_date,created_at,updated_at) VALUES (?1,?2,?3,100,'2026-10-08','now','now')", params![id(),case_id,a]).unwrap();
+    let tx = conn.unchecked_transaction().unwrap();
+    assert_eq!(
+        case_repository::replace_clients(&tx, &case_id, &[rel(&b)], "bad")
+            .unwrap_err()
+            .code(),
+        "CASE_CLIENT_HAS_PAYMENTS"
+    );
+    drop(tx);
+    let stored =
+        case_repository::hydrate(&conn, case_repository::get(&conn, &case_id).unwrap()).unwrap();
+    assert_eq!(stored.clients.len(), 2);
+    assert_eq!(stored.clients[0].notes.as_deref(), Some("DEMO note"));
+    assert_eq!(
+        case_repository::replace_clients(&conn, &case_id, &[], "bad")
+            .unwrap_err()
+            .code(),
+        "CASE_MUST_HAVE_CLIENT"
+    );
+    assert_eq!(
+        case_repository::replace_clients(&conn, &case_id, &[rel(&a), rel(&a)], "bad")
+            .unwrap_err()
+            .code(),
+        "VALIDATION_FAILED"
+    );
+    assert_eq!(
+        case_repository::replace_clients(&conn, &case_id, &[rel("missing")], "bad")
+            .unwrap_err()
+            .code(),
+        "CLIENT_NOT_FOUND"
+    );
+    let c = seed_client(&conn, "CL-C", "DEMO C");
+    conn.execute("UPDATE clients SET archived_at = 'now' WHERE id = ?1", [&c])
+        .unwrap();
+    assert_eq!(
+        case_repository::replace_clients(&conn, &case_id, &[rel(&a), rel(&c)], "bad")
+            .unwrap_err()
+            .code(),
+        "CLIENT_ARCHIVED"
+    );
+}

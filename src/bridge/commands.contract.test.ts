@@ -323,6 +323,12 @@ const contracts = [
     () => bridge.hearingDelete('hearing-1'),
   ],
   ['caseCreate', 'case_create', [{ input: caseCreate }], () => bridge.caseCreate(caseCreate)],
+  [
+    'caseSetClients',
+    'case_set_clients',
+    [{ input: { caseId: 'case-1', clients: caseUpdate.clients } }],
+    () => bridge.caseSetClients({ caseId: 'case-1', clients: caseUpdate.clients }),
+  ],
   ['caseUpdate', 'case_update', [{ input: caseUpdate }], () => bridge.caseUpdate(caseUpdate)],
   ['caseGet', 'case_get', [{ id: 'case-1' }], () => bridge.caseGet('case-1')],
   [
@@ -517,8 +523,8 @@ describe('canonical Tauri bridge payload contracts', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('covers every bridge method', () => {
-    expect(contracts).toHaveLength(69);
-    expect(Object.keys(bridge)).toHaveLength(69);
+    expect(contracts).toHaveLength(70);
+    expect(Object.keys(bridge)).toHaveLength(70);
   });
 
   it.each(contracts)(

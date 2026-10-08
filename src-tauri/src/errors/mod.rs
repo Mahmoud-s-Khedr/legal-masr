@@ -56,6 +56,10 @@ pub enum Error {
     CaseMustHaveClient,
     #[error("case primary client must be reassigned before this client can be detached")]
     CasePrimaryClientReassignmentRequired,
+    #[error("case client has payments")]
+    CaseClientHasPayments,
+    #[error("client is archived")]
+    ClientArchived,
     #[error("task not found")]
     TaskNotFound,
     #[error("attachment source missing")]
@@ -104,6 +108,8 @@ impl Error {
             Self::CasePrimaryClientReassignmentRequired => {
                 "CASE_PRIMARY_CLIENT_REASSIGNMENT_REQUIRED"
             }
+            Self::CaseClientHasPayments => "CASE_CLIENT_HAS_PAYMENTS",
+            Self::ClientArchived => "CLIENT_ARCHIVED",
             Self::TaskNotFound => "TASK_NOT_FOUND",
             Self::AttachmentSourceMissing => "ATTACHMENT_SOURCE_MISSING",
             Self::AttachmentNotFound => "ATTACHMENT_NOT_FOUND",
@@ -140,6 +146,8 @@ impl Error {
             Self::CasePrimaryClientReassignmentRequired => {
                 "يجب تعيين موكل أساسي آخر قبل إزالة هذا الموكل."
             }
+            Self::CaseClientHasPayments => "لا يمكن إزالة موكل له دفعات مرتبطة بالقضية.",
+            Self::ClientArchived => "لا يمكن إضافة موكل مؤرشف.",
             Self::TaskNotFound => "لم يتم العثور على المهمة.",
             Self::AttachmentSourceMissing => "تعذر العثور على الملف المصدر للمرفق.",
             Self::AttachmentNotFound => "لم يتم العثور على المرفق.",

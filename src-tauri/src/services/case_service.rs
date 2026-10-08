@@ -2,7 +2,8 @@ use crate::{
     db,
     dto::{
         CaseClientInput, CaseCreateInput, CaseDto, CaseListInput, CaseOpponentDto,
-        CaseOpponentInput, CaseOpponentUpdateInput, CaseSummary, CaseUpdateInput,
+        CaseOpponentInput, CaseOpponentUpdateInput, CaseSetClientsInput, CaseSummary,
+        CaseUpdateInput,
     },
     errors::Error,
     normalize,
@@ -182,6 +183,29 @@ pub fn update<R: Runtime>(
     case_repository::update(&tx, &case)?;
     case_repository::replace_clients(&tx, &case.id, &clients, &now)?;
     let case = assemble(&tx, &case.id)?;
+    index(&tx, &case, &now)?;
+    tx.commit()?;
+    Ok(case)
+}
+
+// Relationship-only mutation: unrelated case fields are read inside the same transaction.
+pub fn set_clients<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    input: CaseSetClientsInput,
+) -> Result<CaseDto, Error> {
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    let conn = db::open_db(&path, &master)?;
+    let tx = conn.unchecked_transaction()?;
+    case_repository::get(&tx, &input.case_id)?;
+    let now = db::now();
+    case_repository::replace_clients(&tx, &input.case_id, &input.clients, &now)?;
+    tx.execute(
+        "UPDATE cases SET updated_at = ?2 WHERE id = ?1",
+        rusqlite::params![input.case_id, now],
+    )?;
+    let case = assemble(&tx, &input.case_id)?;
     index(&tx, &case, &now)?;
     tx.commit()?;
     Ok(case)

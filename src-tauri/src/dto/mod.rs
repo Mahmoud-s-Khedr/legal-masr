@@ -343,6 +343,13 @@ pub struct CaseClientInput {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CaseSetClientsInput {
+    pub case_id: String,
+    pub clients: Vec<CaseClientInput>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CaseUpdateInput {
     pub id: String,
     pub internal_number: String,

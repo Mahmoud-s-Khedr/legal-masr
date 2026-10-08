@@ -9,6 +9,7 @@ import type {
   CaseOpponentUpdateInput,
   CaseSummary,
   CaseUpdateInput,
+  CaseSetClientsInput,
   ClientCreateInput,
   ClientDto,
   ClientListInput,
@@ -107,6 +108,7 @@ export const bridge = {
   hearingDelete: (id: string) => invoke<void>('hearing_delete', { id }),
 
   caseCreate: (input: CaseCreateInput) => invoke<CaseDto>('case_create', { input }),
+  caseSetClients: (input: CaseSetClientsInput) => invoke<CaseDto>('case_set_clients', { input }),
   caseUpdate: (input: CaseUpdateInput) => invoke<CaseDto>('case_update', { input }),
   caseGet: (id: string) => invoke<CaseDto>('case_get', { id }),
   caseList: (input: CaseListInput) => invoke<CaseSummary[]>('case_list', { input }),

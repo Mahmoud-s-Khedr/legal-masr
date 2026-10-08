@@ -28,6 +28,8 @@ export type AppErrorCode =
   | 'POWER_OF_ATTORNEY_NOT_FOUND'
   | 'HEARING_NOT_FOUND'
   | 'CLIENT_PROBABLE_DUPLICATE'
+  | 'CASE_CLIENT_HAS_PAYMENTS'
+  | 'CLIENT_ARCHIVED'
   | 'CASE_MUST_HAVE_CLIENT'
   | 'CASE_PRIMARY_CLIENT_REASSIGNMENT_REQUIRED'
   | 'TASK_NOT_FOUND'
@@ -515,3 +517,5 @@ export type ClientFinanceSummary = {
   netCashMinor: number;
 };
 export type SearchRebuildResult = { indexedCount: number };
+
+export type CaseSetClientsInput = { caseId: string; clients: CaseClientInput[] };
