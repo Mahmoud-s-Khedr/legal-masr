@@ -25,6 +25,7 @@ import { PageHeader } from '../../../components/layout/PageHeader';
 import { useFormat, useLocalePresentation } from '../../../i18n/LocalePresentation';
 import { dateOnlyToLocalDate, localDateOnly } from '../../../lib/dateOnly';
 import { useCaseList } from '../../cases/api/casesApi';
+import { caseOption } from '../../cases/components/caseOptions';
 import { useTaskList } from '../../tasks/api/tasksApi';
 import {
   useDeleteHearing,
@@ -647,16 +648,12 @@ export function HearingForm({
           error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
         >
           <EntityPicker
+            emptyText={t('cases.noResults')}
             ref={(node) => form.register('caseId').ref(node)}
             required
             value={caseId}
             onValueChange={(value) => setCaseId(value ?? '')}
-            items={(cases.data ?? []).map((item) => ({
-              value: item.id,
-              label: item.clientNames.length
-                ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
-                : item.internalNumber,
-            }))}
+            items={(cases.data ?? []).map(caseOption)}
             placeholder={t('agenda.fields.casePlaceholder')}
             aria-invalid={!!form.formState.errors.caseId}
           />

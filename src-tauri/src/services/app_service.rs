@@ -150,6 +150,9 @@ pub fn unlock<R: Runtime>(
     )?);
     let connection = db::open_db(&db_path, &master)?;
     db::migrate(&connection)?;
+    // Keeps search current for vaults indexed by an earlier version. A failure leaves the
+    // previous index in place and must not keep the lawyer out.
+    let _ = crate::services::search_service::rebuild_with(&connection);
     *state.master_key.lock().map_err(|_| Error::Locked)? = Some(master);
     Ok(())
 }

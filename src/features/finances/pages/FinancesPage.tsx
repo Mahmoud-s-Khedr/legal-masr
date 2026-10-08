@@ -31,6 +31,7 @@ import {
 import { RecordTable } from '@/components/forms/RecordTable';
 import { Textarea } from '../../../components/ui/textarea';
 import { useCase, useCaseList } from '../../cases/api/casesApi';
+import { caseOption, clientOption } from '../../cases/components/caseOptions';
 import { useClientList } from '../../clients/api/clientsApi';
 import {
   useCaseFinanceSummary,
@@ -123,6 +124,7 @@ export function FinancesPage() {
         <label>
           {t('finances.case')}
           <EntityPicker
+            emptyText={t('cases.noResults')}
             value={filterCaseId}
             onValueChange={(value) => {
               setFilterCaseId(value ?? '');
@@ -130,12 +132,7 @@ export function FinancesPage() {
             }}
             items={[
               { value: '', label: t('tasks.allCases') },
-              ...(cases.data ?? []).map((item) => ({
-                value: item.id,
-                label: item.clientNames.length
-                  ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
-                  : item.internalNumber,
-              })),
+              ...(cases.data ?? []).map(caseOption),
             ]}
             placeholder={t('tasks.allCases')}
           />
@@ -504,6 +501,7 @@ export function PaymentForm({
           error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
         >
           <EntityPicker
+            emptyText={t('cases.noResults')}
             ref={(node) => form.register('caseId').ref(node)}
             required
             value={caseId}
@@ -511,7 +509,7 @@ export function PaymentForm({
               setCaseId(value ?? '');
               setPayerClientId('');
             }}
-            items={(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber }))}
+            items={(cases ?? []).map(caseOption)}
             placeholder={t('agenda.fields.casePlaceholder')}
           />
         </Field>
@@ -698,12 +696,10 @@ export function ExpenseForm({
             error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
           >
             <EntityPicker
+              emptyText={t('cases.noResults')}
               value={caseId}
               onValueChange={(value) => setCaseId(value ?? '')}
-              items={[
-                { value: '', label: t('tasks.noCase') },
-                ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
-              ]}
+              items={[{ value: '', label: t('tasks.noCase') }, ...(cases ?? []).map(caseOption)]}
               placeholder={undefined}
             />
           </Field>
@@ -716,7 +712,7 @@ export function ExpenseForm({
               onValueChange={(value) => setClientId(value ?? '')}
               items={[
                 { value: '', label: t('tasks.noClient') },
-                ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+                ...(clients ?? []).map(clientOption),
               ]}
               placeholder={undefined}
             />

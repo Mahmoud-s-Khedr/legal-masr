@@ -7,6 +7,7 @@ use crate::{
         case_repository, client_repository, document_repository, finance_repository,
         hearing_repository, search_repository, task_repository,
     },
+    services::search_service,
     state::AppState,
 };
 use std::fs;
@@ -25,7 +26,11 @@ fn upsert_search_entry(
         &client.id,
         &client.full_name,
         client.primary_phone.as_deref(),
-        &normalize::normalize_text(&format!("{} {}", client.internal_number, client.full_name)),
+        &search_service::client_index_text(
+            &client.internal_number,
+            &client.full_name,
+            client.primary_phone.as_deref(),
+        ),
         now,
     )
 }
@@ -35,6 +40,14 @@ pub fn create<R: Runtime>(
     state: &AppState,
     input: ClientCreateInput,
 ) -> Result<ClientDto, Error> {
+    // Numbers typed on an Arabic keyboard are stored with Latin digits, like the rest of
+    // the app shows them, so they sort, search and collide as the same number.
+    let input = ClientCreateInput {
+        internal_number: normalize::ascii_digits(&input.internal_number),
+        national_id: input.national_id.as_deref().map(normalize::ascii_digits),
+        primary_phone: input.primary_phone.as_deref().map(normalize::ascii_digits),
+        ..input
+    };
     if input.internal_number.trim().is_empty() || input.full_name.trim().is_empty() {
         return Err(Error::Validation);
     }
@@ -84,6 +97,12 @@ pub fn update<R: Runtime>(
     state: &AppState,
     input: ClientUpdateInput,
 ) -> Result<ClientDto, Error> {
+    let input = ClientUpdateInput {
+        internal_number: normalize::ascii_digits(&input.internal_number),
+        national_id: input.national_id.as_deref().map(normalize::ascii_digits),
+        primary_phone: input.primary_phone.as_deref().map(normalize::ascii_digits),
+        ..input
+    };
     if input.internal_number.trim().is_empty() || input.full_name.trim().is_empty() {
         return Err(Error::Validation);
     }

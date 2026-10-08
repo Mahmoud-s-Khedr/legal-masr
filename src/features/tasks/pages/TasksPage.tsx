@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 
 import { Textarea } from '../../../components/ui/textarea';
 import { useCaseList } from '../../cases/api/casesApi';
+import { caseOption, clientOption } from '../../cases/components/caseOptions';
 import { useClientList } from '../../clients/api/clientsApi';
 import {
   useCompleteTask,
@@ -135,16 +136,12 @@ export function TasksPage() {
         <label>
           {t('tasks.case')}
           <EntityPicker
+            emptyText={t('cases.noResults')}
             value={caseId}
             onValueChange={(value) => setCaseId(value ?? '')}
             items={[
               { value: '', label: t('tasks.allCases') },
-              ...(cases.data ?? []).map((item) => ({
-                value: item.id,
-                label: item.clientNames.length
-                  ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
-                  : item.internalNumber,
-              })),
+              ...(cases.data ?? []).map(caseOption),
             ]}
             placeholder={t('tasks.allCases')}
           />
@@ -156,7 +153,7 @@ export function TasksPage() {
             onValueChange={(value) => setClientId(value ?? '')}
             items={[
               { value: '', label: t('tasks.allClients') },
-              ...(clients.data ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+              ...(clients.data ?? []).map(clientOption),
             ]}
             placeholder={t('tasks.allClients')}
           />
@@ -434,12 +431,10 @@ export function TaskForm({
             error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
           >
             <EntityPicker
+              emptyText={t('cases.noResults')}
               value={caseId}
               onValueChange={(value) => setCaseId(value ?? '')}
-              items={[
-                { value: '', label: t('tasks.noCase') },
-                ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
-              ]}
+              items={[{ value: '', label: t('tasks.noCase') }, ...(cases ?? []).map(caseOption)]}
               placeholder={undefined}
             />
           </Field>
@@ -453,7 +448,7 @@ export function TaskForm({
             onValueChange={(value) => setClientId(value ?? '')}
             items={[
               { value: '', label: t('tasks.noClient') },
-              ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+              ...(clients ?? []).map(clientOption),
             ]}
             placeholder={undefined}
           />

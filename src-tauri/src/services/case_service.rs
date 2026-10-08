@@ -8,6 +8,7 @@ use crate::{
     errors::Error,
     normalize,
     repositories::{case_repository, search_repository},
+    services::search_service,
     state::AppState,
 };
 use std::collections::HashSet;
@@ -83,18 +84,14 @@ fn index(conn: &rusqlite::Connection, case: &CaseDto, now: &str) -> Result<(), E
         &case.id,
         &case.internal_number,
         case.official_number.as_deref(),
-        &normalize::normalize_text(&format!(
-            "{} {} {} {} {}",
-            case.internal_number,
-            case.official_number.clone().unwrap_or_default(),
-            case.official_year
-                .map(|year| year.to_string())
-                .unwrap_or_default(),
-            case.judicial_year
-                .map(|year| year.to_string())
-                .unwrap_or_default(),
-            client_names
-        )),
+        &search_service::case_index_text(
+            &case.internal_number,
+            case.official_number.as_deref(),
+            case.official_year,
+            case.judicial_year,
+            case.court_name.as_deref(),
+            &client_names,
+        ),
         now,
     )
 }
@@ -132,6 +129,15 @@ pub fn create<R: Runtime>(
     state: &AppState,
     input: CaseCreateInput,
 ) -> Result<CaseDto, Error> {
+    // Numbers typed on an Arabic keyboard are stored with Latin digits (see clients).
+    let input = CaseCreateInput {
+        internal_number: normalize::ascii_digits(&input.internal_number),
+        official_number: input
+            .official_number
+            .as_deref()
+            .map(normalize::ascii_digits),
+        ..input
+    };
     validate_case(
         &input.internal_number,
         CaseYears {
@@ -164,6 +170,14 @@ pub fn update<R: Runtime>(
     state: &AppState,
     input: CaseUpdateInput,
 ) -> Result<CaseDto, Error> {
+    let input = CaseUpdateInput {
+        internal_number: normalize::ascii_digits(&input.internal_number),
+        official_number: input
+            .official_number
+            .as_deref()
+            .map(normalize::ascii_digits),
+        ..input
+    };
     validate_case(
         &input.internal_number,
         CaseYears {

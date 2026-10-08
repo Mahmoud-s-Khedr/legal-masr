@@ -63,6 +63,8 @@ const caseSummary: CaseSummary = {
   status: 'ACTIVE',
   clientNames: [client.fullName],
   archivedAt: null,
+  courtName: 'محكمة شمال القاهرة الابتدائية',
+  nextHearingDate: null,
 };
 const caseItem: CaseDto = {
   ...caseSummary,

@@ -517,7 +517,9 @@
       "number": "رقم الملف",
       "client": "الموكلون",
       "status": "الحالة",
-      "official": "رقم الدعوى"
+      "official": "رقم الدعوى",
+      "court": "المحكمة",
+      "nextHearing": "الجلسة القادمة"
     },
     "fields": {
       "caseNumber": "رقم الملف الداخلي",
@@ -664,7 +666,8 @@
     "officialNumberOnly": "رقم {{number}}",
     "officialReferenceJudicial": "رقم {{number}} لسنة {{judicialYear}} قضائية",
     "officialReferenceBoth": "رقم {{number}} لسنة {{year}} ({{judicialYear}} قضائية)",
-    "newTitle": "قضية جديدة"
+    "newTitle": "قضية جديدة",
+    "pendingDecision": "بانتظار تسجيل القرار"
   },
   "search": {
     "placeholder": "ابحث بالاسم أو رقم القضية…",

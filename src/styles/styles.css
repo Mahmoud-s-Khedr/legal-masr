@@ -2426,6 +2426,10 @@
   .data-table .cell-muted {
     color: var(--muted);
   }
+  .data-table .pending-decision {
+    color: var(--danger);
+    font-weight: 700;
+  }
   .mono {
     font-family: var(--latin-ui);
     font-variant-numeric: tabular-nums;

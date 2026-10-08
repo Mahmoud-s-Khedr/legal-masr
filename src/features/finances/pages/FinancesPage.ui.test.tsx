@@ -98,6 +98,8 @@ describe('FinancesPage', () => {
         status: 'ACTIVE',
         clientNames: ['أحمد'],
         archivedAt: null,
+        courtName: null,
+        nextHearingDate: null,
       },
     ]);
     vi.mocked(bridge.clientList).mockResolvedValue([
@@ -173,7 +175,7 @@ describe('FinancesPage', () => {
     caseSelect.focus();
     fireEvent.click(caseSelect);
     fireEvent.keyDown(caseSelect, { key: 'ArrowDown' });
-    fireEvent.click(await screen.findByRole('option', { name: 'CA-1' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^CA-1( —|$)/ }));
     const payer = await within(paymentDialog).findByRole('combobox', { name: 'الموكل الدافع' });
     payer.focus();
     fireEvent.click(payer);

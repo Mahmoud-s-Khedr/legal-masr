@@ -517,7 +517,9 @@
       "number": "File number",
       "client": "Clients",
       "status": "Status",
-      "official": "Court case number"
+      "official": "Court case number",
+      "court": "Court",
+      "nextHearing": "Next hearing"
     },
     "fields": {
       "caseNumber": "Internal file number",
@@ -664,7 +666,8 @@
     "officialNumberOnly": "No. {{number}}",
     "officialReferenceJudicial": "No. {{number}} of judicial year {{judicialYear}}",
     "officialReferenceBoth": "No. {{number}} of {{year}} (judicial year {{judicialYear}})",
-    "newTitle": "New case"
+    "newTitle": "New case",
+    "pendingDecision": "decision not recorded"
   },
   "search": {
     "placeholder": "Search by name or case number…",

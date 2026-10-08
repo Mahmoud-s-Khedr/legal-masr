@@ -381,6 +381,9 @@ pub struct CaseSummary {
     pub status: String,
     pub client_names: Vec<String>,
     pub archived_at: Option<String>,
+    pub court_name: Option<String>,
+    /// Earliest hearing still awaiting its decision (it may already be in the past).
+    pub next_hearing_date: Option<String>,
 }
 
 #[derive(Deserialize)]

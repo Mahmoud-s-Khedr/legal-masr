@@ -234,6 +234,8 @@ describe('application gate', () => {
         status: 'ACTIVE',
         clientNames: ['أحمد'],
         archivedAt: null,
+        courtName: null,
+        nextHearingDate: null,
       },
     ]);
 

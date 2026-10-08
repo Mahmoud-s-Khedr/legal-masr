@@ -1,6 +1,7 @@
 use crate::{
     dto::{CaseClientDto, CaseClientInput, CaseDto, CaseOpponentDto, CaseSummary},
     errors::Error,
+    normalize,
 };
 use rusqlite::{params, Connection, Row};
 
@@ -181,9 +182,29 @@ pub fn list(
     client_id: Option<&str>,
     include_archived: bool,
 ) -> Result<Vec<CaseSummary>, Error> {
-    let like = query.map(|value| format!("%{value}%"));
+    let like = query
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| normalize::like_pattern(&normalize::normalize_text(value)));
     let mut statement = conn.prepare(
-        "SELECT c.id, c.internal_number, c.official_number, c.official_year, c.status, c.archived_at, COALESCE(group_concat(cl.full_name, '، '), ''), c.judicial_year FROM cases c LEFT JOIN case_clients cc ON cc.case_id = c.id LEFT JOIN clients cl ON cl.id = cc.client_id WHERE (?1 OR c.archived_at IS NULL) AND (?2 IS NULL OR c.status = ?2) AND (?3 IS NULL OR EXISTS (SELECT 1 FROM case_clients filtered WHERE filtered.case_id = c.id AND filtered.client_id = ?3)) AND (?4 IS NULL OR c.internal_number LIKE ?4 OR c.official_number LIKE ?4 OR CAST(c.official_year AS TEXT) LIKE ?4 OR CAST(c.judicial_year AS TEXT) LIKE ?4) GROUP BY c.id ORDER BY c.archived_at IS NOT NULL, c.internal_number",
+        "SELECT c.id, c.internal_number, c.official_number, c.official_year, c.status, c.archived_at,
+                COALESCE(group_concat(cl.full_name, '، '), ''), c.judicial_year, c.court_name,
+                (SELECT MIN(h.hearing_date) FROM hearings h WHERE h.case_id = c.id AND h.status = 'SCHEDULED')
+         FROM cases c
+         LEFT JOIN case_clients cc ON cc.case_id = c.id
+         LEFT JOIN clients cl ON cl.id = cc.client_id
+         WHERE (?1 OR c.archived_at IS NULL)
+           AND (?2 IS NULL OR c.status = ?2)
+           AND (?3 IS NULL OR EXISTS (SELECT 1 FROM case_clients filtered WHERE filtered.case_id = c.id AND filtered.client_id = ?3))
+           AND (?4 IS NULL
+                OR lm_normalize(c.internal_number || ' ' || COALESCE(c.official_number, '') || ' ' ||
+                     COALESCE(CAST(c.official_year AS TEXT), '') || ' ' || COALESCE(CAST(c.judicial_year AS TEXT), '') || ' ' ||
+                     COALESCE(c.court_name, '') || ' ' || COALESCE(c.circuit_name, '') || ' ' || COALESCE(c.case_type, '')) LIKE ?4 ESCAPE '\\'
+                OR EXISTS (SELECT 1 FROM case_clients sc JOIN clients scl ON scl.id = sc.client_id
+                           WHERE sc.case_id = c.id AND lm_normalize(scl.full_name) LIKE ?4 ESCAPE '\\')
+                OR EXISTS (SELECT 1 FROM case_opponents so
+                           WHERE so.case_id = c.id AND lm_normalize(so.full_name) LIKE ?4 ESCAPE '\\'))
+         GROUP BY c.id",
     )?;
     let rows = statement
         .query_map(params![include_archived, status, client_id, like], |row| {
@@ -201,9 +222,18 @@ pub fn list(
                 } else {
                     names.split("، ").map(str::to_owned).collect()
                 },
+                court_name: row.get(8)?,
+                next_hearing_date: row.get(9)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
+    let mut rows = rows;
+    rows.sort_by(|a, b| {
+        a.archived_at
+            .is_some()
+            .cmp(&b.archived_at.is_some())
+            .then_with(|| normalize::natural_cmp(&a.internal_number, &b.internal_number))
+    });
     Ok(rows)
 }
 
@@ -389,6 +419,125 @@ mod tests {
         assert_eq!(
             list(&conn, Some("42"), None, None, false).unwrap()[0].id,
             case_id
+        );
+    }
+
+    fn numbers(rows: &[CaseSummary]) -> Vec<&str> {
+        rows.iter()
+            .map(|row| row.internal_number.as_str())
+            .collect()
+    }
+
+    fn seed_case(conn: &Connection, number: &str, court: Option<&str>, client: &str) -> String {
+        let case_id = id();
+        insert(
+            conn,
+            &CaseDto {
+                internal_number: number.into(),
+                official_number: None,
+                court_name: court.map(Into::into),
+                ..case(case_id.clone())
+            },
+        )
+        .unwrap();
+        replace_clients(
+            conn,
+            &case_id,
+            &[CaseClientInput {
+                client_id: client.into(),
+                legal_capacity: None,
+                power_of_attorney_id: None,
+                notes: None,
+            }],
+            "now",
+        )
+        .unwrap();
+        case_id
+    }
+
+    #[test]
+    fn case_search_finds_clients_courts_and_opponents_whatever_the_spelling() {
+        let conn = Connection::open_in_memory().unwrap();
+        db::migrate(&conn).unwrap();
+        let ahmed = seed_client(&conn, "1", "أحمد محمود علي");
+        let mostafa = seed_client(&conn, "2", "مصطفى عبد الرحمن");
+        let first = seed_case(
+            &conn,
+            "2026/15",
+            Some("محكمة شمال القاهرة الابتدائية"),
+            &ahmed,
+        );
+        seed_case(&conn, "2026/9", Some("محكمة الأسرة"), &mostafa);
+        insert_opponent(
+            &conn,
+            &id(),
+            &first,
+            "شركة النيل للمقاولات",
+            None,
+            None,
+            None,
+            None,
+            None,
+            "now",
+        )
+        .unwrap();
+        let search = |query: &str| list(&conn, Some(query), None, None, false).unwrap();
+        assert_eq!(numbers(&search("احمد")), vec!["2026/15"]);
+        assert_eq!(numbers(&search("مصطفي")), vec!["2026/9"]);
+        assert_eq!(numbers(&search("شمال القاهره")), vec!["2026/15"]);
+        assert_eq!(numbers(&search("النيل")), vec!["2026/15"]);
+        assert_eq!(numbers(&search("٢٠٢٦/٩")), vec!["2026/9"]);
+        assert!(search("الإسكندرية").is_empty());
+        // Every client of a matching case is still listed.
+        assert_eq!(search("احمد")[0].client_names, vec!["أحمد محمود علي"]);
+        assert_eq!(
+            search("شمال")[0].court_name.as_deref(),
+            Some("محكمة شمال القاهرة الابتدائية")
+        );
+    }
+
+    #[test]
+    fn cases_sort_by_their_numbers_with_archived_ones_last() {
+        let conn = Connection::open_in_memory().unwrap();
+        db::migrate(&conn).unwrap();
+        let client = seed_client(&conn, "1", "أحمد");
+        for number in ["2026/100", "2026/15", "10", "2026/9"] {
+            seed_case(&conn, number, None, &client);
+        }
+        let archived = seed_case(&conn, "1", None, &client);
+        set_archived(&conn, &archived, true, "now").unwrap();
+        assert_eq!(
+            numbers(&list(&conn, None, None, None, true).unwrap()),
+            vec!["10", "2026/9", "2026/15", "2026/100", "1"]
+        );
+    }
+
+    #[test]
+    fn next_hearing_is_the_earliest_hearing_still_awaiting_a_decision() {
+        let conn = Connection::open_in_memory().unwrap();
+        db::migrate(&conn).unwrap();
+        let client = seed_client(&conn, "1", "أحمد");
+        let case_id = seed_case(&conn, "1", None, &client);
+        assert_eq!(
+            list(&conn, None, None, None, false).unwrap()[0].next_hearing_date,
+            None
+        );
+        for (date, status) in [
+            ("2026-09-01", "COMPLETED"),
+            ("2026-11-15", "SCHEDULED"),
+            ("2026-10-20", "SCHEDULED"),
+        ] {
+            conn.execute(
+                "INSERT INTO hearings (id, case_id, hearing_date, status, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 'now', 'now')",
+                params![id(), case_id, date, status],
+            )
+            .unwrap();
+        }
+        assert_eq!(
+            list(&conn, None, None, None, false).unwrap()[0]
+                .next_hearing_date
+                .as_deref(),
+            Some("2026-10-20")
         );
     }
 }

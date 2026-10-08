@@ -184,6 +184,9 @@ export type CaseSummary = {
   status: CaseStatus;
   clientNames: string[];
   archivedAt: string | null;
+  courtName: string | null;
+  /** Earliest hearing still awaiting its decision; it may already be in the past. */
+  nextHearingDate: string | null;
 };
 
 export type CaseCreateInput = {
