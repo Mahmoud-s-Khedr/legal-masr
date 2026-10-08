@@ -64,7 +64,29 @@ The driver must return a successful local `/status` response before a journey
 launches; startup polls every 250 ms for up to 30 seconds and records only a
 fixed startup/session/scenario error code. The backup/restore journey also
 records an allowlisted operation checkpoint on failure. It never retains raw
-WebDriver errors, DOM, paths, passwords, or vault data. Linux and Windows finish
+WebDriver errors, DOM, paths, passwords, or vault data. Session failures are
+classified in memory into fixed startup diagnostics (missing DevTools port,
+version mismatch, occupied profile, application exit, connection refusal or
+request timeout); only these categories are retained in JSON and CI output.
+Windows launches the marked application directly with a reserved loopback debugging
+port, waits for the local WebView endpoint and its `tauri.localhost` page target,
+then drives that target through the Chrome DevTools Protocol. Current EdgeDriver
+builds can attach a separate blank page to this WebView2 setup, so Windows does
+not use it. Linux retains Tauri's WebDriver application-launch path.
+WebView2 150+ ignores environment-supplied browser arguments on elevated hosts,
+including GitHub's Windows runners. The separate Windows harness build supplies
+port 9222 through Tauri's `additionalBrowserArgs` configuration, which uses the
+WebView2 API. It preserves the configured window and Wry 0.55.1's default browser
+arguments. The runner verifies that the port is free before each launch, waiting
+briefly for a closing process to release it, and then waits for its local endpoint;
+production build configuration has no debug-port override.
+Closing a session also stops the application, so restart persistence exercises a
+new application process against the same vault and a new disposable WebView profile.
+These debugging settings apply only to the separate marked harness binary. Windows
+process shutdown terminates the owned tree before deleting its temporary vault,
+preventing a surviving process from reusing an old marker.
+Temporary-directory removal retries briefly for Windows profile locks to clear.
+The Linux preflight uses the supported `tauri-driver --help` command. Linux and Windows finish
 all configured attempts even after a failure and keep each available sanitized
 per-run JSON outcome; the job fails after the final attempt if any attempt
 failed or did not produce a report. Each attempt removes the previous report
