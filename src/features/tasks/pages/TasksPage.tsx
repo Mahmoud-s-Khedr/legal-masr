@@ -163,7 +163,7 @@ export function TasksPage() {
         </label>
         <Button
           type="button"
-
+          variant="secondary"
           onClick={() => {
             setCaseId('');
             setClientId('');
@@ -487,7 +487,7 @@ export function TaskForm({
             </span>
             <Button
               type="button"
-
+              variant="secondary"
               disabled={toggling}
               onClick={onToggleCompletion}
             >

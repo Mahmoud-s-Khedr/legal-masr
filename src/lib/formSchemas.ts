@@ -79,7 +79,7 @@ export const profileDraftSchema = z.object({
   officeAddress: optionalText,
 });
 export const passwordDraftSchema = z
-  .object({ current: z.string().min(12), next: z.string().min(12), confirm: z.string() })
+  .object({ current: z.string().min(1), next: z.string().min(12), confirm: z.string() })
   .refine((values) => values.next === values.confirm, {
     path: ['confirm'],
     message: 'Passwords do not match',

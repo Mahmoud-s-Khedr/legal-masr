@@ -79,7 +79,14 @@ export function ClientDetailPage() {
         actions={
           <>
             {!item.archivedAt && (
-              <Link to={`/cases/new?client=${id}`}>{t('clients.detail.newCase')}</Link>
+              <Button
+                variant="secondary"
+                nativeButton={false}
+                role="link"
+                render={<Link to={`/cases/new?client=${id}`} />}
+              >
+                {t('clients.detail.newCase')}
+              </Button>
             )}
             <Button type="button" onClick={() => setEditOpen(true)}>
               {t('records.edit')}
