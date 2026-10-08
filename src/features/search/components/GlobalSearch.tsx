@@ -55,6 +55,9 @@ export function GlobalSearch({
       >
         <Autocomplete.Input
           render={<Input />}
+          // The topbar field has a search icon at its start and a Ctrl K badge at its end;
+          // leave room for both (the palette has neither).
+          className={palette ? undefined : 'ps-10 pe-[4.5rem]'}
           autoFocus={palette}
           aria-label={t('app.searchLabel')}
           placeholder={t('search.placeholder')}

@@ -94,6 +94,7 @@ describe('FinancesPage', () => {
         internalNumber: 'CA-1',
         officialNumber: null,
         officialYear: null,
+        judicialYear: null,
         status: 'ACTIVE',
         clientNames: ['أحمد'],
         archivedAt: null,
@@ -120,6 +121,7 @@ describe('FinancesPage', () => {
       internalNumber: 'CA-1',
       officialNumber: null,
       officialYear: null,
+      judicialYear: null,
       caseType: null,
       litigationDegree: null,
       courtName: null,
@@ -235,5 +237,41 @@ describe('FinancesPage', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'حفظ المصروف' }));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('تعذر حفظ السجل');
     expect(within(dialog).getByLabelText('المبلغ (ج.م)')).toHaveValue('12.50');
+  });
+
+  it('creates one expense when the save is triggered twice before the first completes', async () => {
+    let finish!: () => void;
+    vi.mocked(bridge.expenseSave).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = () =>
+            resolve({
+              id: 'expense-1',
+              caseId: null,
+              clientId: null,
+              amountMinor: 1_250,
+              expenseDate: '2026-08-24',
+              expenseType: 'COURT_FEE',
+              notes: null,
+              createdAt: 'now',
+              updatedAt: 'now',
+            });
+        }),
+    );
+    renderPage();
+    await screen.findByRole('combobox', { name: 'القضية' });
+    fireEvent.click(screen.getByRole('tab', { name: 'المصروفات' }));
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة مصروف' }));
+    const dialog = await screen.findByRole('dialog', { name: 'إضافة مصروف' });
+    fireEvent.change(within(dialog).getByLabelText('المبلغ (ج.م)'), { target: { value: '12.50' } });
+
+    // Two submissions in the same tick, before any re-render could disable the button.
+    const save = within(dialog).getByRole('button', { name: 'حفظ المصروف' });
+    fireEvent.click(save);
+    fireEvent.click(save);
+    await waitFor(() => expect(bridge.expenseSave).toHaveBeenCalledTimes(1));
+    finish();
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'إضافة مصروف' })).toBeNull());
+    expect(bridge.expenseSave).toHaveBeenCalledTimes(1);
   });
 });

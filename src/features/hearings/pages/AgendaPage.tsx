@@ -1,4 +1,5 @@
 import { DraftForm } from '@/components/forms/DraftForm';
+import { actionableErrorMessage } from '@/bridge/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CreatableCombobox } from '@/components/forms/CreatableCombobox';
 import { TimeField } from '@/components/forms/TimeField';
@@ -96,7 +97,8 @@ export function AgendaPage() {
         handledHearingId.current = requestedHearingId;
         setSelectedDate(hearing.hearingDate);
         setCursor(dateOnlyToLocalDate(hearing.hearingDate));
-        setEditing(hearing);
+        // Only scheduled hearings can be edited; a completed one is shown, not opened.
+        if (hearing.status === 'SCHEDULED') setEditing(hearing);
       });
       return () => {
         cancelled = true;
@@ -285,14 +287,11 @@ export function AgendaPage() {
                     {t('agenda.recordDecision')}
                   </Button>
                 )}
-                <Button
-                  type="button"
-                  variant="ghost"
-
-                  onClick={() => setEditing(hearing)}
-                >
-                  {t('agenda.editHearing')}
-                </Button>
+                {hearing.status === 'SCHEDULED' && (
+                  <Button type="button" variant="ghost" onClick={() => setEditing(hearing)}>
+                    {t('agenda.editHearing')}
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="ghost"
@@ -358,7 +357,9 @@ export function AgendaPage() {
         )}
         {save.isError && (
           <Alert variant="destructive">
-            <AlertDescription>{t('agenda.saveError')}</AlertDescription>
+            <AlertDescription>
+              {actionableErrorMessage(save.error, t('agenda.saveError'))}
+            </AlertDescription>
           </Alert>
         )}
       </FormDialog>

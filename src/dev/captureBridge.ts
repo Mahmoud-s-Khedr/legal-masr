@@ -59,6 +59,7 @@ const caseSummary: CaseSummary = {
   internalNumber: 'دعوى ١٤ / ٢٠٢٦',
   officialNumber: '447',
   officialYear: 2026,
+  judicialYear: null,
   status: 'ACTIVE',
   clientNames: [client.fullName],
   archivedAt: null,
@@ -223,6 +224,10 @@ export async function captureInvoke<T>(command: string): Promise<T> {
     upcomingHearings: [{ ...hearing, id: 'demo-upcoming-hearing', hearingDate: '2026-10-10' }],
   };
   const values: Record<string, unknown> = {
+    // Synthetic key, only so the capture build can show the recovery step.
+    app_initialize: {
+      recoveryKey: '3fa9c0de12b4778a5e61d0c2f9b83a4417de56c0b19a2e8f40d37c61a5b9e208',
+    },
     app_get_status: {
       initialized: true,
       unlocked: true,

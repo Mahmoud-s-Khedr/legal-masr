@@ -50,21 +50,37 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
           >
             <Input dir="ltr" {...register('internalNumber' as never)} autoFocus={autoFocus} />
           </Field>
-          <Field label={t('cases.fields.officialNumber')} hint={t('cases.form.officialNumberHint')}>
-            <Input dir="ltr" {...register('officialNumber' as never)} />
-          </Field>
-          <Field label={t('cases.fields.judicialYear')} error={errorFor('officialYear')}>
-            <Input
-              type="number"
-              dir="ltr"
-              inputMode="numeric"
-              min={1900}
-              max={2200}
-              {...register('officialYear' as never, { valueAsNumber: true })}
+          <Field label={t('cases.fields.status')}>
+            <Controller
+              control={control}
+              name={'status' as never}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  items={CASE_STATUSES.map((status) => ({
+                    value: status,
+                    label: t(`cases.status.${status}`),
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {CASE_STATUSES.map((status) => ({
+                        value: status,
+                        label: t(`cases.status.${status}`),
+                      })).map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              )}
             />
-          </Field>
-          <Field label={t('cases.fields.caseType')} hint={t('cases.form.caseTypeHint')}>
-            <CreatableCombobox suggestion="caseType" {...register('caseType' as never)} />
           </Field>
           <Field label={t('cases.fields.litigationDegree')}>
             <Controller
@@ -104,37 +120,39 @@ export function CaseCoreFields<T extends CaseCoreFormValues>({
               )}
             />
           </Field>
-          <Field label={t('cases.fields.status')}>
-            <Controller
-              control={control}
-              name={'status' as never}
-              render={({ field }) => (
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  items={CASE_STATUSES.map((status) => ({
-                    value: status,
-                    label: t(`cases.status.${status}`),
-                  }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {CASE_STATUSES.map((status) => ({
-                        value: status,
-                        label: t(`cases.status.${status}`),
-                      })).map((item) => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              )}
+          <Field label={t('cases.fields.officialNumber')} hint={t('cases.form.officialNumberHint')}>
+            <Input dir="ltr" {...register('officialNumber' as never)} />
+          </Field>
+          <Field
+            label={t('cases.fields.caseYear')}
+            hint={t('cases.form.caseYearHint')}
+            error={errorFor('officialYear')}
+          >
+            <Input
+              type="number"
+              dir="ltr"
+              inputMode="numeric"
+              min={1800}
+              max={9999}
+              {...register('officialYear' as never, { valueAsNumber: true })}
             />
+          </Field>
+          <Field
+            label={t('cases.fields.judicialYear')}
+            hint={t('cases.form.judicialYearHint')}
+            error={errorFor('judicialYear')}
+          >
+            <Input
+              type="number"
+              dir="ltr"
+              inputMode="numeric"
+              min={1}
+              max={9999}
+              {...register('judicialYear' as never, { valueAsNumber: true })}
+            />
+          </Field>
+          <Field label={t('cases.fields.caseType')} hint={t('cases.form.caseTypeHint')}>
+            <CreatableCombobox suggestion="caseType" {...register('caseType' as never)} />
           </Field>
         </div>
       </fieldset>

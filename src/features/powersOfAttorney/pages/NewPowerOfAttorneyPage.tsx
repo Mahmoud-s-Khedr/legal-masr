@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { actionableErrorMessage } from '@/bridge/errors';
 import { PowerOfAttorneyForm } from '../components/PowerOfAttorneyForm';
 import { useSavePowerOfAttorney } from '../api/powersOfAttorneyApi';
 export function NewPowerOfAttorneyPage() {
@@ -21,7 +22,9 @@ export function NewPowerOfAttorneyPage() {
       />
       {save.isError && (
         <Alert variant="destructive">
-          <AlertDescription>{t('poa.saveError')}</AlertDescription>
+          <AlertDescription>
+            {actionableErrorMessage(save.error, t('poa.saveError'))}
+          </AlertDescription>
         </Alert>
       )}
     </section>

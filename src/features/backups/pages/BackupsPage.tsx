@@ -9,6 +9,7 @@ import { Skeleton } from '../../../components/ui/skeleton';
 import { Icon } from '../../../components/layout/Icon';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { useFormat } from '../../../i18n/LocalePresentation';
+import { useSingleFlight } from '../../../lib/useSingleFlight';
 import {
   useCreateBackup,
   useLatestSuccessfulBackup,
@@ -27,17 +28,17 @@ export function BackupSettingsPanel() {
   // Backup freshness is judged against when the panel was opened.
   const [openedAt] = useState(() => Date.now());
 
-  const createNow = () => {
-    createBackup.mutate();
-  };
+  // `isPending` lags a render behind a click, so a quick second click would start a
+  // second backup, or worse a second restore. Each action may run once at a time.
+  const once = useSingleFlight();
+  const createNow = () => once((settled) => createBackup.mutate(undefined, { onSettled: settled }));
 
-  const validate = () => {
-    validateBackup.mutate();
-  };
+  const validate = () =>
+    once((settled) => validateBackup.mutate(undefined, { onSettled: settled }));
 
   const restore = () => {
     setRestoreOpen(false);
-    restoreBackup.mutate();
+    once((settled) => restoreBackup.mutate(undefined, { onSettled: settled }));
   };
 
   const latest = latestBackup.data;

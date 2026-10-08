@@ -12,13 +12,26 @@ export function CaseStatusBadge({ status, archived }: { status: CaseStatus; arch
 }
 
 /** The court reference as Egyptian filings write it: «رقم 447 لسنة 2026». */
-export function OfficialReference({ number, year }: { number: string; year?: number | null }) {
+export function OfficialReference({
+  number,
+  year,
+  judicialYear,
+}: {
+  number: string;
+  year?: number | null;
+  judicialYear?: number | null;
+}) {
   const { t } = useTranslation();
+  const isolated = '\u2068' + number + '\u2069';
   return (
     <span className="official-reference">
-      {year
-        ? t('cases.officialReference', { number: '\u2068' + number + '\u2069', year })
-        : t('cases.officialNumberOnly', { number: '\u2068' + number + '\u2069' })}
+      {year && judicialYear
+        ? t('cases.officialReferenceBoth', { number: isolated, year, judicialYear })
+        : judicialYear
+          ? t('cases.officialReferenceJudicial', { number: isolated, judicialYear })
+          : year
+            ? t('cases.officialReference', { number: isolated, year })
+            : t('cases.officialNumberOnly', { number: isolated })}
     </span>
   );
 }

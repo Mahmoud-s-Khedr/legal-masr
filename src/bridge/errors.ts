@@ -17,8 +17,12 @@ const appErrorCodes = new Set<AppErrorCode>([
   'CLIENT_NOT_FOUND',
   'CASE_NOT_FOUND',
   'POWER_OF_ATTORNEY_NOT_FOUND',
+  'POWER_OF_ATTORNEY_CLIENT_IN_USE',
   'HEARING_NOT_FOUND',
   'CLIENT_PROBABLE_DUPLICATE',
+  'CLIENT_NUMBER_TAKEN',
+  'CASE_NUMBER_TAKEN',
+  'POWER_OF_ATTORNEY_NUMBER_TAKEN',
   'CASE_CLIENT_HAS_PAYMENTS',
   'CLIENT_ARCHIVED',
   'CASE_MUST_HAVE_CLIENT',
@@ -55,4 +59,17 @@ export function errorMessage(error: unknown, fallback: string): string {
   if (!appError) return fallback;
   const key = `errors.${appError.code}`;
   return i18n.exists(key) ? i18n.t(key) : appError.message;
+}
+
+/**
+ * The message for a failed save in a dialog. A specific code (a number already
+ * used, a record that no longer exists) gets its translated, actionable text.
+ * Anything unspecific, including the catch-all OPERATION_FAILED and raw strings
+ * from the runtime, keeps the dialog's own contextual wording («تعذر حفظ الجلسة»)
+ * instead of a generic sentence that hides which action failed.
+ */
+export function actionableErrorMessage(error: unknown, fallback: string): string {
+  const appError = asAppError(error);
+  if (!appError || appError.code === 'OPERATION_FAILED') return fallback;
+  return errorMessage(error, fallback);
 }

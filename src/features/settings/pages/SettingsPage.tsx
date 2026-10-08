@@ -181,7 +181,9 @@ export function SettingsPage() {
         >
           <TabsList
             variant="line"
-            className="settings-nav"
+            // A stacked sidebar on wide windows; a compact two-column grid at <= 760px
+            // (Tailwind's max-* is strictly "less than", hence 761).
+            className="settings-nav max-[761px]:grid max-[761px]:w-full max-[761px]:grid-cols-2"
             aria-label={t('settings.sectionsLabel')}
           >
             {(

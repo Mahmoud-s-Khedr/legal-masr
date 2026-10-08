@@ -27,6 +27,7 @@ export function CaseEditForm({
       internalNumber: caseDto.internalNumber,
       officialNumber: caseDto.officialNumber ?? undefined,
       officialYear: caseDto.officialYear ?? undefined,
+      judicialYear: caseDto.judicialYear ?? undefined,
       courtName: caseDto.courtName ?? undefined,
       circuitName: caseDto.circuitName ?? undefined,
       caseType: caseDto.caseType ?? undefined,

@@ -230,6 +230,7 @@ describe('application gate', () => {
         internalNumber: '123',
         officialNumber: null,
         officialYear: 2026,
+        judicialYear: null,
         status: 'ACTIVE',
         clientNames: ['أحمد'],
         archivedAt: null,

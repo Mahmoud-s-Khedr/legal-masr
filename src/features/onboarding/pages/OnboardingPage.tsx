@@ -6,6 +6,7 @@ import { forwardRef, type InputHTMLAttributes, useEffect, useState } from 'react
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../../../bridge/errors';
+import { groupRecoveryKey } from '../../../lib/recoveryKey';
 import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
@@ -97,8 +98,8 @@ export function OnboardingPage({
         {subGate === 'recovery-key' ? (
           <div className="recovery-key-step">
             <p className="warning">{t('gate.recoveryKeyWarning')}</p>
-            <code className="recovery-key" aria-label={t('gate.fields.recoveryKey')}>
-              {recoveryKey}
+            <code className="recovery-key" dir="ltr" aria-label={t('gate.fields.recoveryKey')}>
+              {groupRecoveryKey(recoveryKey)}
             </code>
             <ul className="gate-tips">
               <li>{t('gate.recoveryTips.paper')}</li>

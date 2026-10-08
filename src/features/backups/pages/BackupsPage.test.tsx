@@ -154,4 +154,52 @@ describe('BackupSettingsPanel', () => {
     expect(await screen.findByText(/ملف النسخة الاحتياطية تالف/)).toBeInTheDocument();
     expect(bridge.status).not.toHaveBeenCalled();
   });
+
+  it('creates one backup for a double click, and allows another once it has finished', async () => {
+    let finish!: () => void;
+    vi.mocked(bridge.createBackup).mockImplementationOnce(
+      () => new Promise((resolve) => (finish = () => resolve('backup-token'))),
+    );
+    renderPanel();
+    const create = screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' });
+
+    fireEvent.click(create);
+    fireEvent.click(create);
+    await waitFor(() => expect(bridge.createBackup).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(bridge.createBackup).toHaveBeenCalledTimes(1);
+
+    finish();
+    await screen.findByText('تم إنشاء النسخة الاحتياطية بنجاح.');
+    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
+    await waitFor(() => expect(bridge.createBackup).toHaveBeenCalledTimes(2));
+  });
+
+  it('allows a retry after a failed backup', async () => {
+    vi.mocked(bridge.createBackup).mockRejectedValueOnce(new Error('disk full'));
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
+    await screen.findByRole('alert');
+
+    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
+    await waitFor(() => expect(bridge.createBackup).toHaveBeenCalledTimes(2));
+  });
+
+  it('restores once when the confirmation is clicked twice', async () => {
+    let finish!: () => void;
+    vi.mocked(bridge.restoreBackup).mockImplementationOnce(
+      () => new Promise((resolve) => (finish = () => resolve(undefined))),
+    );
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
+    const confirm = await screen.findByRole('button', { name: 'تأكيد الاستعادة' });
+
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+    await waitFor(() => expect(bridge.restoreBackup).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(bridge.restoreBackup).toHaveBeenCalledTimes(1);
+    finish();
+    await waitFor(() => expect(bridge.status).toHaveBeenCalled());
+  });
 });

@@ -1,4 +1,5 @@
 import { DraftForm } from '@/components/forms/DraftForm';
+import { actionableErrorMessage } from '@/bridge/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { EntityPicker } from '@/components/forms/EntityPicker';
@@ -297,7 +298,9 @@ export function TasksPage() {
         )}
         {save.isError && (
           <Alert variant="destructive">
-            <AlertDescription>{t('tasks.saveError')}</AlertDescription>
+            <AlertDescription>
+              {actionableErrorMessage(save.error, t('tasks.saveError'))}
+            </AlertDescription>
           </Alert>
         )}
         {(complete.isError || reopen.isError) && (

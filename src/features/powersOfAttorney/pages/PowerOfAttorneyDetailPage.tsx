@@ -1,4 +1,5 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { actionableErrorMessage } from '@/bridge/errors';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -273,7 +274,9 @@ export function PowerOfAttorneyDetailPage() {
         />
         {save.isError && (
           <Alert variant="destructive">
-            <AlertDescription>{t('poa.saveError')}</AlertDescription>
+            <AlertDescription>
+              {actionableErrorMessage(save.error, t('poa.saveError'))}
+            </AlertDescription>
           </Alert>
         )}
       </FormDialog>
