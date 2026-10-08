@@ -18,8 +18,14 @@ for (const language of languages)
           Promise.all(Array.from(document.images, (image) => image.decode())),
         );
         await expect(page.getByRole('alert')).toHaveCount(0);
-        if (process.env.VISUAL_LAYOUT_PROBE === '1' && name === 'dashboard')
-          await page.addStyleTag({ content: '.today-heading { padding-top: 120px !important; }' });
+        if (process.env.VISUAL_LAYOUT_PROBE === '1' && name === 'dashboard') {
+          const header = page.locator('.dashboard-ledger > .page-header');
+          await expect(header).toHaveCount(1);
+          await page.addStyleTag({
+            content: '.dashboard-ledger > .page-header { padding-top: 120px !important; }',
+          });
+          await expect(header).toHaveCSS('padding-top', '120px');
+        }
         await expect(page).toHaveScreenshot(
           `${name}-${language}-${viewport.width}x${viewport.height}.png`,
           {
