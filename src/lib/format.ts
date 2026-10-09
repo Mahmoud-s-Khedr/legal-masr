@@ -14,6 +14,15 @@ export type DateFormatPreference = 'dd/MM/yyyy' | 'yyyy-MM-dd';
 const localeTag = (language: DisplayLanguage) =>
   language === 'ar' ? 'ar-EG-u-ca-gregory-nu-latn' : 'en-GB-u-ca-gregory';
 
+/**
+ * Joins display names with the interface language's list separator. A fixed
+ * separator is used instead of Intl.ListFormat so the output does not depend on
+ * the ICU data bundled with each platform web view.
+ */
+export function formatNameList(items: readonly string[], language: DisplayLanguage) {
+  return items.join(language === 'ar' ? '، ' : ', ');
+}
+
 const isDateOnly = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
 /** Short numeric date following the lawyer's preference, e.g. 03/10/2026. */

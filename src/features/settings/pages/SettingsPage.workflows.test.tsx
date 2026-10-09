@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -355,6 +355,79 @@ describe('SettingsPage workflows', () => {
       renderSettings('/settings?tab=nonsense');
 
       expect(await screen.findByRole('button', { name: t('settings.profile.save') })).toBeVisible();
+    });
+  });
+  describe('display tab entry routes', () => {
+    // Non-default values make a blank or defaulted label distinguishable from a loaded one.
+    const stored = {
+      ...settings,
+      theme: 'dark' as const,
+      dateFormat: 'yyyy-MM-dd' as const,
+      weekStartsOn: 0,
+    };
+
+    describe.each(['ar', 'en'] as const)('in %s', (language) => {
+      const expectLoadedLabels = () => {
+        const form = screen.getByRole('button', { name: t('settings.save') }).closest('form')!;
+        for (const label of [
+          language === 'ar' ? t('gate.fields.languageAr') : t('gate.fields.languageEn'),
+          t('settings.themes.dark'),
+          t('settings.display.yearFirst'),
+          t('settings.display.sunday'),
+        ])
+          expect(within(form).getByText(label)).toBeVisible();
+      };
+
+      beforeEach(async () => {
+        await i18n.changeLanguage(language);
+        vi.mocked(bridge.settings).mockResolvedValue({ ...stored, language });
+      });
+
+      it('shows the stored labels when mounted directly on the tab (deep link)', async () => {
+        const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        renderSettings('/settings?tab=general');
+
+        await screen.findByRole('button', { name: t('settings.save') });
+        expectLoadedLabels();
+        expect(errors.mock.calls.flat().join(' ')).not.toMatch(/uncontrolled|controlled/i);
+        errors.mockRestore();
+      });
+
+      it('shows the stored labels after clicking the tab', async () => {
+        renderSettings('/settings');
+
+        fireEvent.click(await screen.findByRole('tab', { name: t('settings.tabs.general') }));
+        await screen.findByRole('button', { name: t('settings.save') });
+        expectLoadedLabels();
+      });
+
+      it('saves exactly the stored values when nothing was touched', async () => {
+        vi.mocked(bridge.updateSettings).mockResolvedValue({ ...stored, language });
+        renderSettings('/settings?tab=general');
+
+        fireEvent.click(await screen.findByRole('button', { name: t('settings.save') }));
+
+        expect(await screen.findByText(t('settings.saved'))).toBeVisible();
+        expect(bridge.updateSettings).toHaveBeenCalledTimes(1);
+        expect(bridge.updateSettings).toHaveBeenCalledWith(
+          expect.objectContaining({
+            language,
+            theme: 'dark',
+            dateFormat: 'yyyy-MM-dd',
+            weekStartsOn: 0,
+            defaultReminderMinutes: 60,
+            lockTimeoutMinutes: 15,
+          }),
+        );
+      });
+    });
+
+    it('does not mount the display form while settings are still loading or failed', async () => {
+      vi.mocked(bridge.settings).mockRejectedValue(new Error('locked'));
+      renderSettings('/settings?tab=general');
+
+      expect(await screen.findByText(t('settings.loadError'))).toBeVisible();
+      expect(screen.queryByRole('button', { name: t('settings.save') })).not.toBeInTheDocument();
     });
   });
 });

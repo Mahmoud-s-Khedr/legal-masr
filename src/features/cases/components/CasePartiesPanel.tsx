@@ -51,7 +51,7 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
                       t('cases.parties.lawyerLine', { name: opponent.lawyerName }),
                   ]
                     .filter(Boolean)
-                    .join(' · ') || 'دون صفة مسجلة'}
+                    .join(' · ') || t('cases.parties.noDetails')}
                   {opponent.phone && (
                     <>
                       {' · '}
@@ -190,7 +190,11 @@ function OpponentForm({
       })}
     >
       <FieldGroup>
-        <Field label={<>{t('cases.parties.name')}</>} required>
+        <Field
+          label={<>{t('cases.parties.name')}</>}
+          required
+          error={form.formState.errors.fullName ? t('forms.required') : undefined}
+        >
           <Input
             required
             autoFocus
@@ -200,7 +204,10 @@ function OpponentForm({
             aria-invalid={!!form.formState.errors.fullName}
           />
         </Field>
-        <Field label={<>{t('cases.parties.role')}</>}>
+        <Field
+          label={<>{t('cases.parties.role')}</>}
+          error={form.formState.errors.legalCapacity ? t('forms.invalid') : undefined}
+        >
           <CreatableCombobox
             suggestion="legalCapacity"
             value={legalCapacity}
@@ -209,7 +216,10 @@ function OpponentForm({
             aria-invalid={!!form.formState.errors.legalCapacity}
           />
         </Field>
-        <Field label={<>{t('cases.parties.lawyer')}</>}>
+        <Field
+          label={<>{t('cases.parties.lawyer')}</>}
+          error={form.formState.errors.lawyerName ? t('forms.invalid') : undefined}
+        >
           <Input
             value={lawyerName}
             onChange={(event) => setLawyerName(event.target.value)}
@@ -217,7 +227,10 @@ function OpponentForm({
             aria-invalid={!!form.formState.errors.lawyerName}
           />
         </Field>
-        <Field label={<>{t('cases.parties.phone')}</>}>
+        <Field
+          label={<>{t('cases.parties.phone')}</>}
+          error={form.formState.errors.phone ? t('forms.invalid') : undefined}
+        >
           <Input
             dir="ltr"
             inputMode="tel"
@@ -227,7 +240,10 @@ function OpponentForm({
             aria-invalid={!!form.formState.errors.phone}
           />
         </Field>
-        <Field label={<>{t('cases.parties.address')}</>}>
+        <Field
+          label={<>{t('cases.parties.address')}</>}
+          error={form.formState.errors.address ? t('forms.invalid') : undefined}
+        >
           <Input
             value={address}
             onChange={(event) => setAddress(event.target.value)}
@@ -235,7 +251,10 @@ function OpponentForm({
             aria-invalid={!!form.formState.errors.address}
           />
         </Field>
-        <Field label={<>{t('common.notes')}</>}>
+        <Field
+          label={<>{t('common.notes')}</>}
+          error={form.formState.errors.notes ? t('forms.invalid') : undefined}
+        >
           <Textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}

@@ -162,7 +162,9 @@ export function CaseDetailPage() {
             )}
             {caseDto.clients.length > 0 && (
               <span>
-                <bdi dir="auto">{caseDto.clients.map((client) => client.fullName).join('، ')}</bdi>
+                <bdi dir="auto">
+                  {format.list(caseDto.clients.map((client) => client.fullName))}
+                </bdi>
               </span>
             )}
           </>

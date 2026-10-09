@@ -613,6 +613,7 @@
       "address": "العنوان",
       "empty": "لم يُسجل خصوم بعد. أضف الخصم وصفته ومحاميه إن وُجد.",
       "editTitle": "تعديل بيانات الخصم",
+      "noDetails": "دون صفة مسجلة",
       "lawyerLine": "محاميه: {{name}}",
       "saveError": "تعذر حفظ بيانات الخصم. ما زالت بياناتك في النموذج؛ حاول مرة أخرى.",
       "removeTitle": "إزالة الخصم",
@@ -676,7 +677,11 @@
   "forms": {
     "required": "هذا الحقل مطلوب.",
     "invalid": "تحقق من القيمة المدخلة.",
-    "notSpecified": "غير محدد"
+    "notSpecified": "غير محدد",
+    "showOptions": "عرض الخيارات",
+    "clearSelection": "مسح الاختيار",
+    "removeItem": "إزالة",
+    "removeNamed": "إزالة {{name}}"
   },
   "records": {
     "archive": "أرشفة",

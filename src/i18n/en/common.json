@@ -613,6 +613,7 @@
       "address": "Address",
       "empty": "No opponents recorded yet. Add the opponent, their capacity and their lawyer if any.",
       "editTitle": "Edit opponent",
+      "noDetails": "No capacity recorded",
       "lawyerLine": "Lawyer: {{name}}",
       "saveError": "Could not save the opponent. Your entries are kept; please try again.",
       "removeTitle": "Remove opponent",
@@ -676,7 +677,11 @@
   "forms": {
     "required": "This field is required.",
     "invalid": "Check the value you entered.",
-    "notSpecified": "Not specified"
+    "notSpecified": "Not specified",
+    "showOptions": "Show options",
+    "clearSelection": "Clear selection",
+    "removeItem": "Remove",
+    "removeNamed": "Remove {{name}}"
   },
   "records": {
     "archive": "Archive",

@@ -240,7 +240,7 @@ export function DashboardPage() {
                       )}
                     </Link>
                     <span dir="auto">
-                      {caseContext(caseItem, t)}
+                      {caseContext(caseItem, t, format.list)}
                       {hearing.location && ` · ${hearing.location}`}
                     </span>
                   </div>
@@ -262,7 +262,7 @@ export function DashboardPage() {
             id: item.id,
             to: `/cases/${item.id}`,
             primary: item.internalNumber,
-            secondary: item.clientNames.join('، '),
+            secondary: format.list(item.clientNames),
           }))}
           t={t}
         />
@@ -320,6 +320,7 @@ function HearingRow({
   time: string | null;
   t: Translate;
 }) {
+  const format = useFormat();
   const place = [hearing.location, hearing.circuitName].filter(Boolean).join(' · ');
   return (
     <li>
@@ -328,7 +329,7 @@ function HearingRow({
         <Link to={`/calendar?hearing=${hearing.id}`}>
           <bdi dir="auto">{hearing.hearingType ?? t('dashboard.legalEvent')}</bdi>
         </Link>
-        <span dir="auto">{caseContext(caseItem, t)}</span>
+        <span dir="auto">{caseContext(caseItem, t, format.list)}</span>
         {place && <span dir="auto">{place}</span>}
         {hearing.requiredDocuments && (
           <small className="preparation-context" dir="auto">
@@ -427,11 +428,15 @@ function RecordList({
   );
 }
 
-function caseContext(item: CaseSummary | undefined, t: Translate) {
+function caseContext(
+  item: CaseSummary | undefined,
+  t: Translate,
+  list: (items: readonly string[]) => string,
+) {
   return item
     ? t('dashboard.caseContext', {
         caseNumber: item.internalNumber,
-        clients: item.clientNames.join('، '),
+        clients: list(item.clientNames),
       })
     : t('dashboard.caseContextUnavailable');
 }

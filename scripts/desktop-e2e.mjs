@@ -329,6 +329,60 @@ for (const choice of ['cancel', 'corrupt'])
     await h.nav('/clients');
     await h.browser.$('a*=E2E-PRESERVED').waitForDisplayed();
   });
+await scenario('opponent-form-announces-missing-name', async (h) => {
+  await h.initialize();
+  await h.client('E2E-OPPONENT-CLIENT');
+  await h.nav('/cases');
+  await h.click('إضافة قضية');
+  await h.input('internalNumber', 'E2E-OPPONENT-CASE');
+  const picker = await h.browser.$('[data-slot="combobox-chip-input"]');
+  await picker.waitForDisplayed();
+  await picker.click();
+  await picker.setValue('E2E-OPPONENT-CLIENT');
+  await h.browser.$('[role="option"]').waitForDisplayed();
+  await h.browser.$('[role="option"]').click();
+  await h.click('حفظ القضية');
+  await h.browser.$('h2*=E2E-OPPONENT-CASE').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('open-opponent-form');
+  await h.click('الأطراف');
+  await h.click('إضافة خصم');
+  const dialog = await h.browser.$('[role="dialog"]');
+  await dialog.waitForDisplayed({ timeout: 15000 });
+  for (const value of ['', '   ']) {
+    h.checkpoint('submit-invalid-opponent');
+    if (value) await dialog.$('input[required]').setValue(value);
+    await h.click('حفظ الخصم');
+    const alert = await dialog.$('[role="alert"]');
+    await alert.waitForDisplayed({ timeout: 15000 });
+    assert.equal(await alert.getText(), 'هذا الحقل مطلوب.');
+    const name = await dialog.$('input[required]');
+    assert.equal(await name.getAttribute('aria-invalid'), 'true');
+    assert.equal(await name.getAttribute('aria-describedby'), await alert.getAttribute('id'));
+  }
+  assert.equal(await dialog.isExisting(), true, 'the dialog keeps the draft open');
+});
+await scenario('settings-display-tab-deep-link-shows-saved-labels', async (h) => {
+  await h.initialize();
+  h.checkpoint('open-display-tab-by-deep-link');
+  // First Settings visit arrives directly on the tab, as history navigation and links do.
+  await h.browser.execute(() => {
+    globalThis.history.pushState({}, '', '/settings?tab=general');
+    globalThis.dispatchEvent(new globalThis.PopStateEvent('popstate'));
+  });
+  await h.browser.$('[data-slot="select-trigger"]').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('read-selected-labels');
+  const labels = await h.browser.execute(() =>
+    [...globalThis.document.querySelectorAll('[data-slot="select-trigger"]')].map((trigger) =>
+      trigger.querySelector('[data-slot="select-value"]')?.textContent.trim(),
+    ),
+  );
+  assert.deepEqual(labels.slice(0, 4), [
+    'العربية',
+    'حسب إعداد الجهاز',
+    'يوم/شهر/سنة (03/10/2026)',
+    'السبت',
+  ]);
+});
 await scenario('restart-persistence', async (h) => {
   await h.initialize();
   await h.client('E2E-PERSISTENT');
