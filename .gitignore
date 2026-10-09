@@ -35,3 +35,7 @@ playwright-report/
 later
 # Bulk screenshots and logs of the 2026-10-09 full-app audit (33 MB, 390+ PNGs); kept on disk, not committed
 docs/reviews/evidence/2026-10-09/full-test/
+
+# Generated full-app QA evidence and HTML; retained locally with an evidence archive
+docs/reviews/evidence/2026-10-09-full-app/
+docs/reviews/2026-10-10-full-app-testing-report.html

@@ -16,6 +16,7 @@ import { BackupsPage } from '../features/backups/pages/BackupsPage';
 import { PowersOfAttorneyPage } from '../features/powersOfAttorney/pages/PowersOfAttorneyPage';
 import { PowerOfAttorneyDetailPage } from '../features/powersOfAttorney/pages/PowerOfAttorneyDetailPage';
 import type { IconName } from '../components/layout/Icon';
+import { NotFoundPage } from './NotFoundPage';
 
 export const NAV_GROUPS = [
   {
@@ -70,6 +71,7 @@ export function AppRoutes() {
       <Route path="/finances" element={<FinancesPage />} />
       <Route path="/backups" element={<BackupsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

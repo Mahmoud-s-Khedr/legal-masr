@@ -34,7 +34,12 @@
     "addHearing": "Add hearing",
     "addTask": "Add task",
     "searchLabel": "Global search",
-    "loadError": "Could not load the records. Please try again."
+    "loadError": "Could not load the records. Please try again.",
+    "notFound": {
+      "title": "Page not found",
+      "description": "We could not find the requested page. Return to Today to continue working.",
+      "returnToToday": "Return to Today"
+    }
   },
   "datePicker": {
     "placeholder": "YYYY-MM-DD",
