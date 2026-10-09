@@ -57,6 +57,12 @@ pub fn update_payment(conn: &Connection, payment: &PaymentDto) -> Result<(), Err
     if conn.execute("UPDATE payments SET case_id = ?2, payer_client_id = ?3, amount_minor = ?4, payment_date = ?5, payment_method = ?6, notes = ?7, updated_at = ?8 WHERE id = ?1", params![payment.id, payment.case_id, payment.payer_client_id, payment.amount_minor, payment.payment_date, payment.payment_method, payment.notes, payment.updated_at])? == 0 { return Err(Error::PaymentNotFound); }
     Ok(())
 }
+pub fn delete_payment(conn: &Connection, id: &str) -> Result<(), Error> {
+    if conn.execute("DELETE FROM payments WHERE id = ?1", [id])? == 0 {
+        return Err(Error::PaymentNotFound);
+    }
+    Ok(())
+}
 pub fn list_payments(
     conn: &Connection,
     payer_client_id: Option<&str>,
@@ -79,6 +85,21 @@ pub fn insert_expense(conn: &Connection, expense: &ExpenseDto) -> Result<(), Err
 }
 pub fn update_expense(conn: &Connection, expense: &ExpenseDto) -> Result<(), Error> {
     if conn.execute("UPDATE expenses SET case_id = ?2, client_id = ?3, amount_minor = ?4, expense_date = ?5, expense_type = ?6, notes = ?7, updated_at = ?8 WHERE id = ?1", params![expense.id, expense.case_id, expense.client_id, expense.amount_minor, expense.expense_date, expense.expense_type, expense.notes, expense.updated_at])? == 0 { return Err(Error::ExpenseNotFound); }
+    Ok(())
+}
+/// Refuses an expense that has documents: their managed files must be removed first.
+pub fn delete_expense(conn: &Connection, id: &str) -> Result<(), Error> {
+    let documents: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM attachments WHERE expense_id = ?1",
+        [id],
+        |row| row.get(0),
+    )?;
+    if documents > 0 {
+        return Err(Error::ExpenseHasAttachments);
+    }
+    if conn.execute("DELETE FROM expenses WHERE id = ?1", [id])? == 0 {
+        return Err(Error::ExpenseNotFound);
+    }
     Ok(())
 }
 pub fn list_expenses(

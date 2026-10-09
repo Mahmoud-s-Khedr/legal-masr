@@ -42,6 +42,7 @@ export function CaseEditForm({
 
   return (
     <DraftForm
+      control={control}
       noValidate
       className="dialog-wide-form"
       onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}
@@ -53,7 +54,7 @@ export function CaseEditForm({
             {t('records.saveEdits')}
           </Button>
           {onCancel && (
-            <Button type="button" variant="secondary" onClick={onCancel}>
+            <Button type="button" variant="secondary" data-draft-cancel onClick={onCancel}>
               {t('cases.cancel')}
             </Button>
           )}

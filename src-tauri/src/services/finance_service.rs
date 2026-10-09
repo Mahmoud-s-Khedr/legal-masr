@@ -5,7 +5,7 @@ use crate::{
         FeeAgreementDto, FeeAgreementInput, PaymentDto, PaymentInput, PaymentListInput,
     },
     errors::Error,
-    repositories::finance_repository,
+    repositories::{case_repository, finance_repository},
     state::AppState,
 };
 use tauri::{AppHandle, Runtime};
@@ -83,16 +83,7 @@ pub fn save_fee_agreement<R: Runtime>(
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
-    if conn
-        .query_row(
-            "SELECT 1 FROM cases WHERE id = ?1",
-            [&input.case_id],
-            |_| Ok(()),
-        )
-        .is_err()
-    {
-        return Err(Error::CaseNotFound);
-    }
+    case_repository::ensure_active(&conn, &input.case_id)?;
     finance_repository::upsert_fee_agreement(&conn, &Uuid::new_v4().to_string(), &input, &db::now())
 }
 pub fn save_payment<R: Runtime>(
@@ -113,12 +104,16 @@ pub fn save_payment<R: Runtime>(
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
     ensure_payer_membership(&conn, &input.case_id, &input.payer_client_id)?;
+    case_repository::ensure_active(&conn, &input.case_id)?;
     let now = db::now();
     let is_new = input.id.is_none();
     let id = input.id.unwrap_or_else(|| Uuid::new_v4().to_string());
     let existing = (!is_new)
         .then(|| finance_repository::get_payment(&conn, &id))
         .transpose()?;
+    if let Some(existing) = &existing {
+        case_repository::ensure_active(&conn, &existing.case_id)?;
+    }
     let payment = PaymentDto {
         id,
         case_id: input.case_id,
@@ -155,12 +150,7 @@ pub fn save_expense<R: Runtime>(
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
     if let Some(case_id) = &input.case_id {
-        if conn
-            .query_row("SELECT 1 FROM cases WHERE id = ?1", [case_id], |_| Ok(()))
-            .is_err()
-        {
-            return Err(Error::CaseNotFound);
-        }
+        case_repository::ensure_active(&conn, case_id)?;
     }
     if let Some(client_id) = &input.client_id {
         if conn
@@ -178,6 +168,9 @@ pub fn save_expense<R: Runtime>(
     let existing = (!is_new)
         .then(|| finance_repository::get_expense(&conn, &id))
         .transpose()?;
+    if let Some(case_id) = existing.as_ref().and_then(|item| item.case_id.as_ref()) {
+        case_repository::ensure_active(&conn, case_id)?;
+    }
     let expense = ExpenseDto {
         id,
         case_id: input.case_id,
@@ -199,6 +192,35 @@ pub fn save_expense<R: Runtime>(
     }
     Ok(expense)
 }
+/// Removes a payment recorded by mistake (the lawyer confirms first in the interface).
+pub fn delete_payment<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: &str,
+) -> Result<(), Error> {
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    let conn = db::open_db(&path, &master)?;
+    let payment = finance_repository::get_payment(&conn, id)?;
+    case_repository::ensure_active(&conn, &payment.case_id)?;
+    finance_repository::delete_payment(&conn, id)
+}
+
+/// Removes an expense recorded by mistake (the lawyer confirms first in the interface).
+pub fn delete_expense<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: &str,
+) -> Result<(), Error> {
+    let master = state.unlocked()?;
+    let (_, path) = db::paths(app)?;
+    let conn = db::open_db(&path, &master)?;
+    if let Some(case_id) = finance_repository::get_expense(&conn, id)?.case_id {
+        case_repository::ensure_active(&conn, &case_id)?;
+    }
+    finance_repository::delete_expense(&conn, id)
+}
+
 pub fn list_payments<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,

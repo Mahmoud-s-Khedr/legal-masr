@@ -1,18 +1,22 @@
 import { z } from 'zod';
 import { normalizeTypedDate } from '@/components/forms/DatePicker';
 import { parseMoneyToMinor } from './money';
+import { normalizeTypedTime } from './timeOfDay';
 export const requiredText = z.string().trim().min(1);
 export const optionalText = z.string();
 export const requiredDate = z
   .string()
   .min(1)
-  .refine((value) => !!normalizeTypedDate(value), 'Invalid date');
+  .refine((value) => !!normalizeTypedDate(value), 'Invalid date')
+  .transform((value) => normalizeTypedDate(value) ?? value);
 export const optionalDate = z
   .string()
-  .refine((value) => !value || !!normalizeTypedDate(value), 'Invalid date');
+  .refine((value) => !value || !!normalizeTypedDate(value), 'Invalid date')
+  .transform((value) => (value ? (normalizeTypedDate(value) ?? value) : ''));
 export const timeText = z
   .string()
-  .refine((value) => !value || /^([01]\d|2[0-3]):[0-5]\d$/.test(value), 'Invalid time');
+  .refine((value) => !value || !!normalizeTypedTime(value), 'Invalid time')
+  .transform((value) => (value ? (normalizeTypedTime(value) ?? value) : ''));
 export const moneyText = z
   .string()
   .trim()

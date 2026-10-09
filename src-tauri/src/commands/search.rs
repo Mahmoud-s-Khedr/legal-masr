@@ -8,6 +8,7 @@ pub fn search_global(
     state: State<AppState>,
     query: String,
 ) -> Result<Vec<SearchHit>, Error> {
+    let _operation = state.operation()?;
     search_service::search(&app, &state, &query)
 }
 
@@ -22,6 +23,7 @@ pub fn search_rebuild_index(
     app: AppHandle,
     state: State<AppState>,
 ) -> Result<RebuildResult, Error> {
+    let _operation = state.operation()?;
     let indexed_count = search_service::rebuild_index(&app, &state)?;
     Ok(RebuildResult { indexed_count })
 }

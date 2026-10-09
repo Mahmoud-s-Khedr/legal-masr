@@ -4,11 +4,13 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { actionableErrorMessage } from '@/bridge/errors';
 import { PowerOfAttorneyForm } from '../components/PowerOfAttorneyForm';
-import { useSavePowerOfAttorney } from '../api/powersOfAttorneyApi';
+import { suggestNextNumber } from '../../../lib/nextNumber';
+import { usePowerOfAttorneyList, useSavePowerOfAttorney } from '../api/powersOfAttorneyApi';
 export function NewPowerOfAttorneyPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const save = useSavePowerOfAttorney();
+  const existing = usePowerOfAttorneyList({ includeArchived: true });
   return (
     <section className="record-editor">
       <PageHeader
@@ -18,6 +20,11 @@ export function NewPowerOfAttorneyPage() {
       />
       <div className="editor-surface">
         <PowerOfAttorneyForm
+          suggestedNumber={
+            existing.data
+              ? suggestNextNumber(existing.data.map((item) => item.internalSequence))
+              : undefined
+          }
           busy={save.isPending}
           onCancel={() => navigate('/powers-of-attorney')}
           onSubmit={async (input) => {

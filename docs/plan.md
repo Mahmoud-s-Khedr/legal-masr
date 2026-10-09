@@ -55,15 +55,18 @@ A later [beta-readiness pass](reviews/2026-10-08-beta-pass.md) fixed the reprodu
 error-message defects and added migration `0002`. The recommendation is unchanged: do not give testers real client
 data until backups are portable and restore-safe (B01/B02) and the app has been run on Windows and macOS.
 
-## Portable backup recovery — 2026-10-09
+## Canonical offline integration — 2026-10-10
 
-Format v2 backups carry a copy of the vault's password and recovery envelopes, so
-a backup restores into an empty or incomplete installation with the original
-password or the recovery key; the setup screen, the `INCOMPLETE` gate and
-Settings → Backups offer it. Design, error contract and limits are in
-[plan/07-backup-format.md](plan/07-backup-format.md); the evidence and the
-unverified items are in [the fix-pass report](reviews/2026-10-09-fix-pass-report.md).
-This **narrows** release blocker 2 and B01 (software design and Linux tests); it
-does **not** close them: the Windows↔macOS exercise, repeated restores on
-physical devices, and the other roadmap blockers remain open, so the
-"do not give testers real client data" recommendation is unchanged.
+The local UI is the design reference. Remote functionality is integrated through
+existing components, with one canonical authenticated backup implementation and
+one choose/authenticate/preview/confirm restore flow across setup, incomplete vaults
+and Settings. Recovery restore stages a new password in the same journal; foreign
+vault replacement requires authentication. Old backup readers, alternate key stores
+and superseded commands are removed. Numbered migrations are unchanged.
+
+The operation/session coordinator, archived-owner checks and dependent search
+refresh are implemented. The final contract is in
+[plan/07-backup-format.md](plan/07-backup-format.md). Integration evidence and remaining
+platform risks are recorded in [the integration review](reviews/2026-10-10-integration.md).
+Physical Windows/macOS journeys and the remaining roadmap release blockers are
+still open; this development merge does not certify public-beta readiness.

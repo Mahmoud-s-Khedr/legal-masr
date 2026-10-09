@@ -16,7 +16,13 @@ import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { useAddOpponent, useRemoveOpponent, useUpdateOpponent } from '../api/casesApi';
 
-export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
+export function CasePartiesPanel({
+  caseDto,
+  readOnly = false,
+}: {
+  caseDto: CaseDto;
+  readOnly?: boolean;
+}) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState<CaseOpponentDto | 'new' | null>(null);
   const [removing, setRemoving] = useState<CaseOpponentDto | null>(null);
@@ -27,14 +33,11 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
     <section className="detail-card">
       <div className="card-title">
         <h3>{t('cases.parties.title')}</h3>
-        <Button
-          type="button"
-          variant="secondary"
-
-          onClick={() => setEditing('new')}
-        >
-          {t('cases.parties.add')}
-        </Button>
+        {!readOnly && (
+          <Button type="button" variant="secondary" onClick={() => setEditing('new')}>
+            {t('cases.parties.add')}
+          </Button>
+        )}
       </div>
       {!caseDto.opponents.length ? (
         <p className="empty-compact">{t('cases.parties.empty')}</p>
@@ -60,24 +63,16 @@ export function CasePartiesPanel({ caseDto }: { caseDto: CaseDto }) {
                   )}
                 </span>
               </div>
-              <div className="row-actions">
-                <Button
-                  type="button"
-                  variant="ghost"
-
-                  onClick={() => setEditing(opponent)}
-                >
-                  {t('records.edit')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-
-                  onClick={() => setRemoving(opponent)}
-                >
-                  {t('documents.remove')}
-                </Button>
-              </div>
+              {!readOnly && (
+                <div className="row-actions">
+                  <Button type="button" variant="ghost" onClick={() => setEditing(opponent)}>
+                    {t('records.edit')}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setRemoving(opponent)}>
+                    {t('documents.remove')}
+                  </Button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -155,34 +150,53 @@ function OpponentForm({
 
   const fullName = useWatch({ control: form.control, name: 'fullName' });
   const setFullName = (value: string) =>
-    form.setValue('fullName', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('fullName', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const legalCapacity = useWatch({ control: form.control, name: 'legalCapacity' });
   const setLegalCapacity = (value: string) =>
-    form.setValue('legalCapacity', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('legalCapacity', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const lawyerName = useWatch({ control: form.control, name: 'lawyerName' });
   const setLawyerName = (value: string) =>
-    form.setValue('lawyerName', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('lawyerName', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const phone = useWatch({ control: form.control, name: 'phone' });
   const setPhone = (value: string) =>
-    form.setValue('phone', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('phone', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const address = useWatch({ control: form.control, name: 'address' });
   const setAddress = (value: string) =>
-    form.setValue('address', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('address', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const notes = useWatch({ control: form.control, name: 'notes' });
   const setNotes = (value: string) =>
-    form.setValue('notes', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('notes', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   return (
     <DraftForm
+      control={form.control}
       className="mt-4 grid gap-3.5"
-      onSubmit={form.handleSubmit(async () => {
+      onSubmit={form.handleSubmit(async (values) => {
         try {
           await onSave({
-            fullName: fullName.trim(),
-            legalCapacity: legalCapacity || undefined,
-            lawyerName: lawyerName || undefined,
-            phone: phone || undefined,
-            address: address || undefined,
-            notes: notes || undefined,
+            fullName: values.fullName,
+            legalCapacity: values.legalCapacity || undefined,
+            lawyerName: values.lawyerName || undefined,
+            phone: values.phone || undefined,
+            address: values.address || undefined,
+            notes: values.notes || undefined,
           });
         } catch {
           // The parent mutation exposes an in-dialog retry message.
@@ -263,7 +277,7 @@ function OpponentForm({
           />
         </Field>
         <FormDialogFooter>
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" data-draft-cancel onClick={onCancel}>
             {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={busy}>

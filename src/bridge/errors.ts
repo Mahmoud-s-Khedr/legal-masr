@@ -2,6 +2,8 @@ import i18n from '../i18n';
 import type { AppError, AppErrorCode } from './types';
 
 const appErrorCodes = new Set<AppErrorCode>([
+  'OPERATION_BUSY',
+  'EXPENSE_HAS_ATTACHMENTS',
   'INVALID_PASSWORD',
   'APP_LOCKED',
   'ALREADY_INITIALIZED',
@@ -9,6 +11,7 @@ const appErrorCodes = new Set<AppErrorCode>([
   'BACKUP_CORRUPTED',
   'BACKUP_KEY_MISMATCH',
   'BACKUP_NEWER_VERSION',
+  'BACKUP_MISSING',
   'LEGACY_DATA_MIGRATION_REQUIRED',
   'VAULT_INTERRUPTED',
   'VAULT_MISSING',
@@ -27,6 +30,7 @@ const appErrorCodes = new Set<AppErrorCode>([
   'POWER_OF_ATTORNEY_NUMBER_TAKEN',
   'CASE_CLIENT_HAS_PAYMENTS',
   'CLIENT_ARCHIVED',
+  'CASE_ARCHIVED',
   'CASE_MUST_HAVE_CLIENT',
   'CASE_PRIMARY_CLIENT_REASSIGNMENT_REQUIRED',
   'TASK_NOT_FOUND',
@@ -49,6 +53,11 @@ export function asAppError(error: unknown): AppError | null {
     return null;
   }
   return value as AppError;
+}
+
+/** The lawyer closed a native file dialog without choosing; nothing failed. */
+export function isCancelled(error: unknown): boolean {
+  return asAppError(error)?.code === 'OPERATION_CANCELLED';
 }
 
 /**

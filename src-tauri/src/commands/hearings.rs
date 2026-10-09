@@ -13,6 +13,7 @@ pub fn hearing_create(
     state: State<AppState>,
     input: HearingInput,
 ) -> Result<HearingDto, Error> {
+    let _operation = state.operation()?;
     hearing_service::save(&app, &state, input)
 }
 #[tauri::command]
@@ -21,6 +22,7 @@ pub fn hearing_update(
     state: State<AppState>,
     input: HearingInput,
 ) -> Result<HearingDto, Error> {
+    let _operation = state.operation()?;
     hearing_service::save(&app, &state, input)
 }
 #[tauri::command]
@@ -29,6 +31,7 @@ pub fn hearing_get(
     state: State<AppState>,
     id: String,
 ) -> Result<HearingDto, Error> {
+    let _operation = state.operation()?;
     hearing_service::get(&app, &state, &id)
 }
 #[tauri::command]
@@ -37,6 +40,7 @@ pub fn hearing_list(
     state: State<AppState>,
     input: HearingListInput,
 ) -> Result<Vec<HearingDto>, Error> {
+    let _operation = state.operation()?;
     hearing_service::list(&app, &state, input)
 }
 #[tauri::command]
@@ -45,9 +49,11 @@ pub fn hearing_record_decision(
     state: State<AppState>,
     input: HearingDecisionInput,
 ) -> Result<HearingDecisionResult, Error> {
+    let _operation = state.operation()?;
     hearing_service::record_decision(&app, &state, input)
 }
 #[tauri::command]
 pub fn hearing_delete(app: AppHandle, state: State<AppState>, id: String) -> Result<(), Error> {
+    let _operation = state.operation()?;
     hearing_service::delete(&app, &state, &id)
 }

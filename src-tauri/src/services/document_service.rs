@@ -5,7 +5,7 @@ use crate::{
         AttachmentUpdateInput,
     },
     errors::Error,
-    repositories::document_repository,
+    repositories::{case_repository, document_repository, finance_repository},
     state::AppState,
 };
 use sha2::{Digest, Sha256};
@@ -14,7 +14,6 @@ use std::{
     path::{Path, PathBuf},
 };
 use tauri::{AppHandle, Runtime};
-#[cfg(not(feature = "desktop-e2e"))]
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 use time::{format_description::BorrowedFormatItem, macros::format_description, Date};
@@ -181,24 +180,27 @@ fn remove_managed_attachment_with(
     }
     Ok(())
 }
-pub fn select_source<R: Runtime>(
-    app: &AppHandle<R>,
-    state: &AppState,
-) -> Result<AttachmentSourceSelection, Error> {
-    state.unlocked()?;
+/// Shows the native file picker and waits for the lawyer's choice. It blocks until the
+/// dialog closes, so it must run off the main thread (see `commands::threads`).
+pub fn pick_source<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
     #[cfg(feature = "desktop-e2e")]
-    let path = {
-        let _ = app;
-        crate::desktop_e2e::selection("attachment")?
-    };
-    #[cfg(not(feature = "desktop-e2e"))]
-    let path = app
-        .dialog()
+    if let Some(path) = crate::desktop_e2e::selection("attachment")? {
+        return Ok(path);
+    }
+    app.dialog()
         .file()
         .blocking_pick_file()
         .ok_or(Error::Cancelled)?
         .into_path()
-        .map_err(|_| Error::Operation)?;
+        .map_err(|_| Error::Operation)
+}
+
+/// Turns a picked file into a one-time source token for `add`.
+pub fn register_source(
+    state: &AppState,
+    path: PathBuf,
+) -> Result<AttachmentSourceSelection, Error> {
+    state.unlocked()?;
     let filename = path
         .file_name()
         .and_then(|name| name.to_str())
@@ -211,6 +213,21 @@ pub fn select_source<R: Runtime>(
         source_token: state.store_document_source(path)?,
         filename,
     })
+}
+fn ensure_owner_active(
+    conn: &rusqlite::Connection,
+    case_id: Option<&str>,
+    expense_id: Option<&str>,
+) -> Result<(), Error> {
+    if let Some(id) = case_id {
+        case_repository::ensure_active(conn, id)?;
+    }
+    if let Some(id) = expense_id {
+        if let Some(case_id) = finance_repository::get_expense(conn, id)?.case_id {
+            case_repository::ensure_active(conn, &case_id)?;
+        }
+    }
+    Ok(())
 }
 pub fn add<R: Runtime>(
     app: &AppHandle<R>,
@@ -227,6 +244,7 @@ pub fn add<R: Runtime>(
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
     validate_owners(&conn, &input)?;
+    ensure_owner_active(&conn, input.case_id.as_deref(), input.expense_id.as_deref())?;
     let root = root(app)?;
     let id = Uuid::new_v4().to_string();
     let extension = source
@@ -293,6 +311,11 @@ pub fn update<R: Runtime>(
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
     let mut attachment = document_repository::get(&conn, &input.id)?;
+    ensure_owner_active(
+        &conn,
+        attachment.case_id.as_deref(),
+        attachment.expense_id.as_deref(),
+    )?;
     attachment.category = input.category;
     attachment.description = clean(input.description);
     attachment.document_date = input.document_date;
@@ -341,6 +364,12 @@ pub fn remove<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Res
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
+    let attachment = document_repository::get(&conn, id)?;
+    ensure_owner_active(
+        &conn,
+        attachment.case_id.as_deref(),
+        attachment.expense_id.as_deref(),
+    )?;
     remove_managed_attachment_with(&NativeFiles, &conn, &root(app)?, id)
 }
 #[cfg(test)]

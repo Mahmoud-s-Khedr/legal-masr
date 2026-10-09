@@ -59,7 +59,9 @@ payers are restricted to the clients linked to the selected case; both the
 service and the database enforce that relationship. Expenses use a constrained
 type and have independently optional client/case links. Case and client account
 summaries calculate agreed, received, outstanding, expenses, and net cash from
-integer EGP minor units. The module is not accounting software.
+integer EGP minor units. Deletion requires confirmation and refreshes affected
+totals; an expense with attachments is refused with a specific explanation.
+The module is not accounting software.
 
 ### Attachments
 
@@ -73,11 +75,15 @@ preview, an external-reference mode, or arbitrary paths.
 ### Search and presentation
 
 Global search indexes Clients, Cases, and POAs using normalized Arabic/digit
-prefix/exact lookup and opens the matching deep link. The shared RTL shell
+text and phone matching, literal wildcard handling and entity identities for
+identically named results. Dependent entries refresh after client/relationship
+edits. The shared RTL shell
 contains Today, Agenda, Clients, Powers of Attorney, Cases, Tasks, Documents,
-Finance, Backups, Settings, and Lock Application. The global Documents view is
-read-only: new attachments must be added from their client, case, POA, or
-expense owner so every attachment has exactly one owner. Values whose direction
+Finance, Backups, Settings, and Lock Application. The global Documents view can
+start an addition by selecting an active case, client or POA owner, then opening
+that owner's add form. Every attachment still has exactly one owner. Archived
+cases remain read-only in React and Rust, including global pages and reassignment
+checks against existing and proposed owners. Values whose direction
 must not flip (dates, identifiers, money, phones, filenames, versions) use
 `<bdi>`.
 
@@ -96,9 +102,10 @@ command without a visible UI action.
 - Backups are manual and saved to the app-data backup folder; there is no
   configurable destination, automatic schedule, retention policy, or history
   list UI.
-- Restore has validation and staged rollback protection but no preview and has
-  not been repeatedly proven as portable across devices using the original
-  password.
+- Restore uses authenticated preparation, preview and journaled replacement,
+  including fresh/incomplete installations, foreign vaults and recovery with a
+  staged new password. Physical cross-platform restoration remains unverified;
+  see [07-backup-format.md](07-backup-format.md).
 - The current client export is a manually chosen `client-{id}.json` file.
   Documented full-installation, case, and stable CSV/manifest exports are not
   implemented.

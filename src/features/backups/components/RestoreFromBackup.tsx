@@ -1,125 +1,170 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { asAppError, errorMessage } from '../../../bridge/errors';
-import type { BackupSelection, RestoreCredential } from '../../../bridge/types';
+import { bridge } from '../../../bridge/commands';
+import { asAppError, errorMessage, isCancelled } from '../../../bridge/errors';
+import type { BackupSelection, PreparedBackup, RestoreCredential } from '../../../bridge/types';
 import { Field } from '../../../components/forms/FormField';
+import { Alert, AlertDescription } from '../../../components/ui/alert';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
-import { useRestoreSelectedBackup, useSelectBackupForRestore } from '../api/backupsApi';
+import { useFormat } from '../../../i18n/LocalePresentation';
+import { clearVaultCache } from '../../../lib/vaultCache';
+import { markRestored } from '../../../lib/restoreNotice';
 
-type Kind = RestoreCredential['kind'];
-
-/**
- * Restores a backup with its own password or recovery key. It works on a fresh
- * installation, on an incomplete one, and on an unlocked vault, because the
- * backup carries what is needed to open it. The chosen file's path stays in the
- * native layer; this component only holds the one-time token.
- */
+/** One restore contract for setup, incomplete installations and Settings. Credentials
+ * are submitted directly, so mutation caches never retain them. Paths and keys stay native. */
 export function RestoreFromBackup({
   replacesWorkspace = false,
+  useActiveKey = false,
+  validateOnly = false,
   onRestored,
   onCancel,
 }: {
-  /** True when a workspace exists and will be replaced (a copy is kept). */
   replacesWorkspace?: boolean;
+  useActiveKey?: boolean;
+  validateOnly?: boolean;
   onRestored: () => void;
   onCancel?: () => void;
 }) {
   const { t } = useTranslation();
-  const select = useSelectBackupForRestore();
-  const restore = useRestoreSelectedBackup();
+  const format = useFormat();
+  const client = useQueryClient();
   const [selection, setSelection] = useState<BackupSelection | null>(null);
-  const [kind, setKind] = useState<Kind>('password');
+  const [preview, setPreview] = useState<PreparedBackup | null>(null);
+  const [kind, setKind] = useState<RestoreCredential['kind']>('password');
   const [secret, setSecret] = useState('');
-  const [missingSecret, setMissingSecret] = useState(false);
-  // The native layer drops the selection after any outcome except a mistyped
-  // secret, so the file has to be chosen again after those.
-  const [lostSelection, setLostSelection] = useState<unknown>(null);
-
-  const choose = () => {
-    setLostSelection(null);
-    restore.reset();
-    select.mutate(undefined, {
-      onSuccess: (chosen) => {
-        setSelection(chosen);
-        setSecret('');
-      },
-    });
+  const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<unknown>(null);
+  const flight = useRef(false);
+  const epoch = useRef(0);
+  useEffect(() => {
+    epoch.current += 1;
+    return () => {
+      epoch.current += 1;
+      void bridge.cancelBackupRestore().catch(() => {});
+    };
+  }, []);
+  const clearSecrets = () => {
+    setSecret('');
+    setPassword('');
+    setConfirmation('');
   };
-
-  const submit = () => {
-    if (!selection) return;
-    if (!secret.trim()) {
-      setMissingSecret(true);
-      return;
+  const run = async (work: (active: () => boolean) => Promise<void>) => {
+    if (flight.current) return;
+    const current = epoch.current;
+    const active = () => epoch.current === current;
+    flight.current = true;
+    setBusy(true);
+    setFailure(null);
+    try {
+      await work(active);
+    } catch (error) {
+      if (active() && !isCancelled(error)) setFailure(error);
+    } finally {
+      flight.current = false;
+      if (active()) setBusy(false);
     }
-    setMissingSecret(false);
-    restore.mutate(
-      { token: selection.token, credential: { kind, secret } },
-      {
-        onSuccess: () => {
-          setSecret('');
-          onRestored();
-        },
-        onError: (error) => {
-          const code = asAppError(error)?.code;
-          if (code !== 'INVALID_PASSWORD' && code !== 'RECOVERY_KEY_INVALID') {
-            setSelection(null);
-            setSecret('');
-            setLostSelection(error);
-          }
-        },
-      },
-    );
   };
-
-  const cancelled = asAppError(select.error)?.code === 'OPERATION_CANCELLED';
-  const failure = lostSelection ?? restore.error ?? (cancelled ? null : select.error);
-  const olderFormat = selection?.formatVersion === 1;
-
+  const choose = () =>
+    run(async (active) => {
+      clearSecrets();
+      setPreview(null);
+      setSelection(null);
+      const selected = await bridge.selectBackupForRestore();
+      if (!active()) return;
+      setSelection(selected);
+      if (useActiveKey) {
+        const prepared = await bridge.prepareBackupRestore(selected.token);
+        if (active()) setPreview(prepared);
+      }
+    });
+  const prepare = () =>
+    run(async (active) => {
+      if (!selection) return;
+      if (!secret.trim()) {
+        setFailure(t('restoreFrom.secretRequired'));
+        return;
+      }
+      if (kind === 'recoveryKey' && (password.length < 12 || password !== confirmation)) {
+        setFailure(t('restoreFrom.passwordMismatch'));
+        return;
+      }
+      const credential: RestoreCredential = {
+        kind,
+        secret,
+        ...(kind === 'recoveryKey' ? { newPassword: password, confirmPassword: confirmation } : {}),
+      };
+      clearSecrets();
+      const prepared = await bridge.prepareBackupRestore(selection.token, credential);
+      if (active()) setPreview(prepared);
+    });
+  const commit = () =>
+    run(async (active) => {
+      if (!preview) return;
+      const passwordSource = preview.passwordSource;
+      try {
+        await bridge.commitBackupRestore(preview.token);
+      } catch (error) {
+        if (asAppError(error)?.code === 'VAULT_INTERRUPTED' && active())
+          await clearVaultCache(client);
+        throw error;
+      }
+      if (!active()) return;
+      clearSecrets();
+      setPreview(null);
+      setSelection(null);
+      markRestored(passwordSource);
+      await clearVaultCache(client);
+      onRestored();
+    });
+  const cancel = () =>
+    run(async (active) => {
+      await bridge.cancelBackupRestore();
+      if (!active()) return;
+      clearSecrets();
+      setPreview(null);
+      setSelection(null);
+      setFailure(null);
+      onCancel?.();
+    });
   return (
-    <div className="restore-from-backup">
-      {replacesWorkspace && <p className="warning">{t('restoreFrom.replaceWarning')}</p>}
-      {!selection || olderFormat ? (
-        <>
-          {olderFormat && (
-            <Alert variant="destructive">
-              <AlertDescription>{t('restoreFrom.olderFormat')}</AlertDescription>
-            </Alert>
-          )}
-          <Button type="button" onClick={choose} disabled={select.isPending}>
-            {select.isPending
-              ? t('restoreFrom.choosing')
-              : olderFormat
-                ? t('restoreFrom.chooseAnother')
-                : t('restoreFrom.chooseFile')}
-          </Button>
-        </>
-      ) : (
+    <div className="restore-from-backup" aria-busy={busy}>
+      {replacesWorkspace && !validateOnly && (
+        <p className="warning">{t('restoreFrom.replaceWarning')}</p>
+      )}
+      {!selection && (
+        <Button type="button" onClick={choose} disabled={busy}>
+          {t(busy ? 'restoreFrom.choosing' : 'restoreFrom.chooseFile')}
+        </Button>
+      )}
+      {selection && (
+        <p>
+          <bdi>{selection.fileName}</bdi>
+        </p>
+      )}
+      {selection && !preview && (
         <form
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
-            submit();
+            void prepare();
           }}
         >
-          <p className="success" role="status">
-            {t('restoreFrom.chosen')}
-          </p>
-          <fieldset className="restore-credential-kind">
+          <fieldset disabled={busy} className="restore-credential-kind">
             <legend>{t('restoreFrom.openWith')}</legend>
             {(['password', 'recoveryKey'] as const).map((option) => (
               <label key={option} className="checkbox-field">
                 <input
                   type="radio"
-                  name="restore-credential-kind"
+                  name="restore-method"
                   checked={kind === option}
                   onChange={() => {
                     setKind(option);
-                    setSecret('');
-                    setMissingSecret(false);
-                    restore.reset();
+                    clearSecrets();
+                    setFailure(null);
                   }}
                 />
                 {t(
@@ -132,42 +177,84 @@ export function RestoreFromBackup({
           </fieldset>
           <Field
             label={t(kind === 'password' ? 'restoreFrom.password' : 'restoreFrom.recoveryKey')}
-            hint={t(kind === 'password' ? 'restoreFrom.passwordHint' : 'restoreFrom.recoveryHint')}
-            error={missingSecret ? t('restoreFrom.secretRequired') : undefined}
             required
+            hint={t(kind === 'password' ? 'restoreFrom.passwordHint' : 'restoreFrom.recoveryHint')}
           >
             <Input
-              key={kind}
-              type={kind === 'password' ? 'password' : 'text'}
+              type="password"
               dir="ltr"
               autoComplete="off"
-              spellCheck={false}
-              autoFocus
               value={secret}
+              disabled={busy}
               onChange={(event) => setSecret(event.target.value)}
             />
           </Field>
-          <p className="muted">{t('restoreFrom.afterwards')}</p>
+          {kind === 'recoveryKey' && (
+            <>
+              <Field label={t('restoreFrom.newPassword')} required>
+                <Input
+                  type="password"
+                  dir="ltr"
+                  autoComplete="new-password"
+                  value={password}
+                  disabled={busy}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+              </Field>
+              <Field label={t('restoreFrom.confirmPassword')} required>
+                <Input
+                  type="password"
+                  dir="ltr"
+                  autoComplete="new-password"
+                  value={confirmation}
+                  disabled={busy}
+                  onChange={(event) => setConfirmation(event.target.value)}
+                />
+              </Field>
+            </>
+          )}
           <div className="form-actions">
-            <Button type="submit" disabled={restore.isPending}>
-              {restore.isPending ? t('restoreFrom.restoring') : t('restoreFrom.submit')}
-            </Button>
-            <Button type="button" variant="ghost" onClick={choose} disabled={restore.isPending}>
-              {t('restoreFrom.chooseAnother')}
+            <Button type="submit" disabled={busy}>
+              {t('restoreFrom.prepare')}
             </Button>
           </div>
         </form>
+      )}
+      {preview && (
+        <section aria-label={t('restoreFrom.prepare')}>
+          <p role="status">
+            {t('restoreFrom.preview', {
+              date: format.dateTime(preview.createdAt),
+              count: preview.documentCount,
+            })}
+          </p>
+          {!validateOnly && (
+            <>
+              <p>
+                {t(
+                  `restoreFrom.${preview.passwordSource === 'newPassword' ? 'newPasswordNotice' : preview.passwordSource}`,
+                )}
+              </p>
+              <Button type="button" variant="destructive" disabled={busy} onClick={commit}>
+                {t('backups.restoreConfirm')}
+              </Button>
+            </>
+          )}
+        </section>
       )}
       {failure != null && (
         <Alert variant="destructive">
           <AlertDescription>{errorMessage(failure, t('app.defaultError'))}</AlertDescription>
         </Alert>
       )}
-      {onCancel && (
-        <Button type="button" variant="ghost" className="gate-link" onClick={onCancel}>
-          {t('common.cancel')}
+      {selection && (
+        <Button type="button" variant="ghost" disabled={busy} onClick={choose}>
+          {t('restoreFrom.chooseAnother')}
         </Button>
       )}
+      <Button type="button" variant="outline" disabled={busy} onClick={cancel}>
+        {t('common.cancel')}
+      </Button>
     </div>
   );
 }

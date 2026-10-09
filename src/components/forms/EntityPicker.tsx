@@ -15,6 +15,7 @@ import {
 } from '../ui/combobox';
 import { Button } from '../ui/button';
 import { Spinner } from '../ui/spinner';
+import { matchesSearch } from '@/lib/searchText';
 
 export type EntityOption = {
   value: string;
@@ -25,6 +26,8 @@ export type EntityOption = {
 type Shared = {
   items: readonly EntityOption[];
   placeholder?: string;
+  /** Shown when nothing matches, e.g. «لا توجد قضايا مطابقة». Defaults to the clients text. */
+  emptyText?: string;
   disabled?: boolean;
   loading?: boolean;
   error?: string;
@@ -43,6 +46,7 @@ export function EntityPicker({
   value,
   onValueChange,
   placeholder,
+  emptyText,
   loading,
   error,
   ...props
@@ -60,22 +64,26 @@ export function EntityPicker({
         openOnInputClick
         items={options}
         value={selected}
-        onValueChange={(item) => onValueChange(item?.value ?? '')}
+        // Base UI clears the selection when Escape is pressed with the list closed. A
+        // lawyer presses Escape to close things, never to erase a choice, so ignore it.
+        onValueChange={(item, details) => {
+          if (details.reason !== 'escape-key') onValueChange(item?.value ?? '');
+        }}
         inputValue={query}
-        onInputValueChange={setQuery}
+        onInputValueChange={(next, details) => {
+          if (details.reason !== 'escape-key') setQuery(next);
+        }}
         itemToStringLabel={(item) => String(item.label)}
         itemToStringValue={(item) => item.value}
-        filter={(item, needle) =>
-          `${item.label} ${item.searchText ?? ''}`
-            .toLocaleLowerCase()
-            .includes(needle.toLocaleLowerCase())
-        }
+        filter={(item, needle) => matchesSearch(`${item.label} ${item.searchText ?? ''}`, needle)}
         disabled={props.disabled}
       >
         <ComboboxInput {...props} placeholder={placeholder} showClear={!props.required} />
         <ComboboxContent>
           {loading && <Spinner aria-label={t('records.loading')} />}
-          {!loading && !error && <ComboboxEmpty>{t('clients.noResults')}</ComboboxEmpty>}
+          {!loading && !error && (
+            <ComboboxEmpty>{emptyText ?? t('clients.noResults')}</ComboboxEmpty>
+          )}
           <ComboboxList>
             {(item: EntityOption) => (
               <ComboboxItem key={item.value} value={item} disabled={item.disabled}>
@@ -98,6 +106,7 @@ export function EntityMultiPicker({
   value,
   onValueChange,
   placeholder,
+  emptyText,
   loading,
   error,
   onCreate,
@@ -127,17 +136,16 @@ export function EntityMultiPicker({
         onOpenChange={setOpen}
         items={items}
         value={selected}
-        onValueChange={(items) => onValueChange(items.map((item) => item.value))}
+        // See EntityPicker: Escape must never remove the chosen clients.
+        onValueChange={(items, details) => {
+          if (details.reason !== 'escape-key') onValueChange(items.map((item) => item.value));
+        }}
         inputValue={query}
         onInputValueChange={setQuery}
         itemToStringLabel={(item) => String(item.label)}
         itemToStringValue={(item) => item.value}
         isItemEqualToValue={(a, b) => a.value === b.value}
-        filter={(item, needle) =>
-          `${item.label} ${item.searchText ?? ''}`
-            .toLocaleLowerCase()
-            .includes(needle.toLocaleLowerCase())
-        }
+        filter={(item, needle) => matchesSearch(`${item.label} ${item.searchText ?? ''}`, needle)}
         disabled={props.disabled}
       >
         <ComboboxChips ref={anchor}>
@@ -156,7 +164,9 @@ export function EntityMultiPicker({
         </ComboboxChips>
         <ComboboxContent anchor={anchor}>
           {loading && <Spinner aria-label={t('records.loading')} />}
-          {!loading && !error && <ComboboxEmpty>{t('clients.noResults')}</ComboboxEmpty>}
+          {!loading && !error && (
+            <ComboboxEmpty>{emptyText ?? t('clients.noResults')}</ComboboxEmpty>
+          )}
           <ComboboxList>
             {(item: EntityOption) => (
               <ComboboxItem

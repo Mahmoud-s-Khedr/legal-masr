@@ -8,6 +8,7 @@ use crate::{
     errors::Error,
     normalize,
     repositories::{case_repository, search_repository},
+    services::search_service,
     state::AppState,
 };
 use std::collections::HashSet;
@@ -83,18 +84,14 @@ fn index(conn: &rusqlite::Connection, case: &CaseDto, now: &str) -> Result<(), E
         &case.id,
         &case.internal_number,
         case.official_number.as_deref(),
-        &normalize::normalize_text(&format!(
-            "{} {} {} {} {}",
-            case.internal_number,
-            case.official_number.clone().unwrap_or_default(),
-            case.official_year
-                .map(|year| year.to_string())
-                .unwrap_or_default(),
-            case.judicial_year
-                .map(|year| year.to_string())
-                .unwrap_or_default(),
-            client_names
-        )),
+        &search_service::case_index_text(
+            &case.internal_number,
+            case.official_number.as_deref(),
+            case.official_year,
+            case.judicial_year,
+            case.court_name.as_deref(),
+            &client_names,
+        ),
         now,
     )
 }
@@ -132,6 +129,15 @@ pub fn create<R: Runtime>(
     state: &AppState,
     input: CaseCreateInput,
 ) -> Result<CaseDto, Error> {
+    // Numbers typed on an Arabic keyboard are stored with Latin digits (see clients).
+    let input = CaseCreateInput {
+        internal_number: normalize::ascii_digits(&input.internal_number),
+        official_number: input
+            .official_number
+            .as_deref()
+            .map(normalize::ascii_digits),
+        ..input
+    };
     validate_case(
         &input.internal_number,
         CaseYears {
@@ -164,6 +170,14 @@ pub fn update<R: Runtime>(
     state: &AppState,
     input: CaseUpdateInput,
 ) -> Result<CaseDto, Error> {
+    let input = CaseUpdateInput {
+        internal_number: normalize::ascii_digits(&input.internal_number),
+        official_number: input
+            .official_number
+            .as_deref()
+            .map(normalize::ascii_digits),
+        ..input
+    };
     validate_case(
         &input.internal_number,
         CaseYears {
@@ -180,6 +194,9 @@ pub fn update<R: Runtime>(
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
     let existing = case_repository::get(&conn, &input.id)?;
+    if existing.archived_at.is_some() {
+        return Err(Error::CaseArchived);
+    }
     let now = db::now();
     let clients = input.clients.clone();
     let case = CaseDto {
@@ -222,7 +239,7 @@ pub fn set_clients<R: Runtime>(
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
     let tx = conn.unchecked_transaction()?;
-    case_repository::get(&tx, &input.case_id)?;
+    case_repository::ensure_active(&tx, &input.case_id)?;
     let now = db::now();
     case_repository::replace_clients(&tx, &input.case_id, &input.clients, &now)?;
     tx.execute(
@@ -301,6 +318,7 @@ pub fn add_opponent<R: Runtime>(
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
+    case_repository::ensure_active(&conn, &input.case_id)?;
     let id = Uuid::new_v4().to_string();
     let now = db::now();
     case_repository::insert_opponent(
@@ -329,6 +347,10 @@ pub fn update_opponent<R: Runtime>(
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
+    case_repository::ensure_active(
+        &conn,
+        &case_repository::get_opponent(&conn, &input.id)?.case_id,
+    )?;
     let now = db::now();
     case_repository::update_opponent(
         &conn,
@@ -350,7 +372,9 @@ pub fn remove_opponent<R: Runtime>(
 ) -> Result<(), Error> {
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
-    case_repository::delete_opponent(&db::open_db(&path, &master)?, id)
+    let conn = db::open_db(&path, &master)?;
+    case_repository::ensure_active(&conn, &case_repository::get_opponent(&conn, id)?.case_id)?;
+    case_repository::delete_opponent(&conn, id)
 }
 
 #[cfg(test)]

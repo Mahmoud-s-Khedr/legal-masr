@@ -2,7 +2,7 @@ import { DraftForm } from '@/components/forms/DraftForm';
 import { FieldGroup } from '@/components/ui/field';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { ClientSummary } from '../../../bridge/types';
 import { Button } from '../../../components/ui/button';
@@ -17,12 +17,15 @@ import {
 export function CaseCreateForm({
   clients,
   initialClientIds = [],
+  suggestedNumber,
   busy,
   onSubmit,
   onCancel,
 }: {
   clients: ClientSummary[];
   initialClientIds?: string[];
+  /** The next free internal number, filled in while the field is still empty. */
+  suggestedNumber?: string;
   busy: boolean;
   onSubmit: (values: CaseCreateFormValues) => Promise<void>;
   onCancel: () => void;
@@ -33,6 +36,11 @@ export function CaseCreateForm({
       resolver: zodResolver(caseCreateFormSchema),
       defaultValues: { ...caseCreateFormDefaults, clientIds: initialClientIds },
     });
+  useEffect(() => {
+    if (suggestedNumber && !getValues('internalNumber'))
+      setValue('internalNumber', suggestedNumber);
+  }, [suggestedNumber, getValues, setValue]);
+  const internalNumber = useWatch({ control, name: 'internalNumber' });
   const initialized = useRef(false);
   // A preselected client (from ?client=) only counts once it is a loaded, active client.
   useEffect(() => {
@@ -45,6 +53,7 @@ export function CaseCreateForm({
 
   return (
     <DraftForm
+      control={control}
       noValidate
       onSubmit={handleSubmit((values) => onSubmit(values).catch(() => undefined))}
     >
@@ -71,12 +80,17 @@ export function CaseCreateForm({
           control={control}
           errors={formState.errors}
           autoFocus={false}
+          internalNumberHint={
+            suggestedNumber && internalNumber === suggestedNumber
+              ? t('forms.suggestedNumber')
+              : undefined
+          }
         />
         <div className="form-actions">
           <Button type="submit" disabled={busy || formState.isSubmitting}>
             {t('cases.save')}
           </Button>
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" data-draft-cancel onClick={onCancel}>
             {t('cases.cancel')}
           </Button>
         </div>

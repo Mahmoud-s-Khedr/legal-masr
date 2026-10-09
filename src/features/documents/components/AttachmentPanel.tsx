@@ -1,3 +1,4 @@
+import { useExpenses } from '../../finances/api/financesApi';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useForm, useWatch } from 'react-hook-form';
@@ -91,34 +92,61 @@ export function AttachmentPanel({
   description,
   allowAdd = true,
   showOwner = false,
+  readOnly = false,
+  startAdding = false,
 }: {
   owner: AttachmentListInput;
   title?: string;
   description?: string;
   allowAdd?: boolean;
   showOwner?: boolean;
+  /** Opens the add form once, e.g. after choosing the record on the documents page. */
+  startAdding?: boolean;
+  /** Open and show-in-folder stay available; edit and remove are hidden. */
+  readOnly?: boolean;
 }) {
   const format = useFormat();
   const { t } = useTranslation();
   const categoryLabel = (category: AttachmentCategory) => t(`documents.categories.${category}`);
   const attachments = useAttachments(owner);
+  const ownerCases = useCaseList({ includeArchived: true });
+  const ownerExpenses = useExpenses(
+    {},
+    Boolean(owner.expenseId || attachments.data?.some((item) => item.expenseId)),
+  );
+  const caseReadOnly = (id: string | null | undefined) =>
+    Boolean(id && !ownerCases.data?.some((item) => item.id === id && !item.archivedAt));
+  const expenseReadOnly = (id: string | null | undefined) => {
+    if (!id) return false;
+    const expense = ownerExpenses.data?.find((item) => item.id === id);
+    return !expense || caseReadOnly(expense.caseId);
+  };
+  const ownerReadOnly = readOnly || caseReadOnly(owner.caseId) || expenseReadOnly(owner.expenseId);
   const add = useAddAttachment();
   const update = useUpdateAttachment();
   const remove = useRemoveAttachment();
   const open = useOpenAttachment();
   const reveal = useRevealAttachment();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [startHandled, setStartHandled] = useState(false);
+  if (startAdding && allowAdd && !ownerReadOnly && !startHandled) {
+    setStartHandled(true);
+    setDialogOpen(true);
+  }
   const [source, setSource] = useState<{ token: string; filename: string } | null>(null);
   const form = useForm<z.infer<typeof attachmentDraftSchema>>({
     resolver: zodResolver(attachmentDraftSchema),
     defaultValues: { category: 'OTHER', descriptionValue: '', documentDate: '' },
   });
   const category = useWatch({ control: form.control, name: 'category' });
-  const setCategory = (value: AttachmentCategory) => form.setValue('category', value);
+  const setCategory = (value: AttachmentCategory) =>
+    form.setValue('category', value, { shouldDirty: true });
   const descriptionValue = useWatch({ control: form.control, name: 'descriptionValue' });
-  const setDescriptionValue = (value: string) => form.setValue('descriptionValue', value);
+  const setDescriptionValue = (value: string) =>
+    form.setValue('descriptionValue', value, { shouldDirty: true });
   const documentDate = useWatch({ control: form.control, name: 'documentDate' });
-  const setDocumentDate = (value: string) => form.setValue('documentDate', value);
+  const setDocumentDate = (value: string) =>
+    form.setValue('documentDate', value, { shouldDirty: true });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [removing, setRemoving] = useState<AttachmentDto | null>(null);
 
@@ -289,30 +317,38 @@ export function AttachmentPanel({
                 >
                   {t('documents.reveal')}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-label={t('documents.editAria', { name: attachment.originalFilename })}
-                  onClick={() => {
-                    setActionError(null);
-                    setEditingId(attachment.id);
-                    setCategory(attachment.category);
-                    setDescriptionValue(attachment.description ?? '');
-                    setDocumentDate(attachment.documentDate ?? '');
-                    setDialogOpen(true);
-                  }}
-                >
-                  {t('records.edit')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  type="button"
+                {!readOnly &&
+                  !caseReadOnly(attachment.caseId) &&
+                  !expenseReadOnly(attachment.expenseId) && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        aria-label={t('documents.editAria', { name: attachment.originalFilename })}
+                        onClick={() => {
+                          setActionError(null);
+                          setEditingId(attachment.id);
+                          setCategory(attachment.category);
+                          setDescriptionValue(attachment.description ?? '');
+                          setDocumentDate(attachment.documentDate ?? '');
+                          setDialogOpen(true);
+                        }}
+                      >
+                        {t('records.edit')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        type="button"
 
-                  aria-label={t('documents.removeAria', { name: attachment.originalFilename })}
-                  onClick={() => setRemoving(attachment)}
-                >
-                  {t('documents.remove')}
-                </Button>
+                        aria-label={t('documents.removeAria', {
+                          name: attachment.originalFilename,
+                        })}
+                        onClick={() => setRemoving(attachment)}
+                      >
+                        {t('documents.remove')}
+                      </Button>
+                    </>
+                  )}
               </div>
             </li>
           ))}
@@ -324,6 +360,8 @@ export function AttachmentPanel({
         title={editingId ? t('documents.editTitle') : t('documents.add')}
       >
         <DraftForm
+          control={form.control}
+          draftExtra={source?.token}
           className="mt-4 grid gap-3.5"
           onSubmit={(event) => form.handleSubmit(() => save())(event)}
         >
@@ -385,7 +423,7 @@ export function AttachmentPanel({
             </Field>
             <Field
               label={<>{t('documents.date')}</>}
-              error={form.formState.errors.documentDate ? t('forms.invalid') : undefined}
+              error={form.formState.errors.documentDate ? t('forms.invalidDate') : undefined}
             >
               <DatePicker
                 ref={(node) => form.register('documentDate').ref(node)}
@@ -396,21 +434,21 @@ export function AttachmentPanel({
             </Field>
             <FormDialogFooter>
               <Button
-                type="button"
-                variant="secondary"
-
-                disabled={add.isPending || update.isPending}
-                onClick={close}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
                 type="submit"
                 disabled={
                   pickerPending || add.isPending || update.isPending || (!editingId && !source)
                 }
               >
                 {editingId ? t('records.saveEdits') : t('documents.save')}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={add.isPending || update.isPending}
+                data-draft-cancel
+                onClick={close}
+              >
+                {t('common.cancel')}
               </Button>
             </FormDialogFooter>
           </FieldGroup>

@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import type { ExpenseDto, HearingDto, PaymentDto, TaskDto } from '../../../bridge/types';
 import { Fact, RecordHeader } from '../../../components/layout/RecordHeader';
-import { FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
+import { ConfirmDialog, FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Button } from '../../../components/ui/button';
 import { Checkbox } from '../../../components/ui/checkbox';
@@ -40,7 +40,11 @@ import { TaskForm } from '../../tasks/pages/TasksPage';
 import { useCompleteTask, useReopenTask, useSaveTask, useTaskList } from '../../tasks/api/tasksApi';
 import { useCaseList } from '../api/casesApi';
 import { useClientList } from '../../clients/api/clientsApi';
-import { ExpenseForm, PaymentForm } from '../../finances/pages/FinancesPage';
+import {
+  DeleteTransactionButton,
+  ExpenseForm,
+  PaymentForm,
+} from '../../finances/pages/FinancesPage';
 import { useArchiveCase, useCase, useRestoreCase, useUpdateCase } from '../api/casesApi';
 import { CaseClientsPanel } from '../components/CaseClientsPanel';
 import { CaseStatusBadge, OfficialReference } from '../components/CaseIdentity';
@@ -55,6 +59,7 @@ export function CaseDetailPage() {
     'summary' | 'relationships' | 'hearings' | 'tasks' | 'attachments' | 'account'
   >('summary');
   const [editOpen, setEditOpen] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
   const [caseFeedback, setCaseFeedback] = useState('');
   const [taskEditor, setTaskEditor] = useState<TaskDto | 'new' | null>(null);
   const [hearingEditor, setHearingEditor] = useState<HearingDto | 'new' | null>(null);
@@ -128,13 +133,20 @@ export function CaseDetailPage() {
     (a, b) => Number(a.completed) - Number(b.completed) || a.dueDate.localeCompare(b.dueDate),
   );
   const agreed = account.data?.agreedFeeMinor ?? 0;
+  // An archived case is read-only until it is restored.
+  const readOnly = Boolean(caseDto.archivedAt);
   const feeValue = fee;
 
   return (
     <section className="entity-detail detail-workspace">
-      {(archive.isError || restore.isError) && (
+      {restore.isError && (
         <Alert variant="destructive">
           <AlertDescription>{t('records.statusChangeError')}</AlertDescription>
+        </Alert>
+      )}
+      {caseDto.archivedAt && (
+        <Alert>
+          <AlertDescription>{t('cases.detail.archivedNotice')}</AlertDescription>
         </Alert>
       )}
       <RecordHeader
@@ -171,9 +183,17 @@ export function CaseDetailPage() {
         }
         actions={
           <>
-            <Button type="button" onClick={() => setEditOpen(true)}>
-              {t('records.edit')}
-            </Button>
+            {!caseDto.archivedAt && (
+              <Button
+                type="button"
+                onClick={() => {
+                  update.reset();
+                  setEditOpen(true);
+                }}
+              >
+                {t('records.edit')}
+              </Button>
+            )}
             {caseDto.archivedAt ? (
               <Button
                 variant="secondary"
@@ -184,12 +204,7 @@ export function CaseDetailPage() {
                 {t('records.restore')}
               </Button>
             ) : (
-              <Button
-                variant="ghost"
-
-                disabled={archive.isPending}
-                onClick={() => archive.mutate(id)}
-              >
+              <Button variant="ghost" onClick={() => setConfirmArchive(true)}>
                 {t('records.archive')}
               </Button>
             )}
@@ -233,14 +248,18 @@ export function CaseDetailPage() {
           <section className="detail-card">
             <div className="card-title">
               <h3>{t('cases.detail.dataTitle')}</h3>
-              <Button
-                type="button"
-                variant="ghost"
-
-                onClick={() => setEditOpen(true)}
-              >
-                {t('cases.detail.editData')}
-              </Button>
+              {!caseDto.archivedAt && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    update.reset();
+                    setEditOpen(true);
+                  }}
+                >
+                  {t('cases.detail.editData')}
+                </Button>
+              )}
             </div>
             <dl className="facts">
               <Fact label={t('cases.fields.caseNumber')}>
@@ -280,7 +299,11 @@ export function CaseDetailPage() {
           <div className="case-side-summary">
             <section className="detail-card next-event-card">
               <div className="card-title">
-                <h3>{t('cases.detail.nextHearing')}</h3>
+                <h3>
+                  {nextHearing && nextHearing.hearingDate < today
+                    ? t('cases.detail.awaitingDecision')
+                    : t('cases.detail.nextHearing')}
+                </h3>
               </div>
               {nextHearing ? (
                 <>
@@ -302,30 +325,48 @@ export function CaseDetailPage() {
                       {t('dashboard.preparation')}: {nextHearing.requiredDocuments}
                     </small>
                   )}
-                  <div className="card-actions">
-                    {nextHearing.hearingDate <= today && (
-                      <Button type="button" onClick={() => setHearingDecision(nextHearing)}>
-                        {t('agenda.recordDecision')}
+                  {!readOnly && (
+                    <div className="card-actions">
+                      {nextHearing.hearingDate <= today && (
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            recordDecision.reset();
+                            setHearingDecision(nextHearing);
+                          }}
+                        >
+                          {t('agenda.recordDecision')}
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          saveHearing.reset();
+                          setHearingEditor(nextHearing);
+                        }}
+                      >
+                        {t('agenda.editHearing')}
                       </Button>
-                    )}
-                    <Button
-                      type="button"
-                      variant="secondary"
-
-                      onClick={() => setHearingEditor(nextHearing)}
-                    >
-                      {t('agenda.editHearing')}
-                    </Button>
-                  </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
                   <p className="muted">{t('cases.detail.noNextHearing')}</p>
-                  <div className="card-actions">
-                    <Button type="button" onClick={() => setHearingEditor('new')}>
-                      {t('agenda.add')}
-                    </Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="card-actions">
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          saveHearing.reset();
+                          setHearingEditor('new');
+                        }}
+                      >
+                        {t('agenda.add')}
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
               {lastDecision && (
@@ -371,17 +412,25 @@ export function CaseDetailPage() {
       )}
       {tab === 'relationships' && (
         <div className="detail-stack">
-          <CaseClientsPanel caseDto={caseDto} />
-          <CasePartiesPanel caseDto={caseDto} />
+          <CaseClientsPanel caseDto={caseDto} readOnly={readOnly} />
+          <CasePartiesPanel caseDto={caseDto} readOnly={readOnly} />
         </div>
       )}
       {tab === 'hearings' && (
         <section className="detail-card">
           <div className="card-title">
             <h3>{t('cases.detail.tabs.hearings')}</h3>
-            <Button type="button" onClick={() => setHearingEditor('new')}>
-              {t('agenda.add')}
-            </Button>
+            {!readOnly && (
+              <Button
+                type="button"
+                onClick={() => {
+                  saveHearing.reset();
+                  setHearingEditor('new');
+                }}
+              >
+                {t('agenda.add')}
+              </Button>
+            )}
           </div>
           {!sortedHearings.length ? (
             <p className="empty-compact">{t('cases.detail.noHearings')}</p>
@@ -414,19 +463,25 @@ export function CaseDetailPage() {
                       </p>
                     )}
                     <div className="row-actions">
-                      {hearing.status === 'SCHEDULED' && (
+                      {hearing.status === 'SCHEDULED' && !readOnly && (
                         <>
                           <Button
                             type="button"
                             variant="ghost"
-                            onClick={() => setHearingEditor(hearing)}
+                            onClick={() => {
+                              saveHearing.reset();
+                              setHearingEditor(hearing);
+                            }}
                           >
                             {t('agenda.editHearing')}
                           </Button>
                           <Button
                             type="button"
                             variant="ghost"
-                            onClick={() => setHearingDecision(hearing)}
+                            onClick={() => {
+                              recordDecision.reset();
+                              setHearingDecision(hearing);
+                            }}
                           >
                             {t('agenda.recordDecision')}
                           </Button>
@@ -444,9 +499,17 @@ export function CaseDetailPage() {
         <section className="detail-card">
           <div className="card-title">
             <h3>{t('cases.detail.tabs.tasks')}</h3>
-            <Button type="button" onClick={() => setTaskEditor('new')}>
-              {t('tasks.add')}
-            </Button>
+            {!readOnly && (
+              <Button
+                type="button"
+                onClick={() => {
+                  saveTask.reset();
+                  setTaskEditor('new');
+                }}
+              >
+                {t('tasks.add')}
+              </Button>
+            )}
           </div>
           {!sortedTasks.length ? (
             <p className="empty-compact">{t('cases.detail.noTasks')}</p>
@@ -461,7 +524,7 @@ export function CaseDetailPage() {
                   >
                     <Checkbox
                       checked={task.completed}
-                      disabled={completeTask.isPending || reopenTask.isPending}
+                      disabled={readOnly || completeTask.isPending || reopenTask.isPending}
                       onCheckedChange={() =>
                         (task.completed ? reopenTask : completeTask).mutate(task.id)
                       }
@@ -473,7 +536,10 @@ export function CaseDetailPage() {
                       <button
                         type="button"
                         className="link-button"
-                        onClick={() => setTaskEditor(task)}
+                        onClick={() => {
+                          saveTask.reset();
+                          setTaskEditor(task);
+                        }}
                       >
                         <bdi>{task.title}</bdi>
                       </button>
@@ -494,7 +560,12 @@ export function CaseDetailPage() {
         </section>
       )}
       {tab === 'attachments' && (
-        <AttachmentPanel owner={{ caseId: id }} title={t('cases.detail.attachmentsTitle')} />
+        <AttachmentPanel
+          owner={{ caseId: id }}
+          title={t('cases.detail.attachmentsTitle')}
+          allowAdd={!readOnly}
+          readOnly={readOnly}
+        />
       )}
       {tab === 'account' && (
         <div className="detail-stack">
@@ -546,8 +617,10 @@ export function CaseDetailPage() {
                   .catch(() => undefined);
               })}
             >
-              <FieldGroup>
+              {/* The field with its button beside it, not a full-width bar under it. */}
+              <FieldGroup className="flex-row items-start gap-3 max-[760px]:flex-col max-[760px]:items-stretch">
                 <Field
+                  className="min-w-0 flex-1"
                   label={<>{t('cases.detail.feeLabel')}</>}
                   error={feeForm.formState.errors.amount ? t('cases.detail.feeInvalid') : undefined}
                 >
@@ -561,7 +634,11 @@ export function CaseDetailPage() {
                     }}
                   />
                 </Field>
-                <Button type="submit" disabled={saveFee.isPending}>
+                <Button
+                  type="submit"
+                  className="mt-7 shrink-0 max-[760px]:mt-0"
+                  disabled={readOnly || saveFee.isPending}
+                >
                   {t('cases.detail.feeSave')}
                 </Button>
               </FieldGroup>
@@ -585,9 +662,18 @@ export function CaseDetailPage() {
           <section className="detail-card">
             <div className="card-title">
               <h3>{t('cases.detail.paymentsTitle')}</h3>
-              <Button type="button" onClick={() => setTransactionEditor({ type: 'payment' })}>
-                {t('cases.detail.addPayment')}
-              </Button>
+              {!readOnly && (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    savePayment.reset();
+                    saveFee.reset();
+                    setTransactionEditor({ type: 'payment' });
+                  }}
+                >
+                  {t('cases.detail.addPayment')}
+                </Button>
+              )}
             </div>
             {!payments.data?.length ? (
               <p className="muted">{t('cases.detail.noPayments')}</p>
@@ -619,14 +705,19 @@ export function CaseDetailPage() {
           <section className="detail-card">
             <div className="card-title">
               <h3>{t('cases.detail.expensesTitle')}</h3>
-              <Button
-                type="button"
-                variant="secondary"
-
-                onClick={() => setTransactionEditor({ type: 'expense' })}
-              >
-                {t('cases.detail.addExpense')}
-              </Button>
+              {!readOnly && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    saveExpense.reset();
+                    saveFee.reset();
+                    setTransactionEditor({ type: 'expense' });
+                  }}
+                >
+                  {t('cases.detail.addExpense')}
+                </Button>
+              )}
             </div>
             {!expenses.data?.length ? (
               <p className="muted">{t('cases.detail.noExpenses')}</p>
@@ -642,7 +733,10 @@ export function CaseDetailPage() {
                       }
                     >
                       <span>{format.date(expense.expenseDate)}</span>
-                      <span dir="auto">{expense.notes ?? '—'}</span>
+                      <span dir="auto">
+                        {t(`finances.expenseTypes.${expense.expenseType}`)}
+                        {expense.notes && ` · ${expense.notes}`}
+                      </span>
                       <strong className="money-negative">
                         <bdi>{format.money(expense.amountMinor)}</bdi>
                       </strong>
@@ -654,6 +748,17 @@ export function CaseDetailPage() {
           </section>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmArchive}
+        onOpenChange={setConfirmArchive}
+        title={t('cases.detail.archiveTitle')}
+        description={t('cases.detail.archiveDescription')}
+        confirmLabel={t('cases.detail.archiveTitle')}
+        cancelLabel={t('common.cancel')}
+        pending={archive.isPending}
+        error={archive.isError ? t('records.archiveError') : undefined}
+        onConfirm={() => archive.mutate(id, { onSuccess: () => setConfirmArchive(false) })}
+      />
       <FormDialog open={editOpen} onOpenChange={setEditOpen} title={t('cases.detail.editTitle')}>
         <CaseEditForm
           caseDto={caseDto}
@@ -819,7 +924,11 @@ export function CaseDetailPage() {
                   )?.fullName
             }
             onClose={() => setTransactionEditor(null)}
-            onEdit={() => setTransactionEditor({ ...transactionEditor, inspect: false })}
+            onEdit={
+              readOnly
+                ? undefined
+                : () => setTransactionEditor({ ...transactionEditor, inspect: false })
+            }
           />
         ) : transactionEditor?.type === 'payment' ? (
           <PaymentForm
@@ -878,7 +987,7 @@ function CaseTransactionInspection({
   caseNumber: string;
   clientName?: string;
   onClose: () => void;
-  onEdit: () => void;
+  onEdit?: () => void;
 }) {
   const { t } = useTranslation();
   const format = useFormat();
@@ -915,12 +1024,15 @@ function CaseTransactionInspection({
         <p>{transaction.value.notes ?? '—'}</p>
       </div>
       <FormDialogFooter>
-        <Button type="button" variant="secondary" onClick={onClose}>
-          {t('records.close')}
-        </Button>
+        {onEdit && (
+          <Button type="button" variant="secondary" data-draft-cancel onClick={onClose}>
+            {t('records.close')}
+          </Button>
+        )}
         <Button type="button" onClick={onEdit}>
           {t('cases.detail.editEntryButton')}
         </Button>
+        {onEdit && <DeleteTransactionButton entry={transaction} onDeleted={onClose} />}
       </FormDialogFooter>
     </div>
   );

@@ -86,13 +86,11 @@ pub struct LatestSuccessfulBackupDto {
     pub archive_size_bytes: Option<i64>,
 }
 
-/// A file chosen in the native picker for restoring. The path never leaves
-/// Rust; the token is the only handle the renderer holds.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BackupSelectionDto {
     pub token: String,
-    pub format_version: u8,
+    pub file_name: String,
 }
 
 #[derive(Deserialize)]
@@ -103,11 +101,22 @@ pub enum RestoreCredentialKind {
 }
 
 #[derive(Deserialize, zeroize::Zeroize, zeroize::ZeroizeOnDrop)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RestoreCredentialInput {
     #[zeroize(skip)]
     pub kind: RestoreCredentialKind,
     pub secret: String,
+    pub new_password: Option<String>,
+    pub confirm_password: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreparedBackupDto {
+    pub token: String,
+    pub created_at: String,
+    pub document_count: usize,
+    pub password_source: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -405,6 +414,9 @@ pub struct CaseSummary {
     pub status: String,
     pub client_names: Vec<String>,
     pub archived_at: Option<String>,
+    pub court_name: Option<String>,
+    /// Earliest hearing still awaiting its decision (it may already be in the past).
+    pub next_hearing_date: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -557,8 +569,7 @@ pub struct DashboardSummary {
     pub upcoming_hearings: Vec<HearingDto>,
 }
 
-// Canonical Legal Masr contracts.  These coexist with the legacy DTOs only
-// while the remaining feature callers are migrated in Phase 3.
+// Canonical Legal Masr contracts.
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PowerOfAttorneyDto {

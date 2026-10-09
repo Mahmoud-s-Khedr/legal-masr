@@ -115,9 +115,14 @@ fn installation_with_backup(
     let documents = db::app_dir(handle).unwrap().join("attachments");
     std::fs::create_dir_all(&documents).unwrap();
     std::fs::write(documents.join("scan.bin"), &attachment).unwrap();
-    let created = backup_service::create(handle, state).unwrap();
+    db::open_db(&db_path, &master).unwrap().execute("INSERT INTO attachments (id, client_id, original_filename, stored_filename, relative_path, file_size_bytes, sha256, category, created_at, updated_at) VALUES (?1, (SELECT id FROM clients LIMIT 1), 'scan.bin', 'scan.bin', 'scan.bin', ?2, ?3, 'OTHER', 'now', 'now')", rusqlite::params![uuid::Uuid::new_v4().to_string(), attachment.len() as i64, {use sha2::Digest; hex::encode(sha2::Sha256::digest(&attachment))}]).unwrap();
+    let created = backup_service::create(handle, state, "2026-10-10-12-00-00").unwrap();
     let backup = carry_to.join("carried.lmsbackup");
-    std::fs::copy(created, &backup).unwrap();
+    std::fs::copy(
+        db::app_dir(handle).unwrap().join("Backups").join(created),
+        &backup,
+    )
+    .unwrap();
     Installation {
         recovery_key: init.recovery_key,
         backup,
@@ -129,6 +134,8 @@ fn credential(kind: RestoreCredentialKind, secret: &str) -> RestoreCredentialInp
     RestoreCredentialInput {
         kind,
         secret: secret.into(),
+        new_password: Some("a new recovery password".into()),
+        confirm_password: Some("a new recovery password".into()),
     }
 }
 
@@ -169,15 +176,16 @@ fn a_backup_restores_into_a_fresh_installation_with_the_original_password() {
     let token = state
         .store_restore_selection(source.backup.clone())
         .unwrap();
-    let wrong = backup_service::restore_selected(
+    let wrong = backup_service::prepare(
         handle,
         &state,
         &token,
-        &credential(
+        Some(&credential(
             RestoreCredentialKind::Password,
             "a different local password",
-        ),
-    );
+        )),
+    )
+    .and_then(|prepared| backup_service::commit(handle, &state, &prepared.token));
     assert!(matches!(wrong, Err(Error::InvalidPassword)));
     let still_empty = app_service::get_status(handle, &state).unwrap();
     assert!(
@@ -186,12 +194,16 @@ fn a_backup_restores_into_a_fresh_installation_with_the_original_password() {
     );
 
     // The selection survives a mistyped password, so the file is not picked again.
-    backup_service::restore_selected(
+    backup_service::prepare(
         handle,
         &state,
         &token,
-        &credential(RestoreCredentialKind::Password, ORIGINAL_PASSWORD),
+        Some(&credential(
+            RestoreCredentialKind::Password,
+            ORIGINAL_PASSWORD,
+        )),
     )
+    .and_then(|prepared| backup_service::commit(handle, &state, &prepared.token))
     .unwrap();
 
     // The vault is locked afterwards, the selection is spent, and the password unlocks it.
@@ -214,13 +226,13 @@ fn a_backup_restores_into_a_fresh_installation_with_the_original_password() {
         source.attachment
     );
     // A restored workspace can take another backup, and that one restores too.
-    backup_service::create(handle, &state).unwrap();
+    backup_service::create(handle, &state, "2026-10-10-12-00-00").unwrap();
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
 }
 
 #[test]
-fn a_backup_restores_with_the_recovery_key_and_the_old_password_still_unlocks() {
+fn a_backup_restores_with_the_recovery_key_and_a_new_password() {
     let _guard = lock_app_dir();
     let app = fresh_mock_app();
     app.manage(AppState::default());
@@ -234,24 +246,30 @@ fn a_backup_restores_with_the_recovery_key_and_the_old_password_still_unlocks() 
     let token = state
         .store_restore_selection(source.backup.clone())
         .unwrap();
-    let wrong = backup_service::restore_selected(
+    let wrong = backup_service::prepare(
         handle,
         &state,
         &token,
-        &credential(RestoreCredentialKind::RecoveryKey, "0123456789abcdef"),
-    );
+        Some(&credential(
+            RestoreCredentialKind::RecoveryKey,
+            "0123456789abcdef",
+        )),
+    )
+    .and_then(|prepared| backup_service::commit(handle, &state, &prepared.token));
     assert!(matches!(wrong, Err(Error::InvalidRecovery)));
-    backup_service::restore_selected(
+    backup_service::prepare(
         handle,
         &state,
         &token,
-        &credential(
+        Some(&credential(
             RestoreCredentialKind::RecoveryKey,
             &source.recovery_key.to_uppercase(),
-        ),
+        )),
     )
+    .and_then(|prepared| backup_service::commit(handle, &state, &prepared.token))
     .unwrap();
-    app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
+    assert!(app_service::unlock(handle, &state, ORIGINAL_PASSWORD).is_err());
+    app_service::unlock(handle, &state, "a new recovery password").unwrap();
     assert_eq!(restored_client_numbers(handle, &state), ["CL-PORTABLE"]);
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
@@ -278,7 +296,8 @@ fn restore_recovers_an_incomplete_installation_but_never_replaces_a_healthy_lock
         .unwrap();
     assert_ne!(token, token_again, "a new selection replaces the old token");
     assert!(matches!(
-        backup_service::restore_selected(handle, &state, &token_again, &secret),
+        backup_service::prepare(handle, &state, &token_again, Some(&secret))
+            .and_then(|prepared| backup_service::commit(handle, &state, &prepared.token)),
         Err(Error::Locked)
     ));
     assert_eq!(
@@ -289,7 +308,8 @@ fn restore_recovers_an_incomplete_installation_but_never_replaces_a_healthy_lock
     // An unknown token is refused outright.
     app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
     assert!(matches!(
-        backup_service::restore_selected(handle, &state, "not-a-token", &secret),
+        backup_service::prepare(handle, &state, "not-a-token", Some(&secret))
+            .and_then(|prepared| backup_service::commit(handle, &state, &prepared.token)),
         Err(Error::Validation)
     ));
     app_service::lock(&state).unwrap();
@@ -304,7 +324,9 @@ fn restore_recovers_an_incomplete_installation_but_never_replaces_a_healthy_lock
     let token = state
         .store_restore_selection(source.backup.clone())
         .unwrap();
-    backup_service::restore_selected(handle, &state, &token, &secret).unwrap();
+    backup_service::prepare(handle, &state, &token, Some(&secret))
+        .and_then(|prepared| backup_service::commit(handle, &state, &prepared.token))
+        .unwrap();
     app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
     assert_eq!(restored_client_numbers(handle, &state), ["CL-PORTABLE"]);
     // What was left behind is kept for the lawyer rather than deleted.
@@ -331,12 +353,16 @@ fn restore_refuses_while_a_vault_operation_is_pending() {
     let token = state
         .store_restore_selection(source.backup.clone())
         .unwrap();
-    let result = backup_service::restore_selected(
+    let result = backup_service::prepare(
         handle,
         &state,
         &token,
-        &credential(RestoreCredentialKind::Password, ORIGINAL_PASSWORD),
-    );
+        Some(&credential(
+            RestoreCredentialKind::Password,
+            ORIGINAL_PASSWORD,
+        )),
+    )
+    .and_then(|prepared| backup_service::commit(handle, &state, &prepared.token));
     assert!(matches!(result, Err(Error::VaultInterrupted)));
     assert!(root.join("vault-operation.json").exists());
 
@@ -406,11 +432,19 @@ fn onboarding_reaches_an_unlocked_ready_state_with_no_backup_gate() {
         settings_service::get(handle, &state).expect("settings should be readable once unlocked");
     assert_eq!(settings.language, "ar");
 
-    let backup_path = backup_service::create(handle, &state)
+    let backup_path = backup_service::create(handle, &state, "2026-10-10-12-00-00")
         .expect("backup_create must succeed against the auto-computed backup directory");
-    assert!(std::path::Path::new(&backup_path).exists());
-    backup::validate(&backup_path, Some(&state.unlocked().unwrap()), None)
-        .expect("the freshly created backup must validate");
+    let backup_path = db::app_dir(handle)
+        .unwrap()
+        .join("Backups")
+        .join(backup_path);
+    assert!(backup_path.exists());
+    backup::validate(
+        &backup_path.to_string_lossy(),
+        Some(&state.unlocked().unwrap()),
+        None,
+    )
+    .expect("the freshly created backup must validate");
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
 }
@@ -660,4 +694,313 @@ fn password_change_requires_an_unlocked_session_and_correct_current_password() {
     assert!(app_service::unlock(app.handle(), &state, "a secure local password").is_err());
     app_service::unlock(app.handle(), &state, "new secure local password").unwrap();
     std::fs::remove_dir_all(db::app_dir(app.handle()).unwrap()).unwrap();
+}
+
+#[test]
+fn archived_owners_cannot_be_bypassed_by_reassignment_and_active_owners_can() {
+    use legalmaster_lib::services::{
+        document_service, finance_service, hearing_service, task_service,
+    };
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    app_service::initialize(
+        handle,
+        &state,
+        InitializeInput {
+            password: ORIGINAL_PASSWORD.into(),
+            full_name: "Synthetic".into(),
+            language: "en".into(),
+            lock_timeout_minutes: 15,
+        },
+    )
+    .unwrap();
+    let client = "00000000-0000-0000-0000-000000000001";
+    let old = "00000000-0000-0000-0000-000000000002";
+    let new = "00000000-0000-0000-0000-000000000003";
+    let (_, path) = db::paths(handle).unwrap();
+    let conn = db::open_db(&path, &state.unlocked().unwrap()).unwrap();
+    conn.execute("INSERT INTO clients(id,internal_number,full_name,created_at,updated_at) VALUES (?1,'1','Synthetic','now','now')", [client]).unwrap();
+    for (id, number) in [(old, "1"), (new, "2")] {
+        conn.execute("INSERT INTO cases(id,internal_number,status,created_at,updated_at) VALUES (?1,?2,'ACTIVE','now','now')", rusqlite::params![id,number]).unwrap();
+        conn.execute("INSERT INTO case_clients(case_id,client_id,created_at,updated_at) VALUES (?1,?2,'now','now')",rusqlite::params![id,client]).unwrap();
+    }
+    let task_input = |id: Option<String>, owner: Option<&str>| {
+        serde_json::from_value(
+            serde_json::json!({"id":id,"caseId":owner,"title":"Synthetic","dueDate":"2026-10-10"}),
+        )
+        .unwrap()
+    };
+    let payment_input = |id: Option<String>, owner: &str| {
+        serde_json::from_value(serde_json::json!({"id":id,"caseId":owner,"payerClientId":client,"amountMinor":100,"paymentDate":"2026-10-10"})).unwrap()
+    };
+    let expense_input = |id: Option<String>, owner: Option<&str>| {
+        serde_json::from_value(serde_json::json!({"id":id,"caseId":owner,"amountMinor":100,"expenseDate":"2026-10-10","expenseType":"OTHER"})).unwrap()
+    };
+    let hearing_input = |id: Option<String>, owner: &str| {
+        serde_json::from_value(
+            serde_json::json!({"id":id,"caseId":owner,"hearingDate":"2026-10-10"}),
+        )
+        .unwrap()
+    };
+    let task = task_service::save(handle, &state, task_input(None, Some(old))).unwrap();
+    let payment = finance_service::save_payment(handle, &state, payment_input(None, old)).unwrap();
+    let expense =
+        finance_service::save_expense(handle, &state, expense_input(None, Some(old))).unwrap();
+    let hearing = hearing_service::save(handle, &state, hearing_input(None, old)).unwrap();
+    let fixture = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(fixture.path(), b"Synthetic attachment").unwrap();
+    let source = state.store_document_source(fixture.path().into()).unwrap();
+    let document = document_service::add(
+        handle,
+        &state,
+        serde_json::from_value(
+            serde_json::json!({"expenseId":expense.id,"sourceToken":source,"category":"OTHER"}),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    conn.execute("UPDATE cases SET archived_at='now' WHERE id=?1", [old])
+        .unwrap();
+    assert!(matches!(
+        task_service::save(handle, &state, task_input(Some(task.id.clone()), Some(new))),
+        Err(Error::CaseArchived)
+    ));
+    assert!(matches!(
+        task_service::save(handle, &state, task_input(Some(task.id.clone()), None)),
+        Err(Error::CaseArchived)
+    ));
+    assert!(matches!(
+        finance_service::save_payment(handle, &state, payment_input(Some(payment.id.clone()), new)),
+        Err(Error::CaseArchived)
+    ));
+    assert!(matches!(
+        finance_service::save_expense(
+            handle,
+            &state,
+            expense_input(Some(expense.id.clone()), None)
+        ),
+        Err(Error::CaseArchived)
+    ));
+    assert!(matches!(
+        hearing_service::save(handle, &state, hearing_input(Some(hearing.id.clone()), new)),
+        Err(Error::CaseArchived)
+    ));
+    assert!(matches!(
+        document_service::remove(handle, &state, &document.id),
+        Err(Error::CaseArchived)
+    ));
+    assert!(matches!(
+        task_service::save(handle, &state, task_input(None, Some(old))),
+        Err(Error::CaseArchived)
+    ));
+    conn.execute("UPDATE cases SET archived_at=NULL WHERE id=?1", [old])
+        .unwrap();
+    assert_eq!(
+        task_service::save(handle, &state, task_input(Some(task.id), Some(new)))
+            .unwrap()
+            .case_id
+            .as_deref(),
+        Some(new)
+    );
+    finance_service::save_payment(handle, &state, payment_input(Some(payment.id), new)).unwrap();
+    assert_eq!(
+        finance_service::save_expense(
+            handle,
+            &state,
+            expense_input(Some(expense.id.clone()), None)
+        )
+        .unwrap()
+        .case_id,
+        None
+    );
+    hearing_service::save(handle, &state, hearing_input(Some(hearing.id), old)).unwrap();
+    assert!(matches!(
+        finance_service::delete_expense(handle, &state, &expense.id),
+        Err(Error::ExpenseHasAttachments)
+    ));
+    document_service::remove(handle, &state, &document.id).unwrap();
+    finance_service::delete_expense(handle, &state, &expense.id).unwrap();
+}
+
+#[test]
+fn client_edits_refresh_linked_search_and_normalized_numbers_collide() {
+    use legalmaster_lib::services::{client_service, search_service};
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    app_service::initialize(
+        handle,
+        &state,
+        InitializeInput {
+            password: ORIGINAL_PASSWORD.into(),
+            full_name: "Synthetic".into(),
+            language: "en".into(),
+            lock_timeout_minutes: 15,
+        },
+    )
+    .unwrap();
+    let make = |number: &str, name: &str| {
+        serde_json::from_value(
+            serde_json::json!({"internalNumber":number,"fullName":name,"confirmDuplicate":true}),
+        )
+        .unwrap()
+    };
+    let client = client_service::create(handle, &state, make("١٢", "أحمد التجريبي")).unwrap();
+    assert_eq!(client.internal_number, "12");
+    assert!(client_service::create(handle, &state, make("۱۲", "Other Synthetic")).is_err());
+    let (_, path) = db::paths(handle).unwrap();
+    let conn = db::open_db(&path, &state.unlocked().unwrap()).unwrap();
+    let case = "00000000-0000-0000-0000-000000000002";
+    let poa = "00000000-0000-0000-0000-000000000003";
+    conn.execute("INSERT INTO cases(id,internal_number,status,created_at,updated_at) VALUES (?1,'1','ACTIVE','now','now')",[case]).unwrap();
+    conn.execute("INSERT INTO case_clients(case_id,client_id,created_at,updated_at) VALUES (?1,?2,'now','now')",rusqlite::params![case,client.id]).unwrap();
+    conn.execute("INSERT INTO powers_of_attorney(id,internal_sequence,created_at,updated_at) VALUES (?1,'1','now','now')",[poa]).unwrap();
+    conn.execute("INSERT INTO power_of_attorney_clients(power_of_attorney_id,client_id,created_at) VALUES (?1,?2,'now')",rusqlite::params![poa,client.id]).unwrap();
+    search_service::rebuild_index(handle, &state).unwrap();
+    assert_eq!(
+        search_service::search(handle, &state, "احمد التجريبي")
+            .unwrap()
+            .len(),
+        3
+    );
+    client_service::update(
+        handle,
+        &state,
+        serde_json::from_value(
+            serde_json::json!({"id":client.id,"internalNumber":"12","fullName":"محمود الاختباري"}),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert!(search_service::search(handle, &state, "احمد التجريبي")
+        .unwrap()
+        .is_empty());
+    let hits = search_service::search(handle, &state, "محمود الاختباري").unwrap();
+    assert_eq!(hits.len(), 3);
+    assert!(hits.iter().any(|hit| hit.entity_type == "CASE"));
+    assert!(hits
+        .iter()
+        .any(|hit| hit.entity_type == "POWER_OF_ATTORNEY"));
+    assert!(search_service::search(handle, &state, "%_")
+        .unwrap()
+        .is_empty());
+}
+
+#[test]
+fn restore_tokens_are_one_use_and_cancel_or_lock_removes_preparation() {
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    let carry = tempfile::tempdir().unwrap();
+    let installation = installation_with_backup(handle, &state, carry.path());
+    let (_, db_path) = db::paths(handle).unwrap();
+    let before = std::fs::read(&db_path).unwrap();
+    let selection = state
+        .store_restore_selection(installation.backup.clone())
+        .unwrap();
+    let prepared = backup_service::prepare(handle, &state, &selection, None).unwrap();
+    assert_eq!(std::fs::read(&db_path).unwrap(), before);
+    state.clear_restore_selection().unwrap();
+    assert!(matches!(
+        backup_service::commit(handle, &state, &prepared.token),
+        Err(Error::Validation)
+    ));
+    assert!(backup_service::prepare(handle, &state, &selection, None).is_err());
+    let selection = state
+        .store_restore_selection(installation.backup.clone())
+        .unwrap();
+    let prepared = backup_service::prepare(handle, &state, &selection, None).unwrap();
+    app_service::lock(&state).unwrap();
+    app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
+    assert!(matches!(
+        backup_service::commit(handle, &state, &prepared.token),
+        Err(Error::Validation)
+    ));
+    let selection = state.store_restore_selection(installation.backup).unwrap();
+    let mismatch = RestoreCredentialInput {
+        kind: RestoreCredentialKind::RecoveryKey,
+        secret: installation.recovery_key,
+        new_password: Some("synthetic new password".into()),
+        confirm_password: Some("different confirmation".into()),
+    };
+    assert!(matches!(
+        backup_service::prepare(handle, &state, &selection, Some(&mismatch)),
+        Err(Error::Validation)
+    ));
+    let prepared = backup_service::prepare(handle, &state, &selection, None).unwrap();
+    backup_service::commit(handle, &state, &prepared.token).unwrap();
+    assert!(state.unlocked().is_err());
+    app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
+    assert!(matches!(
+        backup_service::commit(handle, &state, &prepared.token),
+        Err(Error::Validation)
+    ));
+    assert!(!std::fs::read_dir(db::app_dir(handle).unwrap())
+        .unwrap()
+        .any(|entry| entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".prepared-")));
+}
+
+#[test]
+fn local_client_export_preserves_live_data_and_refuses_unwritable_destinations() {
+    use legalmaster_lib::{dto::ClientCreateInput, services::client_service};
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let state: State<AppState> = app.state();
+    app_service::initialize(app.handle(), &state, setup_input()).unwrap();
+    let client = client_service::create(
+        app.handle(),
+        &state,
+        ClientCreateInput {
+            internal_number: "EXPORT-1".into(),
+            full_name: "Fictional export client".into(),
+            national_id: None,
+            primary_phone: None,
+            email: None,
+            address: None,
+            notes: None,
+            confirm_duplicate: false,
+        },
+    )
+    .unwrap();
+    let destination = tempfile::tempdir().unwrap();
+    let exported =
+        client_service::export(app.handle(), &state, &client.id, destination.path()).unwrap();
+    let contents: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&exported).unwrap()).unwrap();
+    assert_eq!(contents["client"]["id"], client.id);
+    assert_eq!(contents["client"]["internalNumber"], "EXPORT-1");
+    assert_eq!(contents["cases"], serde_json::json!([]));
+    assert_eq!(contents["payments"], serde_json::json!([]));
+    let before = std::fs::read(&exported).unwrap();
+    assert!(client_service::export(
+        app.handle(),
+        &state,
+        &client.id,
+        &destination.path().join("missing")
+    )
+    .is_err());
+    assert_eq!(std::fs::read(&exported).unwrap(), before);
+    assert_eq!(
+        client_service::get(app.handle(), &state, &client.id)
+            .unwrap()
+            .internal_number,
+        "EXPORT-1"
+    );
+    app_service::lock(&state).unwrap();
+    assert!(matches!(
+        client_service::export(app.handle(), &state, &client.id, destination.path()),
+        Err(Error::Locked)
+    ));
 }

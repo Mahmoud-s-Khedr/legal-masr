@@ -20,7 +20,7 @@ Rust unit and integration coverage includes:
   installation with the password and with the recovery key, wrong password and
   wrong recovery key, every altered header field, truncated/garbage/non-JSON
   files, newer envelope/manifest/database versions, bounded key-derivation cost,
-  v1 compatibility, the failure paths leaving the destination byte-identical, and
+  rejection of every other format, preview/cancellation leaving live data unchanged, and
   every journal interruption for the new replacement fields.
 
 Frontend Vitest/React Testing Library coverage includes bridge payload
@@ -43,7 +43,7 @@ CI never rewrites them. The dated evidence distinguishes the uncommitted tree
 measurements from validation on a final committed revision. Renderer cleanup
 cannot remove Rust reports because their output directories are separate.
 
-Playwright asserts 64 full-page screenshots across 16 routes, Arabic/English and
+Playwright asserts 68 full-page screenshots across 17 routes, Arabic/English and
 1366×768/1440×900. It uses pinned Ubuntu 24.04 Chromium, a fixed fixture clock,
 Africa/Cairo, light theme, disabled animations, loaded fonts/images and route
 readiness checks. Threshold is 0.2; maximum differing-pixel ratio is 0.001.
@@ -52,22 +52,28 @@ actuals, diffs, traces and HTML reports are ignored. `pnpm verify:visual` checks
 all combinations, safe filenames, PNG structure/dimensions and hashes. Use
 `pnpm update:visual:canonical` to propose a baseline and
 `pnpm capture:visual:canonical` to compare. CI only compares. Initial visual
-approval is pending; release validation requires an approved manifest. Original
-Stitch reference assets are absent from this checkout, so design parity remains
-unverified. Review the [candidate gallery](../../tests/visual/review.html).
+approval is pending; release validation requires an approved manifest. The current local implementation, captured before integration in Arabic/English at
+both desktop sizes plus targeted narrow/dark views, is the visual reference. Review the [candidate gallery](../../tests/visual/review.html).
 
 Native WebdriverIO journeys use `tauri-driver` on Linux/Windows, real IPC,
 SQLCipher and encryption. The compile-time `desktop-e2e` feature is disabled by
 default; `pnpm build:desktop:e2e` builds in a separate target directory. It
 refuses unmarked launches and uses a unique runner-created temporary vault and
 allowlisted dialog fixtures. `pnpm test:desktop` exercises initialization,
-records, attachments, backup/restore, locked gate, wrong passwords, cancelled
-and corrupt restore (asserting the refusal message, not just an alert), restore
-of a carried backup into a fresh and an incomplete installation, the opponent
-form's validation feedback, the Settings display tab opened by deep link, and
-restart persistence. Reports contain sanitized outcomes
+records, attachments, backup/restore, locked gate, wrong passwords, silent picker cancellation
+and corrupt restore (asserting the specific refusal message), restore
+of a verified save-copy into a fresh and an incomplete installation, recovery-key
+restore with a new password, a real Linux picker heartbeat with lock/reunlock,
+the opponent form's validation feedback, the Settings display tab opened by deep
+link, and restart persistence. Reports are retained after each scenario and contain sanitized outcomes
 and binary checksums only. No vaults, backups, secrets or security-screen captures
 are uploaded. Packaging binaries are scanned for harness markers.
+
+Print-media tests verify that hearing rolls and synthetic recovery-key sheets
+exclude workspace chrome and unrelated records and fit a single A4 page for the
+fixture. Offline validation uses a network namespace for Rust/native journeys and
+Docker `--network none` for browser PDF checks. These checks do not certify physical
+printers or Windows/macOS. See the [integration review](../reviews/2026-10-10-integration.md).
 
 The driver must return a successful local `/status` response before a journey
 launches; startup polls every 250 ms for up to 30 seconds and records only a

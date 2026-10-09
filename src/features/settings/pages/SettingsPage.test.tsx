@@ -17,7 +17,7 @@ vi.mock('@tauri-apps/plugin-notification', () => ({
 }));
 
 import { bridge } from '../../../bridge/commands';
-import '../../../i18n';
+import i18n from '../../../i18n';
 import { SettingsPage } from './SettingsPage';
 
 const settings = {
@@ -62,10 +62,12 @@ describe('SettingsPage', () => {
     });
   });
 
-  it('shows developer information when About is opened directly', async () => {
+  it('shows support contacts when About is opened directly', async () => {
     vi.mocked(bridge.settings).mockResolvedValue(settings);
     renderSettingsPage('/settings?tab=about');
-    expect(await screen.findByRole('heading', { name: 'عن المطوّر' })).toBeVisible();
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('settings.about.developerTitle') }),
+    ).toBeVisible();
     expect(screen.getByText('طوّر التطبيق محمود خضر')).toBeVisible();
     expect(screen.getByRole('link', { name: 'لينكدإن' })).toHaveAttribute(
       'href',

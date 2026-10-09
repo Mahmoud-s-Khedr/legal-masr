@@ -1,0 +1,50 @@
+{
+  "advisoryDatabaseCommit": "7eebec69c352c7191b1f13eb95dd510eeca5d1de",
+  "dependencyCount": 533,
+  "vulnerabilityFindings": 0,
+  "ignoredAdvisories": [],
+  "warnings": [
+    {
+      "id": "RUSTSEC-2024-0370",
+      "package": "proc-macro-error",
+      "version": "1.0.4",
+      "kind": "unmaintained"
+    },
+    {
+      "id": "RUSTSEC-2025-0081",
+      "package": "unic-char-property",
+      "version": "0.9.0",
+      "kind": "unmaintained"
+    },
+    {
+      "id": "RUSTSEC-2025-0075",
+      "package": "unic-char-range",
+      "version": "0.9.0",
+      "kind": "unmaintained"
+    },
+    {
+      "id": "RUSTSEC-2025-0080",
+      "package": "unic-common",
+      "version": "0.9.0",
+      "kind": "unmaintained"
+    },
+    {
+      "id": "RUSTSEC-2025-0100",
+      "package": "unic-ucd-ident",
+      "version": "0.9.0",
+      "kind": "unmaintained"
+    },
+    {
+      "id": "RUSTSEC-2025-0098",
+      "package": "unic-ucd-version",
+      "version": "0.9.0",
+      "kind": "unmaintained"
+    },
+    {
+      "id": "RUSTSEC-2024-0429",
+      "package": "glib",
+      "version": "0.18.5",
+      "kind": "unsound"
+    }
+  ]
+}

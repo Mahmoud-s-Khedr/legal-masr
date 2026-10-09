@@ -4,7 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { errorMessage } from '../../../bridge/errors';
 import { useClientList } from '../../clients/api/clientsApi';
-import { useCreateCase } from '../api/casesApi';
+import { useCaseList, useCreateCase } from '../api/casesApi';
+import { suggestNextNumber } from '../../../lib/nextNumber';
 import { CaseCreateForm } from '../forms/CaseCreateForm';
 
 export function NewCasePage() {
@@ -14,6 +15,7 @@ export function NewCasePage() {
   const initialClientId = params.get('client');
   const { data: clients, isLoading, isError } = useClientList({ includeArchived: false });
   const createCase = useCreateCase();
+  const existing = useCaseList({ includeArchived: true });
   return (
     <section className="record-editor">
       <PageHeader
@@ -31,6 +33,11 @@ export function NewCasePage() {
         <CaseCreateForm
           clients={clients ?? []}
           initialClientIds={initialClientId ? [initialClientId] : []}
+          suggestedNumber={
+            existing.data
+              ? suggestNextNumber(existing.data.map((item) => item.internalNumber))
+              : undefined
+          }
           busy={createCase.isPending || isLoading || isError}
           onCancel={() => navigate('/cases')}
           onSubmit={async (values) => {

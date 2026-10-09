@@ -14,6 +14,7 @@ pub fn power_of_attorney_create(
     state: State<AppState>,
     input: PowerOfAttorneyInput,
 ) -> Result<PowerOfAttorneyDto, Error> {
+    let _operation = state.operation()?;
     power_of_attorney_service::save(&app, &state, input)
 }
 
@@ -23,6 +24,7 @@ pub fn power_of_attorney_update(
     state: State<AppState>,
     input: PowerOfAttorneyInput,
 ) -> Result<PowerOfAttorneyDto, Error> {
+    let _operation = state.operation()?;
     power_of_attorney_service::save(&app, &state, input)
 }
 
@@ -32,6 +34,7 @@ pub fn power_of_attorney_get(
     state: State<AppState>,
     id: String,
 ) -> Result<PowerOfAttorneyDto, Error> {
+    let _operation = state.operation()?;
     power_of_attorney_service::get(&app, &state, &id)
 }
 
@@ -41,6 +44,7 @@ pub fn power_of_attorney_list(
     state: State<AppState>,
     input: PowerOfAttorneyListInput,
 ) -> Result<Vec<PowerOfAttorneySummary>, Error> {
+    let _operation = state.operation()?;
     power_of_attorney_service::list(&app, &state, input)
 }
 
@@ -50,6 +54,7 @@ pub fn power_of_attorney_archive(
     state: State<AppState>,
     id: String,
 ) -> Result<PowerOfAttorneyDto, Error> {
+    let _operation = state.operation()?;
     power_of_attorney_service::set_archived(&app, &state, &id, true)
 }
 
@@ -59,5 +64,6 @@ pub fn power_of_attorney_restore(
     state: State<AppState>,
     id: String,
 ) -> Result<PowerOfAttorneyDto, Error> {
+    let _operation = state.operation()?;
     power_of_attorney_service::set_archived(&app, &state, &id, false)
 }

@@ -2426,6 +2426,13 @@
   .data-table .cell-muted {
     color: var(--muted);
   }
+  .data-table .pending-decision {
+    color: var(--danger);
+    font-weight: 700;
+  }
+  .data-table .pending-decision small {
+    display: block;
+  }
   .mono {
     font-family: var(--latin-ui);
     font-variant-numeric: tabular-nums;
@@ -3252,12 +3259,88 @@
   .calendar-agenda-list .agenda-item strong {
     color: var(--ink);
   }
+  .calendar-agenda-list .agenda-item.is-today {
+    border-inline-start-color: var(--gold);
+  }
+  .agenda-timeline li.is-decided time {
+    color: var(--muted);
+  }
+  .decision-context {
+    color: var(--success);
+    font-weight: 700;
+  }
+  .day-line {
+    display: block;
+    color: var(--ink);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: 1.6;
+    white-space: normal;
+  }
+  .day-line.muted,
+  .day-line-done {
+    color: var(--muted);
+  }
+  .day-line-time {
+    display: inline-block;
+    min-width: 4.5rem;
+    color: var(--accent);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .day-line-task {
+    color: var(--muted);
+  }
+  .calendar-detail-actions {
+    display: grid;
+    gap: 0.5rem;
+    margin: -0.4rem 0 0.9rem;
+  }
+  .calendar-detail-actions > button {
+    justify-self: start;
+  }
   @media (max-width: 1100px) {
     .calendar-layout {
       grid-template-columns: 1fr;
     }
     .calendar-detail {
       position: static;
+    }
+  }
+  .hearing-roll table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+  .hearing-roll th,
+  .hearing-roll td {
+    border: 1px solid #888;
+    padding: 4pt 6pt;
+    text-align: start;
+    vertical-align: top;
+  }
+  .hearing-roll h2 {
+    margin: 0 0 4pt;
+    font-size: 15pt;
+  }
+  .hearing-roll header p {
+    margin: 0 0 10pt;
+  }
+  .hearing-roll-decision {
+    width: 22%;
+  }
+  .hearing-roll td:first-child {
+    white-space: nowrap;
+  }
+  .hearing-roll td:nth-child(3) {
+    min-width: 8em;
+  }
+  @media print {
+    .hearing-roll {
+      direction: inherit;
+    }
+    .hearing-roll tr {
+      break-inside: avoid;
     }
   }
 }
@@ -3410,6 +3493,32 @@
   .gate-link {
     margin-top: 0.85rem;
   }
+  .gate-notice {
+    margin: 0 0 1rem;
+  }
+  .developer-contacts-plain {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    user-select: text;
+  }
+  .gate-support {
+    display: grid;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--line);
+    padding-top: 0.85rem;
+    font-size: var(--text-sm);
+    text-align: start;
+  }
+  .segmented {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 0.5rem;
+  }
   .gate-brand {
     gap: 0.6rem;
   }
@@ -3485,6 +3594,56 @@
     word-break: normal;
     overflow-wrap: normal;
     user-select: all;
+  }
+  .recovery-key-sheet {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .recovery-key-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+  .print-only {
+    display: none;
+  }
+  @media print {
+    .print-only {
+      display: block;
+    }
+    /* Collapse unrelated content so isolated printing does not leave blank pages. */
+    body:has(.print-focus) *:not(.print-focus):not(.print-focus *):not(:has(.print-focus)) {
+      display: none !important;
+    }
+    body:has(.print-focus) *:has(.print-focus) {
+      display: block !important;
+      position: static !important;
+      transform: none !important;
+      overflow: visible !important;
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      width: auto !important;
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+    body:has(.print-focus) .print-focus {
+      position: static;
+      padding: 1.5cm;
+      color: #000;
+    }
+    .recovery-key-print-title {
+      font-size: 16pt;
+      font-weight: 800;
+    }
+    .recovery-key {
+      font-size: 15pt;
+      user-select: auto;
+    }
   }
   .gate-tips {
     display: grid;

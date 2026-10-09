@@ -8,11 +8,15 @@ vi.mock('../../../bridge/commands', async (importOriginal) => {
 import { bridge } from '../../../bridge/commands';
 import i18n from '../../../i18n';
 import { renderWorkflow } from '../../../test/workflow';
+import { clearRestoreNotice, markRestored } from '../../../lib/restoreNotice';
 import { OnboardingPage, type OnboardingSubGate } from './OnboardingPage';
 function mount(subGate: OnboardingSubGate) {
   const callbacks = {
     onSwitchToRecovery: vi.fn(),
     onBackToUnlock: vi.fn(),
+    onSwitchToRestore: vi.fn(),
+    onLeaveRestore: vi.fn(),
+    onRestored: vi.fn(),
     onSetupSucceeded: vi.fn(),
     onUnlocked: vi.fn(),
     onRecovered: vi.fn(),
@@ -27,6 +31,7 @@ function mount(subGate: OnboardingSubGate) {
 }
 beforeEach(async () => {
   vi.resetAllMocks();
+  clearRestoreNotice();
   await i18n.changeLanguage('ar');
 });
 describe('vault forms', () => {
@@ -178,5 +183,48 @@ describe('vault forms', () => {
     const { callbacks } = mount('recovery');
     fireEvent.click(screen.getByRole('button', { name: 'رجوع إلى الدخول بكلمة المرور' }));
     expect(callbacks.onBackToUnlock).toHaveBeenCalledOnce();
+  });
+});
+
+describe('restoring an office on a new computer', () => {
+  it('offers the reusable flow from setup and can return to setup', async () => {
+    vi.mocked(bridge.cancelBackupRestore).mockResolvedValue(undefined);
+    const { callbacks, unmount } = mount('setup');
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('gate.restoreFromBackup') }));
+    expect(callbacks.onSwitchToRestore).toHaveBeenCalledOnce();
+    unmount();
+    const restore = mount('restore');
+    expect(screen.getByRole('button', { name: i18n.t('restoreFrom.chooseFile') })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.cancel') }));
+    await waitFor(() => expect(restore.callbacks.onLeaveRestore).toHaveBeenCalledOnce());
+  });
+  it('names the password to use after restore and clears the notice on unlock', async () => {
+    markRestored('newPassword');
+    vi.mocked(bridge.unlock).mockResolvedValue(undefined);
+    const { callbacks, unmount } = mount('unlock');
+    expect(screen.getByRole('status')).toHaveTextContent(i18n.t('restoreFrom.newPasswordNotice'));
+    fireEvent.change(screen.getByLabelText('كلمة المرور'), {
+      target: { value: 'fictional password 2026' },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'فتح' }).closest('form')!);
+    await waitFor(() => expect(callbacks.onUnlocked).toHaveBeenCalledOnce());
+    unmount();
+    mount('unlock');
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+  it('explains a corrupt vault without losing the unlock draft', async () => {
+    vi.mocked(bridge.unlock).mockRejectedValue({
+      code: 'VAULT_CORRUPT',
+      message: 'safe',
+      details: null,
+    });
+    mount('unlock');
+    expect(screen.queryByText(/\+201016240934/)).toBeNull();
+    fireEvent.change(screen.getByLabelText('كلمة المرور'), {
+      target: { value: 'fictional password 2026' },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'فتح' }).closest('form')!);
+    expect(await screen.findByRole('alert')).toHaveTextContent(i18n.t('errors.VAULT_CORRUPT'));
+    expect(screen.getByRole('region', { name: 'الدعم الفني' })).toHaveTextContent('+201016240934');
   });
 });

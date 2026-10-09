@@ -42,8 +42,8 @@ operations:
 - attachment source selection, managed-copy add/list/update/open/reveal/remove;
 - fee-agreement save, payment/expense save/list, and case/client summaries;
 - dashboard, reminders, normalized global search, and index rebuilding;
-- manual backup create/validate/restore/latest-successful and profile/settings
-  operations.
+- manual backup creation, token-based selection/preparation/commit/cancellation,
+  latest-successful summary, save-copy/reveal and profile/settings operations.
 
 The typed bridge is implemented in `src/bridge/types.ts` and
 `src/bridge/commands.ts`. Query invalidation is centralized in
@@ -61,6 +61,11 @@ The vault uses a random database master key wrapped separately with
 Argon2id-derived password material and a recovery-key envelope. See
 [05-security.md](05-security.md). Backups derive a separate encryption key
 from that master key; see [07-backup-format.md](07-backup-format.md).
+
+Vault commands share an exclusive operation gate. Native pickers and heavy archive
+work run on worker threads. Session generations and selection requests reject stale
+results after lock, cancellation or replacement; the renderer also rejects late IPC
+results at session boundaries. Paths, staged keys and prepared snapshots stay native.
 
 ## Native capabilities and logging
 

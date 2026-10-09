@@ -31,6 +31,23 @@ describe('GlobalSearch', () => {
 
   afterEach(() => vi.clearAllMocks());
 
+  it('empties the field on Escape, ready for the next search', async () => {
+    vi.mocked(useGlobalSearch).mockReturnValue({ data: hits } as ReturnType<
+      typeof useGlobalSearch
+    >);
+    render(
+      <MemoryRouter>
+        <SearchHarness />
+      </MemoryRouter>,
+    );
+    const input = screen.getByRole('combobox', { name: 'البحث العام' });
+    fireEvent.change(input, { target: { value: 'أحمد' } });
+    await screen.findByRole('listbox');
+    fireEvent.keyDown(input, { key: 'Escape' });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(input).toHaveValue('');
+  });
+
   it('debounces grouped results and routes the selected record', async () => {
     vi.mocked(useGlobalSearch).mockReturnValue({ data: hits } as ReturnType<
       typeof useGlobalSearch
@@ -105,5 +122,28 @@ describe('GlobalSearch', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('combobox', { name: 'البحث العام' })).not.toHaveClass('ps-10');
+  });
+
+  it('opens the pressed record when two results share a name', async () => {
+    const twins: SearchHit[] = [
+      { entityType: 'CLIENT', entityId: 'client-a', title: 'أحمد محمود علي', subtitle: '0109' },
+      { entityType: 'CLIENT', entityId: 'client-b', title: 'أحمد محمود علي', subtitle: '0100' },
+    ];
+    vi.mocked(useGlobalSearch).mockReturnValue({ data: twins } as ReturnType<
+      typeof useGlobalSearch
+    >);
+    render(
+      <MemoryRouter>
+        <SearchHarness />
+        <Location />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'البحث العام' }), {
+      target: { value: 'أحمد محمود' },
+    });
+    fireEvent.click(await screen.findByRole('option', { name: /0100/ }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/clients/client-b');
   });
 });

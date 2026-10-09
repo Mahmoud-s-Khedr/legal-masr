@@ -7,6 +7,7 @@ use crate::{
         case_repository, client_repository, document_repository, finance_repository,
         hearing_repository, search_repository, task_repository,
     },
+    services::search_service,
     state::AppState,
 };
 use std::fs;
@@ -25,7 +26,11 @@ fn upsert_search_entry(
         &client.id,
         &client.full_name,
         client.primary_phone.as_deref(),
-        &normalize::normalize_text(&format!("{} {}", client.internal_number, client.full_name)),
+        &search_service::client_index_text(
+            &client.internal_number,
+            &client.full_name,
+            client.primary_phone.as_deref(),
+        ),
         now,
     )
 }
@@ -35,6 +40,14 @@ pub fn create<R: Runtime>(
     state: &AppState,
     input: ClientCreateInput,
 ) -> Result<ClientDto, Error> {
+    // Numbers typed on an Arabic keyboard are stored with Latin digits, like the rest of
+    // the app shows them, so they sort, search and collide as the same number.
+    let input = ClientCreateInput {
+        internal_number: normalize::ascii_digits(&input.internal_number),
+        national_id: input.national_id.as_deref().map(normalize::ascii_digits),
+        primary_phone: input.primary_phone.as_deref().map(normalize::ascii_digits),
+        ..input
+    };
     if input.internal_number.trim().is_empty() || input.full_name.trim().is_empty() {
         return Err(Error::Validation);
     }
@@ -84,6 +97,12 @@ pub fn update<R: Runtime>(
     state: &AppState,
     input: ClientUpdateInput,
 ) -> Result<ClientDto, Error> {
+    let input = ClientUpdateInput {
+        internal_number: normalize::ascii_digits(&input.internal_number),
+        national_id: input.national_id.as_deref().map(normalize::ascii_digits),
+        primary_phone: input.primary_phone.as_deref().map(normalize::ascii_digits),
+        ..input
+    };
     if input.internal_number.trim().is_empty() || input.full_name.trim().is_empty() {
         return Err(Error::Validation);
     }
@@ -110,7 +129,7 @@ pub fn update<R: Runtime>(
         &now,
     )?;
     let client = client_repository::find_by_id(&tx, &input.id)?;
-    upsert_search_entry(&tx, &client, &now)?;
+    search_service::refresh_with(&tx)?;
     tx.commit()?;
     Ok(client)
 }
@@ -167,7 +186,23 @@ pub fn restore<R: Runtime>(
     set_archived(app, state, id, false)
 }
 
-pub fn export<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<String, Error> {
+/// Shows the native folder picker. It blocks until the dialog closes, so it must run off
+/// the main thread (see `commands::threads`).
+pub fn pick_export_folder<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, Error> {
+    app.dialog()
+        .file()
+        .blocking_pick_folder()
+        .ok_or(Error::Cancelled)?
+        .into_path()
+        .map_err(|_| Error::Operation)
+}
+
+pub fn export<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: &str,
+    destination: &std::path::Path,
+) -> Result<String, Error> {
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
@@ -188,13 +223,6 @@ pub fn export<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Res
     let attachments = document_repository::list(&conn, None, Some(id), None, None)?;
     let payments = finance_repository::list_payments(&conn, Some(id), None, None, None)?;
     let expenses = finance_repository::list_expenses(&conn, Some(id), None, None, None)?;
-    let destination = app
-        .dialog()
-        .file()
-        .blocking_pick_folder()
-        .ok_or(Error::Cancelled)?
-        .into_path()
-        .map_err(|_| Error::Operation)?;
     let path = destination.join(format!("client-{}.json", client.id));
     let export = serde_json::json!({
         "formatVersion": 1,

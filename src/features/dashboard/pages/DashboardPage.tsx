@@ -27,7 +27,7 @@ export function DashboardPage() {
     queryFn: () => bridge.dashboardSummary(date),
   });
   const clients = useClientList({});
-  const cases = useCaseList({});
+  const cases = useCaseList({ includeArchived: true });
   const complete = useCompleteTask();
 
   if (agenda.isLoading || clients.isLoading || cases.isLoading)
@@ -134,7 +134,12 @@ export function DashboardPage() {
                 context={taskContext(task, caseFor, clientFor, t)}
                 meta={t('dashboard.overdueDays', { count: daysBetween(task.dueDate, date) })}
                 overdue
-                pending={complete.isPending}
+                pending={
+                  complete.isPending ||
+                  Boolean(
+                    task.caseId && (!caseFor(task.caseId) || caseFor(task.caseId)?.archivedAt),
+                  )
+                }
                 onComplete={() => complete.mutate(task.id)}
                 t={t}
               />
@@ -186,7 +191,12 @@ export function DashboardPage() {
                   key={task.id}
                   task={task}
                   context={taskContext(task, caseFor, clientFor, t)}
-                  pending={complete.isPending}
+                  pending={
+                    complete.isPending ||
+                    Boolean(
+                      task.caseId && (!caseFor(task.caseId) || caseFor(task.caseId)?.archivedAt),
+                    )
+                  }
                   onComplete={() => complete.mutate(task.id)}
                   t={t}
                 />
@@ -322,8 +332,9 @@ function HearingRow({
 }) {
   const format = useFormat();
   const place = [hearing.location, hearing.circuitName].filter(Boolean).join(' · ');
+  const decided = hearing.status === 'COMPLETED';
   return (
-    <li>
+    <li className={decided ? 'is-decided' : undefined}>
       <time className={time ? undefined : 'all-day'}>{time ?? t('dashboard.allDay')}</time>
       <div>
         <Link to={`/calendar?hearing=${hearing.id}`}>
@@ -331,10 +342,16 @@ function HearingRow({
         </Link>
         <span dir="auto">{caseContext(caseItem, t, format.list)}</span>
         {place && <span dir="auto">{place}</span>}
-        {hearing.requiredDocuments && (
-          <small className="preparation-context" dir="auto">
-            {t('dashboard.preparation')}: {hearing.requiredDocuments}
+        {decided ? (
+          <small className="decision-context" dir="auto">
+            {t('dashboard.decision')}: {hearing.decisionText ?? t('agenda.decisionRecorded')}
           </small>
+        ) : (
+          hearing.requiredDocuments && (
+            <small className="preparation-context" dir="auto">
+              {t('dashboard.preparation')}: {hearing.requiredDocuments}
+            </small>
+          )
         )}
       </div>
     </li>

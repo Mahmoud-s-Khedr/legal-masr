@@ -15,6 +15,7 @@ pub fn case_create(
     state: State<AppState>,
     input: CaseCreateInput,
 ) -> Result<CaseDto, Error> {
+    let _operation = state.operation()?;
     case_service::create(&app, &state, input)
 }
 
@@ -24,11 +25,13 @@ pub fn case_update(
     state: State<AppState>,
     input: CaseUpdateInput,
 ) -> Result<CaseDto, Error> {
+    let _operation = state.operation()?;
     case_service::update(&app, &state, input)
 }
 
 #[tauri::command]
 pub fn case_get(app: AppHandle, state: State<AppState>, id: String) -> Result<CaseDto, Error> {
+    let _operation = state.operation()?;
     case_service::get(&app, &state, &id)
 }
 
@@ -38,16 +41,19 @@ pub fn case_list(
     state: State<AppState>,
     input: CaseListInput,
 ) -> Result<Vec<CaseSummary>, Error> {
+    let _operation = state.operation()?;
     case_service::list(&app, &state, input)
 }
 
 #[tauri::command]
 pub fn case_archive(app: AppHandle, state: State<AppState>, id: String) -> Result<CaseDto, Error> {
+    let _operation = state.operation()?;
     case_service::archive(&app, &state, &id)
 }
 
 #[tauri::command]
 pub fn case_restore(app: AppHandle, state: State<AppState>, id: String) -> Result<CaseDto, Error> {
+    let _operation = state.operation()?;
     case_service::restore(&app, &state, &id)
 }
 
@@ -57,6 +63,7 @@ pub fn case_add_opponent(
     state: State<AppState>,
     input: CaseOpponentInput,
 ) -> Result<CaseOpponentDto, Error> {
+    let _operation = state.operation()?;
     case_service::add_opponent(&app, &state, input)
 }
 
@@ -66,6 +73,7 @@ pub fn case_update_opponent(
     state: State<AppState>,
     input: CaseOpponentUpdateInput,
 ) -> Result<CaseOpponentDto, Error> {
+    let _operation = state.operation()?;
     case_service::update_opponent(&app, &state, input)
 }
 
@@ -75,6 +83,7 @@ pub fn case_remove_opponent(
     state: State<AppState>,
     id: String,
 ) -> Result<(), Error> {
+    let _operation = state.operation()?;
     case_service::remove_opponent(&app, &state, &id)
 }
 
@@ -84,5 +93,6 @@ pub fn case_set_clients(
     state: State<AppState>,
     input: CaseSetClientsInput,
 ) -> Result<CaseDto, Error> {
+    let _operation = state.operation()?;
     case_service::set_clients(&app, &state, input)
 }

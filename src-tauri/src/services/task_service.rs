@@ -2,7 +2,7 @@ use crate::{
     db,
     dto::{TaskDto, TaskInput, TaskListInput},
     errors::Error,
-    repositories::task_repository,
+    repositories::{case_repository, task_repository},
     state::AppState,
 };
 use tauri::{AppHandle, Runtime};
@@ -37,12 +37,18 @@ pub fn save<R: Runtime>(
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
+    if let Some(case_id) = &input.case_id {
+        case_repository::ensure_active(&conn, case_id)?;
+    }
     let now = db::now();
     let is_new = input.id.is_none();
     let id = input.id.unwrap_or_else(|| Uuid::new_v4().to_string());
     let existing = (!is_new)
         .then(|| task_repository::get(&conn, &id))
         .transpose()?;
+    if let Some(case_id) = existing.as_ref().and_then(|item| item.case_id.as_ref()) {
+        case_repository::ensure_active(&conn, case_id)?;
+    }
     let task = TaskDto {
         id,
         client_id: input.client_id,
@@ -96,6 +102,7 @@ pub fn set_completed<R: Runtime>(
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
+    ensure_case_active(&conn, id)?;
     let now = db::now();
     task_repository::set_completed(&conn, id, completed, &now)?;
     task_repository::get(&conn, id)
@@ -104,7 +111,17 @@ pub fn set_completed<R: Runtime>(
 pub fn delete<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
-    task_repository::delete(&db::open_db(&path, &master)?, id)
+    let conn = db::open_db(&path, &master)?;
+    ensure_case_active(&conn, id)?;
+    task_repository::delete(&conn, id)
+}
+
+/// Tasks of an archived case are read-only with it.
+fn ensure_case_active(conn: &rusqlite::Connection, task_id: &str) -> Result<(), Error> {
+    match task_repository::get(conn, task_id)?.case_id {
+        Some(case_id) => case_repository::ensure_active(conn, &case_id),
+        None => Ok(()),
+    }
 }
 
 #[cfg(test)]

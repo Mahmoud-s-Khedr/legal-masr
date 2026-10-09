@@ -4,7 +4,7 @@ use crate::{
         HearingDecisionInput, HearingDecisionResult, HearingDto, HearingInput, HearingListInput,
     },
     errors::Error,
-    repositories::hearing_repository,
+    repositories::{case_repository, hearing_repository},
     state::AppState,
 };
 use tauri::{AppHandle, Runtime};
@@ -71,12 +71,16 @@ pub fn save<R: Runtime>(
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
+    case_repository::ensure_active(&conn, &input.case_id)?;
     let now = db::now();
     let existing = input
         .id
         .as_deref()
         .map(|id| hearing_repository::get(&conn, id))
         .transpose()?;
+    if let Some(existing) = &existing {
+        case_repository::ensure_active(&conn, &existing.case_id)?;
+    }
     if existing
         .as_ref()
         .is_some_and(|item| item.case_id != input.case_id || item.status != "SCHEDULED")
@@ -144,6 +148,7 @@ pub fn record_decision<R: Runtime>(
     let now = db::now();
     let tx = conn.unchecked_transaction()?;
     let source = hearing_repository::get(&tx, &input.id)?;
+    case_repository::ensure_active(&tx, &source.case_id)?;
     if source.status != "SCHEDULED" {
         return Err(Error::Validation);
     }
@@ -173,5 +178,7 @@ pub fn record_decision<R: Runtime>(
 pub fn delete<R: Runtime>(app: &AppHandle<R>, state: &AppState, id: &str) -> Result<(), Error> {
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
-    hearing_repository::delete(&db::open_db(&path, &master)?, id)
+    let conn = db::open_db(&path, &master)?;
+    case_repository::ensure_active(&conn, &hearing_repository::get(&conn, id)?.case_id)?;
+    hearing_repository::delete(&conn, id)
 }

@@ -21,7 +21,11 @@ export const useCaseList = (input: CaseListInput) => {
 };
 
 export const useCase = (id: string) =>
-  useQuery({ queryKey: queryKeys.cases.detail(id), queryFn: () => bridge.caseGet(id) });
+  useQuery({
+    queryKey: queryKeys.cases.detail(id),
+    queryFn: () => bridge.caseGet(id),
+    enabled: Boolean(id),
+  });
 
 function invalidateCase(
   queryClient: ReturnType<typeof useQueryClient>,

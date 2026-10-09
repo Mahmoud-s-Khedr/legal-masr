@@ -11,6 +11,8 @@ export type AppError = {
   diagnostic?: AppDiagnostic;
 };
 export type AppErrorCode =
+  | 'OPERATION_BUSY'
+  | 'EXPENSE_HAS_ATTACHMENTS'
   | 'INVALID_PASSWORD'
   | 'APP_LOCKED'
   | 'ALREADY_INITIALIZED'
@@ -18,6 +20,7 @@ export type AppErrorCode =
   | 'BACKUP_CORRUPTED'
   | 'BACKUP_KEY_MISMATCH'
   | 'BACKUP_NEWER_VERSION'
+  | 'BACKUP_MISSING'
   | 'LEGACY_DATA_MIGRATION_REQUIRED'
   | 'VAULT_INTERRUPTED'
   | 'VAULT_MISSING'
@@ -36,6 +39,7 @@ export type AppErrorCode =
   | 'POWER_OF_ATTORNEY_NUMBER_TAKEN'
   | 'CASE_CLIENT_HAS_PAYMENTS'
   | 'CLIENT_ARCHIVED'
+  | 'CASE_ARCHIVED'
   | 'CASE_MUST_HAVE_CLIENT'
   | 'CASE_PRIMARY_CLIENT_REASSIGNMENT_REQUIRED'
   | 'TASK_NOT_FOUND'
@@ -64,18 +68,21 @@ export type SettingsUpdateInput = {
   lockTimeoutMinutes: number;
 };
 /** A backup chosen in the native picker. The path stays in Rust; only the token is held here. */
-export type BackupSelection = {
-  token: string;
-  formatVersion: number;
-};
+export type BackupSelection = { token: string; fileName: string };
 export type RestoreCredential = {
   kind: 'password' | 'recoveryKey';
   secret: string;
+  newPassword?: string;
+  confirmPassword?: string;
 };
-export type LatestSuccessfulBackup = {
-  completedAt: string;
-  archiveSizeBytes: number | null;
+export type PreparedBackup = {
+  token: string;
+  createdAt: string;
+  documentCount: number;
+  passwordSource: 'currentPassword' | 'backupPassword' | 'newPassword';
 };
+export type LatestSuccessfulBackup = { completedAt: string; archiveSizeBytes: number | null };
+
 export type LawyerProfile = {
   fullName: string;
   barNumber: string | null;
@@ -195,6 +202,9 @@ export type CaseSummary = {
   status: CaseStatus;
   clientNames: string[];
   archivedAt: string | null;
+  courtName: string | null;
+  /** Earliest hearing still awaiting its decision; it may already be in the past. */
+  nextHearingDate: string | null;
 };
 
 export type CaseCreateInput = {

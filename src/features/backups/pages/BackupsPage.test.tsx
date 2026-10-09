@@ -2,22 +2,33 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { queryKeys } from '../../../lib/queryKeys';
+import { clearRestoreNotice, restoreNoticePending } from '../../../lib/restoreNotice';
 
 vi.mock('../../../bridge/commands', () => ({
   bridge: {
     createBackup: vi.fn(),
     latestSuccessfulBackup: vi.fn(),
-    restoreBackup: vi.fn(),
+    saveBackupCopy: vi.fn(),
+    revealBackup: vi.fn(),
+    prepareBackupRestore: vi.fn(),
+    commitBackupRestore: vi.fn(),
+    cancelBackupRestore: vi.fn(),
     selectBackupForRestore: vi.fn(),
-    restoreSelectedBackup: vi.fn(),
     status: vi.fn(),
-    validateBackup: vi.fn(),
   },
 }));
 
 import { bridge } from '../../../bridge/commands';
 import i18n from '../../../i18n';
 import { BackupSettingsPanel } from './BackupsPage';
+
+const cancelled = { code: 'OPERATION_CANCELLED', message: 'cancelled', details: null };
+const summary = {
+  token: 'restore-token',
+  fileName: 'LegalMasr-backup-2026-10-04-0930.lmsbackup',
+  createdAt: '2026-10-04T09:30:00',
+  documentCount: 3,
+};
 
 function renderPanel() {
   const queryClient = new QueryClient({
@@ -33,13 +44,29 @@ function renderPanel() {
   return { queryClient, ...view };
 }
 
+const createButton = () => screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' });
+const restoreButton = () => screen.getByRole('button', { name: i18n.t('backups.restore') });
+
 describe('BackupSettingsPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearRestoreNotice();
     vi.mocked(bridge.latestSuccessfulBackup).mockResolvedValue(null);
-    vi.mocked(bridge.createBackup).mockResolvedValue('backup-token');
-    vi.mocked(bridge.validateBackup).mockResolvedValue(undefined);
-    vi.mocked(bridge.restoreBackup).mockResolvedValue(undefined);
+    vi.mocked(bridge.createBackup).mockResolvedValue('LegalMasr-backup-2026-10-08-1052.lmsbackup');
+    vi.mocked(bridge.saveBackupCopy).mockResolvedValue(
+      'LegalMasr-backup-2026-10-08-1052.lmsbackup',
+    );
+    vi.mocked(bridge.revealBackup).mockResolvedValue(undefined);
+    vi.mocked(bridge.selectBackupForRestore).mockResolvedValue({
+      token: 'choice',
+      fileName: summary.fileName,
+    });
+    vi.mocked(bridge.prepareBackupRestore).mockResolvedValue({
+      ...summary,
+      passwordSource: 'currentPassword',
+    });
+    vi.mocked(bridge.commitBackupRestore).mockResolvedValue(undefined);
+    vi.mocked(bridge.cancelBackupRestore).mockResolvedValue(undefined);
     vi.mocked(bridge.status).mockResolvedValue({
       initialized: true,
       unlocked: false,
@@ -67,221 +94,146 @@ describe('BackupSettingsPanel', () => {
     expect(screen.getByText(/12 ك\.ب/)).toBeInTheDocument();
   });
 
-  it('explains when no successful backup exists', async () => {
+  it('explains when no successful backup exists, and offers no copy of nothing', async () => {
     renderPanel();
 
     expect(await screen.findByText('لا توجد نسخة احتياطية ناجحة بعد.')).toBeInTheDocument();
     expect(screen.getByText('لم تُنشئ أي نسخة احتياطية بعد. أنشئ أول نسخة الآن.')).toBeVisible();
     expect(screen.getByText(/فلاشة أو قرص خارجي/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'حفظ نسخة في مكان آخر…' })).toBeNull();
   });
 
-  it('reports successful and failed backup creation', async () => {
-    const { rerender } = renderPanel();
+  it('names the new backup after the local time and says where to take it next', async () => {
+    renderPanel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
-    expect(await screen.findByText('تم إنشاء النسخة الاحتياطية بنجاح.')).toBeInTheDocument();
-
-    vi.mocked(bridge.createBackup).mockRejectedValueOnce('تعذر إنشاء النسخة الاحتياطية.');
-    rerender(
-      <QueryClientProvider
-        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-      >
-        <BackupSettingsPanel />
-      </QueryClientProvider>,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
-
-    expect(await screen.findByText('تعذر إنشاء النسخة الاحتياطية.')).toBeInTheDocument();
-  });
-
-  it('reports successful and failed backup validation', async () => {
-    const { rerender } = renderPanel();
-
-    fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف للفحص' }));
-    expect(await screen.findByText('الملف سليم ويمكن الاستعادة منه.')).toBeInTheDocument();
-
-    vi.mocked(bridge.validateBackup).mockRejectedValueOnce(new Error('corrupted'));
-    rerender(
-      <QueryClientProvider
-        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-      >
-        <BackupSettingsPanel />
-      </QueryClientProvider>,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف للفحص' }));
-
+    fireEvent.click(createButton());
     expect(
-      await screen.findByText('الملف تالف، أو ليس نسخة احتياطية من ليجال مصر.'),
+      await screen.findByText('LegalMasr-backup-2026-10-08-1052.lmsbackup'),
     ).toBeInTheDocument();
-  });
-
-  it('does not restore when the confirmation dialog is cancelled', async () => {
-    renderPanel();
-
-    fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
-    expect(await screen.findByText(/تستبدل الاستعادة بياناتك الحالية/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
-
-    expect(bridge.restoreBackup).not.toHaveBeenCalled();
-  });
-
-  it('clears cached vault data and refetches status after a confirmed restore', async () => {
-    const { queryClient } = renderPanel();
-    queryClient.setQueryData(queryKeys.clients.list({}), [{ id: 'stale-client' }]);
-
-    fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'تأكيد الاستعادة' }));
-
-    await waitFor(() => expect(bridge.restoreBackup).toHaveBeenCalledOnce());
-    await waitFor(() => expect(bridge.status).toHaveBeenCalledOnce());
-    expect(queryClient.getQueryData(queryKeys.clients.list({}))).toBeUndefined();
-    expect(queryClient.getQueryData(queryKeys.appStatus)).toEqual({
-      initialized: true,
-      unlocked: false,
-      vaultState: 'LOCKED',
-    });
-  });
-
-  it('keeps an understandable error visible when restore fails', async () => {
-    vi.mocked(bridge.restoreBackup).mockRejectedValueOnce({
-      code: 'BACKUP_CORRUPTED',
-      message: 'ملف النسخة الاحتياطية تالف.',
-      details: null,
-    });
-    renderPanel();
-
-    fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'تأكيد الاستعادة' }));
-
-    expect(await screen.findByText(/ملف النسخة الاحتياطية تالف/)).toBeInTheDocument();
-    expect(bridge.status).not.toHaveBeenCalled();
-  });
-
-  it('creates one backup for a double click, and allows another once it has finished', async () => {
-    let finish!: () => void;
-    vi.mocked(bridge.createBackup).mockImplementationOnce(
-      () => new Promise((resolve) => (finish = () => resolve('backup-token'))),
+    expect(vi.mocked(bridge.createBackup).mock.calls[0]?.[0]).toMatch(
+      /^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/,
     );
+    // Once a backup exists it can be copied off the computer straight away.
+    expect(screen.getByRole('button', { name: 'حفظ نسخة في مكان آخر…' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'إظهار في المجلد' })).toBeEnabled();
+  });
+
+  it('reports a failed backup and allows a retry', async () => {
+    vi.mocked(bridge.createBackup).mockRejectedValueOnce('تعذر إنشاء النسخة الاحتياطية.');
     renderPanel();
-    const create = screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' });
 
-    fireEvent.click(create);
-    fireEvent.click(create);
-    await waitFor(() => expect(bridge.createBackup).toHaveBeenCalledTimes(1));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(bridge.createBackup).toHaveBeenCalledTimes(1);
+    fireEvent.click(createButton());
+    expect(await screen.findByText('تعذر إنشاء النسخة الاحتياطية.')).toBeInTheDocument();
 
-    finish();
-    await screen.findByText('تم إنشاء النسخة الاحتياطية بنجاح.');
-    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
+    fireEvent.click(createButton());
     await waitFor(() => expect(bridge.createBackup).toHaveBeenCalledTimes(2));
   });
 
-  it('offers none of the three actions while one of them is running, then all again', async () => {
-    let finish: () => void = () => undefined;
-    vi.mocked(bridge.createBackup).mockImplementation(
-      () => new Promise<string>((resolve) => (finish = () => resolve('backup-token'))),
-    );
+  it('saves a copy elsewhere, shows the folder, and stays quiet when the dialog is closed', async () => {
+    vi.mocked(bridge.latestSuccessfulBackup).mockResolvedValue({
+      completedAt: '2026-10-04 09:30',
+      archiveSizeBytes: 12_345,
+    });
+    vi.mocked(bridge.saveBackupCopy).mockRejectedValueOnce(cancelled);
     renderPanel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
+    const save = await screen.findByRole('button', { name: 'حفظ نسخة في مكان آخر…' });
+    fireEvent.click(save);
+    await waitFor(() => expect(bridge.saveBackupCopy).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(save).toBeEnabled());
+    expect(screen.queryByRole('alert')).toBeNull();
 
-    expect(await screen.findByRole('button', { name: 'جارٍ إنشاء النسخة…' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'اختيار ملف للفحص' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' })).toBeDisabled();
-    expect(bridge.validateBackup).not.toHaveBeenCalled();
-    expect(bridge.restoreBackup).not.toHaveBeenCalled();
+    fireEvent.click(save);
+    expect(await screen.findByText(/تم حفظ نسخة باسم/)).toBeInTheDocument();
 
-    finish();
-    expect(await screen.findByRole('button', { name: 'إنشاء نسخة احتياطية الآن' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'اختيار ملف للفحص' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'إظهار في المجلد' }));
+    await waitFor(() => expect(bridge.revealBackup).toHaveBeenCalledTimes(1));
   });
 
-  it('allows a retry after a failed backup', async () => {
-    vi.mocked(bridge.createBackup).mockRejectedValueOnce(new Error('disk full'));
-    renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
-    await screen.findByRole('alert');
-
-    fireEvent.click(screen.getByRole('button', { name: 'إنشاء نسخة احتياطية الآن' }));
-    await waitFor(() => expect(bridge.createBackup).toHaveBeenCalledTimes(2));
-  });
-
-  it('restores once when the confirmation is clicked twice', async () => {
-    let finish!: () => void;
-    vi.mocked(bridge.restoreBackup).mockImplementationOnce(
-      () => new Promise((resolve) => (finish = () => resolve(undefined))),
-    );
-    renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
-    const confirm = await screen.findByRole('button', { name: 'تأكيد الاستعادة' });
-
-    fireEvent.click(confirm);
-    fireEvent.click(confirm);
-    await waitFor(() => expect(bridge.restoreBackup).toHaveBeenCalledTimes(1));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(bridge.restoreBackup).toHaveBeenCalledTimes(1);
-    finish();
-    await waitFor(() => expect(bridge.status).toHaveBeenCalled());
-  });
-  it.each(['restore', 'validate'] as const)(
-    'offers the backup password or recovery key when %s finds a backup from another installation',
-    async (action) => {
-      const mismatch = { code: 'BACKUP_KEY_MISMATCH', message: 'safe', details: null };
-      vi.mocked(
-        action === 'validate' ? bridge.validateBackup : bridge.restoreBackup,
-      ).mockRejectedValueOnce(mismatch);
-      vi.mocked(bridge.selectBackupForRestore).mockResolvedValue({
-        token: 'one-time',
-        formatVersion: 2,
-      });
-      vi.mocked(bridge.restoreSelectedBackup).mockResolvedValue(undefined);
-      renderPanel();
-
-      if (action === 'validate') {
-        fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف للفحص' }));
-      } else {
-        fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
-        fireEvent.click(await screen.findByRole('button', { name: 'تأكيد الاستعادة' }));
-      }
-
-      const open = await screen.findByRole('button', {
-        name: i18n.t('backups.restoreWithCredentials'),
-      });
-      expect(screen.getByText(i18n.t('errors.BACKUP_KEY_MISMATCH'))).toBeVisible();
-      fireEvent.click(open);
-      const dialog = await screen.findByRole('dialog');
-      expect(within(dialog).getByText(i18n.t('restoreFrom.replaceWarning'))).toBeVisible();
-      fireEvent.click(
-        within(dialog).getByRole('button', { name: i18n.t('restoreFrom.chooseFile') }),
-      );
-      fireEvent.change(await within(dialog).findByLabelText(i18n.t('restoreFrom.password')), {
-        target: { value: 'a secure local password' },
-      });
-      fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('restoreFrom.submit') }));
-      await waitFor(() =>
-        expect(bridge.restoreSelectedBackup).toHaveBeenCalledWith('one-time', {
-          kind: 'password',
-          secret: 'a secure local password',
-        }),
-      );
-    },
-  );
-
-  it('does not offer a credential restore for an ordinary restore failure', async () => {
-    vi.mocked(bridge.restoreBackup).mockRejectedValueOnce({
-      code: 'BACKUP_CORRUPTED',
+  it('suggests saving a copy when the folder cannot be shown on this computer', async () => {
+    vi.mocked(bridge.latestSuccessfulBackup).mockResolvedValue({
+      completedAt: '2026-10-04 09:30',
+      archiveSizeBytes: null,
+    });
+    vi.mocked(bridge.revealBackup).mockRejectedValueOnce({
+      code: 'OPERATION_FAILED',
       message: 'safe',
       details: null,
     });
     renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'تأكيد الاستعادة' }));
 
-    expect(await screen.findByText(i18n.t('errors.BACKUP_CORRUPTED'))).toBeVisible();
-    expect(
-      screen.queryByRole('button', { name: i18n.t('backups.restoreWithCredentials') }),
-    ).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'إظهار في المجلد' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(i18n.t('errors.OPERATION_FAILED'));
+  });
+
+  it('says plainly when there is no backup file to copy', async () => {
+    vi.mocked(bridge.latestSuccessfulBackup).mockResolvedValue({
+      completedAt: '2026-10-04 09:30',
+      archiveSizeBytes: null,
+    });
+    vi.mocked(bridge.saveBackupCopy).mockRejectedValueOnce({
+      code: 'BACKUP_MISSING',
+      message: 'safe',
+      details: null,
+    });
+    renderPanel();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'حفظ نسخة في مكان آخر…' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('لا توجد نسخة احتياطية بعد');
+  });
+
+  it.each(['restore', 'validate'] as const)(
+    'uses the same preparation flow for %s',
+    async (action) => {
+      renderPanel();
+      fireEvent.click(
+        action === 'restore'
+          ? restoreButton()
+          : screen.getByRole('button', { name: i18n.t('backups.validate') }),
+      );
+      const dialog = await screen.findByRole('dialog');
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: i18n.t('restoreFrom.chooseFile') }),
+      );
+      expect(await within(dialog).findByRole('status')).toHaveTextContent('3');
+      expect(bridge.prepareBackupRestore).toHaveBeenCalledWith('choice');
+      if (action === 'validate')
+        expect(
+          within(dialog).queryByRole('button', { name: i18n.t('backups.restoreConfirm') }),
+        ).toBeNull();
+      fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('common.cancel') }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(bridge.commitBackupRestore).not.toHaveBeenCalled();
+    },
+  );
+  it('restores the prepared token and clears vault caches', async () => {
+    const { queryClient } = renderPanel();
+    queryClient.setQueryData(queryKeys.clients.list({}), ['fictional']);
+    fireEvent.click(restoreButton());
+    fireEvent.click(await screen.findByRole('button', { name: i18n.t('restoreFrom.chooseFile') }));
+    fireEvent.click(await screen.findByRole('button', { name: i18n.t('backups.restoreConfirm') }));
+    await waitFor(() => expect(bridge.commitBackupRestore).toHaveBeenCalledWith('restore-token'));
+    await waitFor(() =>
+      expect(queryClient.getQueryData(queryKeys.clients.list({}))).toBeUndefined(),
+    );
+    expect(restoreNoticePending()).toBe(true);
+  });
+  it('creates once on a double click and re-enables actions after completion', async () => {
+    let finish!: () => void;
+    vi.mocked(bridge.createBackup).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = () => resolve('new.lmsbackup');
+        }),
+    );
+    renderPanel();
+    fireEvent.click(createButton());
+    fireEvent.click(createButton());
+    await waitFor(() => expect(bridge.createBackup).toHaveBeenCalledOnce());
+    expect(restoreButton()).toBeDisabled();
+    finish();
+    expect(await screen.findByText('new.lmsbackup')).toBeVisible();
+    fireEvent.click(createButton());
+    await waitFor(() => expect(bridge.createBackup).toHaveBeenCalledTimes(2));
   });
 });

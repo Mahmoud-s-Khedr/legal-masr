@@ -8,6 +8,7 @@ use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub fn settings_get(app: AppHandle, state: State<AppState>) -> Result<SettingsDto, Error> {
+    let _operation = state.operation()?;
     settings_service::get(&app, &state)
 }
 
@@ -17,11 +18,13 @@ pub fn settings_update(
     state: State<AppState>,
     input: SettingsUpdateInput,
 ) -> Result<SettingsDto, Error> {
+    let _operation = state.operation()?;
     settings_service::update(&app, &state, &input)
 }
 
 #[tauri::command]
 pub fn profile_get(app: AppHandle, state: State<AppState>) -> Result<LawyerProfileDto, Error> {
+    let _operation = state.operation()?;
     settings_service::get_profile(&app, &state)
 }
 
@@ -31,6 +34,7 @@ pub fn profile_update(
     state: State<AppState>,
     profile: LawyerProfileDto,
 ) -> Result<LawyerProfileDto, Error> {
+    let _operation = state.operation()?;
     settings_service::update_profile(&app, &state, profile)
 }
 
@@ -40,6 +44,7 @@ pub fn settings_set_autostart(
     state: State<AppState>,
     enabled: bool,
 ) -> Result<SettingsDto, Error> {
+    let _operation = state.operation()?;
     settings_service::set_autostart(&app, &state, enabled)
 }
 
@@ -49,6 +54,7 @@ pub fn settings_set_usage_counters(
     state: State<AppState>,
     enabled: bool,
 ) -> Result<SettingsDto, Error> {
+    let _operation = state.operation()?;
     settings_service::set_usage_counters(&app, &state, enabled)
 }
 
@@ -58,5 +64,6 @@ pub fn settings_open_developer_contact(
     state: State<AppState>,
     contact: String,
 ) -> Result<(), Error> {
+    let _operation = state.operation()?;
     settings_service::open_developer_contact(&app, &state, &contact)
 }

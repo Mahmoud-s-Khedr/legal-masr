@@ -22,16 +22,24 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import type { CaseDto } from '../../../bridge/types';
 
-export function CaseClientsPanel({ caseDto }: { caseDto: CaseDto }) {
+export function CaseClientsPanel({
+  caseDto,
+  readOnly = false,
+}: {
+  caseDto: CaseDto;
+  readOnly?: boolean;
+}) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   return (
     <section className="detail-card">
       <div className="card-title">
         <h3>{t('cases.clientsPanel.title')}</h3>
-        <Button type="button" variant="outline" onClick={() => setEditing(true)}>
-          {t('records.edit')}
-        </Button>
+        {!readOnly && (
+          <Button type="button" variant="outline" onClick={() => setEditing(true)}>
+            {t('records.edit')}
+          </Button>
+        )}
       </div>
       <ul className="compact-records">
         {caseDto.clients.map((client) => (
@@ -97,6 +105,7 @@ function RelationshipEditor({ caseDto, onClose }: { caseDto: CaseDto; onClose: (
   });
   return (
     <DraftForm
+      control={control}
       noValidate
       onSubmit={handleSubmit(async (values) => {
         try {
@@ -185,7 +194,7 @@ function RelationshipEditor({ caseDto, onClose }: { caseDto: CaseDto; onClose: (
             <Button type="submit" disabled={save.isPending || formState.isSubmitting}>
               {t('records.saveEdits')}
             </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" data-draft-cancel onClick={onClose}>
               {t('common.cancel')}
             </Button>
           </div>

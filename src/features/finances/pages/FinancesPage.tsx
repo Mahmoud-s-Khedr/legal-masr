@@ -1,4 +1,3 @@
-import { fieldError } from '@/lib/fieldError';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +8,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { paymentDraftSchema, expenseDraftSchema } from '@/lib/formSchemas';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { minorToInput, parseMoneyToMinor } from '../../../lib/money';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
@@ -18,7 +17,8 @@ import { useFormat } from '../../../i18n/LocalePresentation';
 import type { ExpenseDto, ExpenseType, PaymentDto, PaymentMethod } from '../../../bridge/types';
 import { DatePicker } from '../../../components/forms/DatePicker';
 import { Button } from '../../../components/ui/button';
-import { FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
+import { ConfirmDialog, FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
+import { actionableErrorMessage } from '../../../bridge/errors';
 import { Input } from '../../../components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import {
@@ -32,15 +32,19 @@ import {
 import { RecordTable } from '@/components/forms/RecordTable';
 import { Textarea } from '../../../components/ui/textarea';
 import { useCase, useCaseList } from '../../cases/api/casesApi';
+import { caseOption, clientOption } from '../../cases/components/caseOptions';
 import { useClientList } from '../../clients/api/clientsApi';
 import {
   useCaseFinanceSummary,
+  useDeleteExpense,
+  useDeletePayment,
   useExpenses,
   usePayments,
   useSaveExpense,
   useSavePayment,
 } from '../api/financesApi';
 import { localDateOnly } from '../../../lib/dateOnly';
+import { NoCasesYet } from '../../cases/components/NoCasesYet';
 
 const methods: readonly PaymentMethod[] = [
   'CASH',
@@ -74,7 +78,7 @@ export function FinancesPage() {
   const [filterCaseId, setFilterCaseId] = useState(params.get('case') ?? '');
   const [filterClientId, setFilterClientId] = useState(params.get('client') ?? '');
   const [entry, setEntry] = useState<Entry>(null);
-  const cases = useCaseList({});
+  const cases = useCaseList({ includeArchived: true });
   const clients = useClientList({});
   const selectedCase = useCase(filterCaseId);
   const caseAccount = useCaseFinanceSummary(filterCaseId);
@@ -100,7 +104,11 @@ export function FinancesPage() {
         title={t('finances.title')}
         description={t('finances.description')}
         actions={
-          <Button type="button" onClick={() => setEntry({ type: tab, mode: 'edit' })}>
+          <Button
+            type="button"
+            disabled={Boolean(filterCaseId && (!selectedCase.data || selectedCase.data.archivedAt))}
+            onClick={() => setEntry({ type: tab, mode: 'edit' })}
+          >
             {t(`finances.add.${tab}`)}
           </Button>
         }
@@ -124,6 +132,7 @@ export function FinancesPage() {
         <label>
           {t('finances.case')}
           <EntityPicker
+            emptyText={t('cases.noResults')}
             value={filterCaseId}
             onValueChange={(value) => {
               setFilterCaseId(value ?? '');
@@ -131,12 +140,7 @@ export function FinancesPage() {
             }}
             items={[
               { value: '', label: t('tasks.allCases') },
-              ...(cases.data ?? []).map((item) => ({
-                value: item.id,
-                label: item.clientNames.length
-                  ? `${item.internalNumber} — ${format.list(item.clientNames)}`
-                  : item.internalNumber,
-              })),
+              ...(cases.data ?? []).map(caseOption),
             ]}
             placeholder={t('tasks.allCases')}
           />
@@ -234,6 +238,11 @@ export function FinancesPage() {
                   const caseName = cases.data?.find(
                     (caseItem) => caseItem.id === (payment?.caseId ?? expense?.caseId),
                   )?.internalNumber;
+                  const ownerCaseId = payment?.caseId ?? expense?.caseId;
+                  const immutable = Boolean(
+                    ownerCaseId &&
+                    !cases.data?.some((item) => item.id === ownerCaseId && !item.archivedAt),
+                  );
                   const clientName = clients.data?.find(
                     (client) => client.id === (payment?.payerClientId ?? expense?.clientId),
                   )?.fullName;
@@ -262,7 +271,7 @@ export function FinancesPage() {
                           </bdi>
                         </Button>
                       </td>
-                      <td>
+                      <td className="cell-wrap">
                         <Badge variant="secondary">
                           {payment
                             ? payment.paymentMethod
@@ -270,7 +279,11 @@ export function FinancesPage() {
                               : t('finances.paymentFallback')
                             : t(`finances.expenseTypes.${expense!.expenseType}`)}
                         </Badge>
-                        {record.notes && <small dir="auto">{record.notes}</small>}
+                        {record.notes && (
+                          <small className="cell-note" dir="auto">
+                            {record.notes}
+                          </small>
+                        )}
                       </td>
                       <td className="cell-wrap">
                         <bdi>{caseName ?? '—'}</bdi>
@@ -284,6 +297,7 @@ export function FinancesPage() {
                           variant="ghost"
                           type="button"
 
+                          disabled={immutable}
                           onClick={() => {
                             setEntry(
                               payment
@@ -329,6 +343,10 @@ export function FinancesPage() {
                   (entry.type === 'payment' ? entry.value?.payerClientId : entry.value?.clientId),
               )?.fullName
             }
+            readOnly={Boolean(
+              entry.value.caseId &&
+              !cases.data?.some((item) => item.id === entry.value?.caseId && !item.archivedAt),
+            )}
             onEdit={() => setEntry({ ...entry, mode: 'edit' })}
             onClose={closeEntry}
           />
@@ -336,7 +354,7 @@ export function FinancesPage() {
           <PaymentForm
             initial={entry.value}
             initialCaseId={filterCaseId || undefined}
-            cases={cases.data ?? []}
+            cases={cases.data?.filter((item) => !item.archivedAt)}
             onCancel={closeEntry}
             busy={savePayment.isPending}
             onSave={async (input) => {
@@ -348,7 +366,7 @@ export function FinancesPage() {
           <ExpenseForm
             initial={entry.value}
             initialCaseId={filterCaseId || undefined}
-            cases={cases.data ?? []}
+            cases={cases.data?.filter((item) => !item.archivedAt) ?? []}
             clients={clients.data ?? []}
             onCancel={closeEntry}
             busy={saveExpense.isPending}
@@ -368,18 +386,76 @@ export function FinancesPage() {
   );
 }
 
+/** «حذف السجل» for a payment or expense entered by mistake, with a confirmation. */
+export function DeleteTransactionButton({
+  entry,
+  onDeleted,
+}: {
+  entry: { type: 'payment'; value: PaymentDto } | { type: 'expense'; value: ExpenseDto };
+  onDeleted: () => void;
+}) {
+  const { t } = useTranslation();
+  const [confirming, setConfirming] = useState(false);
+  const deletePayment = useDeletePayment();
+  const deleteExpense = useDeleteExpense();
+  const mutation = entry.type === 'payment' ? deletePayment : deleteExpense;
+  const done = {
+    onSuccess: () => {
+      setConfirming(false);
+      onDeleted();
+    },
+  };
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        className="text-destructive"
+        onClick={() => {
+          mutation.reset();
+          setConfirming(true);
+        }}
+      >
+        {t('finances.delete')}
+      </Button>
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={t(`finances.deleteTitle.${entry.type}`)}
+        description={t(`finances.deleteDescription.${entry.type}`)}
+        confirmLabel={t(`finances.deleteTitle.${entry.type}`)}
+        cancelLabel={t('common.cancel')}
+        destructive
+        pending={mutation.isPending}
+        error={
+          mutation.isError
+            ? actionableErrorMessage(mutation.error, t('finances.deleteError'))
+            : undefined
+        }
+        onConfirm={() => {
+          if (mutation.isPending) return;
+          if (entry.type === 'payment') deletePayment.mutate(entry.value, done);
+          else deleteExpense.mutate(entry.value, done);
+        }}
+      />
+    </>
+  );
+}
+
 function TransactionInspection({
   entry,
   caseName,
   clientName,
   onEdit,
   onClose,
+  readOnly = false,
 }: {
   entry: { type: 'payment'; value: PaymentDto } | { type: 'expense'; value: ExpenseDto };
   caseName?: string;
   clientName?: string;
   onEdit: () => void;
   onClose: () => void;
+  readOnly?: boolean;
 }) {
   const { t } = useTranslation();
   const format = useFormat();
@@ -417,12 +493,13 @@ function TransactionInspection({
         <p>{record.notes ?? '—'}</p>
       </div>
       <FormDialogFooter>
-        <Button type="button" variant="secondary" onClick={onClose}>
+        <Button type="button" variant="secondary" data-draft-cancel onClick={onClose}>
           {t('records.close')}
         </Button>
-        <Button type="button" onClick={onEdit}>
+        <Button type="button" disabled={readOnly} onClick={onEdit}>
           {t('cases.detail.editEntryButton')}
         </Button>
+        {!readOnly && <DeleteTransactionButton entry={entry} onDeleted={onClose} />}
       </FormDialogFooter>
     </div>
   );
@@ -458,40 +535,59 @@ export function PaymentForm({
 
   const caseId = useWatch({ control: form.control, name: 'caseId' });
   const setCaseId = (value: string) =>
-    form.setValue('caseId', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('caseId', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const caseDetail = useCase(caseId);
   const payerClientId = useWatch({ control: form.control, name: 'payerClientId' });
   const setPayerClientId = (value: string) =>
-    form.setValue('payerClientId', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('payerClientId', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const amount = useWatch({ control: form.control, name: 'amount' });
   const setAmount = (value: string) =>
-    form.setValue('amount', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('amount', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const date = useWatch({ control: form.control, name: 'date' });
   const setDate = (value: string) =>
-    form.setValue('date', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('date', value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
   const method = useWatch({ control: form.control, name: 'method' });
   const setMethod = (value: PaymentMethod | '') =>
-    form.setValue('method', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('method', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const notes = useWatch({ control: form.control, name: 'notes' });
   const setNotes = (value: string) =>
-    form.setValue('notes', value, { shouldValidate: form.formState.isSubmitted });
-  const [error, setError] = useState('');
+    form.setValue('notes', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
+  // A case with a single client has an obvious payer; choose it.
+  useEffect(() => {
+    const clients = caseDetail.data?.clients;
+    if (caseDetail.data?.id === caseId && clients?.length === 1 && !form.getValues('payerClientId'))
+      form.setValue('payerClientId', clients[0].clientId);
+  }, [caseDetail.data, caseId, form]);
+  if (cases && !cases.length && !initial) return <NoCasesYet onCancel={onCancel} />;
   return (
     <DraftForm
+      control={form.control}
       className="mt-4 grid gap-3.5"
-      onSubmit={form.handleSubmit(async () => {
-        const amountMinor = parseMoneyToMinor(amount);
-        if (!amountMinor || !caseId || !payerClientId)
-          return setError(t('finances.paymentInvalid'));
+      onSubmit={form.handleSubmit(async (values) => {
         try {
           await onSave({
             id: initial?.id,
-            caseId,
-            payerClientId,
-            amountMinor,
-            paymentDate: date,
-            paymentMethod: method || undefined,
-            notes: notes || undefined,
+            caseId: values.caseId,
+            payerClientId: values.payerClientId,
+            amountMinor: parseMoneyToMinor(values.amount) ?? 0,
+            paymentDate: values.date,
+            paymentMethod: values.method || undefined,
+            notes: values.notes || undefined,
           });
         } catch {
           // The parent mutation exposes an in-dialog retry message.
@@ -502,9 +598,10 @@ export function PaymentForm({
         <Field
           label={<>{t('finances.case')}</>}
           required
-          error={fieldError(form.formState.errors.caseId, t)}
+          error={form.formState.errors.caseId ? t('forms.chooseCase') : undefined}
         >
           <EntityPicker
+            emptyText={t('cases.noResults')}
             ref={(node) => form.register('caseId').ref(node)}
             required
             value={caseId}
@@ -512,14 +609,14 @@ export function PaymentForm({
               setCaseId(value ?? '');
               setPayerClientId('');
             }}
-            items={(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber }))}
+            items={(cases ?? []).map(caseOption)}
             placeholder={t('agenda.fields.casePlaceholder')}
           />
         </Field>
         <Field
           label={<>{t('finances.payer')}</>}
           required
-          error={fieldError(form.formState.errors.payerClientId, t)}
+          error={form.formState.errors.payerClientId ? t('forms.choosePayer') : undefined}
         >
           <EntityPicker
             ref={(node) => form.register('payerClientId').ref(node)}
@@ -538,7 +635,7 @@ export function PaymentForm({
           <Field
             label={<>{t('finances.amount')}</>}
             required
-            error={fieldError(form.formState.errors.amount, t)}
+            error={form.formState.errors.amount ? t('finances.amountInvalid') : undefined}
           >
             <Input
               required
@@ -552,7 +649,7 @@ export function PaymentForm({
           <Field
             label={<>{t('finances.paymentDate')}</>}
             required
-            error={fieldError(form.formState.errors.date, t)}
+            error={form.formState.errors.date ? t('forms.invalidDate') : undefined}
           >
             <DatePicker
               required
@@ -603,13 +700,8 @@ export function PaymentForm({
             aria-invalid={!!form.formState.errors.notes}
           />
         </Field>
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
         <FormDialogFooter>
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" data-draft-cancel onClick={onCancel}>
             {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={busy}>
@@ -653,38 +745,48 @@ export function ExpenseForm({
 
   const caseId = useWatch({ control: form.control, name: 'caseId' });
   const setCaseId = (value: string) =>
-    form.setValue('caseId', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('caseId', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const clientId = useWatch({ control: form.control, name: 'clientId' });
   const setClientId = (value: string) =>
-    form.setValue('clientId', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('clientId', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const amount = useWatch({ control: form.control, name: 'amount' });
   const setAmount = (value: string) =>
-    form.setValue('amount', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('amount', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   const date = useWatch({ control: form.control, name: 'date' });
   const setDate = (value: string) =>
-    form.setValue('date', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('date', value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
   const type = useWatch({ control: form.control, name: 'type' });
   const setType = (value: ExpenseType) =>
-    form.setValue('type', value, { shouldValidate: form.formState.isSubmitted });
+    form.setValue('type', value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
   const notes = useWatch({ control: form.control, name: 'notes' });
   const setNotes = (value: string) =>
-    form.setValue('notes', value, { shouldValidate: form.formState.isSubmitted });
-  const [error, setError] = useState('');
+    form.setValue('notes', value, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
+    });
   return (
     <DraftForm
+      control={form.control}
       className="mt-4 grid gap-3.5"
-      onSubmit={form.handleSubmit(async () => {
-        const amountMinor = parseMoneyToMinor(amount);
-        if (!amountMinor) return setError(t('finances.amountInvalid'));
+      onSubmit={form.handleSubmit(async (values) => {
         try {
           await onSave({
             id: initial?.id,
-            caseId: caseId || undefined,
-            clientId: clientId || undefined,
-            amountMinor,
-            expenseDate: date,
-            expenseType: type,
-            notes: notes || undefined,
+            caseId: values.caseId || undefined,
+            clientId: values.clientId || undefined,
+            amountMinor: parseMoneyToMinor(values.amount) ?? 0,
+            expenseDate: values.date,
+            expenseType: values.type,
+            notes: values.notes || undefined,
           });
         } catch {
           // The parent mutation exposes an in-dialog retry message.
@@ -696,15 +798,13 @@ export function ExpenseForm({
         <div className="settings-two-columns">
           <Field
             label={<>{t('finances.case')}</>}
-            error={fieldError(form.formState.errors.caseId, t)}
+            error={form.formState.errors.caseId ? t('forms.chooseCase') : undefined}
           >
             <EntityPicker
+              emptyText={t('cases.noResults')}
               value={caseId}
               onValueChange={(value) => setCaseId(value ?? '')}
-              items={[
-                { value: '', label: t('tasks.noCase') },
-                ...(cases ?? []).map((item) => ({ value: item.id, label: item.internalNumber })),
-              ]}
+              items={[{ value: '', label: t('tasks.noCase') }, ...(cases ?? []).map(caseOption)]}
               placeholder={undefined}
             />
           </Field>
@@ -717,7 +817,7 @@ export function ExpenseForm({
               onValueChange={(value) => setClientId(value ?? '')}
               items={[
                 { value: '', label: t('tasks.noClient') },
-                ...(clients ?? []).map((item) => ({ value: item.id, label: item.fullName })),
+                ...(clients ?? []).map(clientOption),
               ]}
               placeholder={undefined}
             />
@@ -727,7 +827,7 @@ export function ExpenseForm({
           <Field
             label={<>{t('finances.amount')}</>}
             required
-            error={fieldError(form.formState.errors.amount, t)}
+            error={form.formState.errors.amount ? t('finances.amountInvalid') : undefined}
           >
             <Input
               required
@@ -741,7 +841,7 @@ export function ExpenseForm({
           <Field
             label={<>{t('finances.expenseDate')}</>}
             required
-            error={fieldError(form.formState.errors.date, t)}
+            error={form.formState.errors.date ? t('forms.invalidDate') : undefined}
           >
             <DatePicker
               required
@@ -794,13 +894,8 @@ export function ExpenseForm({
             aria-invalid={!!form.formState.errors.notes}
           />
         </Field>
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
         <FormDialogFooter>
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" data-draft-cancel onClick={onCancel}>
             {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={busy}>

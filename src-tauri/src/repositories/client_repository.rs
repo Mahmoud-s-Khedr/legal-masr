@@ -1,6 +1,7 @@
 use crate::{
     dto::{ClientDto, ClientDuplicateCandidate, ClientSummary},
     errors::Error,
+    normalize,
 };
 use rusqlite::{Connection, Row};
 
@@ -76,22 +77,38 @@ pub fn find_by_id(conn: &Connection, id: &str) -> Result<ClientDto, Error> {
     .map_err(|_| Error::ClientNotFound)
 }
 
+/// Text and phone patterns for a list search box: the text pattern matches normalized
+/// names and numbers; the phone pattern (three digits or more) matches phone digits.
+pub fn search_patterns(query: Option<&str>) -> (Option<String>, Option<String>) {
+    let query = query.map(str::trim).filter(|value| !value.is_empty());
+    let text = query.map(|value| normalize::like_pattern(&normalize::normalize_text(value)));
+    let phone = query
+        .map(normalize::normalize_phone)
+        .filter(|digits| digits.len() >= 3)
+        .map(|digits| normalize::like_pattern(&digits));
+    (text, phone)
+}
+
 pub fn list(
     conn: &Connection,
     query: Option<&str>,
     include_archived: bool,
 ) -> Result<Vec<ClientSummary>, Error> {
-    let like = query.map(|q| format!("%{q}%"));
+    let (text, phone) = search_patterns(query);
     let archived_filter = if include_archived {
         "1 = 1"
     } else {
         "archived_at IS NULL"
     };
     let sql = format!(
-        "SELECT id, internal_number, full_name, primary_phone, archived_at FROM clients WHERE {archived_filter} AND (?1 IS NULL OR internal_number LIKE ?1 OR full_name LIKE ?1 OR primary_phone LIKE ?1) ORDER BY full_name"
+        "SELECT id, internal_number, full_name, primary_phone, archived_at FROM clients
+         WHERE {archived_filter}
+           AND (?1 IS NULL
+                OR lm_normalize(internal_number || ' ' || full_name) LIKE ?1 ESCAPE '\\'
+                OR (?2 IS NOT NULL AND lm_digits(primary_phone) LIKE ?2 ESCAPE '\\'))"
     );
     let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map([like], |row| {
+    let rows = stmt.query_map(rusqlite::params![text, phone], |row| {
         Ok(ClientSummary {
             id: row.get(0)?,
             internal_number: row.get(1)?,
@@ -100,7 +117,9 @@ pub fn list(
             archived_at: row.get(4)?,
         })
     })?;
-    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    let mut clients = rows.collect::<Result<Vec<_>, _>>()?;
+    clients.sort_by(|a, b| normalize::natural_cmp(&a.full_name, &b.full_name));
+    Ok(clients)
 }
 
 pub fn set_archived(conn: &Connection, id: &str, archived: bool, now: &str) -> Result<(), Error> {
@@ -121,7 +140,7 @@ pub fn find_probable_duplicates(
     full_name: &str,
 ) -> Result<Vec<ClientDuplicateCandidate>, Error> {
     let mut stmt = conn.prepare(
-        "SELECT id, full_name, primary_phone FROM clients WHERE (normalized_phone IS NOT NULL AND normalized_phone = ?1) OR full_name = ?2",
+        "SELECT id, full_name, primary_phone FROM clients WHERE (normalized_phone IS NOT NULL AND normalized_phone = ?1) OR lm_normalize(full_name) = lm_normalize(?2)",
     )?;
     let rows = stmt.query_map(rusqlite::params![normalized_phone, full_name], |row| {
         Ok(ClientDuplicateCandidate {
@@ -175,5 +194,65 @@ mod tests {
             "now",
         );
         assert!(duplicate.is_err());
+    }
+
+    fn seed(connection: &Connection, number: &str, name: &str, phone: Option<&str>) {
+        insert(
+            connection,
+            &Uuid::new_v4().to_string(),
+            number,
+            name,
+            None,
+            phone,
+            phone.map(normalize::normalize_phone).as_deref(),
+            None,
+            None,
+            None,
+            "now",
+        )
+        .unwrap();
+    }
+
+    fn names(connection: &Connection, query: &str) -> Vec<String> {
+        list(connection, Some(query), false)
+            .unwrap()
+            .into_iter()
+            .map(|client| client.full_name)
+            .collect()
+    }
+
+    #[test]
+    fn client_search_matches_spelling_variants_and_phone_digits() {
+        let connection = Connection::open_in_memory().unwrap();
+        db::migrate(&connection).unwrap();
+        seed(&connection, "1", "أحمد محمود علي", Some("0122 333 4444"));
+        seed(&connection, "2", "مصطفى إبراهيم", Some("٠١١١٢٢٢٣٣٣٣"));
+        assert_eq!(names(&connection, "احمد"), vec!["أحمد محمود علي"]);
+        assert_eq!(names(&connection, "ابراهيم"), vec!["مصطفى إبراهيم"]);
+        assert_eq!(names(&connection, "مصطفي"), vec!["مصطفى إبراهيم"]);
+        assert_eq!(names(&connection, "0122333"), vec!["أحمد محمود علي"]);
+        assert_eq!(names(&connection, "٠١٢٢ ٣٣٣"), vec!["أحمد محمود علي"]);
+        assert_eq!(names(&connection, "01112223333"), vec!["مصطفى إبراهيم"]);
+        assert!(names(&connection, "سامي").is_empty());
+        // Two digits are too few to treat as a phone number and match nothing here.
+        assert!(names(&connection, "44").is_empty());
+        // A typed % is a character, not a wildcard.
+        assert!(names(&connection, "%").is_empty());
+    }
+
+    #[test]
+    fn probable_duplicates_ignore_hamza_and_alef_maqsura_differences() {
+        let connection = Connection::open_in_memory().unwrap();
+        db::migrate(&connection).unwrap();
+        seed(&connection, "1", "أحمد مصطفى", None);
+        assert_eq!(
+            find_probable_duplicates(&connection, None, "احمد مصطفي")
+                .unwrap()
+                .len(),
+            1
+        );
+        assert!(find_probable_duplicates(&connection, None, "أحمد علي")
+            .unwrap()
+            .is_empty());
     }
 }

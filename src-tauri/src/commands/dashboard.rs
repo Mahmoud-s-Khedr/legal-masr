@@ -6,5 +6,6 @@ pub fn dashboard_get_summary(
     state: State<AppState>,
     today: String,
 ) -> Result<DashboardSummary, Error> {
+    let _operation = state.operation()?;
     dashboard_service::summary(&app, &state, &today)
 }

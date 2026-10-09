@@ -4,10 +4,18 @@ import { queryKeys } from './queryKeys';
 const invalidate = (queryClient: QueryClient, queryKey: readonly unknown[]) =>
   queryClient.invalidateQueries({ queryKey });
 
+const refreshAccounts = (client: QueryClient) =>
+  client.invalidateQueries({
+    predicate: (query) =>
+      (query.queryKey[0] === 'cases' || query.queryKey[0] === 'clients') &&
+      query.queryKey[2] === 'account',
+  });
+
 /** Invalidation rules from the finalized frontend-domain contract. */
 export const queryInvalidation = {
   payment(queryClient: QueryClient, input: { caseId: string; payerClientId: string }) {
     invalidate(queryClient, queryKeys.payments.all);
+    refreshAccounts(queryClient);
     invalidate(queryClient, queryKeys.cases.account(input.caseId));
     invalidate(queryClient, queryKeys.clients.account(input.payerClientId));
   },
@@ -52,10 +60,12 @@ export const queryInvalidation = {
   },
   expense(queryClient: QueryClient, input: { caseId?: string | null; clientId?: string | null }) {
     invalidate(queryClient, queryKeys.expenses.all);
+    refreshAccounts(queryClient);
     if (input.caseId) invalidate(queryClient, queryKeys.cases.account(input.caseId));
     if (input.clientId) invalidate(queryClient, queryKeys.clients.account(input.clientId));
   },
   feeAgreement(queryClient: QueryClient, caseId: string) {
+    refreshAccounts(queryClient);
     invalidate(queryClient, queryKeys.cases.account(caseId));
   },
 };

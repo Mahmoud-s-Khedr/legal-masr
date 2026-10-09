@@ -4,6 +4,7 @@ use crate::{
         PowerOfAttorneySummary,
     },
     errors::Error,
+    normalize,
 };
 use rusqlite::{params, Connection};
 
@@ -164,15 +165,23 @@ pub fn list(
     include_archived: bool,
     client_id: Option<&str>,
 ) -> Result<Vec<PowerOfAttorneySummary>, Error> {
-    let like = query.map(|value| format!("%{value}%"));
+    let like = query
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| normalize::like_pattern(&normalize::normalize_text(value)));
+    // Matching clients in a subquery keeps every client of a matching POA in its list.
     let mut statement = conn.prepare(
         "SELECT p.id, p.internal_sequence, p.official_number, p.issue_year, p.archived_at, COALESCE(group_concat(c.full_name, '، '), '')
          FROM powers_of_attorney p
          LEFT JOIN power_of_attorney_clients pc ON pc.power_of_attorney_id = p.id
          LEFT JOIN clients c ON c.id = pc.client_id
-         WHERE (?1 OR p.archived_at IS NULL) AND (?2 IS NULL OR p.internal_sequence LIKE ?2 OR p.official_number LIKE ?2 OR c.full_name LIKE ?2)
+         WHERE (?1 OR p.archived_at IS NULL)
+           AND (?2 IS NULL
+                OR lm_normalize(p.internal_sequence || ' ' || COALESCE(p.official_number, '') || ' ' || COALESCE(p.notary_office, '')) LIKE ?2 ESCAPE '\\'
+                OR EXISTS (SELECT 1 FROM power_of_attorney_clients mpc JOIN clients mc ON mc.id = mpc.client_id
+                           WHERE mpc.power_of_attorney_id = p.id AND lm_normalize(mc.full_name) LIKE ?2 ESCAPE '\\'))
            AND (?3 IS NULL OR EXISTS (SELECT 1 FROM power_of_attorney_clients owner WHERE owner.power_of_attorney_id = p.id AND owner.client_id = ?3))
-         GROUP BY p.id ORDER BY p.archived_at IS NOT NULL, p.internal_sequence",
+         GROUP BY p.id",
     )?;
     let rows = statement
         .query_map(params![include_archived, like, client_id], |row| {
@@ -191,6 +200,13 @@ pub fn list(
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
+    let mut rows = rows;
+    rows.sort_by(|a, b| {
+        a.archived_at
+            .is_some()
+            .cmp(&b.archived_at.is_some())
+            .then_with(|| normalize::natural_cmp(&a.internal_sequence, &b.internal_sequence))
+    });
     Ok(rows)
 }
 
@@ -397,5 +413,45 @@ mod tests {
         assert!(matches!(result, Err(Error::PowerOfAttorneyClientInUse)));
         assert_eq!(linked_clients(&connection, &poa_id), before);
         assert!(before.contains(&first) && before.contains(&second));
+    }
+
+    #[test]
+    fn poa_search_matches_notary_office_and_any_client_but_lists_every_client() {
+        let connection = Connection::open_in_memory().unwrap();
+        db::migrate(&connection).unwrap();
+        let (ahmed, sara) = (id(), id());
+        for (client_id, number, name) in [(&ahmed, "CL-1", "أحمد"), (&sara, "CL-2", "سارة")]
+        {
+            connection.execute("INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')", params![client_id, number, name]).unwrap();
+        }
+        let shared = id();
+        insert(&connection, &poa(shared.clone())).unwrap();
+        replace_clients(&connection, &shared, &[ahmed.clone(), sara.clone()], "now").unwrap();
+        let other = id();
+        insert(
+            &connection,
+            &PowerOfAttorneyDto {
+                internal_sequence: "TA-10".into(),
+                notary_office: Some("توثيق الجيزة".into()),
+                ..poa(other.clone())
+            },
+        )
+        .unwrap();
+        replace_clients(&connection, &other, &[sara], "now").unwrap();
+        let search = |query: &str| list(&connection, Some(query), false, None).unwrap();
+
+        let by_client = search("احمد");
+        assert_eq!(by_client.len(), 1);
+        assert_eq!(
+            by_client[0].client_names.len(),
+            2,
+            "all clients stay listed"
+        );
+        assert_eq!(search("الجيزه")[0].id, other);
+        assert_eq!(search("شهر عقاري")[0].id, shared);
+        assert!(search("الإسكندرية").is_empty());
+        // Sorted by number: TA-1 before TA-10.
+        let all = list(&connection, None, false, None).unwrap();
+        assert_eq!(all[0].id, shared);
     }
 }

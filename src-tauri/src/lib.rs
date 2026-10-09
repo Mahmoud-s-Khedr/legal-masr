@@ -6,6 +6,7 @@ mod desktop_e2e;
 pub mod dto;
 pub mod errors;
 mod logging;
+pub mod navigation;
 pub mod normalize;
 pub mod repositories;
 pub mod security;
@@ -34,6 +35,7 @@ pub fn run() {
     }));
     let builder = builder
         .manage(AppState::default())
+        .plugin(navigation::guard())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(
@@ -57,12 +59,17 @@ pub fn run() {
             commands::app::app_lock,
             commands::app::app_change_password,
             commands::app::app_recover_access,
+            commands::app::app_replace_recovery_key,
+            commands::app::app_save_recovery_key,
+            commands::app::app_print,
             commands::backup::backup_create,
             commands::backup::backup_latest_successful,
-            commands::backup::backup_validate,
-            commands::backup::backup_restore,
             commands::backup::backup_select_for_restore,
-            commands::backup::backup_restore_selected,
+            commands::backup::backup_prepare_restore,
+            commands::backup::backup_commit_restore,
+            commands::backup::backup_cancel_restore,
+            commands::backup::backup_save_copy,
+            commands::backup::backup_reveal,
             commands::settings::settings_get,
             commands::settings::settings_open_developer_contact,
             commands::settings::settings_update,
@@ -118,8 +125,10 @@ pub fn run() {
             commands::finances::fee_agreement_save,
             commands::finances::payment_save,
             commands::finances::payment_list,
+            commands::finances::payment_delete,
             commands::finances::expense_save,
             commands::finances::expense_list,
+            commands::finances::expense_delete,
             commands::finances::finance_case_summary,
             commands::finances::finance_client_summary,
             commands::reminders::reminders_refresh

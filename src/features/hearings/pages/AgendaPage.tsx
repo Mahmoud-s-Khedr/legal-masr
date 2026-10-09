@@ -11,9 +11,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { hearingDraftSchema, decisionDraftSchema } from '@/lib/formSchemas';
 import { EntityPicker } from '@/components/forms/EntityPicker';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { HearingDto, HearingInput, TaskDto } from '../../../bridge/types';
+import { bridge } from '../../../bridge/commands';
+import { useMutation } from '@tanstack/react-query';
+import { byHearingTime, HearingRoll } from '../components/HearingRoll';
 import { DatePicker } from '../../../components/forms/DatePicker';
 import { Button } from '../../../components/ui/button';
 import { ConfirmDialog, FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
@@ -25,7 +28,9 @@ import { Icon } from '../../../components/layout/Icon';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { useFormat, useLocalePresentation } from '../../../i18n/LocalePresentation';
 import { dateOnlyToLocalDate, localDateOnly } from '../../../lib/dateOnly';
-import { useCaseList } from '../../cases/api/casesApi';
+import { useCase, useCaseList } from '../../cases/api/casesApi';
+import { NoCasesYet } from '../../cases/components/NoCasesYet';
+import { caseOption } from '../../cases/components/caseOptions';
 import { useTaskList } from '../../tasks/api/tasksApi';
 import {
   useDeleteHearing,
@@ -45,13 +50,38 @@ export function AgendaPage() {
   const { weekStartsOn, direction } = useLocalePresentation();
   const format = useFormat();
   const cases = useCaseList({ includeArchived: true });
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const requestedHearingId = params.get('hearing');
   const createIntent = params.get('create') === 'hearing';
   const [view, setView] = useState<'month' | 'week' | 'list'>('month');
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(params.get('date') ?? localDate());
-  const [editing, setEditing] = useState<HearingDto | 'new' | null>(createIntent ? 'new' : null);
+  const [editing, setEditing] = useState<HearingDto | 'new' | null>(null);
+  // «إضافة جلسة» links carry ?create=hearing. Treat it as a one-time request: open the
+  // form, then drop it from the address so the same link works again from this page.
+  const [createHandled, setCreateHandled] = useState(false);
+  if (createIntent && !createHandled) {
+    setCreateHandled(true);
+    setEditing('new');
+    const requestedDate = params.get('date');
+    if (requestedDate) {
+      setSelectedDate(requestedDate);
+      setCursor(dateOnlyToLocalDate(requestedDate));
+    }
+  } else if (!createIntent && createHandled) {
+    setCreateHandled(false);
+  }
+  useEffect(() => {
+    if (!createIntent) return;
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('create');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [createIntent, setParams]);
   const [removing, setRemoving] = useState<HearingDto | null>(null);
   const [dismissedUnavailableId, setDismissedUnavailableId] = useState<string | null>(null);
   const handledHearingId = useRef<string | null>(null);
@@ -76,6 +106,25 @@ export function AgendaPage() {
     return dates;
   }, [hearings.data, tasks.data]);
   const selected = items.get(selectedDate) ?? { hearings: [], tasks: [] };
+  const detailRef = useRef<HTMLElement>(null);
+  const print = useMutation({ gcTime: 0, mutationFn: bridge.print });
+  // The printed roll joins the page on the first request, then the print dialog opens.
+  const [printRequests, setPrintRequests] = useState(0);
+  const { mutate: printPage } = print;
+  useEffect(() => {
+    if (printRequests) printPage();
+  }, [printRequests, printPage]);
+  // On narrow windows the day's details sit below the calendar; bring them into view so
+  // choosing a day visibly does something.
+  const selectDay = (date: string) => {
+    setSelectedDate(date);
+    const detail = detailRef.current;
+    if (!detail?.previousElementSibling) return;
+    const stacked =
+      detail.getBoundingClientRect().top >=
+      detail.previousElementSibling.getBoundingClientRect().bottom;
+    if (stacked) detail.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+  };
   const label = format.monthYear(cursor);
   const caseLabel = (caseId: string) => {
     const item = cases.data?.find((candidate) => candidate.id === caseId);
@@ -196,7 +245,7 @@ export function AgendaPage() {
               cursor={cursor}
               selectedDate={selectedDate}
               items={items}
-              onSelect={setSelectedDate}
+              onSelect={selectDay}
               weekStartsOn={weekStartsOn}
               weekdayFormatter={(day) => format.weekday(day, 'short')}
               dayLabel={format.dateLong}
@@ -207,26 +256,47 @@ export function AgendaPage() {
               cursor={cursor}
               selectedDate={selectedDate}
               items={items}
-              onSelect={setSelectedDate}
+              onSelect={selectDay}
               weekStartsOn={weekStartsOn}
               dayLabel={format.dateCompact}
+              lines={(entry) => <DayLines entry={entry} caseLabel={caseLabel} />}
               t={t}
             />
           ) : (
             <AgendaList
               items={items}
-              onSelect={setSelectedDate}
+              onSelect={selectDay}
               dayLabel={format.dateLong}
               selectedDate={selectedDate}
+              lines={(entry) => <DayLines entry={entry} caseLabel={caseLabel} />}
               t={t}
             />
           )}
         </section>
-        <aside className="calendar-detail">
+        <aside className="calendar-detail" ref={detailRef}>
           <p className="kicker">{t('agenda.dayDetails')}</p>
           <h3>
             <time dateTime={selectedDate}>{format.dateLong(selectedDate)}</time>
           </h3>
+          {selected.hearings.length > 0 && (
+            <div className="calendar-detail-actions">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={print.isPending}
+                onClick={() => setPrintRequests((count) => count + 1)}
+              >
+                <Icon name="printer" size={16} />
+                {t('agenda.printRoll')}
+              </Button>
+              {print.isError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{t('agenda.printError')}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
           {unavailable && (
             <div className="record-unavailable" role="alert">
               <p>{t('agenda.recordUnavailable')}</p>
@@ -254,7 +324,7 @@ export function AgendaPage() {
               </div>
             </div>
           )}
-          {selected.hearings.map((hearing) => (
+          {[...selected.hearings].sort(byHearingTime).map((hearing) => (
             <article className="agenda-item" key={hearing.id}>
               <div className="agenda-item-head">
                 <strong dir="auto">{hearing.hearingType ?? t('agenda.hearing')}</strong>
@@ -319,6 +389,9 @@ export function AgendaPage() {
           ))}
         </aside>
       </div>
+      {printRequests > 0 && (
+        <HearingRoll date={selectedDate} hearings={selected.hearings} cases={cases.data ?? []} />
+      )}
       <ConfirmDialog
         open={Boolean(removing)}
         onOpenChange={(open) => !open && setRemoving(null)}
@@ -475,6 +548,51 @@ function MonthGrid({
     </>
   );
 }
+/** A day in the week and list views holds several lines, not a one-line pill. */
+const dayRowClasses =
+  'grid h-auto justify-stretch justify-items-start gap-1 py-2 whitespace-normal';
+
+/** What a day holds, line by line: each hearing with its time, case and court, then open tasks. */
+function DayLines({
+  entry,
+  caseLabel,
+}: {
+  entry: CalendarDayItems | undefined;
+  caseLabel: (caseId: string) => string;
+}) {
+  const { t } = useTranslation();
+  const format = useFormat();
+  const openTasks = entry?.tasks.filter((task) => !task.completed) ?? [];
+  const completed = (entry?.tasks.length ?? 0) - openTasks.length;
+  if (!entry || (!entry.hearings.length && !openTasks.length && !completed))
+    return <span className="day-line muted">{t('agenda.noEvents')}</span>;
+  return (
+    <>
+      {[...entry.hearings].sort(byHearingTime).map((hearing) => (
+        <span className="day-line" key={hearing.id} dir="auto">
+          <span className="day-line-time">
+            {hearing.hearingTime ? format.time(hearing.hearingTime) : t('agenda.allDay')}
+          </span>
+          {[caseLabel(hearing.caseId), hearing.location].filter(Boolean).join(' · ')}
+          {hearing.status !== 'SCHEDULED' && (
+            <span className="day-line-done"> · {t('agenda.decisionRecorded')}</span>
+          )}
+        </span>
+      ))}
+      {openTasks.map((task) => (
+        <span className="day-line day-line-task" key={task.id} dir="auto">
+          {t('agenda.task')}: <bdi>{task.title}</bdi>
+        </span>
+      ))}
+      {completed > 0 && (
+        <span className="day-line muted">
+          {t('agenda.completedTaskCount', { count: completed })}
+        </span>
+      )}
+    </>
+  );
+}
+
 function WeekList({
   cursor,
   selectedDate,
@@ -482,7 +600,7 @@ function WeekList({
   onSelect,
   weekStartsOn,
   dayLabel,
-  t,
+  lines,
 }: {
   cursor: Date;
   selectedDate: string;
@@ -490,6 +608,7 @@ function WeekList({
   onSelect: (date: string) => void;
   weekStartsOn: number;
   dayLabel: (date: string) => string;
+  lines: (entry: CalendarDayItems | undefined) => ReactNode;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const start = plusDays(cursor, -((cursor.getDay() - weekStartsOn + 7) % 7));
@@ -497,72 +616,68 @@ function WeekList({
     <div className="calendar-agenda-list">
       {Array.from({ length: 7 }, (_, index) => plusDays(start, index)).map((day) => {
         const date = formatDate(day);
-        const entry = items.get(date);
         return (
           <Button
             variant="ghost"
-            className={`agenda-item ${selectedDate === date ? 'selected-record' : ''}`}
+            className={`agenda-item ${dayRowClasses} ${selectedDate === date ? 'selected-record' : ''} ${date === localDate() ? 'is-today' : ''}`}
             type="button"
             key={date}
             onClick={() => onSelect(date)}
           >
             <strong>{dayLabel(date)}</strong>
-            <span>
-              {entry
-                ? t('agenda.dayCounts', {
-                    hearings: entry.hearings.length,
-                    tasks: entry.tasks.filter((task) => !task.completed).length,
-                    completed: entry.tasks.filter((task) => task.completed).length,
-                  })
-                : t('agenda.noEvents')}
-            </span>
+            {lines(items.get(date))}
           </Button>
         );
       })}
     </div>
   );
 }
+
 function AgendaList({
   items,
   onSelect,
   dayLabel,
   selectedDate,
+  lines,
   t,
 }: {
   items: Map<string, CalendarDayItems>;
   onSelect: (date: string) => void;
   dayLabel: (date: string) => string;
   selectedDate: string;
+  lines: (entry: CalendarDayItems | undefined) => ReactNode;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
-  const format = useFormat();
+  // The list starts today; earlier days are one click away.
+  const [showPast, setShowPast] = useState(false);
+  const today = localDate();
+  const entries = [...items.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const past = entries.filter(([date]) => date < today);
+  const shown = showPast ? entries : entries.filter(([date]) => date >= today);
   return (
     <div className="calendar-agenda-list">
-      {[...items.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([date, entry]) => (
-          <Button
-            variant="ghost"
-            className={`agenda-item ${selectedDate === date ? 'selected-record' : ''}`}
-            type="button"
-            key={date}
-            onClick={() => onSelect(date)}
-          >
-            <strong>{dayLabel(date)}</strong>
-            <span>
-              {format.list(
-                entry.hearings.map((hearing) => hearing.hearingType ?? t('agenda.hearing')),
-              ) || t('agenda.tasksLabel')}{' '}
-              ·{' '}
-              {t('agenda.dayCounts', {
-                hearings: entry.hearings.length,
-                tasks: entry.tasks.filter((task) => !task.completed).length,
-                completed: entry.tasks.filter((task) => task.completed).length,
-              })}
-            </span>
-          </Button>
-        ))}
-      {!items.size && <p className="empty-compact">{t('agenda.empty')}</p>}
+      {past.length > 0 && (
+        <Button type="button" variant="ghost" size="sm" onClick={() => setShowPast(!showPast)}>
+          {showPast ? t('agenda.hidePast') : t('agenda.showPast', { count: past.length })}
+        </Button>
+      )}
+      {shown.map(([date, entry]) => (
+        <Button
+          variant="ghost"
+          className={`agenda-item ${dayRowClasses} ${selectedDate === date ? 'selected-record' : ''} ${date === today ? 'is-today' : ''}`}
+          type="button"
+          key={date}
+          onClick={() => onSelect(date)}
+        >
+          <strong>{dayLabel(date)}</strong>
+          {lines(entry)}
+        </Button>
+      ))}
+      {!items.size ? (
+        <p className="empty-compact">{t('agenda.empty')}</p>
+      ) : (
+        !shown.length && <p className="empty-compact">{t('agenda.noUpcoming')}</p>
+      )}
     </div>
   );
 }
@@ -582,7 +697,6 @@ export function HearingForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const format = useFormat();
   const form = useForm<z.infer<typeof hearingDraftSchema>>({
     resolver: zodResolver(hearingDraftSchema),
     defaultValues: {
@@ -598,45 +712,52 @@ export function HearingForm({
   });
 
   const cases = useCaseList({});
-  const caseId = useWatch({ control: form.control, name: 'caseId' });
-  const setCaseId = (value: string) =>
-    form.setValue('caseId', value, { shouldValidate: form.formState.isSubmitted });
-  const date = useWatch({ control: form.control, name: 'date' });
-  const setDate = (value: string) =>
-    form.setValue('date', value, { shouldValidate: form.formState.isSubmitted });
-  const time = useWatch({ control: form.control, name: 'time' });
-  const setTime = (value: string) =>
-    form.setValue('time', value, { shouldValidate: form.formState.isSubmitted });
-  const type = useWatch({ control: form.control, name: 'type' });
-  const setType = (value: string) =>
-    form.setValue('type', value, { shouldValidate: form.formState.isSubmitted });
-  const location = useWatch({ control: form.control, name: 'location' });
-  const setLocation = (value: string) =>
-    form.setValue('location', value, { shouldValidate: form.formState.isSubmitted });
-  const circuit = useWatch({ control: form.control, name: 'circuit' });
-  const setCircuit = (value: string) =>
-    form.setValue('circuit', value, { shouldValidate: form.formState.isSubmitted });
-  const requiredDocuments = useWatch({ control: form.control, name: 'requiredDocuments' });
-  const setRequiredDocuments = (value: string) =>
-    form.setValue('requiredDocuments', value, { shouldValidate: form.formState.isSubmitted });
-  const notes = useWatch({ control: form.control, name: 'notes' });
-  const setNotes = (value: string) =>
-    form.setValue('notes', value, { shouldValidate: form.formState.isSubmitted });
+  const errors = form.formState.errors;
+  const draft = useWatch({ control: form.control });
+  const bind = <K extends keyof z.infer<typeof hearingDraftSchema>>(name: K) => ({
+    value: draft[name] ?? '',
+    set: (value: string) =>
+      form.setValue(name, value as never, {
+        shouldDirty: true,
+        shouldValidate: form.formState.isSubmitted,
+      }),
+  });
+  const caseId = bind('caseId');
+  const date = bind('date');
+  const time = bind('time');
+  const type = bind('type');
+  const location = bind('location');
+  const circuit = bind('circuit');
+  const requiredDocuments = bind('requiredDocuments');
+  const notes = bind('notes');
+  // A new hearing usually sits where its case sits: offer the case's court and circuit.
+  const chosenCase = useCase(initial ? '' : caseId.value);
+  useEffect(() => {
+    if (initial || !chosenCase.data) return;
+    if (!form.getValues('location') && chosenCase.data.courtName)
+      form.setValue('location', chosenCase.data.courtName);
+    if (!form.getValues('circuit') && chosenCase.data.circuitName)
+      form.setValue('circuit', chosenCase.data.circuitName);
+  }, [chosenCase.data, form, initial]);
+
+  if (cases.isSuccess && !cases.data.length && !initial) return <NoCasesYet onCancel={onCancel} />;
+
   return (
     <DraftForm
+      control={form.control}
       className="mt-4 grid gap-3.5"
-      onSubmit={form.handleSubmit(async () => {
+      onSubmit={form.handleSubmit(async (values) => {
         try {
           await onSave({
             id: initial?.id,
-            caseId,
-            hearingDate: date,
-            hearingTime: time || undefined,
-            hearingType: type || undefined,
-            location: location || undefined,
-            circuitName: circuit || undefined,
-            requiredDocuments: requiredDocuments || undefined,
-            notes: notes || undefined,
+            caseId: values.caseId,
+            hearingDate: values.date,
+            hearingTime: values.time || undefined,
+            hearingType: values.type || undefined,
+            location: values.location || undefined,
+            circuitName: values.circuit || undefined,
+            requiredDocuments: values.requiredDocuments || undefined,
+            notes: values.notes || undefined,
           });
         } catch {
           // The parent mutation exposes an in-dialog retry message.
@@ -650,18 +771,14 @@ export function HearingForm({
           error={fieldError(form.formState.errors.caseId, t)}
         >
           <EntityPicker
+            emptyText={t('cases.noResults')}
             ref={(node) => form.register('caseId').ref(node)}
             required
-            value={caseId}
-            onValueChange={(value) => setCaseId(value ?? '')}
-            items={(cases.data ?? []).map((item) => ({
-              value: item.id,
-              label: item.clientNames.length
-                ? `${item.internalNumber} — ${format.list(item.clientNames)}`
-                : item.internalNumber,
-            }))}
+            value={caseId.value}
+            onValueChange={(value) => caseId.set(value ?? '')}
+            items={(cases.data ?? []).map(caseOption)}
             placeholder={t('agenda.fields.casePlaceholder')}
-            aria-invalid={!!form.formState.errors.caseId}
+            aria-invalid={!!errors.caseId}
           />
         </Field>
         <div className="settings-two-columns">
@@ -672,86 +789,66 @@ export function HearingForm({
           >
             <DatePicker
               required
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
+              value={date.value}
+              onChange={(event) => date.set(event.target.value)}
               ref={(node) => form.register('date').ref(node)}
-              aria-invalid={!!form.formState.errors.date}
+              aria-invalid={!!errors.date}
             />
           </Field>
           <Field
             label={<>{t('agenda.fields.time')}</>}
-            error={form.formState.errors.time ? t('forms.invalid') : undefined}
+            error={errors.time ? t('forms.invalidTime') : undefined}
           >
             <TimeField
-              value={time}
-              onChange={(event) => setTime(event.target.value)}
+              value={time.value}
+              onChange={(event) => time.set(event.target.value)}
               ref={(node) => form.register('time').ref(node)}
-              aria-invalid={!!form.formState.errors.time}
+              aria-invalid={!!errors.time}
             />
           </Field>
         </div>
         <div className="settings-two-columns">
-          <Field
-            label={<>{t('agenda.fields.type')}</>}
-            error={form.formState.errors.type ? t('forms.invalid') : undefined}
-          >
+          <Field label={<>{t('agenda.fields.type')}</>}>
             <CreatableCombobox
               suggestion="hearingType"
-              value={type}
-              onChange={(event) => setType(event.target.value)}
+              value={type.value}
+              onChange={(event) => type.set(event.target.value)}
               ref={(node) => form.register('type').ref(node)}
-              aria-invalid={!!form.formState.errors.type}
             />
           </Field>
-          <Field
-            label={<>{t('agenda.fields.location')}</>}
-            error={form.formState.errors.location ? t('forms.invalid') : undefined}
-          >
+          <Field label={<>{t('agenda.fields.location')}</>}>
             <CreatableCombobox
               suggestion="courtName"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
+              value={location.value}
+              onChange={(event) => location.set(event.target.value)}
               ref={(node) => form.register('location').ref(node)}
-              aria-invalid={!!form.formState.errors.location}
             />
           </Field>
         </div>
-        <Field
-          label={<>{t('agenda.fields.circuit')}</>}
-          error={form.formState.errors.circuit ? t('forms.invalid') : undefined}
-        >
+        <Field label={<>{t('agenda.fields.circuit')}</>}>
           <CreatableCombobox
             suggestion="circuitName"
-            value={circuit}
-            onChange={(event) => setCircuit(event.target.value)}
+            value={circuit.value}
+            onChange={(event) => circuit.set(event.target.value)}
             ref={(node) => form.register('circuit').ref(node)}
-            aria-invalid={!!form.formState.errors.circuit}
           />
         </Field>
-        <Field
-          label={<>{t('agenda.fields.requiredDocuments')}</>}
-          error={form.formState.errors.requiredDocuments ? t('forms.invalid') : undefined}
-        >
+        <Field label={<>{t('agenda.fields.requiredDocuments')}</>}>
           <Textarea
-            value={requiredDocuments}
-            onChange={(event) => setRequiredDocuments(event.target.value)}
+            value={requiredDocuments.value}
+            onChange={(event) => requiredDocuments.set(event.target.value)}
             ref={(node) => form.register('requiredDocuments').ref(node)}
-            aria-invalid={!!form.formState.errors.requiredDocuments}
           />
         </Field>
-        <Field
-          label={<>{t('common.notes')}</>}
-          error={form.formState.errors.notes ? t('forms.invalid') : undefined}
-        >
+        <Field label={<>{t('common.notes')}</>}>
           <Textarea
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
+            value={notes.value}
+            onChange={(event) => notes.set(event.target.value)}
             ref={(node) => form.register('notes').ref(node)}
-            aria-invalid={!!form.formState.errors.notes}
           />
         </Field>
         <FormDialogFooter>
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" data-draft-cancel onClick={onCancel}>
             {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={busy}>
@@ -762,6 +859,7 @@ export function HearingForm({
     </DraftForm>
   );
 }
+
 export function DecisionForm({
   hearing,
   busy,
@@ -778,29 +876,29 @@ export function DecisionForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const form = useForm<z.infer<typeof decisionDraftSchema>>({
     resolver: zodResolver(decisionDraftSchema),
     defaultValues: { decisionText: hearing.decisionText ?? '', nextDate: '' },
   });
-
   const decisionText = useWatch({ control: form.control, name: 'decisionText' });
-  const setDecisionText = (value: string) =>
-    form.setValue('decisionText', value, { shouldValidate: form.formState.isSubmitted });
   const nextDate = useWatch({ control: form.control, name: 'nextDate' });
-  const setNextDate = (value: string) =>
-    form.setValue('nextDate', value, { shouldValidate: form.formState.isSubmitted });
+  const set = (name: 'decisionText' | 'nextDate', value: string) =>
+    form.setValue(name, value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
+  const nextIsNotLater = Boolean(nextDate && nextDate <= hearing.hearingDate);
   return (
     <DraftForm
+      control={form.control}
       className="mt-4 grid gap-3.5"
-      onSubmit={form.handleSubmit(async () => {
+      onSubmit={form.handleSubmit(async (values) => {
         try {
           await onSave({
             id: hearing.id,
-            decisionText: decisionText || undefined,
-            nextHearing: nextDate
+            decisionText: values.decisionText?.trim() || undefined,
+            nextHearing: values.nextDate
               ? {
                   caseId: hearing.caseId,
-                  hearingDate: nextDate,
+                  hearingDate: values.nextDate,
                   hearingTime: hearing.hearingTime ?? undefined,
                   hearingType: hearing.hearingType ?? undefined,
                   location: hearing.location ?? undefined,
@@ -817,32 +915,33 @@ export function DecisionForm({
       })}
     >
       <FieldGroup>
-        <Field
-          label={<>{t('agenda.fields.decisionText')}</>}
-          error={form.formState.errors.decisionText ? t('forms.invalid') : undefined}
-        >
+        <Field label={<>{t('agenda.fields.decisionText')}</>}>
           <Textarea
             autoFocus
             value={decisionText}
-            onChange={(event) => setDecisionText(event.target.value)}
+            onChange={(event) => set('decisionText', event.target.value)}
             ref={(node) => form.register('decisionText').ref(node)}
-            aria-invalid={!!form.formState.errors.decisionText}
           />
         </Field>
         <Field
           label={<>{t('agenda.fields.nextHearing')}</>}
-          error={form.formState.errors.nextDate ? t('forms.invalid') : undefined}
+          hint={
+            nextIsNotLater
+              ? t('agenda.nextHearingNotLater', { date: format.date(hearing.hearingDate) })
+              : undefined
+          }
+          error={form.formState.errors.nextDate ? t('forms.invalidDate') : undefined}
         >
           <DatePicker
             value={nextDate}
-            onChange={(event) => setNextDate(event.target.value)}
+            onChange={(event) => set('nextDate', event.target.value)}
             ref={(node) => form.register('nextDate').ref(node)}
             aria-invalid={!!form.formState.errors.nextDate}
           />
         </Field>
         <p className="muted">{t('agenda.nextHearingHint')}</p>
         <FormDialogFooter>
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" data-draft-cancel onClick={onCancel}>
             {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={busy}>

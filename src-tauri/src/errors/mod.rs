@@ -18,6 +18,8 @@ struct Diagnostic {
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("Operation in progress")]
+    OperationBusy,
     #[error("invalid password")]
     InvalidPassword,
     #[error("application is locked")]
@@ -72,6 +74,10 @@ pub enum Error {
     CaseClientHasPayments,
     #[error("client is archived")]
     ClientArchived,
+    #[error("case is archived")]
+    CaseArchived,
+    #[error("no backup yet")]
+    BackupMissing,
     #[error("task not found")]
     TaskNotFound,
     #[error("attachment source missing")]
@@ -80,6 +86,8 @@ pub enum Error {
     AttachmentNotFound,
     #[error("payment not found")]
     PaymentNotFound,
+    #[error("expense has attachments")]
+    ExpenseHasAttachments,
     #[error("expense not found")]
     ExpenseNotFound,
     #[error("operation could not be completed")]
@@ -123,6 +131,7 @@ impl From<rusqlite::Error> for Error {
 impl Error {
     pub fn code(&self) -> &'static str {
         match self {
+            Self::OperationBusy => "OPERATION_BUSY",
             Self::InvalidPassword => "INVALID_PASSWORD",
             Self::Locked => "APP_LOCKED",
             Self::Initialized => "ALREADY_INITIALIZED",
@@ -152,11 +161,14 @@ impl Error {
             }
             Self::CaseClientHasPayments => "CASE_CLIENT_HAS_PAYMENTS",
             Self::ClientArchived => "CLIENT_ARCHIVED",
+            Self::CaseArchived => "CASE_ARCHIVED",
+            Self::BackupMissing => "BACKUP_MISSING",
             Self::TaskNotFound => "TASK_NOT_FOUND",
             Self::AttachmentSourceMissing => "ATTACHMENT_SOURCE_MISSING",
             Self::AttachmentNotFound => "ATTACHMENT_NOT_FOUND",
             Self::PaymentNotFound => "PAYMENT_NOT_FOUND",
             Self::ExpenseNotFound => "EXPENSE_NOT_FOUND",
+            Self::ExpenseHasAttachments => "EXPENSE_HAS_ATTACHMENTS",
             Self::Operation => "OPERATION_FAILED",
             Self::Cancelled => "OPERATION_CANCELLED",
             Self::Io(_) | Self::Sql(_) | Self::Json(_) | Self::Zip(_) => "OPERATION_FAILED",
@@ -165,6 +177,8 @@ impl Error {
 
     fn message(&self) -> &'static str {
         match self {
+            Self::OperationBusy => "توجد عملية قيد التنفيذ؛ حاول مرة أخرى بعد اكتمالها.",
+            Self::ExpenseHasAttachments => "احذف مرفقات المصروف أولًا قبل حذف المصروف.",
             Self::InvalidPassword => "كلمة المرور غير صحيحة.",
             Self::Locked => "التطبيق مقفل.",
             Self::Initialized => "تم إعداد التطبيق بالفعل.",
@@ -198,6 +212,8 @@ impl Error {
             }
             Self::CaseClientHasPayments => "لا يمكن إزالة موكل له دفعات مرتبطة بالقضية.",
             Self::ClientArchived => "لا يمكن إضافة موكل مؤرشف.",
+            Self::CaseArchived => "القضية مؤرشفة؛ استعدها أولًا لتعديلها.",
+            Self::BackupMissing => "لا توجد نسخة احتياطية بعد.",
             Self::TaskNotFound => "لم يتم العثور على المهمة.",
             Self::AttachmentSourceMissing => "تعذر العثور على الملف المصدر للمرفق.",
             Self::AttachmentNotFound => "لم يتم العثور على المرفق.",

@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
 import type {
+  ExpenseDto,
   ExpenseInput,
   ExpenseListInput,
   FeeAgreementInput,
+  PaymentDto,
   PaymentInput,
   PaymentListInput,
 } from '../../../bridge/types';
@@ -12,8 +14,12 @@ import { queryKeys } from '../../../lib/queryKeys';
 
 export const usePayments = (input: PaymentListInput = {}) =>
   useQuery({ queryKey: queryKeys.payments.list(input), queryFn: () => bridge.paymentList(input) });
-export const useExpenses = (input: ExpenseListInput = {}) =>
-  useQuery({ queryKey: queryKeys.expenses.list(input), queryFn: () => bridge.expenseList(input) });
+export const useExpenses = (input: ExpenseListInput = {}, enabled = true) =>
+  useQuery({
+    queryKey: queryKeys.expenses.list(input),
+    queryFn: () => bridge.expenseList(input),
+    enabled,
+  });
 export const useSavePayment = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -30,6 +36,28 @@ export const useSaveExpense = () => {
   return useMutation({
     mutationFn: (input: ExpenseInput) => bridge.expenseSave(input),
     onSuccess: (expense) =>
+      queryInvalidation.expense(queryClient, {
+        caseId: expense.caseId,
+        clientId: expense.clientId,
+      }),
+  });
+};
+export const useDeletePayment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payment: PaymentDto) => bridge.paymentDelete(payment.id),
+    onSuccess: (_, payment) =>
+      queryInvalidation.payment(queryClient, {
+        caseId: payment.caseId,
+        payerClientId: payment.payerClientId,
+      }),
+  });
+};
+export const useDeleteExpense = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (expense: ExpenseDto) => bridge.expenseDelete(expense.id),
+    onSuccess: (_, expense) =>
       queryInvalidation.expense(queryClient, {
         caseId: expense.caseId,
         clientId: expense.clientId,

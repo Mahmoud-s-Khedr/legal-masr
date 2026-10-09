@@ -86,12 +86,20 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
         password_envelope: new_password_envelope.clone(),
         recovery_envelope: recovery_envelope.clone(),
     };
+    {
+        use sha2::Digest;
+        let conn = db::open_db(&db_path, &master).unwrap();
+        conn.execute("INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000001', '1', 'Synthetic', 'now', 'now')", []).unwrap();
+        let bytes = fs::read(source_documents.join("managed.txt")).unwrap();
+        conn.execute("INSERT INTO attachments (id, client_id, original_filename, stored_filename, relative_path, file_size_bytes, sha256, category, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'managed.txt', 'managed.txt', 'managed.txt', ?1, ?2, 'OTHER', 'now', 'now')", rusqlite::params![bytes.len() as i64, hex::encode(sha2::Sha256::digest(&bytes))]).unwrap();
+    }
     let backup_path = backup::create(
         &db_path,
         &master,
         &security_file,
         backup_dir.path().to_str().unwrap(),
         &source_documents,
+        "2026-10-10-12-00-00",
     )
     .unwrap();
     backup::validate(&backup_path, Some(&master), None).unwrap();
@@ -108,14 +116,9 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
             .unwrap();
     }
 
-    backup::restore(
-        &active_db_path,
-        &active_documents,
-        &backup_path,
-        Some(&master),
-        None,
-    )
-    .unwrap();
+    backup::prepare(active_dir.path(), &backup_path, Some(&master), None, None)
+        .and_then(|prepared| backup::commit(&active_db_path, &active_documents, prepared))
+        .unwrap();
 
     let conn = db::open_db(&active_db_path, &master).unwrap();
     let restored_value: String = conn

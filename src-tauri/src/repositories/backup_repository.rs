@@ -18,6 +18,18 @@ pub fn finish(
     Ok(())
 }
 
+/// A backup's database snapshot is taken while its own history row still says RUNNING.
+/// After that backup is restored, the newest RUNNING row is the restored backup itself,
+/// which did succeed: record it so, with the restored file's size.
+pub fn settle_restored(conn: &Connection, size: Option<i64>) -> Result<(), Error> {
+    conn.execute(
+        "UPDATE backup_history SET status = 'SUCCEEDED', completed_at = started_at, archive_size_bytes = ?1
+         WHERE id = (SELECT id FROM backup_history WHERE status = 'RUNNING' ORDER BY started_at DESC LIMIT 1)",
+        params![size],
+    )?;
+    Ok(())
+}
+
 pub fn latest_successful(conn: &Connection) -> Result<Option<LatestSuccessfulBackupDto>, Error> {
     conn.query_row(
         "SELECT completed_at, archive_size_bytes FROM backup_history WHERE status = 'SUCCEEDED' ORDER BY completed_at DESC LIMIT 1",
@@ -48,6 +60,40 @@ mod tests {
             )
             .expect("backup history table");
         connection
+    }
+
+    #[test]
+    fn a_restored_backup_counts_as_the_latest_successful_one() {
+        let connection = connection();
+        start(&connection, "stale", "2026-08-24T07:00:00Z").expect("stale row");
+        start(&connection, "restored", "2026-08-24T08:00:00Z").expect("restored row");
+        assert!(latest_successful(&connection).unwrap().is_none());
+
+        settle_restored(&connection, Some(4096)).expect("settle");
+
+        let latest = latest_successful(&connection)
+            .unwrap()
+            .expect("a successful backup");
+        assert_eq!(latest.completed_at, "2026-08-24T08:00:00Z");
+        assert_eq!(latest.archive_size_bytes, Some(4096));
+        // Only the backup being restored is settled; an older unknown run stays as it was.
+        let stale: String = connection
+            .query_row(
+                "SELECT status FROM backup_history WHERE id = 'stale'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(stale, "RUNNING");
+        // With nothing running, settling changes nothing.
+        settle_restored(&connection, Some(1)).expect("settle again");
+        assert_eq!(
+            latest_successful(&connection)
+                .unwrap()
+                .unwrap()
+                .archive_size_bytes,
+            Some(4096)
+        );
     }
 
     #[test]

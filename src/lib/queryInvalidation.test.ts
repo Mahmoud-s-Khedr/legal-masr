@@ -49,4 +49,18 @@ describe('canonical query invalidation', () => {
     expect(invalidateQueries).not.toHaveBeenCalledWith({ queryKey: ['cases'] });
     expect(invalidateQueries).not.toHaveBeenCalledWith({ queryKey: ['clients'] });
   });
+  it('refreshes former and new account owners after reassignment without touching unrelated details', () => {
+    const client = new QueryClient();
+    const oldCase = ['cases', 'former-case', 'account'];
+    const newCase = ['cases', 'next-case', 'account'];
+    const oldClient = ['clients', 'former-client', 'account'];
+    const newClient = ['clients', 'next-client', 'account'];
+    const unrelated = ['clients', 'unrelated', 'relationships'];
+    for (const key of [oldCase, newCase, oldClient, newClient, unrelated])
+      client.setQueryData(key, { synthetic: true });
+    queryInvalidation.payment(client, { caseId: 'next-case', payerClientId: 'next-client' });
+    for (const key of [oldCase, newCase, oldClient, newClient])
+      expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(unrelated)?.isInvalidated).toBe(false);
+  });
 });

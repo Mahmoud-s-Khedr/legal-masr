@@ -1,6 +1,6 @@
 import { DraftForm } from '@/components/forms/DraftForm';
 import { CreatableCombobox } from '@/components/forms/CreatableCombobox';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,7 +22,10 @@ const schema = z.object({
   issueDate: optionalDate,
   notaryOffice: z.string(),
   notes: z.string(),
-  clientIds: z.array(z.string()).refine((ids) => new Set(ids).size === ids.length),
+  clientIds: z
+    .array(z.string())
+    .min(1)
+    .refine((ids) => new Set(ids).size === ids.length),
   lawyers: z.array(
     z.object({
       id: z.string().optional(),
@@ -34,11 +37,13 @@ const schema = z.object({
 });
 export function PowerOfAttorneyForm({
   powerOfAttorney,
+  suggestedNumber,
   busy,
   onSubmit,
   onCancel,
 }: {
   powerOfAttorney?: PowerOfAttorneyDto;
+  suggestedNumber?: string;
   busy: boolean;
   onSubmit: (input: PowerOfAttorneyInput) => Promise<void>;
   onCancel: () => void;
@@ -67,10 +72,15 @@ export function PowerOfAttorneyForm({
         })) ?? [],
     },
   });
+  useEffect(() => {
+    if (suggestedNumber && !getValues('internalSequence'))
+      setValue('internalSequence', suggestedNumber);
+  }, [suggestedNumber, getValues, setValue]);
   const lawyers = useWatch({ control, name: 'lawyers' });
   return (
     <>
       <DraftForm
+        control={control}
         noValidate
         onSubmit={handleSubmit(async (values) => {
           if (busy) return;
@@ -101,7 +111,7 @@ export function PowerOfAttorneyForm({
               </Field>
               <Field
                 label={t('poa.fields.issueDate')}
-                error={formState.errors.issueDate ? t('forms.invalid') : undefined}
+                error={formState.errors.issueDate ? t('forms.invalidDate') : undefined}
               >
                 <Controller
                   control={control}
@@ -117,7 +127,10 @@ export function PowerOfAttorneyForm({
           <fieldset className="form-section">
             <legend className="form-section-title">{t('poa.clientsTitle')}</legend>
             <p className="form-section-hint">{t('poa.clientsHint')}</p>
-            <Field label={t('poa.tabs.clients')}>
+            <Field
+              label={t('poa.tabs.clients')}
+              error={formState.errors.clientIds ? t('poa.clientsRequired') : undefined}
+            >
               <Controller
                 control={control}
                 name="clientIds"
@@ -171,6 +184,7 @@ export function PowerOfAttorneyForm({
                       setValue(
                         'lawyers',
                         lawyers.filter((_, i) => i !== index),
+                        { shouldDirty: true },
                       )
                     }
                   >
@@ -184,7 +198,9 @@ export function PowerOfAttorneyForm({
                 type="button"
                 variant="outline"
                 onClick={() =>
-                  setValue('lawyers', [...lawyers, { fullName: '', barNumber: '', notes: '' }])
+                  setValue('lawyers', [...lawyers, { fullName: '', barNumber: '', notes: '' }], {
+                    shouldDirty: true,
+                  })
                 }
               >
                 {t('poa.addLawyer')}
@@ -200,7 +216,7 @@ export function PowerOfAttorneyForm({
             <Button type="submit" disabled={busy || formState.isSubmitting}>
               {t('poa.save')}
             </Button>
-            <Button type="button" variant="secondary" onClick={onCancel}>
+            <Button type="button" variant="secondary" data-draft-cancel onClick={onCancel}>
               {t('common.cancel')}
             </Button>
           </div>
@@ -210,7 +226,11 @@ export function PowerOfAttorneyForm({
         open={creating}
         onOpenChange={setCreating}
         initialName={clientName}
-        onCreated={(id) => setValue('clientIds', [...new Set([...getValues('clientIds'), id])])}
+        onCreated={(id) =>
+          setValue('clientIds', [...new Set([...getValues('clientIds'), id])], {
+            shouldDirty: true,
+          })
+        }
       />
     </>
   );

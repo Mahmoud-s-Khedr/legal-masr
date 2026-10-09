@@ -21,12 +21,9 @@ use std::{
 use zeroize::Zeroizing;
 use zip::{write::SimpleFileOptions, ZipArchive, ZipWriter};
 
-/// First format: the archive key derives from the vault master key only, so the
-/// file opens only where that key already exists.
-const FORMAT_V1: u8 = 1;
 /// Current format: the header carries a copy of the vault's security envelopes,
 /// so the password or the recovery key recovers the master key anywhere.
-const FORMAT_V2: u8 = 2;
+const FORMAT_VERSION: u8 = 2;
 const NONCE_BYTES: usize = 24;
 // A backup header is untrusted input. Bound the key-derivation cost it can
 // request before any derivation starts; the app itself writes 19 MiB / 2 / 1.
@@ -35,10 +32,10 @@ const MAX_KDF_ITERATIONS: u32 = 10;
 const MAX_KDF_PARALLELISM: u32 = 8;
 
 #[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct BackupEnvelope {
     version: u8,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    security: Option<SecurityFile>,
+    security: SecurityFile,
     nonce: String,
     ciphertext: String,
 }
@@ -64,8 +61,8 @@ pub enum Credential<'a> {
 struct Opened {
     version: u8,
     master: Zeroizing<[u8; 32]>,
-    plaintext: Vec<u8>,
-    security: Option<SecurityFile>,
+    plaintext: Zeroizing<Vec<u8>>,
+    security: SecurityFile,
 }
 
 fn checksum(bytes: &[u8]) -> String {
@@ -125,14 +122,16 @@ pub fn create(
     security_file: &SecurityFile,
     destination: &str,
     documents: &Path,
+    stamp: &str,
 ) -> Result<String, Error> {
     let destination = PathBuf::from(destination);
     fs::create_dir_all(&destination)?;
     let mut archive = ZipWriter::new(Cursor::new(Vec::new()));
     let database = consistent_database_snapshot(db_path, master)?;
     let opened = db::open_db(db_path, master)?;
+    validate_documents(&opened, documents)?;
     let manifest = BackupManifest {
-        format_version: FORMAT_V2,
+        format_version: FORMAT_VERSION,
         application_version: env!("CARGO_PKG_VERSION").into(),
         schema_version: db::schema_version(&opened),
         created_at: db::now(),
@@ -167,11 +166,11 @@ pub fn create(
     archive.write_all(&serde_json::to_vec(&manifest)?)?;
     archive.start_file("checksums.json", SimpleFileOptions::default())?;
     archive.write_all(&serde_json::to_vec(&checksums)?)?;
-    let plaintext = archive.finish()?.into_inner();
+    let plaintext = Zeroizing::new(archive.finish()?.into_inner());
     let key = Zeroizing::new(security::backup_key(master));
     let nonce = security::random_32();
     let nonce_text = STANDARD.encode(&nonce[..NONCE_BYTES]);
-    let aad = header_aad(FORMAT_V2, security_file, &nonce_text);
+    let aad = header_aad(FORMAT_VERSION, security_file, &nonce_text);
     let cipher =
         XChaCha20Poly1305::new_from_slice(key.as_slice()).map_err(|_| Error::BackupInvalid)?;
     let ciphertext = cipher
@@ -184,46 +183,60 @@ pub fn create(
         )
         .map_err(|_| Error::BackupInvalid)?;
     let payload = serde_json::to_vec(&BackupEnvelope {
-        version: FORMAT_V2,
-        security: Some(security_file.clone()),
+        version: FORMAT_VERSION,
+        security: security_file.clone(),
         nonce: nonce_text,
         ciphertext: STANDARD.encode(ciphertext),
     })?;
+    if stamp.len() != 19
+        || !stamp.bytes().enumerate().all(|(i, c)| {
+            if [4, 7, 10, 13, 16].contains(&i) {
+                c == b'-'
+            } else {
+                c.is_ascii_digit()
+            }
+        })
+    {
+        return Err(Error::Validation);
+    }
     let output = destination.join(format!(
-        "legalmaster-backup-{}.lmsbackup",
-        time::OffsetDateTime::now_utc().unix_timestamp_nanos()
+        "legal-masr-{stamp}-{}.lmsbackup",
+        uuid::Uuid::new_v4()
     ));
-    let temp = output.with_extension("tmp");
-    let mut file = fs::File::create(&temp)?;
-    file.write_all(&payload)?;
-    file.sync_all()?;
-    drop(file);
-    fs::rename(temp, &output)?;
-    if let Err(error) = validate(&output.to_string_lossy(), Some(master), None) {
+    let temporary = destination.join(format!(".{}.creating", uuid::Uuid::new_v4()));
+    let result = (|| -> Result<(), Error> {
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)?;
+        file.write_all(&payload)?;
+        file.sync_all()?;
+        drop(file);
+        validate(&temporary.to_string_lossy(), Some(master), None)?;
+        // Linking a unique staged file creates the final name atomically without overwrite.
+        fs::hard_link(&temporary, &output)?;
+        fs::remove_file(&temporary)?;
+        vault_operation::sync_directory(&destination)
+    })();
+    if let Err(error) = result {
+        let _ = fs::remove_file(&temporary);
         let _ = fs::remove_file(&output);
         return Err(error);
     }
     Ok(output.to_string_lossy().into_owned())
 }
 
-/// Reads and classifies the file header without any key. Anything that is not a
-/// well-formed Legal Masr envelope is `BackupInvalid`; an envelope written by a
-/// newer format is `BackupNewerVersion`. An unreadable file stays an I/O error.
+/// Only the canonical envelope is accepted. Unsupported formats are BackupInvalid;
+/// an unreadable file remains an I/O error.
 fn read_envelope(path: &str) -> Result<BackupEnvelope, Error> {
     let value: serde_json::Value =
         serde_json::from_slice(&fs::read(path)?).map_err(|_| Error::BackupInvalid)?;
-    match value.get("version").and_then(serde_json::Value::as_u64) {
-        Some(version) if version > u64::from(FORMAT_V2) => return Err(Error::BackupNewerVersion),
-        Some(version) if version >= 1 => {}
-        _ => return Err(Error::BackupInvalid),
+    if value.get("version").and_then(serde_json::Value::as_u64) != Some(u64::from(FORMAT_VERSION)) {
+        return Err(Error::BackupInvalid);
     }
     let envelope: BackupEnvelope =
         serde_json::from_value(value).map_err(|_| Error::BackupInvalid)?;
-    // A v1 file never carries key material and a v2 file always does; anything
-    // else was rewritten and must not be trusted as either.
-    if (envelope.version == FORMAT_V1) == envelope.security.is_some() {
-        return Err(Error::BackupInvalid);
-    }
+    bounded_kdf(&envelope.security)?;
     Ok(envelope)
 }
 
@@ -234,7 +247,21 @@ pub fn inspect(path: &str) -> Result<u8, Error> {
 }
 
 fn bounded_kdf(security: &SecurityFile) -> Result<(), Error> {
-    let valid = (1..=MAX_KDF_ITERATIONS).contains(&security.iterations)
+    let valid = security.version == 1
+        && STANDARD
+            .decode(&security.salt)
+            .is_ok_and(|value| value.len() == 32)
+        && [&security.password_envelope, &security.recovery_envelope]
+            .iter()
+            .all(|envelope| {
+                STANDARD
+                    .decode(&envelope.nonce)
+                    .is_ok_and(|value| value.len() == 24)
+                    && STANDARD
+                        .decode(&envelope.ciphertext)
+                        .is_ok_and(|value| value.len() == 48)
+            })
+        && (1..=MAX_KDF_ITERATIONS).contains(&security.iterations)
         && (1..=MAX_KDF_PARALLELISM).contains(&security.parallelism)
         && security.memory_kib >= 8 * security.parallelism
         && security.memory_kib <= MAX_KDF_MEMORY_KIB;
@@ -293,8 +320,7 @@ fn decrypt_body(
 }
 
 /// Opens the envelope. `credential` recovers the master key from a v2 header;
-/// without one the active vault's master key is used (same installation, and
-/// the only way a v1 file can be opened).
+/// without one the active vault's master key is used.
 ///
 /// Failure classes are kept apart wherever the cryptography allows it: a
 /// credential that does not unwrap the master key is `InvalidPassword` /
@@ -316,21 +342,12 @@ fn open(
     if nonce.len() != NONCE_BYTES {
         return Err(Error::BackupInvalid);
     }
-    let used_credential = envelope.security.is_some() && credential.is_some();
-    let (master, aad) = match (&envelope.security, credential) {
-        (None, _) => (
-            Zeroizing::new(*active_master.ok_or(Error::BackupKeyMismatch)?),
-            Vec::new(),
-        ),
-        (Some(security), credential) => {
-            bounded_kdf(security)?;
-            let aad = header_aad(envelope.version, security, &envelope.nonce);
-            let master = match credential {
-                Some(credential) => master_from_credential(security, credential)?,
-                None => Zeroizing::new(*active_master.ok_or(Error::BackupKeyMismatch)?),
-            };
-            (master, aad)
-        }
+    let used_credential = credential.is_some();
+    bounded_kdf(&envelope.security)?;
+    let aad = header_aad(envelope.version, &envelope.security, &envelope.nonce);
+    let master = match credential {
+        Some(credential) => master_from_credential(&envelope.security, credential)?,
+        None => Zeroizing::new(*active_master.ok_or(Error::BackupKeyMismatch)?),
     };
     let key = Zeroizing::new(security::backup_key(&master));
     let plaintext = decrypt_body(&key, &nonce, &ciphertext, &aad).map_err(|()| {
@@ -343,7 +360,7 @@ fn open(
     Ok(Opened {
         version: envelope.version,
         master,
-        plaintext,
+        plaintext: Zeroizing::new(plaintext),
         security: envelope.security,
     })
 }
@@ -374,6 +391,28 @@ fn declared_zip_entry_count(bytes: &[u8]) -> Result<usize, Error> {
     Ok(total_entries as usize)
 }
 
+fn safe_attachment_name(name: &str) -> bool {
+    !name.is_empty()
+        && name != "."
+        && name != ".."
+        && !name.ends_with(['.', ' '])
+        && !name
+            .chars()
+            .any(|c| c.is_control() || "\\/:*?\"<>|".contains(c))
+        && ![
+            "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7",
+            "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+        ]
+        .contains(
+            &name
+                .split('.')
+                .next()
+                .unwrap_or_default()
+                .to_uppercase()
+                .as_str(),
+        )
+}
+
 /// Checks the authenticated archive: exact inventory, manifest, checksums.
 fn validate_archive(plaintext: &[u8], version: u8) -> Result<(), Error> {
     let declared_entry_count = declared_zip_entry_count(plaintext)?;
@@ -394,7 +433,7 @@ fn validate_archive(plaintext: &[u8], version: u8) -> Result<(), Error> {
             data_entries.insert(name);
         } else if let Some(filename) = name.strip_prefix("attachments/") {
             let path = Path::new(filename);
-            if filename.is_empty() || path.components().count() != 1 {
+            if !safe_attachment_name(filename) || path.components().count() != 1 {
                 return Err(Error::BackupInvalid);
             }
             data_entries.insert(name);
@@ -460,6 +499,50 @@ pub fn validate(
     validate_archive(&opened.plaintext, opened.version)
 }
 
+fn validate_documents(conn: &rusqlite::Connection, documents: &Path) -> Result<(), Error> {
+    let mut statement =
+        conn.prepare("SELECT relative_path, file_size_bytes, sha256 FROM attachments")?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, String>(2)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut expected = BTreeSet::new();
+    for (name, size, hash) in rows {
+        if !safe_attachment_name(&name) || !expected.insert(name.to_lowercase()) {
+            return Err(Error::BackupInvalid);
+        }
+        let bytes = fs::read(documents.join(&name)).map_err(|_| Error::BackupInvalid)?;
+        if size != bytes.len() as i64 || checksum(&bytes) != hash {
+            return Err(Error::BackupInvalid);
+        }
+    }
+    let mut actual = BTreeSet::new();
+    if documents.exists() {
+        for entry in fs::read_dir(documents)? {
+            let entry = entry?;
+            let name = entry
+                .file_name()
+                .into_string()
+                .map_err(|_| Error::BackupInvalid)?;
+            if !entry.file_type()?.is_file()
+                || !safe_attachment_name(&name)
+                || !actual.insert(name.to_lowercase())
+            {
+                return Err(Error::BackupInvalid);
+            }
+        }
+    }
+    if actual != expected {
+        return Err(Error::BackupInvalid);
+    }
+    Ok(())
+}
+
 fn remove_restore_staging(active_db: &Path, documents_root: &Path) {
     let _ = fs::remove_dir_all(documents_root.with_extension("restore.tmp"));
     let _ = fs::remove_file(active_db.with_extension("restore.tmp"));
@@ -468,44 +551,89 @@ fn remove_restore_staging(active_db: &Path, documents_root: &Path) {
     }
 }
 
-/// Replaces the vault with the archive's contents.
-///
-/// `active_master` is the unlocked vault's key, if any. Without `credential` the
-/// archive must open with that key (same installation). With one, a v2 archive
-/// is opened from its own header; when its master key differs from the active
-/// one (or there is no active vault) the restored vault adopts the archive's
-/// password and recovery envelopes, otherwise the current `security.json` stays.
-///
-/// Everything is authenticated, validated and staged before any live file is
-/// touched, so a failure leaves the destination as it was.
-pub fn restore(
-    active_db: &Path,
-    documents_root: &Path,
+pub struct PreparedRestore {
+    root: PathBuf,
+    pub created_at: String,
+    pub document_count: usize,
+    pub password_source: &'static str,
+    adopt_security: bool,
+}
+impl Drop for PreparedRestore {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.root);
+    }
+}
+
+pub fn prepare(
+    workspace: &Path,
     path: &str,
     active_master: Option<&[u8; 32]>,
     credential: Option<Credential<'_>>,
-) -> Result<(), Error> {
-    let root = active_db.parent().ok_or(Error::Operation)?;
-    if vault_operation::pending(root) {
+    new_password: Option<&str>,
+) -> Result<PreparedRestore, Error> {
+    if vault_operation::pending(workspace) {
         return Err(Error::VaultInterrupted);
     }
-    // Staging with no journal is the remains of an attempt that never reached
-    // the point of replacing anything.
-    remove_restore_staging(active_db, documents_root);
+    let recovery = matches!(credential, Some(Credential::RecoveryKey(_)));
+    if recovery && new_password.is_none_or(|p| p.chars().count() < 12) {
+        return Err(Error::Validation);
+    }
     let opened = open(path, active_master, credential)?;
     validate_archive(&opened.plaintext, opened.version)?;
-    let adopted_security = match (&opened.security, active_master) {
-        (Some(_), Some(active)) if same_key(active, &opened.master) => None,
-        (security, _) => security.clone(),
+    let same_master = active_master.is_some_and(|active| same_key(active, &opened.master));
+    let mut adopted_security = if same_master {
+        None
+    } else {
+        Some(opened.security.clone())
     };
+    if recovery {
+        let mut security_file = if same_master {
+            security::read_security(&workspace.join("security.json"))?
+        } else {
+            opened.security.clone()
+        };
+        let salt = security::random_32();
+        let key = Zeroizing::new(security::derive_password(
+            new_password.ok_or(Error::Validation)?,
+            &salt,
+            19_456,
+            2,
+            1,
+        )?);
+        security_file.salt = STANDARD.encode(salt);
+        security_file.memory_kib = 19_456;
+        security_file.iterations = 2;
+        security_file.parallelism = 1;
+        security_file.password_envelope = security::wrap(&key, &opened.master)?;
+        adopted_security = Some(security_file);
+    }
+    let mut prepared = PreparedRestore {
+        root: workspace.join(format!(".prepared-{}", uuid::Uuid::new_v4())),
+        created_at: String::new(),
+        document_count: 0,
+        password_source: if recovery {
+            "newPassword"
+        } else if same_master {
+            "currentPassword"
+        } else {
+            "backupPassword"
+        },
+        adopt_security: adopted_security.is_some(),
+    };
+    fs::create_dir_all(&prepared.root)?;
+    let root = &prepared.root;
     let mut archive = ZipArchive::new(Cursor::new(opened.plaintext.as_slice()))?;
     let mut db_bytes = Vec::new();
     archive
         .by_name("database.sqlite")
         .map_err(|_| Error::BackupInvalid)?
         .read_to_end(&mut db_bytes)?;
-    let documents_staging = documents_root.with_extension("restore.tmp");
-    let staging = active_db.with_extension("restore.tmp");
+    let manifest: BackupManifest = serde_json::from_reader(archive.by_name("manifest.json")?)
+        .map_err(|_| Error::BackupInvalid)?;
+    prepared.created_at = manifest.created_at;
+    prepared.document_count = manifest.managed_document_count;
+    let documents_staging = root.join("attachments");
+    let staging = root.join("database.sqlite");
     let result = (|| -> Result<(), Error> {
         fs::create_dir_all(&documents_staging)?;
         for index in 0..archive.len() {
@@ -533,6 +661,9 @@ pub fn restore(
         if db::schema_version(&restored) > db::latest_schema_version() {
             return Err(Error::BackupNewerVersion);
         }
+        if db::schema_version(&restored) != manifest.schema_version {
+            return Err(Error::BackupInvalid);
+        }
         db::migrate(&restored).map_err(|_| Error::BackupInvalid)?;
         restored
             .query_row("PRAGMA integrity_check", [], |r| r.get::<_, String>(0))
@@ -544,15 +675,53 @@ pub fn restore(
                     Err(Error::BackupInvalid)
                 }
             })?;
+        if restored.prepare("PRAGMA foreign_key_check")?.exists([])? {
+            return Err(Error::BackupInvalid);
+        }
+        validate_documents(&restored, &documents_staging)?;
+        crate::repositories::backup_repository::settle_restored(
+            &restored,
+            Some(fs::metadata(path)?.len() as i64),
+        )?;
         drop(restored);
         vault_operation::sync_file(&staging)?;
         if let Some(security) = &adopted_security {
-            let staged = root.join("security.restore.tmp");
+            let staged = root.join("security.json");
             fs::write(&staged, serde_json::to_vec_pretty(security)?)?;
             vault_operation::sync_file(&staged)?;
         }
-        vault_operation::install_restore(active_db, documents_root, adopted_security.is_some())?;
         Ok(())
+    })();
+    result?;
+    Ok(prepared)
+}
+
+pub fn commit(
+    active_db: &Path,
+    documents_root: &Path,
+    prepared: PreparedRestore,
+) -> Result<(), Error> {
+    let root = active_db.parent().ok_or(Error::Operation)?;
+    if vault_operation::pending(root) {
+        return Err(Error::VaultInterrupted);
+    }
+    remove_restore_staging(active_db, documents_root);
+    let result = (|| -> Result<(), Error> {
+        fs::rename(
+            prepared.root.join("database.sqlite"),
+            active_db.with_extension("restore.tmp"),
+        )?;
+        fs::rename(
+            prepared.root.join("attachments"),
+            documents_root.with_extension("restore.tmp"),
+        )?;
+        if prepared.adopt_security {
+            fs::rename(
+                prepared.root.join("security.json"),
+                root.join("security.restore.tmp"),
+            )?;
+        }
+        vault_operation::install_restore(active_db, documents_root, prepared.adopt_security)
     })();
     if result.is_err() && !vault_operation::pending(root) {
         remove_restore_staging(active_db, documents_root);
@@ -574,6 +743,12 @@ mod tests {
                 params![uuid::Uuid::new_v4().to_string(), client_number],
             )
             .unwrap();
+    }
+
+    fn record_attachment(db_path: &Path, master: &[u8; 32], name: &str, bytes: &[u8]) {
+        db::open_db(db_path, master).unwrap().execute(
+            "INSERT INTO attachments (id, client_id, original_filename, stored_filename, relative_path, file_size_bytes, sha256, category, created_at, updated_at) VALUES (?1, (SELECT id FROM clients LIMIT 1), ?2, ?2, ?2, ?3, ?4, 'OTHER', 'now', 'now')",
+            params![uuid::Uuid::new_v4().to_string(), name, bytes.len() as i64, checksum(bytes)]).unwrap();
     }
 
     fn archive_with_entries(
@@ -598,7 +773,7 @@ mod tests {
             archive.write_all(content).unwrap();
         }
         let manifest = BackupManifest {
-            format_version: 1,
+            format_version: FORMAT_VERSION,
             application_version: "test".into(),
             schema_version: db::latest_schema_version(),
             created_at: db::now(),
@@ -620,13 +795,22 @@ mod tests {
         let plaintext = archive.finish().unwrap().into_inner();
         let nonce = security::random_32();
         let key = zeroize::Zeroizing::new(security::backup_key(master));
+        let security_file = vault_security_for(master, PASSWORD, RECOVERY).0;
+        let nonce_text = STANDARD.encode(&nonce[..24]);
+        let aad = header_aad(FORMAT_VERSION, &security_file, &nonce_text);
         let ciphertext = XChaCha20Poly1305::new_from_slice(key.as_slice())
             .unwrap()
-            .encrypt(XNonce::from_slice(&nonce[..24]), plaintext.as_ref())
+            .encrypt(
+                XNonce::from_slice(&nonce[..24]),
+                Payload {
+                    msg: plaintext.as_ref(),
+                    aad: &aad,
+                },
+            )
             .unwrap();
         let envelope = BackupEnvelope {
-            version: 1,
-            security: None,
+            version: FORMAT_VERSION,
+            security: security_file,
             nonce: STANDARD.encode(&nonce[..24]),
             ciphertext: STANDARD.encode(ciphertext),
         };
@@ -644,13 +828,22 @@ mod tests {
         let plaintext = archive.finish().unwrap().into_inner();
         let nonce = security::random_32();
         let key = zeroize::Zeroizing::new(security::backup_key(master));
+        let security_file = vault_security_for(master, PASSWORD, RECOVERY).0;
+        let nonce_text = STANDARD.encode(&nonce[..24]);
+        let aad = header_aad(FORMAT_VERSION, &security_file, &nonce_text);
         let ciphertext = XChaCha20Poly1305::new_from_slice(key.as_slice())
             .unwrap()
-            .encrypt(XNonce::from_slice(&nonce[..24]), plaintext.as_ref())
+            .encrypt(
+                XNonce::from_slice(&nonce[..24]),
+                Payload {
+                    msg: plaintext.as_ref(),
+                    aad: &aad,
+                },
+            )
             .unwrap();
         let envelope = BackupEnvelope {
-            version: 1,
-            security: None,
+            version: FORMAT_VERSION,
+            security: security_file,
             nonce: STANDARD.encode(&nonce[..24]),
             ciphertext: STANDARD.encode(ciphertext),
         };
@@ -722,13 +915,22 @@ mod tests {
 
         let nonce = security::random_32();
         let key = zeroize::Zeroizing::new(security::backup_key(master));
+        let security_file = vault_security_for(master, PASSWORD, RECOVERY).0;
+        let nonce_text = STANDARD.encode(&nonce[..24]);
+        let aad = header_aad(FORMAT_VERSION, &security_file, &nonce_text);
         let ciphertext = XChaCha20Poly1305::new_from_slice(key.as_slice())
             .unwrap()
-            .encrypt(XNonce::from_slice(&nonce[..24]), archive.as_ref())
+            .encrypt(
+                XNonce::from_slice(&nonce[..24]),
+                Payload {
+                    msg: archive.as_ref(),
+                    aad: &aad,
+                },
+            )
             .unwrap();
         let envelope = BackupEnvelope {
-            version: 1,
-            security: None,
+            version: FORMAT_VERSION,
+            security: security_file,
             nonce: STANDARD.encode(&nonce[..24]),
             ciphertext: STANDARD.encode(ciphertext),
         };
@@ -737,7 +939,7 @@ mod tests {
 
     fn manifest_with_document_count(document_count: usize) -> Vec<u8> {
         serde_json::to_vec(&BackupManifest {
-            format_version: 1,
+            format_version: FORMAT_VERSION,
             application_version: "test".into(),
             schema_version: db::latest_schema_version(),
             created_at: db::now(),
@@ -757,6 +959,7 @@ mod tests {
         fs::create_dir(&source_attachments).unwrap();
         fs::write(source_attachments.join("scan.pdf"), b"durable copy").unwrap();
 
+        record_attachment(&source, &master, "scan.pdf", b"durable copy");
         let destination = temp.path().join("backups");
         let (security_file, _) = vault_security_for(&master, "a secure local password", RECOVERY);
         let backup = create(
@@ -765,11 +968,12 @@ mod tests {
             &security_file,
             &destination.to_string_lossy(),
             &source_attachments,
+            "2026-10-10-12-00-00",
         )
         .unwrap();
         validate(&backup, Some(&master), None).unwrap();
         let plaintext = open(&backup, Some(&master), None).unwrap().plaintext;
-        let mut archive = ZipArchive::new(Cursor::new(plaintext)).unwrap();
+        let mut archive = ZipArchive::new(Cursor::new(plaintext.as_slice())).unwrap();
         let manifest: BackupManifest =
             serde_json::from_reader(archive.by_name("manifest.json").unwrap()).unwrap();
         assert_eq!(manifest.managed_document_count, 1);
@@ -782,7 +986,15 @@ mod tests {
         migrated_database(&active, &master, "CL-OLD");
         fs::create_dir(&active_attachments).unwrap();
         fs::write(active_attachments.join("old.pdf"), b"old").unwrap();
-        restore(&active, &active_attachments, &backup, Some(&master), None).unwrap();
+        prepare(
+            active.parent().unwrap(),
+            &backup,
+            Some(&master),
+            None,
+            Some("a new recovery password"),
+        )
+        .and_then(|prepared| commit(&active, &active_attachments, prepared))
+        .unwrap();
 
         let connection = db::open_db(&active, &master).unwrap();
         let restored_client: String = connection
@@ -812,7 +1024,15 @@ mod tests {
             .unwrap();
         assert_eq!(previous, "CL-OLD");
         drop(old);
-        restore(&active, &active_attachments, &backup, Some(&master), None).unwrap();
+        prepare(
+            active.parent().unwrap(),
+            &backup,
+            Some(&master),
+            None,
+            Some("a new recovery password"),
+        )
+        .and_then(|prepared| commit(&active, &active_attachments, prepared))
+        .unwrap();
         assert_eq!(fs::read_dir(snapshots).unwrap().count(), 2);
         assert_eq!(
             fs::read(snapshot.join("attachments/old.pdf")).unwrap(),
@@ -839,13 +1059,14 @@ mod tests {
             &[("nested/not-allowed.pdf", b"bad")],
         );
         assert!(matches!(
-            restore(
-                &active,
-                &documents,
+            prepare(
+                active.parent().unwrap(),
                 &invalid_archive.to_string_lossy(),
                 Some(&master),
-                None
-            ),
+                None,
+                Some("a new recovery password")
+            )
+            .and_then(|prepared| commit(&active, &documents, prepared)),
             Err(Error::BackupInvalid)
         ));
         assert_eq!(fs::read(&active).unwrap(), before);
@@ -859,8 +1080,8 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let path = temp.path().join("bad-nonce.lmsbackup");
         let payload = BackupEnvelope {
-            version: 1,
-            security: None,
+            version: FORMAT_VERSION,
+            security: vault_security_for(&security::random_32(), PASSWORD, RECOVERY).0,
             nonce: STANDARD.encode([0_u8; 23]),
             ciphertext: STANDARD.encode([0_u8; 48]),
         };
@@ -981,6 +1202,7 @@ mod tests {
         fs::create_dir(&attachments).unwrap();
         let attachment: Vec<u8> = (0..=255u8).cycle().take(4096).collect();
         fs::write(attachments.join("scan.bin"), &attachment).unwrap();
+        record_attachment(&db_path, &master, "scan.bin", &attachment);
         let (security, _) = vault_security_for(&master, PASSWORD, RECOVERY);
         let backup = create(
             &db_path,
@@ -988,6 +1210,7 @@ mod tests {
             &security,
             &dir.path().join("Backups").to_string_lossy(),
             &attachments,
+            "2026-10-10-12-00-00",
         )
         .unwrap();
         Source {
@@ -1072,13 +1295,14 @@ mod tests {
         let active = root.join("legalmaster.sqlite");
         let attachments = root.join("attachments");
 
-        restore(
-            &active,
-            &attachments,
+        prepare(
+            active.parent().unwrap(),
             &source.backup,
             None,
             Some(Credential::Password(PASSWORD)),
+            Some("a new recovery password"),
         )
+        .and_then(|prepared| commit(&active, &attachments, prepared))
         .unwrap();
 
         assert_eq!(client_numbers(&active, &source.master), ["CL-SOURCE"]);
@@ -1091,7 +1315,6 @@ mod tests {
         let unlocked = unlock_with_password(root, PASSWORD).unwrap();
         assert_eq!(unlocked, source.master);
         assert!(db::open_db(&active, &unlocked).is_ok());
-        assert!(root.join("Backups").is_dir());
         // Nothing existed, so nothing is preserved and nothing is left staged.
         assert!(!root.join("EmergencySnapshots").exists());
         assert!(!vault_operation::pending(root));
@@ -1114,18 +1337,19 @@ mod tests {
         ] {
             let destination = tempfile::tempdir().unwrap();
             let active = destination.path().join("legalmaster.sqlite");
-            restore(
-                &active,
-                &destination.path().join("attachments"),
+            prepare(
+                active.parent().unwrap(),
                 &source.backup,
                 None,
                 Some(Credential::RecoveryKey(&typed)),
+                Some("a new recovery password"),
             )
+            .and_then(|prepared| commit(&active, &destination.path().join("attachments"), prepared))
             .unwrap();
             assert_eq!(client_numbers(&active, &source.master), ["CL-SOURCE"]);
-            // The recovery key does not set a password; the backup's password still works.
+            // Recovery stages a new password before installing the snapshot.
             assert_eq!(
-                unlock_with_password(destination.path(), PASSWORD).unwrap(),
+                unlock_with_password(destination.path(), "a new recovery password").unwrap(),
                 source.master
             );
         }
@@ -1140,23 +1364,25 @@ mod tests {
         let active = destination.path().join("legalmaster.sqlite");
         let attachments = destination.path().join("attachments");
 
-        let wrong_password = restore(
-            &active,
-            &attachments,
+        let wrong_password = prepare(
+            active.parent().unwrap(),
             &source.backup,
             None,
             Some(Credential::Password("a different local password")),
-        );
+            Some("a new recovery password"),
+        )
+        .and_then(|prepared| commit(&active, &attachments, prepared));
         assert!(matches!(wrong_password, Err(Error::InvalidPassword)));
         let mut wrong_key = RECOVERY.to_owned();
         wrong_key.replace_range(0..1, "4");
-        let wrong_recovery = restore(
-            &active,
-            &attachments,
+        let wrong_recovery = prepare(
+            active.parent().unwrap(),
             &source.backup,
             None,
             Some(Credential::RecoveryKey(&wrong_key)),
-        );
+            Some("a new recovery password"),
+        )
+        .and_then(|prepared| commit(&active, &attachments, prepared));
         assert!(matches!(wrong_recovery, Err(Error::InvalidRecovery)));
         assert_eq!(tree_snapshot(destination.path()), before);
         assert_eq!(Error::InvalidPassword.code(), "INVALID_PASSWORD");
@@ -1178,34 +1404,33 @@ mod tests {
                 nonce[0] ^= 1;
                 e.nonce = STANDARD.encode(nonce);
             }),
-            ("security version", |e| {
-                e.security.as_mut().unwrap().version = 2
-            }),
+            ("security version", |e| e.security.version = 2),
             ("recovery envelope", |e| {
-                let envelope = &mut e.security.as_mut().unwrap().recovery_envelope;
+                let envelope = &mut e.security.recovery_envelope;
                 envelope.ciphertext = flip_first_char(&envelope.ciphertext);
             }),
             ("recovery nonce", |e| {
-                let envelope = &mut e.security.as_mut().unwrap().recovery_envelope;
+                let envelope = &mut e.security.recovery_envelope;
                 envelope.nonce = flip_first_char(&envelope.nonce);
             }),
             ("a swapped-in header", |e| {
                 let other = vault_security_for(&security::random_32(), PASSWORD, RECOVERY).0;
-                e.security = Some(SecurityFile {
+                e.security = SecurityFile {
                     salt: other.salt.clone(),
                     ..other
-                });
+                };
             }),
         ];
         for (name, edit) in edits {
             let altered = rewrite_envelope(&source.backup, edit);
-            let result = restore(
-                &active,
-                &attachments,
+            let result = prepare(
+                active.parent().unwrap(),
                 &altered,
                 None,
                 Some(Credential::Password(PASSWORD)),
-            );
+                Some("a new recovery password"),
+            )
+            .and_then(|prepared| commit(&active, &attachments, prepared));
             // A swapped header still unwraps (to another master key), so the body
             // fails authentication like every other edit.
             assert!(
@@ -1216,17 +1441,18 @@ mod tests {
         }
         // Damage to the password envelope itself cannot be told from a wrong password.
         let altered = rewrite_envelope(&source.backup, |e| {
-            let envelope = &mut e.security.as_mut().unwrap().password_envelope;
+            let envelope = &mut e.security.password_envelope;
             envelope.ciphertext = flip_first_char(&envelope.ciphertext);
         });
         assert!(matches!(
-            restore(
-                &active,
-                &attachments,
+            prepare(
+                active.parent().unwrap(),
                 &altered,
                 None,
-                Some(Credential::Password(PASSWORD))
-            ),
+                Some(Credential::Password(PASSWORD)),
+                Some("a new recovery password")
+            )
+            .and_then(|prepared| commit(&active, &attachments, prepared)),
             Err(Error::InvalidPassword)
         ));
         assert_eq!(tree_snapshot(destination.path()), before);
@@ -1266,13 +1492,14 @@ mod tests {
             fs::write(&path, &bytes).unwrap();
             let path = path.to_string_lossy().into_owned();
             for credential in [None, Some(Credential::Password(PASSWORD))] {
-                let result = restore(
-                    &active,
-                    &attachments,
+                let result = prepare(
+                    active.parent().unwrap(),
                     &path,
                     Some(&source.master),
                     credential,
-                );
+                    Some("a new recovery password"),
+                )
+                .and_then(|prepared| commit(&active, &attachments, prepared));
                 assert!(
                     matches!(result, Err(Error::BackupInvalid)),
                     "{name}: {result:?}"
@@ -1303,7 +1530,10 @@ mod tests {
             Some(&security::random_32()),
             None,
         );
-        assert!(matches!(result, Err(Error::Io(_))), "{result:?}");
+        assert!(
+            matches!(result, Err(Error::Io(_))),
+            "unexpected restore result"
+        );
     }
 
     #[test]
@@ -1316,19 +1546,17 @@ mod tests {
 
         let future_format = rewrite_envelope(&source.backup, |e| e.version = 3);
         assert!(matches!(
-            restore(
-                &active,
-                &attachments,
+            prepare(
+                active.parent().unwrap(),
                 &future_format,
                 None,
-                Some(Credential::Password(PASSWORD))
-            ),
-            Err(Error::BackupNewerVersion)
+                Some(Credential::Password(PASSWORD)),
+                Some("a new recovery password")
+            )
+            .and_then(|prepared| commit(&active, &attachments, prepared)),
+            Err(Error::BackupInvalid)
         ));
-        assert!(matches!(
-            inspect(&future_format),
-            Err(Error::BackupNewerVersion)
-        ));
+        assert!(matches!(inspect(&future_format), Err(Error::BackupInvalid)));
 
         // A manifest that declares a schema this build does not know.
         let future_manifest = destination.path().join("future-manifest.lmsbackup");
@@ -1341,7 +1569,7 @@ mod tests {
         )]))
         .unwrap();
         let manifest = serde_json::to_vec(&BackupManifest {
-            format_version: FORMAT_V2,
+            format_version: FORMAT_VERSION,
             application_version: "future".into(),
             schema_version: db::latest_schema_version() + 1,
             created_at: db::now(),
@@ -1361,13 +1589,14 @@ mod tests {
         );
         let before_with_file = tree_snapshot(destination.path());
         assert!(matches!(
-            restore(
-                &active,
-                &attachments,
+            prepare(
+                active.parent().unwrap(),
                 &future_manifest.to_string_lossy(),
                 None,
-                Some(Credential::Password(PASSWORD))
-            ),
+                Some(Credential::Password(PASSWORD)),
+                Some("a new recovery password")
+            )
+            .and_then(|prepared| commit(&active, &attachments, prepared)),
             Err(Error::BackupNewerVersion)
         ));
         assert_eq!(tree_snapshot(destination.path()), before_with_file);
@@ -1390,7 +1619,7 @@ mod tests {
             checksum(&bytes),
         )]))
         .unwrap();
-        let manifest = manifest_for(FORMAT_V2, 0);
+        let manifest = manifest_for(FORMAT_VERSION, 0);
         v2_archive_with_raw_entries(
             &future_database,
             &master,
@@ -1403,13 +1632,14 @@ mod tests {
         );
         let before_with_files = tree_snapshot(destination.path());
         assert!(matches!(
-            restore(
-                &active,
-                &attachments,
+            prepare(
+                active.parent().unwrap(),
                 &future_database.to_string_lossy(),
                 None,
-                Some(Credential::Password(PASSWORD))
-            ),
+                Some(Credential::Password(PASSWORD)),
+                Some("a new recovery password")
+            )
+            .and_then(|prepared| commit(&active, &attachments, prepared)),
             Err(Error::BackupNewerVersion)
         ));
         assert_eq!(tree_snapshot(destination.path()), before_with_files);
@@ -1431,89 +1661,51 @@ mod tests {
             |s| s.memory_kib = 1,
         ];
         for edit in edits {
-            let altered = rewrite_envelope(&source.backup, |e| edit(e.security.as_mut().unwrap()));
+            let altered = rewrite_envelope(&source.backup, |e| edit(&mut e.security));
             let started = std::time::Instant::now();
-            let result = restore(
-                &destination.path().join("legalmaster.sqlite"),
-                &destination.path().join("attachments"),
+            let result = prepare(
+                destination
+                    .path()
+                    .join("legalmaster.sqlite")
+                    .parent()
+                    .unwrap(),
                 &altered,
                 None,
                 Some(Credential::Password(PASSWORD)),
+                Some("a new recovery password"),
+            )
+            .and_then(|prepared| {
+                commit(
+                    &destination.path().join("legalmaster.sqlite"),
+                    &destination.path().join("attachments"),
+                    prepared,
+                )
+            });
+            assert!(
+                matches!(result, Err(Error::BackupInvalid)),
+                "unexpected restore result"
             );
-            assert!(matches!(result, Err(Error::BackupInvalid)), "{result:?}");
             assert!(started.elapsed() < Duration::from_secs(2));
         }
         assert_eq!(tree_snapshot(destination.path()), before);
     }
 
     #[test]
-    fn a_v1_archive_opens_only_with_its_own_installations_key() {
-        let temp = tempfile::tempdir().unwrap();
-        let master = security::random_32();
-        let source = temp.path().join("v1.sqlite");
-        migrated_database(&source, &master, "CL-V1");
-        let database = fs::read(&source).unwrap();
-        let archive = temp.path().join("v1.lmsbackup");
-        archive_with_entries(
-            &archive,
-            &master,
-            &database,
-            &[("scan.pdf", b"v1 attachment")],
-        );
-        let archive = archive.to_string_lossy().into_owned();
-        assert_eq!(inspect(&archive).unwrap(), FORMAT_V1);
-
-        // The installation that made it restores it exactly as before.
-        let active = temp.path().join("active.sqlite");
-        let documents = temp.path().join("documents");
-        migrated_database(&active, &master, "CL-OLD");
-        fs::write(temp.path().join("security.json"), b"current security").unwrap();
-        restore(&active, &documents, &archive, Some(&master), None).unwrap();
-        assert_eq!(client_numbers(&active, &master), ["CL-V1"]);
-        assert_eq!(
-            fs::read(documents.join("scan.pdf")).unwrap(),
-            b"v1 attachment"
-        );
-        assert_eq!(
-            fs::read(temp.path().join("security.json")).unwrap(),
-            b"current security"
-        );
-
-        // Another installation (or none) cannot derive its key.
-        let other = tempfile::tempdir().unwrap();
-        let before = tree_snapshot(other.path());
-        let target = other.path().join("legalmaster.sqlite");
-        for (active_master, credential) in [
-            (Some(security::random_32()), None),
-            (None, Some(Credential::Password(PASSWORD))),
-            (
-                Some(security::random_32()),
-                Some(Credential::RecoveryKey(RECOVERY)),
-            ),
-        ] {
-            let result = restore(
-                &target,
-                &other.path().join("attachments"),
-                &archive,
-                active_master.as_ref(),
-                credential,
-            );
-            assert!(
-                matches!(result, Err(Error::BackupKeyMismatch)),
-                "{result:?}"
-            );
-        }
-        assert_eq!(tree_snapshot(other.path()), before);
-        assert_eq!(Error::BackupKeyMismatch.code(), "BACKUP_KEY_MISMATCH");
-    }
-
-    #[test]
-    fn a_v1_header_with_key_material_or_a_v2_header_without_is_not_trusted() {
+    fn only_the_canonical_authenticated_envelope_is_accepted() {
         let source = source_with_backup();
-        let downgraded = rewrite_envelope(&source.backup, |e| e.version = 1);
-        assert!(matches!(inspect(&downgraded), Err(Error::BackupInvalid)));
-        let stripped = rewrite_envelope(&source.backup, |e| e.security = None);
-        assert!(matches!(inspect(&stripped), Err(Error::BackupInvalid)));
+        for version in [0, 1, 3, 255] {
+            let rewritten = rewrite_envelope(&source.backup, |e| e.version = version);
+            assert!(matches!(inspect(&rewritten), Err(Error::BackupInvalid)));
+        }
+        let mut value: serde_json::Value =
+            serde_json::from_slice(&fs::read(&source.backup).unwrap()).unwrap();
+        value.as_object_mut().unwrap().remove("security");
+        let stripped = source._dir.path().join("stripped.lmsbackup");
+        fs::write(&stripped, serde_json::to_vec(&value).unwrap()).unwrap();
+        assert!(matches!(
+            inspect(&stripped.to_string_lossy()),
+            Err(Error::BackupInvalid)
+        ));
     }
 
     #[test]
@@ -1535,11 +1727,7 @@ mod tests {
         // The installation later changed its password; its envelopes differ from the backup's.
         let (current_security, _) =
             vault_security_for(&source.master, "a newer local password", RECOVERY);
-        for credential in [
-            None,
-            Some(Credential::Password(PASSWORD)),
-            Some(Credential::RecoveryKey(RECOVERY)),
-        ] {
+        for credential in [None, Some(Credential::Password(PASSWORD))] {
             let destination = tempfile::tempdir().unwrap();
             let root = destination.path();
             let active = root.join("legalmaster.sqlite");
@@ -1549,13 +1737,14 @@ mod tests {
                 serde_json::to_vec_pretty(&current_security).unwrap(),
             )
             .unwrap();
-            restore(
-                &active,
-                &root.join("attachments"),
+            prepare(
+                active.parent().unwrap(),
                 &source.backup,
                 Some(&source.master),
                 credential,
+                Some("a new recovery password"),
             )
+            .and_then(|prepared| commit(&active, &root.join("attachments"), prepared))
             .unwrap();
             assert_eq!(client_numbers(&active, &source.master), ["CL-SOURCE"]);
             assert_eq!(
@@ -1583,13 +1772,14 @@ mod tests {
         let own_security_bytes = serde_json::to_vec_pretty(&own_security).unwrap();
         fs::write(root.join("security.json"), &own_security_bytes).unwrap();
 
-        restore(
-            &active,
-            &attachments,
+        prepare(
+            active.parent().unwrap(),
             &source.backup,
             Some(&own_master),
             Some(Credential::Password(PASSWORD)),
+            Some("a new recovery password"),
         )
+        .and_then(|prepared| commit(&active, &attachments, prepared))
         .unwrap();
 
         assert_eq!(client_numbers(&active, &source.master), ["CL-SOURCE"]);
@@ -1636,13 +1826,14 @@ mod tests {
         fs::write(root.join("attachments/stranded.pdf"), b"stranded").unwrap();
         let active = root.join("legalmaster.sqlite");
 
-        restore(
-            &active,
-            &root.join("attachments"),
+        prepare(
+            active.parent().unwrap(),
             &source.backup,
             None,
             Some(Credential::Password(PASSWORD)),
+            Some("a new recovery password"),
         )
+        .and_then(|prepared| commit(&active, &root.join("attachments"), prepared))
         .unwrap();
 
         assert_eq!(client_numbers(&active, &source.master), ["CL-SOURCE"]);
@@ -1677,23 +1868,25 @@ mod tests {
         fs::write(root.join("attachments/own.pdf"), b"own").unwrap();
         fs::write(root.join("security.json"), b"own security").unwrap();
         let before = tree_snapshot(root);
-        let result = restore(
-            &active,
-            &root.join("attachments"),
+        let result = prepare(
+            active.parent().unwrap(),
             &source.backup,
             Some(&own_master),
             Some(Credential::Password("not the password")),
-        );
+            Some("a new recovery password"),
+        )
+        .and_then(|prepared| commit(&active, &root.join("attachments"), prepared));
         assert!(matches!(result, Err(Error::InvalidPassword)));
         assert_eq!(tree_snapshot(root), before);
         // And the same backup with no credentials from a foreign vault.
-        let result = restore(
-            &active,
-            &root.join("attachments"),
+        let result = prepare(
+            active.parent().unwrap(),
             &source.backup,
             Some(&own_master),
             None,
-        );
+            Some("a new recovery password"),
+        )
+        .and_then(|prepared| commit(&active, &root.join("attachments"), prepared));
         assert!(matches!(result, Err(Error::BackupKeyMismatch)));
         assert_eq!(tree_snapshot(root), before);
     }
@@ -1704,13 +1897,24 @@ mod tests {
         let destination = tempfile::tempdir().unwrap();
         fs::write(destination.path().join("vault-operation.json"), b"{}").unwrap();
         let before = tree_snapshot(destination.path());
-        let result = restore(
-            &destination.path().join("legalmaster.sqlite"),
-            &destination.path().join("attachments"),
+        let result = prepare(
+            destination
+                .path()
+                .join("legalmaster.sqlite")
+                .parent()
+                .unwrap(),
             &source.backup,
             None,
             Some(Credential::Password(PASSWORD)),
-        );
+            Some("a new recovery password"),
+        )
+        .and_then(|prepared| {
+            commit(
+                &destination.path().join("legalmaster.sqlite"),
+                &destination.path().join("attachments"),
+                prepared,
+            )
+        });
         assert!(matches!(result, Err(Error::VaultInterrupted)));
         assert_eq!(tree_snapshot(destination.path()), before);
     }
@@ -1724,13 +1928,20 @@ mod tests {
         fs::write(root.join("security.restore.tmp"), b"stale").unwrap();
         fs::create_dir(root.join("attachments.restore.tmp")).unwrap();
         fs::write(root.join("attachments.restore.tmp/stale.pdf"), b"stale").unwrap();
-        restore(
-            &root.join("legalmaster.sqlite"),
-            &root.join("attachments"),
+        prepare(
+            root.join("legalmaster.sqlite").parent().unwrap(),
             &source.backup,
             None,
             Some(Credential::Password(PASSWORD)),
+            Some("a new recovery password"),
         )
+        .and_then(|prepared| {
+            commit(
+                &root.join("legalmaster.sqlite"),
+                &root.join("attachments"),
+                prepared,
+            )
+        })
         .unwrap();
         assert!(!root.join("attachments/stale.pdf").exists());
         assert_eq!(unlock_with_password(root, PASSWORD).unwrap(), source.master);
@@ -1741,8 +1952,8 @@ mod tests {
         let source = source_with_backup();
         let text = fs::read_to_string(&source.backup).unwrap();
         let envelope: BackupEnvelope = serde_json::from_str(&text).unwrap();
-        assert_eq!(envelope.version, FORMAT_V2);
-        let header = envelope.security.unwrap();
+        assert_eq!(envelope.version, FORMAT_VERSION);
+        let header = envelope.security;
         assert_eq!(header.salt, source.security.salt);
         assert_eq!(
             header.password_envelope.ciphertext,
@@ -1753,13 +1964,98 @@ mod tests {
         assert!(!text.contains(&hex::encode(source.master)));
         // The manifest inside carries the same format version as the envelope.
         let opened = open(&source.backup, Some(&source.master), None).unwrap();
-        let mut archive = ZipArchive::new(Cursor::new(opened.plaintext)).unwrap();
+        let mut archive = ZipArchive::new(Cursor::new(opened.plaintext.as_slice())).unwrap();
         let manifest: BackupManifest =
             serde_json::from_reader(archive.by_name("manifest.json").unwrap()).unwrap();
-        assert_eq!(manifest.format_version, FORMAT_V2);
+        assert_eq!(manifest.format_version, FORMAT_VERSION);
         assert_eq!(manifest.schema_version, db::latest_schema_version());
     }
 
+    #[test]
+    fn preview_changes_no_live_files_and_cancellation_removes_staging() {
+        let source = source_with_backup();
+        let destination = tempfile::tempdir().unwrap();
+        let active = destination.path().join("legalmaster.sqlite");
+        migrated_database(&active, &source.master, "CL-OWN");
+        let before = fs::read(&active).unwrap();
+        let prepared = prepare(
+            destination.path(),
+            &source.backup,
+            Some(&source.master),
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(prepared.document_count, 1);
+        assert_eq!(prepared.password_source, "currentPassword");
+        assert_eq!(fs::read(&active).unwrap(), before);
+        let staging = prepared.root.clone();
+        assert!(staging.exists());
+        drop(prepared);
+        assert!(!staging.exists());
+        assert_eq!(fs::read(&active).unwrap(), before);
+        assert!(!vault_operation::pending(destination.path()));
+    }
+    #[test]
+    fn recovery_restore_requires_a_new_password_and_rejects_missing_documents() {
+        let source = source_with_backup();
+        let destination = tempfile::tempdir().unwrap();
+        assert!(matches!(
+            prepare(
+                destination.path(),
+                &source.backup,
+                None,
+                Some(Credential::RecoveryKey(RECOVERY)),
+                None
+            ),
+            Err(Error::Validation)
+        ));
+        assert!(matches!(
+            prepare(
+                destination.path(),
+                &source.backup,
+                None,
+                Some(Credential::RecoveryKey(RECOVERY)),
+                Some("short")
+            ),
+            Err(Error::Validation)
+        ));
+        let active = source._dir.path().join("legalmaster.sqlite");
+        // An authenticated inventory still has to match the database attachment metadata.
+        let opened = open(&source.backup, Some(&source.master), None).unwrap();
+        let mut zip = ZipArchive::new(Cursor::new(opened.plaintext.as_slice())).unwrap();
+        let mut bytes = Vec::new();
+        zip.by_name("database.sqlite")
+            .unwrap()
+            .read_to_end(&mut bytes)
+            .unwrap();
+        let invalid = destination.path().join("missing-doc.lmsbackup");
+        v2_archive_with_raw_entries(
+            &invalid,
+            &source.master,
+            &source.security,
+            &[
+                ("database.sqlite", &bytes),
+                ("manifest.json", &manifest_for(FORMAT_VERSION, 0)),
+                (
+                    "checksums.json",
+                    &serde_json::to_vec(&BTreeMap::from([("database.sqlite", checksum(&bytes))]))
+                        .unwrap(),
+                ),
+            ],
+        );
+        assert!(matches!(
+            prepare(
+                destination.path(),
+                &invalid.to_string_lossy(),
+                None,
+                Some(Credential::Password(PASSWORD)),
+                None
+            ),
+            Err(Error::BackupInvalid)
+        ));
+        assert!(!active.with_extension("restore.tmp").exists());
+    }
     fn manifest_for(format_version: u8, document_count: usize) -> Vec<u8> {
         serde_json::to_vec(&BackupManifest {
             format_version,
@@ -1789,7 +2085,7 @@ mod tests {
         let nonce = security::random_32();
         let nonce_text = STANDARD.encode(&nonce[..NONCE_BYTES]);
         let key = Zeroizing::new(security::backup_key(master));
-        let aad = header_aad(FORMAT_V2, security_file, &nonce_text);
+        let aad = header_aad(FORMAT_VERSION, security_file, &nonce_text);
         let ciphertext = XChaCha20Poly1305::new_from_slice(key.as_slice())
             .unwrap()
             .encrypt(
@@ -1801,8 +2097,8 @@ mod tests {
             )
             .unwrap();
         let envelope = BackupEnvelope {
-            version: FORMAT_V2,
-            security: Some(security_file.clone()),
+            version: FORMAT_VERSION,
+            security: security_file.clone(),
             nonce: nonce_text,
             ciphertext: STANDARD.encode(ciphertext),
         };

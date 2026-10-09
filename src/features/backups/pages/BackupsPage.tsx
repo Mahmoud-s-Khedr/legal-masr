@@ -1,8 +1,8 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { asAppError, actionableErrorMessage, errorMessage } from '../../../bridge/errors';
-import { ConfirmDialog, FormDialog } from '../../../components/forms/FormDialog';
+import { errorMessage, isCancelled } from '../../../bridge/errors';
+import { FormDialog } from '../../../components/forms/FormDialog';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Skeleton } from '../../../components/ui/skeleton';
@@ -13,8 +13,8 @@ import { useSingleFlight } from '../../../lib/useSingleFlight';
 import {
   useCreateBackup,
   useLatestSuccessfulBackup,
-  useRestoreBackup,
-  useValidateBackup,
+  useSaveBackupCopy,
+  useRevealBackup,
 } from '../api/backupsApi';
 import { RestoreFromBackup } from '../components/RestoreFromBackup';
 
@@ -22,11 +22,11 @@ export function BackupSettingsPanel() {
   const { t } = useTranslation();
   const format = useFormat();
   const createBackup = useCreateBackup();
-  const validateBackup = useValidateBackup();
-  const restoreBackup = useRestoreBackup();
+  const saveCopy = useSaveBackupCopy();
+  const reveal = useRevealBackup();
   const latestBackup = useLatestSuccessfulBackup();
   const [restoreOpen, setRestoreOpen] = useState(false);
-  const [otherOpen, setOtherOpen] = useState(false);
+  const [validateOpen, setValidateOpen] = useState(false);
   // Backup freshness is judged against when the panel was opened.
   const [openedAt] = useState(() => Date.now());
 
@@ -35,23 +35,9 @@ export function BackupSettingsPanel() {
   const once = useSingleFlight();
   // The guard is shared on purpose: a restore must never overlap a backup or a check. So while
   // any of them runs, none of the three may be offered; otherwise a click would be dropped silently.
-  const busy = createBackup.isPending || validateBackup.isPending || restoreBackup.isPending;
+  const busy =
+    createBackup.isPending || saveCopy.isPending || reveal.isPending || restoreOpen || validateOpen;
   const createNow = () => once((settled) => createBackup.mutate(undefined, { onSettled: settled }));
-
-  const validate = () =>
-    once((settled) => validateBackup.mutate(undefined, { onSettled: settled }));
-
-  const restore = () => {
-    setRestoreOpen(false);
-    once((settled) => restoreBackup.mutate(undefined, { onSettled: settled }));
-  };
-
-  // A backup made by another installation cannot be opened with this vault's key, but its
-  // own password or recovery key opens it.
-  const foreignBackup =
-    asAppError(restoreBackup.error)?.code === 'BACKUP_KEY_MISMATCH' ||
-    asAppError(validateBackup.error)?.code === 'BACKUP_KEY_MISMATCH';
-
   const latest = latestBackup.data;
   const ageDays = latest
     ? Math.floor((openedAt - new Date(latest.completedAt).getTime()) / 86_400_000)
@@ -119,24 +105,12 @@ export function BackupSettingsPanel() {
               type="button"
               variant="secondary"
 
-              onClick={validate}
+              onClick={() => setValidateOpen(true)}
               disabled={busy}
             >
-              {validateBackup.isPending ? t('backups.validating') : t('backups.validate')}
+              {t('backups.validate')}
             </Button>
           </div>
-          {validateBackup.isSuccess && (
-            <p className="success" role="status">
-              {t('backups.validateSuccess')}
-            </p>
-          )}
-          {validateBackup.isError && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                {actionableErrorMessage(validateBackup.error, t('backups.validateFailed'))}
-              </AlertDescription>
-            </Alert>
-          )}
         </Card>
 
         <Card className="panel backup-action backup-danger">
@@ -150,64 +124,73 @@ export function BackupSettingsPanel() {
               onClick={() => setRestoreOpen(true)}
               disabled={busy}
             >
-              {restoreBackup.isPending ? t('backups.restoring') : t('backups.restore')}
+              {t('backups.restore')}
             </Button>
           </div>
-          {restoreBackup.isSuccess && (
-            <p className="success" role="status">
-              {t('backups.restoreSuccess')}
-            </p>
-          )}
-          {restoreBackup.isError && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                {errorMessage(restoreBackup.error, t('app.defaultError'))}
-              </AlertDescription>
-            </Alert>
-          )}
-          {foreignBackup && (
-            <div className="backup-other-installation">
-              <p className="muted">{t('backups.restoreOtherHint')}</p>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setOtherOpen(true)}
-                disabled={busy}
-              >
-                {t('backups.restoreWithCredentials')}
-              </Button>
-            </div>
-          )}
         </Card>
       </div>
       <p className="security-note backup-offsite">
         <Icon name="shield" size={20} />
         <span>{t('backups.offsiteAdvice')}</span>
       </p>
+      {(latest || createBackup.isSuccess) && (
+        <div className="form-actions">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => once((done) => saveCopy.mutate(undefined, { onSettled: done }))}
+          >
+            {t('backups.saveCopy')}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => once((done) => reveal.mutate(undefined, { onSettled: done }))}
+          >
+            {t('backups.reveal')}
+          </Button>
+        </div>
+      )}
+      {createBackup.data && (
+        <p className="success">
+          <bdi>{createBackup.data}</bdi>
+        </p>
+      )}
+      {saveCopy.isSuccess && (
+        <p role="status">{t('backups.saveCopySuccess', { name: saveCopy.data })}</p>
+      )}
+      {[saveCopy.error, reveal.error]
+        .filter((error) => error && !isCancelled(error))
+        .map((error, index) => (
+          <Alert key={index} variant="destructive">
+            <AlertDescription>{errorMessage(error, t('app.defaultError'))}</AlertDescription>
+          </Alert>
+        ))}
       <FormDialog
-        open={otherOpen}
-        onOpenChange={setOtherOpen}
-        title={t('backups.restoreOtherTitle')}
+        open={restoreOpen || validateOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRestoreOpen(false);
+            setValidateOpen(false);
+          }
+        }}
+        title={t(validateOpen ? 'backups.validateTitle' : 'backups.restoreTitle')}
       >
-        {otherOpen && (
+        {(restoreOpen || validateOpen) && (
           <RestoreFromBackup
             replacesWorkspace
-            onRestored={() => setOtherOpen(false)}
-            onCancel={() => setOtherOpen(false)}
+            useActiveKey
+            validateOnly={validateOpen}
+            onRestored={() => setRestoreOpen(false)}
+            onCancel={() => {
+              setRestoreOpen(false);
+              setValidateOpen(false);
+            }}
           />
         )}
       </FormDialog>
-      <ConfirmDialog
-        open={restoreOpen}
-        onOpenChange={setRestoreOpen}
-        title={t('backups.restore')}
-        description={t('backups.restoreWarning')}
-        confirmLabel={t('backups.restoreConfirm')}
-        cancelLabel={t('backups.restoreCancel')}
-        onConfirm={restore}
-        pending={restoreBackup.isPending}
-        destructive
-      />
     </div>
   );
 }

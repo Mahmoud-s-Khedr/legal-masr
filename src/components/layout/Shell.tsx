@@ -16,8 +16,11 @@ import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { useSettings } from '../../features/settings/api/settingsApi';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Icon } from './Icon';
+import { ScrollToTop } from './ScrollToTop';
 import { DeveloperContacts } from './DeveloperContacts';
 import { shouldLockForLifecycleGap } from '../../lib/lifecycleLock';
+
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent);
 
 export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
   const { t } = useTranslation();
@@ -95,6 +98,7 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <div className="app-shell">
         <aside className="sidebar">
           <div className="sidebar-brand brand-block">
@@ -127,7 +131,7 @@ export function Shell({ onLock }: { onLock: () => Promise<void> | void }) {
               <Icon name="search" size={19} />
               <GlobalSearch query={searchQuery} onQueryChange={setSearchQuery} />
               <kbd className="search-shortcut" aria-hidden="true">
-                Ctrl K
+                {isMac ? '⌘ K' : 'Ctrl K'}
               </kbd>
             </div>
             <Button

@@ -33,15 +33,20 @@ function parseDateOnly(value: string) {
 const ARABIC_INDIC = /[٠-٩۰-۹]/g;
 
 /**
- * Accepts the day-first dates lawyers type (3/10/2026, 03-10-2026, ٣/١٠/٢٠٢٦)
- * and returns the canonical YYYY-MM-DD value, or null when it is not a real date.
+ * Accepts the day-first dates lawyers type (3/10/2026, 03-10-2026, ٣/١٠/٢٠٢٦) and returns
+ * the canonical YYYY-MM-DD value, or null when it is not a real date. `lenient` also
+ * accepts an unpadded year-first date (2026-10-3) once typing finishes.
+ * Calendar years always require four explicit digits.
  */
-export function normalizeTypedDate(raw: string) {
+export function normalizeTypedDate(raw: string, { lenient = false } = {}) {
   const value = raw.trim().replace(ARABIC_INDIC, (digit) => String(digit.charCodeAt(0) & 0xf));
   const dayFirst = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(value);
+  const yearFirst = lenient ? /^(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})$/.exec(value) : null;
   const candidate = dayFirst
     ? `${dayFirst[3]}-${dayFirst[2].padStart(2, '0')}-${dayFirst[1].padStart(2, '0')}`
-    : value;
+    : yearFirst
+      ? `${yearFirst[1]}-${yearFirst[2].padStart(2, '0')}-${yearFirst[3].padStart(2, '0')}`
+      : value;
   return parseDateOnly(candidate) ? candidate : null;
 }
 
@@ -91,7 +96,11 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
           dir="ltr"
           inputMode="numeric"
           autoComplete="off"
-          placeholder={dateFormat === 'yyyy-MM-dd' ? 'YYYY-MM-DD' : 'DD/MM/YYYY'}
+          placeholder={
+            dateFormat === 'yyyy-MM-dd'
+              ? t('datePicker.placeholderYearFirst')
+              : t('datePicker.placeholder')
+          }
 
           title={t('datePicker.inputTitle')}
           required={required}
@@ -103,9 +112,17 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
             else onChange?.(event);
           }}
           onBlur={(event) => {
-            const normalized = normalizeTypedDate(event.target.value);
+            const normalized = normalizeTypedDate(event.target.value, { lenient: true });
             if (normalized && normalized !== event.target.value) emitChange(normalized);
             inputProps.onBlur?.(event);
+          }}
+          onKeyDown={(event) => {
+            // Enter submits without a blur; finish the date first.
+            if (event.key === 'Enter') {
+              const normalized = normalizeTypedDate(event.currentTarget.value, { lenient: true });
+              if (normalized && normalized !== value) emitChange(normalized);
+            }
+            inputProps.onKeyDown?.(event);
           }}
         />
         <InputGroupAddon align="inline-end">

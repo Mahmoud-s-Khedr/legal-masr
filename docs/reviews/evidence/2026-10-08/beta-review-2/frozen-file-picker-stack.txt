@@ -1,0 +1,23 @@
+Main thread of the real (non-test) debug build, captured with gdb while the window was frozen
+after pressing «اختيار ملف» in the Add document dialog (Linux, WebKitGTK, Xvfb). Trimmed to the
+frames that matter; no record data or user paths are present.
+
+#1  std::sys::pal::unix::futex::futex_wait
+#4  std::sync::mpmc::context::Context::wait_until
+#12 std::sync::mpsc::Receiver<Option<FilePath>>::recv          <- waiting for the dialog result
+#13 tauri_plugin_dialog::FileDialogBuilder::blocking_pick_file
+#14 legalmaster_lib::services::document_service::select_source   (src/services/document_service.rs:198)
+#15 legalmaster_lib::commands::documents::attachment_select_source (src/commands/documents.rs:16)
+#19 tauri::manager::AppManager::run_invoke_handler
+#20 tauri::webview::Webview::on_message
+#21 tauri::ipc::protocol::get::{closure}
+#27 wry::webkitgtk::web_context::register_uri_scheme::{closure}  <- IPC handled on the GTK main thread
+#28 webkit2gtk::WebContextExt::register_uri_scheme::callback_func
+#29.. libwebkit2gtk-4.1.so.0
+
+tauri-plugin-dialog 2.7.2 src/desktop.rs:148 creates every file dialog with
+`handle.run_on_main_thread(...)`. The main thread is the one blocked in frame #12, so the dialog is
+never created and the channel never receives a value. No file chooser window was mapped
+(`xdotool search` listed only the app window) and WebDriver could no longer read `location`.
+The same pattern is used by backup_service.rs:69 (check / restore backup) and
+client_service.rs:194 (client export, not reachable from the UI today).

@@ -1,3 +1,4 @@
+import { DeveloperContacts } from '../../../components/layout/DeveloperContacts';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FieldGroup } from '@/components/ui/field';
@@ -5,8 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { forwardRef, type InputHTMLAttributes, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { errorMessage } from '../../../bridge/errors';
-import { groupRecoveryKey } from '../../../lib/recoveryKey';
+import { asAppError, errorMessage } from '../../../bridge/errors';
+import { RecoveryKeyCard } from '../components/RecoveryKeyCard';
+import {
+  clearRestoreNotice,
+  restoreNoticePending,
+  restoredPasswordSource,
+} from '../../../lib/restoreNotice';
 import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
@@ -106,9 +112,7 @@ export function OnboardingPage({
         {subGate === 'recovery-key' ? (
           <div className="recovery-key-step">
             <p className="warning">{t('gate.recoveryKeyWarning')}</p>
-            <code className="recovery-key" dir="ltr" aria-label={t('gate.fields.recoveryKey')}>
-              {groupRecoveryKey(recoveryKey)}
-            </code>
+            <RecoveryKeyCard recoveryKey={recoveryKey} />
             <ul className="gate-tips">
               <li>{t('gate.recoveryTips.paper')}</li>
               <li>{t('gate.recoveryTips.separate')}</li>
@@ -143,6 +147,7 @@ export function OnboardingPage({
             onSubmit={async (values) => {
               await unlockVault.mutateAsync(values.password);
               unlockVault.reset();
+              clearRestoreNotice();
               onUnlocked();
             }}
           />
@@ -164,10 +169,25 @@ export function OnboardingPage({
             <AlertDescription>{errorMessage(error, t('app.defaultError'))}</AlertDescription>
           </Alert>
         )}
+        {['VAULT_MISSING', 'VAULT_INCOMPLETE', 'VAULT_CORRUPT', 'VAULT_INTERRUPTED'].includes(
+          asAppError(error)?.code ?? '',
+        ) && (
+          <section className="gate-support" aria-label={t('app.supportTitle')}>
+            <strong>{t('app.supportTitle')}</strong>
+            <DeveloperContacts plain />
+          </section>
+        )}
         {subGate === 'setup' && onSwitchToRestore && (
           <Button variant="ghost" className="gate-link" onClick={onSwitchToRestore}>
             {t('gate.restoreFromBackup')}
           </Button>
+        )}
+        {subGate === 'unlock' && restoreNoticePending() && (
+          <p className="success" role="status">
+            {t(
+              `restoreFrom.${restoredPasswordSource() === 'newPassword' ? 'newPasswordNotice' : restoredPasswordSource()}`,
+            )}
+          </p>
         )}
         {subGate === 'unlock' && (
           <Button variant="ghost" className="gate-link" onClick={onSwitchToRecovery}>

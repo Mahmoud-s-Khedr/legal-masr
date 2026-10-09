@@ -26,18 +26,9 @@ struct Intent {
     database: String,
     attachments: String,
     had_attachments: bool,
-    /// Intents written before these fields existed always had a database to
-    /// preserve and never replaced `security.json`.
-    #[serde(default = "default_true")]
     had_database: bool,
-    #[serde(default)]
     had_security: bool,
-    #[serde(default)]
     adopt_security: bool,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 pub fn pending(root: &Path) -> bool {
@@ -557,7 +548,7 @@ mod tests {
     }
 
     #[test]
-    fn an_intent_written_before_the_security_fields_existed_still_recovers() {
+    fn an_incomplete_intent_is_refused_without_changing_live_files() {
         let temp = tempfile::tempdir().unwrap();
         let root = temp.path();
         let id = uuid::Uuid::new_v4().to_string();
@@ -575,19 +566,20 @@ mod tests {
             ),
         )
         .unwrap();
-        recover(root).unwrap();
+        assert!(recover(root).is_err());
         assert_eq!(
             fs::read(root.join("legalmaster.sqlite")).unwrap(),
-            b"new db"
+            b"old db"
         );
         assert_eq!(
             fs::read(root.join("security.json")).unwrap(),
             b"old security"
         );
         assert_eq!(
-            fs::read(snapshot.join("database.sqlite")).unwrap(),
-            b"old db"
+            fs::read(root.join("legalmaster.restore.tmp")).unwrap(),
+            b"new db"
         );
+        assert!(pending(root));
     }
 
     #[test]

@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-10",
+  "frontend": {
+    "format": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "rendererTests": 573,
+    "scriptTests": 60,
+    "coverage": {
+      "statements": 87.8,
+      "branches": 85.14,
+      "functions": 78.59,
+      "lines": 87.8
+    }
+  },
+  "rust": {
+    "format": "passed",
+    "clippyAllFeaturesAllTargetsWarningsDenied": "passed",
+    "productionTests": 159,
+    "allFeatureTests": 160,
+    "coverage": {
+      "regions": 57.52529510961214,
+      "functions": 59.813084112149525,
+      "lines": 61.950252343186726
+    },
+    "audit": {
+      "exitCode": 0,
+      "vulnerabilityFindings": 0,
+      "unmaintainedWarnings": 6,
+      "unsoundnessWarnings": 1
+    }
+  },
+  "coverageFloors": "passed without changes",
+  "visual": {
+    "freshLocalReferenceCaptures": 84,
+    "identicalCaptures": 37,
+    "baselineUpdateChecks": 71,
+    "finalComparisonChecks": 71,
+    "manifestCaptures": 68,
+    "thresholdsChanged": false
+  },
+  "offline": {
+    "rustTests": "network namespace, only loopback",
+    "nativeLinuxScenarios": 11,
+    "nativeNetworking": "network namespace, only loopback",
+    "isolatedPrintChecks": 2,
+    "printNetworking": "Docker --network none"
+  },
+  "normalDebugDesktop": {
+    "debianPackage": "passed",
+    "harnessBoundaryScan": "passed",
+    "binarySha256": "3ea892615e9b1834baf1834f440e8862fede16e6f5ee520e4ccd0608901b1eb1",
+    "debianSha256": "4daa54245108f699e76912acc70600c19d134b6badf2b12cf02694985090de0f"
+  },
+  "physicalWindowsValidation": "outstanding",
+  "physicalMacOSValidation": "outstanding",
+  "physicalPrinterValidation": "not performed"
+}

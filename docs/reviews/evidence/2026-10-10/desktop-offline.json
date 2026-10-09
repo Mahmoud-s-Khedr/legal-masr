@@ -1,0 +1,50 @@
+{
+  "platform": "linux",
+  "binarySha256": "050829e0a9a88a63196a6ba2c20717488e5cc0b0cc9b34a78dc4d21327e729c2",
+  "results": [
+    {
+      "scenario": "initialize-client-case-attachment-backup-restore",
+      "result": "passed"
+    },
+    {
+      "scenario": "wrong-password-refusal",
+      "result": "passed"
+    },
+    {
+      "scenario": "cancel-restore-preserves-active-data",
+      "result": "passed"
+    },
+    {
+      "scenario": "corrupt-restore-preserves-active-data",
+      "result": "passed"
+    },
+    {
+      "scenario": "native-picker-responsive-cancellation-and-lock",
+      "result": "passed"
+    },
+    {
+      "scenario": "fresh-installation-restores-a-portable-backup-with-the-original-password",
+      "result": "passed"
+    },
+    {
+      "scenario": "recovery-key-restore-stages-a-new-password",
+      "result": "passed"
+    },
+    {
+      "scenario": "incomplete-installation-restores-a-portable-backup",
+      "result": "passed"
+    },
+    {
+      "scenario": "opponent-form-announces-missing-name",
+      "result": "passed"
+    },
+    {
+      "scenario": "settings-display-tab-deep-link-shows-saved-labels",
+      "result": "passed"
+    },
+    {
+      "scenario": "restart-persistence",
+      "result": "passed"
+    }
+  ]
+}

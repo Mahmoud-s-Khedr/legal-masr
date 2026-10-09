@@ -28,12 +28,12 @@ import {
 import { Textarea } from '../../../components/ui/textarea';
 import { BackupSettingsPanel } from '../../backups/pages/BackupsPage';
 import type { Settings } from '../../../bridge/types';
+import { RecoveryKeySection } from '../components/RecoveryKeySection';
 import { developerDiagnostic } from '../../../bridge/devDiagnostics';
 import {
   useChangePassword,
   useProfile,
   useSetAutostart,
-  useSetUsageCounters,
   useSettings,
   useUpdateProfile,
   useUpdateSettings,
@@ -112,7 +112,6 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
   const setAutostart = useSetAutostart();
-  const setUsageCounters = useSetUsageCounters();
   const [notificationStatus, setNotificationStatus] = useState<'unknown' | 'granted' | 'denied'>(
     'unknown',
   );
@@ -669,38 +668,7 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
                   </FieldGroup>
                 </DraftForm>
               </section>
-              <section className="settings-section">
-                <div className="card-title">
-                  <div>
-                    <h3>{t('settings.security.countersTitle')}</h3>
-                    <p>{t('settings.security.countersHint')}</p>
-                  </div>
-                </div>
-                <div className="settings-toggle-row">
-                  <div>
-                    <strong>{t('settings.security.counters')}</strong>
-                    <span>{t('settings.security.countersDetail')}</span>
-                  </div>
-                  <Switch
-                    aria-label={t('settings.security.counters')}
-                    checked={settings.usageCountersEnabled}
-                    disabled={setUsageCounters.isPending}
-                    onCheckedChange={(checked) => setUsageCounters.mutate(checked)}
-                  />
-                </div>
-                {setUsageCounters.isError && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{t('settings.security.countersError')}</AlertDescription>
-                  </Alert>
-                )}
-              </section>
-              <section className="security-note">
-                <Icon name="shield" size={22} />
-                <div>
-                  <strong>{t('settings.security.recoveryTitle')}</strong>
-                  <p>{t('settings.security.recoveryHint')}</p>
-                </div>
-              </section>
+              <RecoveryKeySection />
             </div>
           )}
 

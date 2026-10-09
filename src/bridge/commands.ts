@@ -32,6 +32,7 @@ import type {
   BackupSelection,
   LatestSuccessfulBackup,
   RestoreCredential,
+  PreparedBackup,
   FeeAgreementInput,
   ExpenseDto,
   ExpenseInput,
@@ -64,15 +65,24 @@ export const bridge = {
   recover: (recoveryKey: string, newPassword: string) =>
     invoke<void>('app_recover_access', { recoveryKey, newPassword }),
   lock: () => invoke<void>('app_lock'),
+  replaceRecoveryKey: (currentPassword: string) =>
+    invoke<{ recoveryKey: string }>('app_replace_recovery_key', { currentPassword }),
+  /** Saves the recovery key as a text file where the lawyer chooses. */
+  saveRecoveryKey: (recoveryKey: string) => invoke<void>('app_save_recovery_key', { recoveryKey }),
+  /** Opens the system print dialog; the page's print styles decide what is printed. */
+  print: () => invoke<void>('app_print'),
   changePassword: (currentPassword: string, newPassword: string) =>
     invoke<void>('app_change_password', { currentPassword, newPassword }),
-  createBackup: () => invoke<string>('backup_create'),
+  /** On a new installation: choose a backup made on another computer. */
+  createBackup: (stamp: string) => invoke<string>('backup_create', { stamp }),
   latestSuccessfulBackup: () => invoke<LatestSuccessfulBackup | null>('backup_latest_successful'),
-  validateBackup: () => invoke<void>('backup_validate'),
-  restoreBackup: () => invoke<void>('backup_restore'),
   selectBackupForRestore: () => invoke<BackupSelection>('backup_select_for_restore'),
-  restoreSelectedBackup: (token: string, credential: RestoreCredential) =>
-    invoke<void>('backup_restore_selected', { token, credential }),
+  prepareBackupRestore: (token: string, credential?: RestoreCredential) =>
+    invoke<PreparedBackup>('backup_prepare_restore', { token, credential: credential ?? null }),
+  commitBackupRestore: (token: string) => invoke<void>('backup_commit_restore', { token }),
+  cancelBackupRestore: () => invoke<void>('backup_cancel_restore'),
+  saveBackupCopy: () => invoke<string>('backup_save_copy'),
+  revealBackup: () => invoke<void>('backup_reveal'),
   openDeveloperContact: (contact: DeveloperContact) =>
     invoke<void>('settings_open_developer_contact', { contact }),
   settings: () => invoke<Settings>('settings_get'),
@@ -149,8 +159,10 @@ export const bridge = {
     invoke<FeeAgreementDto>('fee_agreement_save', { input }),
   paymentSave: (input: PaymentInput) => invoke<PaymentDto>('payment_save', { input }),
   paymentList: (input: PaymentListInput = {}) => invoke<PaymentDto[]>('payment_list', { input }),
+  paymentDelete: (id: string) => invoke<void>('payment_delete', { id }),
   expenseSave: (input: ExpenseInput) => invoke<ExpenseDto>('expense_save', { input }),
   expenseList: (input: ExpenseListInput = {}) => invoke<ExpenseDto[]>('expense_list', { input }),
+  expenseDelete: (id: string) => invoke<void>('expense_delete', { id }),
   financeCaseSummary: (id: string) => invoke<CaseFinanceSummary>('finance_case_summary', { id }),
   financeClientSummary: (id: string) =>
     invoke<ClientFinanceSummary>('finance_client_summary', { id }),

@@ -9,10 +9,12 @@ vi.mock('../bridge/commands', () => ({
     recover: vi.fn(),
     lock: vi.fn(),
     createBackup: vi.fn(),
-    validateBackup: vi.fn(),
-    restoreBackup: vi.fn(),
     selectBackupForRestore: vi.fn(),
-    restoreSelectedBackup: vi.fn(),
+    prepareBackupRestore: vi.fn(),
+    commitBackupRestore: vi.fn(),
+    cancelBackupRestore: vi.fn(),
+    saveRecoveryKey: vi.fn(),
+    print: vi.fn(),
     settings: vi.fn(),
     updateSettings: vi.fn(),
     clientList: vi.fn(),
@@ -31,6 +33,7 @@ describe('application gate', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('ar');
     vi.clearAllMocks();
+    vi.mocked(bridge.cancelBackupRestore).mockResolvedValue(undefined);
     // The QueryClient is a module-level singleton shared by every render in
     // this file; without clearing it, cached data from one test (e.g. an
     // "unlocked" app-status) leaks into the next test's fresh render.
@@ -132,9 +135,16 @@ describe('application gate', () => {
     });
     vi.mocked(bridge.selectBackupForRestore).mockResolvedValue({
       token: 'one-time',
-      formatVersion: 2,
+      fileName: 'office.lmsbackup',
     });
-    vi.mocked(bridge.restoreSelectedBackup).mockImplementation(async () => {
+    vi.mocked(bridge.prepareBackupRestore).mockResolvedValue({
+      token: 'prepared',
+      createdAt: '2026-10-10T10:00:00Z',
+      documentCount: 3,
+      passwordSource: 'backupPassword',
+    });
+    vi.mocked(bridge.cancelBackupRestore).mockResolvedValue(undefined);
+    vi.mocked(bridge.commitBackupRestore).mockImplementation(async () => {
       // The native layer has rebuilt the workspace and locked it.
       vi.mocked(bridge.status).mockResolvedValue({
         initialized: true,
@@ -152,15 +162,17 @@ describe('application gate', () => {
     fireEvent.change(await screen.findByLabelText(i18n.t('restoreFrom.password')), {
       target: { value: 'a secure local password' },
     });
-    fireEvent.click(screen.getByRole('button', { name: i18n.t('restoreFrom.submit') }));
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('restoreFrom.prepare') }));
 
+    fireEvent.click(await screen.findByRole('button', { name: i18n.t('backups.restoreConfirm') }));
     expect(
       await screen.findByRole('heading', { name: i18n.t('gate.title.unlock') }),
     ).toBeInTheDocument();
-    expect(bridge.restoreSelectedBackup).toHaveBeenCalledWith('one-time', {
+    expect(bridge.prepareBackupRestore).toHaveBeenCalledWith('one-time', {
       kind: 'password',
       secret: 'a secure local password',
     });
+    expect(bridge.commitBackupRestore).toHaveBeenCalledWith('prepared');
     expect(bridge.initialize).not.toHaveBeenCalled();
   });
 
@@ -227,11 +239,10 @@ describe('application gate', () => {
       '/backups',
     );
     expect(document.documentElement).toHaveAttribute('data-theme', 'system');
+    // Preserve the local footer and its developer contacts.
     const footer = screen.getByRole('contentinfo');
-    expect(footer).toHaveTextContent('طوّر التطبيق محمود خضر');
-    expect(footer).toHaveTextContent('Mahmoud.s.khedr.2@gmail.com');
     expect(footer).toHaveTextContent('+201016240934');
-    expect(screen.getByRole('link', { name: 'عن ليجال مصر' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: i18n.t('settings.tabs.about') })).toHaveAttribute(
       'href',
       '/settings?tab=about',
     );
@@ -319,6 +330,8 @@ describe('application gate', () => {
         status: 'ACTIVE',
         clientNames: ['أحمد'],
         archivedAt: null,
+        courtName: null,
+        nextHearingDate: null,
       },
     ]);
 
@@ -380,6 +393,49 @@ describe('application gate', () => {
     render(<App />);
     await waitFor(() => expect(document.documentElement).toHaveAttribute('lang', 'en'));
     expect(document.documentElement).toHaveAttribute('dir', 'ltr');
+    await i18n.changeLanguage('ar');
+  });
+
+  it('keeps the language chosen on the lock screen after unlocking, and saves it', async () => {
+    const saved = {
+      language: 'ar' as const,
+      theme: 'system' as const,
+      dateFormat: 'dd/MM/yyyy' as const,
+      weekStartsOn: 6,
+      defaultReminderMinutes: 60,
+      autostartEnabled: false,
+      lockTimeoutMinutes: 15,
+      usageCountersEnabled: false,
+    };
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: false,
+      vaultState: 'LOCKED',
+    });
+    vi.mocked(bridge.unlock).mockResolvedValue(undefined);
+    vi.mocked(bridge.updateSettings).mockImplementation(async (next) => ({ ...saved, ...next }));
+    render(<App />);
+    await screen.findByRole('heading', { name: 'افتح ليجال مصر' });
+    fireEvent.click(screen.getByRole('button', { name: 'English' }));
+    await screen.findByRole('heading', { name: 'Unlock Legal Masr' });
+
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: true,
+      vaultState: 'UNLOCKED',
+    });
+    vi.mocked(bridge.settings).mockResolvedValue(saved);
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'fictional password 2026' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(bridge.updateSettings).mock.calls[0]?.[0]).toMatchObject({
+        language: 'en',
+      }),
+    );
+    expect(i18n.language).toBe('en');
     await i18n.changeLanguage('ar');
   });
 

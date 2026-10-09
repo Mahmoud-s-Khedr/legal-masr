@@ -1,15 +1,6 @@
 import { remote } from 'webdriverio';
 import { spawn, spawnSync } from 'node:child_process';
-import {
-  mkdtemp,
-  mkdir,
-  writeFile,
-  readFile,
-  readdir,
-  rm,
-  access,
-  copyFile,
-} from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -24,6 +15,8 @@ import {
   waitForWebView,
 } from './desktop-e2e-driver.mjs';
 const password = 'fictional desktop password 2026';
+const strings = JSON.parse(await readFile(resolve('src/i18n/ar/common.json'), 'utf8'));
+const restorePassword = 'fictional new recovery password 2026';
 const bytes = Buffer.from('%PDF-1.4\nFictional attachment for desktop validation only.\n');
 const binary = resolve(
   process.env.LEGALMASTER_E2E_BINARY ||
@@ -62,7 +55,20 @@ async function reserveDebuggingPort({ timeoutMs = 15_000 } = {}) {
   }
 }
 const results = [];
+const outputDirectory = process.env.LEGALMASTER_E2E_OUTPUT_DIRECTORY ?? 'test-results/desktop';
+const binarySha256 = createHash('sha256')
+  .update(await readFile(binary))
+  .digest('hex');
+await mkdir(outputDirectory, { recursive: true });
+async function retainOutcomes() {
+  await writeFile(
+    join(outputDirectory, 'results.json'),
+    JSON.stringify({ platform: process.platform, binarySha256, results }, null, 2),
+  );
+}
+await retainOutcomes();
 async function scenario(name, exercise) {
+  if (process.env.LEGALMASTER_E2E_SCENARIO && process.env.LEGALMASTER_E2E_SCENARIO !== name) return;
   const root = await mkdtemp(join(tmpdir(), 'legalmaster-desktop-e2e-'));
   const nonce = randomUUID();
   await writeFile(join(root, 'runner-marker'), nonce);
@@ -153,6 +159,14 @@ async function scenario(name, exercise) {
   };
   const nav = async (href) => {
     const link = await browser.$(`nav a[href="${href}"]`);
+    await link.waitForDisplayed({ timeout: 15000 });
+    if (process.platform !== 'win32') {
+      await browser.execute(
+        (target) =>
+          target.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' }),
+        link,
+      );
+    }
     await link.waitForClickable({ timeout: 15000 });
     await link.click();
   };
@@ -166,6 +180,7 @@ async function scenario(name, exercise) {
       .$(`//*[normalize-space(text())=${JSON.stringify(text)}]`)
       .waitForDisplayed({ timeout: 15000 });
   };
+  let recoveryKey;
   const initialize = async () => {
     checkpoint = 'initialize-name';
     await input('fullName', 'محامٍ خيالي');
@@ -174,14 +189,15 @@ async function scenario(name, exercise) {
     await input('confirmPassword', password);
     checkpoint = 'initialize-submit';
     await click('بدء الاستخدام');
+    recoveryKey = await browser.$('.recovery-key').getText();
     checkpoint = 'initialize-confirm';
     await browser.$('.gate-confirm [role="checkbox"]').click();
     checkpoint = 'initialize-continue';
     await click('متابعة إلى مساحة العمل');
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
   };
-  const unlock = async () => {
-    await input('password', password);
+  const unlock = async (value = password) => {
+    await input('password', value);
     await click('فتح');
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
   };
@@ -213,6 +229,9 @@ async function scenario(name, exercise) {
       checkpoint(value) {
         checkpoint = value;
       },
+      get recoveryKey() {
+        return recoveryKey;
+      },
       get browser() {
         return browser;
       },
@@ -240,6 +259,11 @@ async function scenario(name, exercise) {
               gatePresent: Boolean(globalThis.document.querySelector('.gate')),
               confirmationPresent: Boolean(globalThis.document.querySelector('.gate-confirm')),
               workspacePresent: Boolean(globalThis.document.querySelector('nav')),
+              caseListRoute: globalThis.location.pathname === '/cases',
+              caseListLinkPresent: Boolean(
+                globalThis.document.querySelector('table tbody a[href^="/cases/"]'),
+              ),
+              loadErrorPresent: Boolean(globalThis.document.querySelector('[role="alert"]')),
             }))
             .catch(() => undefined)
         : undefined;
@@ -255,6 +279,7 @@ async function scenario(name, exercise) {
     });
     // WebDriver exceptions may include secret input, paths, or DOM. Never print them.
   } finally {
+    await retainOutcomes();
     await close().catch(() => undefined);
     if (driver?.exitCode === null && !driverError) {
       await stopDriver(driver);
@@ -297,6 +322,7 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.selection('backup');
   await h.nav('/backups');
   await h.click('استعادة من نسخة احتياطية');
+  await h.click(strings.restoreFrom.chooseFile);
   await h.click('تأكيد الاستعادة');
   await h.browser.$('.gate').waitForDisplayed({ timeout: 15000 });
   h.checkpoint('unlock-restored-vault');
@@ -326,24 +352,55 @@ await scenario('wrong-password-refusal', async (h) => {
   assert.equal(await h.browser.$('nav').isExisting(), false);
   await h.unlock();
 });
-const expectedRefusal = {
-  cancel: 'أُلغيت العملية.',
-  corrupt: 'ملف النسخة الاحتياطية تالف أو غير صالح. لم تتغير بياناتك الحالية.',
-};
 for (const choice of ['cancel', 'corrupt'])
   await scenario(`${choice}-restore-preserves-active-data`, async (h) => {
     await h.initialize();
     await h.client('E2E-PRESERVED');
     await h.selection(choice);
     await h.nav('/backups');
-    await h.click('استعادة من نسخة احتياطية');
-    await h.click('تأكيد الاستعادة');
-    const alert = await h.browser.$('[role="alert"]');
-    await alert.waitForDisplayed({ timeout: 15000 });
-    // The code must be the one that tells the lawyer what happened, not any alert.
-    assert.equal(await alert.getText(), expectedRefusal[choice]);
+    await h.click(strings.backups.restore);
+    await h.click(strings.restoreFrom.chooseFile);
+    if (choice === 'corrupt') {
+      const alert = await h.browser.$('[role="alert"]');
+      await alert.waitForDisplayed({ timeout: 15000 });
+      assert.equal(await alert.getText(), strings.errors.BACKUP_CORRUPTED);
+    } else {
+      await h.browser.waitUntil(
+        async () =>
+          await h.browser
+            .$(`//button[normalize-space(.)="${strings.restoreFrom.chooseFile}"]`)
+            .isEnabled(),
+        { timeout: 15000 },
+      );
+      assert.equal(await h.browser.$('[role="alert"]').isExisting(), false);
+    }
+    await h.click(strings.common.cancel);
     await h.nav('/clients');
     await h.browser.$('a*=E2E-PRESERVED').waitForDisplayed();
+  });
+if (process.platform === 'linux')
+  await scenario('native-picker-responsive-cancellation-and-lock', async (h) => {
+    await h.initialize();
+    await h.selection('native');
+    await h.nav('/backups');
+    await h.click(strings.backups.restore);
+    await h.click(strings.restoreFrom.chooseFile);
+    h.checkpoint('picker-heartbeat');
+    const beat = await h.browser.execute(async () => {
+      const start = performance.now();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return performance.now() - start;
+    });
+    assert.ok(beat >= 90 && beat < 2000);
+    h.checkpoint('lock-with-picker-open');
+    await h.browser.execute(() =>
+      globalThis.document.querySelector('button[aria-label="قفل التطبيق"]').click(),
+    );
+    assert.equal(spawnSync('xdotool', ['key', 'Escape']).status, 0);
+    await h.browser.$('input[name="password"]').waitForDisplayed({ timeout: 15000 });
+    await h.unlock();
+    assert.equal(await h.browser.$('.restore-from-backup').isExisting(), false);
+    assert.equal(await h.browser.$('[role="alert"]').isExisting(), false);
   });
 // A workspace with one client, one case and one managed attachment, backed up from the UI.
 async function seedAndBackUp(h, label) {
@@ -373,21 +430,46 @@ async function seedAndBackUp(h, label) {
   await h.nav('/backups');
   await h.click('إنشاء نسخة احتياطية الآن');
   await h.waitText('تم إنشاء النسخة الاحتياطية بنجاح.');
-  // Carry the backup out of the installation, as a lawyer would to a new machine.
+  // Carry a verified copy out through the same save dialog used by the lawyer.
+  h.checkpoint('save-copy');
+  await h.selection('save');
+  await h.click(strings.backups.saveCopy);
+  await h.waitText(strings.backups.saveCopySuccess.replace('{{name}}', 'copy.lmsbackup'));
+  h.checkpoint('copy-saved');
   await h.close();
-  const [made] = (await readdir(join(h.root, 'vault/Backups'))).filter((name) =>
-    name.endsWith('.lmsbackup'),
-  );
-  await copyFile(join(h.root, 'vault/Backups', made), join(h.root, 'fixtures/portable.lmsbackup'));
   await h.selection('portable');
 }
-async function expectRestoredWorkspace(h, label) {
+async function expectRestoredWorkspace(h, label, value = password) {
   h.checkpoint('unlock-restored');
-  await h.unlock();
+  await h.unlock(value);
+  h.checkpoint('restored-clients');
   await h.nav('/clients');
   await h.browser.$(`a*=E2E-${label}`).waitForDisplayed();
+  h.checkpoint('restored-case');
   await h.nav('/cases');
-  await h.browser.$(`a*=E2E-${label}-CASE`).click();
+  h.checkpoint('restored-case-route');
+  const restoredCase = await h.browser.$('table tbody a[href^="/cases/"]');
+  await restoredCase.waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('restored-case-identity');
+  assert.equal(
+    process.platform === 'win32'
+      ? (await restoredCase.getText()) === `E2E-${label}-CASE`
+      : await h.browser.execute(
+          (target, expected) => target.textContent === expected,
+          restoredCase,
+          `E2E-${label}-CASE`,
+        ),
+    true,
+  );
+  h.checkpoint('restored-case-open');
+  // Exercise keyboard activation too; WebKit's native scrolling click can stall on
+  // a long mixed-direction link, even after the exact restored identity is verified.
+  if (process.platform === 'win32') await restoredCase.click();
+  else {
+    await h.browser.execute((target) => target.focus(), restoredCase);
+    await h.browser.keys('Enter');
+  }
+  h.checkpoint('restored-documents');
   await h.click('المستندات');
   await h.waitText('fictional.pdf');
   h.checkpoint('verify-attachment-bytes');
@@ -404,7 +486,7 @@ async function restoreWithPassword(h) {
   await secret.waitForDisplayed({ timeout: 15000 });
   h.checkpoint('wrong-password');
   await secret.setValue('fictional incorrect password');
-  await h.click('استعادة النسخة');
+  await h.click(strings.restoreFrom.prepare);
   const alert = await h.browser.$('[role="alert"]');
   await alert.waitForDisplayed({ timeout: 30000 });
   assert.equal(await alert.getText(), 'كلمة المرور غير صحيحة. تحقق منها وحاول مرة أخرى.');
@@ -412,7 +494,8 @@ async function restoreWithPassword(h) {
   assert.equal(await h.browser.$('nav').isExisting(), false);
   h.checkpoint('original-password');
   await secret.setValue(password);
-  await h.click('استعادة النسخة');
+  await h.click(strings.restoreFrom.prepare);
+  await h.click(strings.backups.restoreConfirm);
   await h.browser.$('input[name="password"]').waitForDisplayed({ timeout: 60000 });
 }
 await scenario(
@@ -426,6 +509,27 @@ await scenario(
     await expectRestoredWorkspace(h, 'PORTABLE');
   },
 );
+await scenario('recovery-key-restore-stages-a-new-password', async (h) => {
+  await seedAndBackUp(h, 'RECOVERY');
+  const key = h.recoveryKey;
+  await rm(join(h.root, 'vault'), { recursive: true, force: true });
+  await h.launch();
+  await h.click(strings.gate.restoreFromBackup);
+  await h.click(strings.restoreFrom.chooseFile);
+  h.checkpoint('recovery-inputs');
+  await h.browser.$('input[name="restore-method"]').waitForDisplayed({ timeout: 15000 });
+  const choices = await h.browser.$$('input[name="restore-method"]');
+  await choices[1].click();
+  await h.browser.$('input[autocomplete="new-password"]').waitForDisplayed({ timeout: 15000 });
+  const fields = await h.browser.$$('input[type="password"]');
+  await fields[0].setValue(key);
+  await fields[1].setValue(restorePassword);
+  await fields[2].setValue(restorePassword);
+  await h.click(strings.restoreFrom.prepare);
+  h.checkpoint('recovery-preview');
+  await h.click(strings.backups.restoreConfirm);
+  await expectRestoredWorkspace(h, 'RECOVERY', restorePassword);
+});
 await scenario('incomplete-installation-restores-a-portable-backup', async (h) => {
   await seedAndBackUp(h, 'RECOVERED');
   // The database is lost; the security file and attachments remain.
@@ -502,21 +606,6 @@ await scenario('restart-persistence', async (h) => {
   await h.nav('/clients');
   await h.browser.$('a*=E2E-PERSISTENT').waitForDisplayed();
 });
-const outputDirectory = process.env.LEGALMASTER_E2E_OUTPUT_DIRECTORY ?? 'test-results/desktop';
-await mkdir(outputDirectory, { recursive: true });
-await writeFile(
-  join(outputDirectory, 'results.json'),
-  JSON.stringify(
-    {
-      platform: process.platform,
-      binarySha256: createHash('sha256')
-        .update(await readFile(binary))
-        .digest('hex'),
-      results,
-    },
-    null,
-    2,
-  ),
-);
+await retainOutcomes();
 for (const result of results) console.log(JSON.stringify(result));
 if (results.some((result) => result.result !== 'passed')) process.exitCode = 1;

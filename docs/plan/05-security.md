@@ -206,7 +206,7 @@ existing filename. All ordinary opens use SQLite flags without CREATE and refuse
 missing, empty, corrupt, legacy or newer-schema databases. Setup refuses existing
 database/security artifacts, managed-file directories, backup/snapshot directories
 and interrupted-operation artifacts. Status returns `vaultState` (`EMPTY`,
-`LOCKED`, `UNLOCKED`, `INCOMPLETE`, `INTERRUPTED`) alongside compatibility flags.
+`LOCKED`, `UNLOCKED`, `INCOMPLETE`, `INTERRUPTED`) alongside initialized/unlocked flags.
 Incomplete and interrupted states cannot show setup or unlock forms.
 
 Setup installs a flushed staged database/security pair through the same durable
@@ -223,5 +223,8 @@ unobserved auth mutations. Idle locking uses a 30-minute fallback on settings
 load failure, tracks scroll/wheel activity, and keeps a stable callback reference.
 The existing delayed-timer lifecycle-gap heuristic remains; replacing it with a
 native resume signal and reproducing target-device throttling are open tasks.
-Operation admission/session epochs and late-result cache protection remain open;
-commands have not been made asynchronous in this remediation slice.
+The 2026-10-10 integration adds operation admission, native session generations,
+selection invalidation and renderer late-result rejection. Native pickers and heavy
+backup work are asynchronous; cancellation and lock clear transient restoration
+state. See [07-backup-format.md](07-backup-format.md) and the
+[integration review](../reviews/2026-10-10-integration.md).

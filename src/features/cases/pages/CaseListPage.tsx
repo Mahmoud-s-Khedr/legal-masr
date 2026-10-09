@@ -24,14 +24,16 @@ import { PageHeader } from '../../../components/layout/PageHeader';
 import { CASE_STATUSES } from '../schemas/case.schema';
 import { CaseStatusBadge, OfficialReference } from '../components/CaseIdentity';
 import { useFormat } from '../../../i18n/LocalePresentation';
+import { localDateOnly } from '../../../lib/dateOnly';
 
 export function CaseListPage() {
   const { t } = useTranslation();
-  const format = useFormat();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
   const navigate = useNavigate();
+  const format = useFormat();
+  const today = localDateOnly();
   const {
     data: cases,
     isLoading,
@@ -117,6 +119,8 @@ export function CaseListPage() {
                 <th scope="col">{t('cases.columns.number')}</th>
                 <th scope="col">{t('cases.columns.official')}</th>
                 <th scope="col">{t('cases.columns.client')}</th>
+                <th scope="col">{t('cases.columns.court')}</th>
+                <th scope="col">{t('cases.columns.nextHearing')}</th>
                 <th scope="col">{t('cases.columns.status')}</th>
               </tr>
             </thead>
@@ -140,6 +144,29 @@ export function CaseListPage() {
                     )}
                   </td>
                   <td className="cell-wrap">{format.list(caseSummary.clientNames) || '—'}</td>
+                  <td className="cell-wrap cell-narrow">
+                    {caseSummary.courtName ? (
+                      <bdi dir="auto">{caseSummary.courtName}</bdi>
+                    ) : (
+                      <span className="cell-muted">—</span>
+                    )}
+                  </td>
+                  <td>
+                    {caseSummary.nextHearingDate ? (
+                      <span
+                        className={
+                          caseSummary.nextHearingDate < today ? 'pending-decision' : undefined
+                        }
+                      >
+                        <bdi>{format.date(caseSummary.nextHearingDate)}</bdi>
+                        {caseSummary.nextHearingDate < today && (
+                          <small>{t('cases.pendingDecision')}</small>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="cell-muted">—</span>
+                    )}
+                  </td>
                   <td>
                     <CaseStatusBadge
                       status={caseSummary.status}

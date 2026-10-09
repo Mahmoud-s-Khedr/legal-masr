@@ -28,33 +28,43 @@ pub fn root() -> Result<PathBuf, Error> {
 }
 
 // The runner writes one enum choice; paths never come from React or this file.
-pub fn selection(kind: &str) -> Result<PathBuf, Error> {
+// `native` returns None so the caller shows the real dialog (the runner then cancels it),
+// which keeps the native dialog path itself under test.
+pub fn selection(kind: &str) -> Result<Option<PathBuf>, Error> {
     let root = root()?;
     let choice = fs::read_to_string(root.join("dialog-selection"))?;
     match (kind, choice.as_str()) {
+        (_, "native") => Ok(None),
         (_, "cancel") => Err(Error::Cancelled),
         ("attachment", "attachment") => {
             let path = root.join("fixtures/fictional.pdf");
             if path.canonicalize()?.parent() != Some(root.join("fixtures").as_path()) {
                 return Err(Error::Operation);
             }
-            Ok(path)
+            Ok(Some(path))
         }
         ("backup", "corrupt") => {
             let path = root.join("fixtures/corrupt.lmsbackup");
             if path.canonicalize()?.parent() != Some(root.join("fixtures").as_path()) {
                 return Err(Error::Operation);
             }
-            Ok(path)
+            Ok(Some(path))
         }
-        // A backup carried out of the installation that made it, as a lawyer would
-        // carry it to a new machine. The runner copies it into the fixtures.
+        // The copy saved earlier by the `save` choice, restored on a fresh installation.
         ("backup", "portable") => {
-            let path = root.join("fixtures/portable.lmsbackup");
-            if path.canonicalize()?.parent() != Some(root.join("fixtures").as_path()) {
+            let path = root.join("exported/copy.lmsbackup");
+            if path.canonicalize()?.parent() != Some(root.join("exported").as_path()) {
                 return Err(Error::Operation);
             }
-            Ok(path)
+            Ok(Some(path))
+        }
+        ("save-backup", "save") => {
+            let folder = root.join("exported");
+            fs::create_dir_all(&folder)?;
+            if folder.canonicalize()?.parent() != Some(root.as_path()) {
+                return Err(Error::Operation);
+            }
+            Ok(Some(folder.join("copy.lmsbackup")))
         }
         ("backup", "backup") => {
             let mut backups = fs::read_dir(root.join("vault/Backups"))?
@@ -67,7 +77,7 @@ pub fn selection(kind: &str) -> Result<PathBuf, Error> {
             if path.canonicalize()?.parent() != Some(root.join("vault/Backups").as_path()) {
                 return Err(Error::Operation);
             }
-            Ok(path)
+            Ok(Some(path))
         }
         _ => Err(Error::Operation),
     }

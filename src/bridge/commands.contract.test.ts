@@ -192,10 +192,40 @@ const contracts = [
     [{ currentPassword: 'old password', newPassword: 'new password' }],
     () => bridge.changePassword('old password', 'new password'),
   ],
-  ['createBackup', 'backup_create', [], () => bridge.createBackup()],
+  [
+    'createBackup',
+    'backup_create',
+    [{ stamp: '2026-10-10-12-00-00' }],
+    () => bridge.createBackup('2026-10-10-12-00-00'),
+  ],
+  ['saveBackupCopy', 'backup_save_copy', [], () => bridge.saveBackupCopy()],
+  ['revealBackup', 'backup_reveal', [], () => bridge.revealBackup()],
+  [
+    'saveRecoveryKey',
+    'app_save_recovery_key',
+    [{ recoveryKey: 'fictional' }],
+    () => bridge.saveRecoveryKey('fictional'),
+  ],
+  ['print', 'app_print', [], () => bridge.print()],
+  [
+    'replaceRecoveryKey',
+    'app_replace_recovery_key',
+    [{ currentPassword: 'fictional' }],
+    () => bridge.replaceRecoveryKey('fictional'),
+  ],
+  [
+    'paymentDelete',
+    'payment_delete',
+    [{ id: 'payment-1' }],
+    () => bridge.paymentDelete('payment-1'),
+  ],
+  [
+    'expenseDelete',
+    'expense_delete',
+    [{ id: 'expense-1' }],
+    () => bridge.expenseDelete('expense-1'),
+  ],
   ['latestSuccessfulBackup', 'backup_latest_successful', [], () => bridge.latestSuccessfulBackup()],
-  ['validateBackup', 'backup_validate', [], () => bridge.validateBackup()],
-  ['restoreBackup', 'backup_restore', [], () => bridge.restoreBackup()],
   [
     'selectBackupForRestore',
     'backup_select_for_restore',
@@ -203,8 +233,8 @@ const contracts = [
     () => bridge.selectBackupForRestore(),
   ],
   [
-    'restoreSelectedBackup',
-    'backup_restore_selected',
+    'prepareBackupRestore',
+    'backup_prepare_restore',
     [
       {
         token: 'one-time-token',
@@ -212,11 +242,18 @@ const contracts = [
       },
     ],
     () =>
-      bridge.restoreSelectedBackup('one-time-token', {
+      bridge.prepareBackupRestore('one-time-token', {
         kind: 'password',
         secret: 'a secure local password',
       }),
   ],
+  [
+    'commitBackupRestore',
+    'backup_commit_restore',
+    [{ token: 'prepared' }],
+    () => bridge.commitBackupRestore('prepared'),
+  ],
+  ['cancelBackupRestore', 'backup_cancel_restore', [], () => bridge.cancelBackupRestore()],
   [
     'openDeveloperContact',
     'settings_open_developer_contact',
@@ -544,8 +581,7 @@ describe('canonical Tauri bridge payload contracts', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('covers every bridge method', () => {
-    expect(contracts).toHaveLength(72);
-    expect(Object.keys(bridge)).toHaveLength(72);
+    expect(contracts.map((contract) => contract[0]).sort()).toEqual(Object.keys(bridge).sort());
   });
 
   it.each(contracts)(

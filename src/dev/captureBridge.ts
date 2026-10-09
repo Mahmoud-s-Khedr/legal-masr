@@ -63,6 +63,8 @@ const caseSummary: CaseSummary = {
   status: 'ACTIVE',
   clientNames: [client.fullName],
   archivedAt: null,
+  courtName: 'محكمة شمال القاهرة الابتدائية',
+  nextHearingDate: null,
 };
 const caseItem: CaseDto = {
   ...caseSummary,
@@ -280,6 +282,18 @@ export async function captureInvoke<T>(command: string): Promise<T> {
       },
     ],
     backup_latest_successful: { completedAt: stamp, archiveSizeBytes: 12000 },
+    backup_create: 'LegalMasr-backup-2026-10-08-1052.lmsbackup',
+    backup_save_copy: 'LegalMasr-backup-2026-10-08-1052.lmsbackup',
+    backup_select_for_restore: {
+      token: 'fixture-selection',
+      fileName: 'legal-masr-2026-10-10-12-00-00-fixture.lmsbackup',
+    },
+    backup_prepare_restore: {
+      token: 'fixture-prepared',
+      createdAt: stamp,
+      documentCount: 1,
+      passwordSource: 'currentPassword',
+    },
     fee_agreement_save: {
       id: 'demo-fee-1',
       caseId: caseItem.id,
