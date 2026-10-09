@@ -1,0 +1,39 @@
+[
+  {
+    "label": "P1 cold start -> deep link /settings?tab=general (first visit)",
+    "immediate": ["", "", "", "Saturday", "60"],
+    "after2500ms": ["", "", "", "Saturday", "60"]
+  },
+  {
+    "label": "P2 cold start -> sidebar Settings -> click Display tab",
+    "immediate": ["English", "Use device setting", "Day/month/year (03/10/2026)", "Saturday", "60"],
+    "after2500ms": [
+      "English",
+      "Use device setting",
+      "Day/month/year (03/10/2026)",
+      "Saturday",
+      "60"
+    ]
+  },
+  {
+    "label": "P2b ... then sidebar Today, then history.back() to /settings?tab=general",
+    "immediate": ["", "", "", "Saturday", "60"],
+    "after2500ms": ["", "", "", "Saturday", "60"]
+  },
+  {
+    "label": "P3 in-session onboarding -> go(/) -> deep link /settings?tab=general",
+    "immediate": ["", "", "", "Saturday", "60"],
+    "after2500ms": ["", "", "", "Saturday", "60"]
+  },
+  {
+    "label": "P4 in-session onboarding -> sidebar Settings -> click Display tab",
+    "immediate": [],
+    "after2500ms": [
+      "English",
+      "Use device setting",
+      "Day/month/year (03/10/2026)",
+      "Saturday",
+      "60"
+    ]
+  }
+]

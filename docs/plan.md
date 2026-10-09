@@ -54,3 +54,16 @@ This work does not certify phase acceptance or public-beta readiness.
 A later [beta-readiness pass](reviews/2026-10-08-beta-pass.md) fixed the reproducible editing, layout, theme and
 error-message defects and added migration `0002`. The recommendation is unchanged: do not give testers real client
 data until backups are portable and restore-safe (B01/B02) and the app has been run on Windows and macOS.
+
+## Portable backup recovery — 2026-10-09
+
+Format v2 backups carry a copy of the vault's password and recovery envelopes, so
+a backup restores into an empty or incomplete installation with the original
+password or the recovery key; the setup screen, the `INCOMPLETE` gate and
+Settings → Backups offer it. Design, error contract and limits are in
+[plan/07-backup-format.md](plan/07-backup-format.md); the evidence and the
+unverified items are in [the fix-pass report](reviews/2026-10-09-fix-pass-report.md).
+This **narrows** release blocker 2 and B01 (software design and Linux tests); it
+does **not** close them: the Windows↔macOS exercise, repeated restores on
+physical devices, and the other roadmap blockers remain open, so the
+"do not give testers real client data" recommendation is unchanged.
