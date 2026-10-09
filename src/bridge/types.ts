@@ -16,6 +16,8 @@ export type AppErrorCode =
   | 'ALREADY_INITIALIZED'
   | 'RECOVERY_KEY_INVALID'
   | 'BACKUP_CORRUPTED'
+  | 'BACKUP_KEY_MISMATCH'
+  | 'BACKUP_NEWER_VERSION'
   | 'LEGACY_DATA_MIGRATION_REQUIRED'
   | 'VAULT_INTERRUPTED'
   | 'VAULT_MISSING'
@@ -60,6 +62,15 @@ export type SettingsUpdateInput = {
   weekStartsOn: number;
   defaultReminderMinutes: number;
   lockTimeoutMinutes: number;
+};
+/** A backup chosen in the native picker. The path stays in Rust; only the token is held here. */
+export type BackupSelection = {
+  token: string;
+  formatVersion: number;
+};
+export type RestoreCredential = {
+  kind: 'password' | 'recoveryKey';
+  secret: string;
 };
 export type LatestSuccessfulBackup = {
   completedAt: string;

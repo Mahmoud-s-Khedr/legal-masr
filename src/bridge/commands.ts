@@ -29,7 +29,9 @@ import type {
   Settings,
   SettingsUpdateInput,
   LawyerProfile,
+  BackupSelection,
   LatestSuccessfulBackup,
+  RestoreCredential,
   FeeAgreementInput,
   ExpenseDto,
   ExpenseInput,
@@ -68,6 +70,9 @@ export const bridge = {
   latestSuccessfulBackup: () => invoke<LatestSuccessfulBackup | null>('backup_latest_successful'),
   validateBackup: () => invoke<void>('backup_validate'),
   restoreBackup: () => invoke<void>('backup_restore'),
+  selectBackupForRestore: () => invoke<BackupSelection>('backup_select_for_restore'),
+  restoreSelectedBackup: (token: string, credential: RestoreCredential) =>
+    invoke<void>('backup_restore_selected', { token, credential }),
   openDeveloperContact: (contact: DeveloperContact) =>
     invoke<void>('settings_open_developer_contact', { contact }),
   settings: () => invoke<Settings>('settings_get'),

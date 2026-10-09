@@ -157,6 +157,7 @@ pub fn unlock<R: Runtime>(
 pub fn lock(state: &AppState) -> Result<(), Error> {
     drop(state.master_key.lock().map_err(|_| Error::Locked)?.take());
     state.clear_document_sources()?;
+    state.clear_restore_selection()?;
     Ok(())
 }
 

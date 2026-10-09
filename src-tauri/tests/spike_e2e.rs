@@ -77,14 +77,24 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
         b"managed document bytes",
     )
     .unwrap();
+    let security_file = security::SecurityFile {
+        version: 1,
+        salt: STANDARD.encode(new_salt),
+        memory_kib: 19_456,
+        iterations: 2,
+        parallelism: 1,
+        password_envelope: new_password_envelope.clone(),
+        recovery_envelope: recovery_envelope.clone(),
+    };
     let backup_path = backup::create(
         &db_path,
         &master,
+        &security_file,
         backup_dir.path().to_str().unwrap(),
         &source_documents,
     )
     .unwrap();
-    backup::validate(&backup_path, &master).unwrap();
+    backup::validate(&backup_path, Some(&master), None).unwrap();
 
     let active_dir = tempfile::tempdir().unwrap();
     let active_db_path = active_dir.path().join("legalmaster.sqlite");
@@ -98,7 +108,14 @@ fn full_security_and_backup_lifecycle_survives_close_reopen_and_restore() {
             .unwrap();
     }
 
-    backup::restore(&active_db_path, &master, &backup_path, &active_documents).unwrap();
+    backup::restore(
+        &active_db_path,
+        &active_documents,
+        &backup_path,
+        Some(&master),
+        None,
+    )
+    .unwrap();
 
     let conn = db::open_db(&active_db_path, &master).unwrap();
     let restored_value: String = conn

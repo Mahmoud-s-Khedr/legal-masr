@@ -86,6 +86,30 @@ pub struct LatestSuccessfulBackupDto {
     pub archive_size_bytes: Option<i64>,
 }
 
+/// A file chosen in the native picker for restoring. The path never leaves
+/// Rust; the token is the only handle the renderer holds.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupSelectionDto {
+    pub token: String,
+    pub format_version: u8,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RestoreCredentialKind {
+    Password,
+    RecoveryKey,
+}
+
+#[derive(Deserialize, zeroize::Zeroize, zeroize::ZeroizeOnDrop)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoreCredentialInput {
+    #[zeroize(skip)]
+    pub kind: RestoreCredentialKind,
+    pub secret: String,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LawyerProfileDto {

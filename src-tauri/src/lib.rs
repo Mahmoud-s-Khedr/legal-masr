@@ -61,6 +61,8 @@ pub fn run() {
             commands::backup::backup_latest_successful,
             commands::backup::backup_validate,
             commands::backup::backup_restore,
+            commands::backup::backup_select_for_restore,
+            commands::backup::backup_restore_selected,
             commands::settings::settings_get,
             commands::settings::settings_open_developer_contact,
             commands::settings::settings_update,

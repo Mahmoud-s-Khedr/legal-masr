@@ -1,8 +1,8 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { errorMessage } from '../../../bridge/errors';
-import { ConfirmDialog } from '../../../components/forms/FormDialog';
+import { asAppError, actionableErrorMessage, errorMessage } from '../../../bridge/errors';
+import { ConfirmDialog, FormDialog } from '../../../components/forms/FormDialog';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Skeleton } from '../../../components/ui/skeleton';
@@ -16,6 +16,7 @@ import {
   useRestoreBackup,
   useValidateBackup,
 } from '../api/backupsApi';
+import { RestoreFromBackup } from '../components/RestoreFromBackup';
 
 export function BackupSettingsPanel() {
   const { t } = useTranslation();
@@ -25,6 +26,7 @@ export function BackupSettingsPanel() {
   const restoreBackup = useRestoreBackup();
   const latestBackup = useLatestSuccessfulBackup();
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [otherOpen, setOtherOpen] = useState(false);
   // Backup freshness is judged against when the panel was opened.
   const [openedAt] = useState(() => Date.now());
 
@@ -43,6 +45,12 @@ export function BackupSettingsPanel() {
     setRestoreOpen(false);
     once((settled) => restoreBackup.mutate(undefined, { onSettled: settled }));
   };
+
+  // A backup made by another installation cannot be opened with this vault's key, but its
+  // own password or recovery key opens it.
+  const foreignBackup =
+    asAppError(restoreBackup.error)?.code === 'BACKUP_KEY_MISMATCH' ||
+    asAppError(validateBackup.error)?.code === 'BACKUP_KEY_MISMATCH';
 
   const latest = latestBackup.data;
   const ageDays = latest
@@ -124,7 +132,9 @@ export function BackupSettingsPanel() {
           )}
           {validateBackup.isError && (
             <Alert variant="destructive">
-              <AlertDescription>{t('backups.validateFailed')}</AlertDescription>
+              <AlertDescription>
+                {actionableErrorMessage(validateBackup.error, t('backups.validateFailed'))}
+              </AlertDescription>
             </Alert>
           )}
         </Card>
@@ -155,12 +165,38 @@ export function BackupSettingsPanel() {
               </AlertDescription>
             </Alert>
           )}
+          {foreignBackup && (
+            <div className="backup-other-installation">
+              <p className="muted">{t('backups.restoreOtherHint')}</p>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setOtherOpen(true)}
+                disabled={busy}
+              >
+                {t('backups.restoreWithCredentials')}
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
       <p className="security-note backup-offsite">
         <Icon name="shield" size={20} />
         <span>{t('backups.offsiteAdvice')}</span>
       </p>
+      <FormDialog
+        open={otherOpen}
+        onOpenChange={setOtherOpen}
+        title={t('backups.restoreOtherTitle')}
+      >
+        {otherOpen && (
+          <RestoreFromBackup
+            replacesWorkspace
+            onRestored={() => setOtherOpen(false)}
+            onCancel={() => setOtherOpen(false)}
+          />
+        )}
+      </FormDialog>
       <ConfirmDialog
         open={restoreOpen}
         onOpenChange={setRestoreOpen}

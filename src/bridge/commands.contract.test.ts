@@ -197,6 +197,27 @@ const contracts = [
   ['validateBackup', 'backup_validate', [], () => bridge.validateBackup()],
   ['restoreBackup', 'backup_restore', [], () => bridge.restoreBackup()],
   [
+    'selectBackupForRestore',
+    'backup_select_for_restore',
+    [],
+    () => bridge.selectBackupForRestore(),
+  ],
+  [
+    'restoreSelectedBackup',
+    'backup_restore_selected',
+    [
+      {
+        token: 'one-time-token',
+        credential: { kind: 'password', secret: 'a secure local password' },
+      },
+    ],
+    () =>
+      bridge.restoreSelectedBackup('one-time-token', {
+        kind: 'password',
+        secret: 'a secure local password',
+      }),
+  ],
+  [
     'openDeveloperContact',
     'settings_open_developer_contact',
     [{ contact: 'email' }],
@@ -523,8 +544,8 @@ describe('canonical Tauri bridge payload contracts', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('covers every bridge method', () => {
-    expect(contracts).toHaveLength(70);
-    expect(Object.keys(bridge)).toHaveLength(70);
+    expect(contracts).toHaveLength(72);
+    expect(Object.keys(bridge)).toHaveLength(72);
   });
 
   it.each(contracts)(

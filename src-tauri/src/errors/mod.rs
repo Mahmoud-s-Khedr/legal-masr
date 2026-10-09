@@ -28,6 +28,10 @@ pub enum Error {
     InvalidRecovery,
     #[error("backup is invalid")]
     BackupInvalid,
+    #[error("backup key does not belong to this vault")]
+    BackupKeyMismatch,
+    #[error("backup was made by a newer version")]
+    BackupNewerVersion,
     #[error("a populated legacy vault needs an explicit conversion")]
     LegacyDataMigrationRequired,
     #[error("vault operation interrupted; recovery required")]
@@ -124,6 +128,8 @@ impl Error {
             Self::Initialized => "ALREADY_INITIALIZED",
             Self::InvalidRecovery => "RECOVERY_KEY_INVALID",
             Self::BackupInvalid => "BACKUP_CORRUPTED",
+            Self::BackupKeyMismatch => "BACKUP_KEY_MISMATCH",
+            Self::BackupNewerVersion => "BACKUP_NEWER_VERSION",
             Self::LegacyDataMigrationRequired => "LEGACY_DATA_MIGRATION_REQUIRED",
             Self::VaultInterrupted => "VAULT_INTERRUPTED",
             Self::VaultMissing => "VAULT_MISSING",
@@ -164,6 +170,8 @@ impl Error {
             Self::Initialized => "تم إعداد التطبيق بالفعل.",
             Self::InvalidRecovery => "مفتاح الاسترداد غير صحيح.",
             Self::BackupInvalid => "ملف النسخة الاحتياطية غير صالح.",
+            Self::BackupKeyMismatch => "هذه النسخة الاحتياطية أُنشئت في تثبيت آخر ولا يمكن فتحها هنا.",
+            Self::BackupNewerVersion => "أُنشئت هذه النسخة الاحتياطية بإصدار أحدث من التطبيق.",
             Self::LegacyDataMigrationRequired => {
                 "تحتوي قاعدة البيانات القديمة على سجلات وتحتاج إلى ترحيل مخصص قبل التحديث."
             }

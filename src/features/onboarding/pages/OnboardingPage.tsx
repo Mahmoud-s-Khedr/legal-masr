@@ -13,6 +13,7 @@ import { Card } from '../../../components/ui/card';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Field } from '../../../components/forms/FormField';
 import { Input } from '../../../components/ui/input';
+import { RestoreFromBackup } from '../../backups/components/RestoreFromBackup';
 import { useInitializeVault, useRecoverAccess, useUnlockVault } from '../api/onboardingApi';
 import {
   PASSWORD_MIN_LENGTH,
@@ -24,13 +25,16 @@ import {
   unlockSchema,
 } from '../schemas/onboarding.schema';
 
-export type OnboardingSubGate = 'setup' | 'unlock' | 'recovery' | 'recovery-key';
+export type OnboardingSubGate = 'setup' | 'unlock' | 'recovery' | 'recovery-key' | 'restore';
 
 export function OnboardingPage({
   subGate,
   recoveryKey,
   onSwitchToRecovery,
   onBackToUnlock,
+  onSwitchToRestore,
+  onLeaveRestore,
+  onRestored,
   onSetupSucceeded,
   onUnlocked,
   onRecovered,
@@ -40,6 +44,10 @@ export function OnboardingPage({
   recoveryKey: string;
   onSwitchToRecovery: () => void;
   onBackToUnlock?: () => void;
+  /** Offered on a fresh installation: bring a workspace back from a backup. */
+  onSwitchToRestore?: () => void;
+  onLeaveRestore?: () => void;
+  onRestored?: () => void;
   onSetupSucceeded: (recoveryKey: string) => void;
   onUnlocked: () => void;
   onRecovered: () => void;
@@ -127,6 +135,8 @@ export function OnboardingPage({
               initializeVault.reset();
             }}
           />
+        ) : subGate === 'restore' ? (
+          <RestoreFromBackup onRestored={() => onRestored?.()} onCancel={onLeaveRestore} />
         ) : subGate === 'unlock' ? (
           <UnlockForm
             busy={busy}
@@ -153,6 +163,11 @@ export function OnboardingPage({
           <Alert variant="destructive">
             <AlertDescription>{errorMessage(error, t('app.defaultError'))}</AlertDescription>
           </Alert>
+        )}
+        {subGate === 'setup' && onSwitchToRestore && (
+          <Button variant="ghost" className="gate-link" onClick={onSwitchToRestore}>
+            {t('gate.restoreFromBackup')}
+          </Button>
         )}
         {subGate === 'unlock' && (
           <Button variant="ghost" className="gate-link" onClick={onSwitchToRecovery}>

@@ -26,6 +26,18 @@ struct Intent {
     database: String,
     attachments: String,
     had_attachments: bool,
+    /// Intents written before these fields existed always had a database to
+    /// preserve and never replaced `security.json`.
+    #[serde(default = "default_true")]
+    had_database: bool,
+    #[serde(default)]
+    had_security: bool,
+    #[serde(default)]
+    adopt_security: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 pub fn pending(root: &Path) -> bool {
@@ -106,12 +118,25 @@ pub fn install_setup(root: &Path) -> Result<(), Error> {
             database: "legalmaster.sqlite".into(),
             attachments: "attachments".into(),
             had_attachments: false,
+            had_database: false,
+            had_security: false,
+            adopt_security: false,
         },
     )?;
     recover(root)
 }
 
-pub fn install_restore(active: &Path, attachments: &Path) -> Result<(), Error> {
+/// Replaces the vault database and attachments with the staged `*.restore.tmp`
+/// copies. With `adopt_security` a staged `security.restore.tmp` replaces
+/// `security.json` too (a backup from another installation brings its own
+/// password and recovery envelopes). Whatever existed is moved, never deleted,
+/// into `EmergencySnapshots/<operation-id>/`; missing pieces (a fresh or
+/// incomplete installation) are skipped.
+pub fn install_restore(
+    active: &Path,
+    attachments: &Path,
+    adopt_security: bool,
+) -> Result<(), Error> {
     let root = active.parent().ok_or(Error::VaultIncomplete)?;
     if attachments.parent() != Some(root) {
         return Err(Error::VaultIncomplete);
@@ -123,21 +148,34 @@ pub fn install_restore(active: &Path, attachments: &Path) -> Result<(), Error> {
         database: basename(active)?,
         attachments: basename(attachments)?,
         had_attachments: attachments.exists(),
+        had_database: active.exists(),
+        had_security: root.join("security.json").exists(),
+        adopt_security,
     };
     sync_file(&active.with_extension("restore.tmp"))?;
     flush_tree(&attachments.with_extension("restore.tmp"))?;
+    if adopt_security {
+        sync_file(&root.join("security.restore.tmp"))?;
+    }
     let snapshots = root.join("EmergencySnapshots");
-    fs::create_dir_all(&snapshots)?;
     let snapshot = snapshots.join(&intent.id);
-    fs::create_dir(&snapshot)?;
+    let preserves_something = intent.had_database || intent.had_attachments || intent.had_security;
+    if preserves_something {
+        fs::create_dir_all(&snapshots)?;
+        fs::create_dir(&snapshot)?;
+    }
     let security = root.join("security.json");
-    if security.exists() {
+    // A kept security file is copied now; a replaced one is moved during
+    // recovery, where the move can be resumed after an interruption.
+    if intent.had_security && !adopt_security {
         let preserved = snapshot.join("security.json");
         fs::copy(security, &preserved)?;
         sync_file(&preserved)?;
     }
-    sync_directory(&snapshot)?;
-    sync_directory(&snapshots)?;
+    if preserves_something {
+        sync_directory(&snapshot)?;
+        sync_directory(&snapshots)?;
+    }
     sync_directory(root)?;
     write_intent(root, &intent)?;
     recover(root)
@@ -199,12 +237,15 @@ fn recover_with_checkpoint(
             let snapshot: PathBuf = root.join("EmergencySnapshots").join(&intent.id);
             let old_db = snapshot.join("database.sqlite");
             let old_documents = snapshot.join("attachments");
-            if !old_db.exists() {
+            let old_security = snapshot.join("security.json");
+            let active_security = root.join("security.json");
+            if intent.had_database && !old_db.exists() {
                 // The staged DB must still exist before admitting the first
                 // destructive rename. A damaged intent cannot consume a vault.
                 if !active.with_extension("restore.tmp").is_file() {
                     return Err(Error::VaultIncomplete);
                 }
+                fs::create_dir_all(&snapshot)?;
                 fs::rename(&active, &old_db)?;
                 sync_directory(&snapshot)?;
                 sync_directory(root)?;
@@ -214,7 +255,17 @@ fn recover_with_checkpoint(
                 if !documents.with_extension("restore.tmp").is_dir() {
                     return Err(Error::VaultIncomplete);
                 }
+                fs::create_dir_all(&snapshot)?;
                 fs::rename(&documents, &old_documents)?;
+                sync_directory(&snapshot)?;
+                sync_directory(root)?;
+            }
+            if intent.adopt_security && intent.had_security && !old_security.exists() {
+                if !root.join("security.restore.tmp").is_file() {
+                    return Err(Error::VaultIncomplete);
+                }
+                fs::create_dir_all(&snapshot)?;
+                fs::rename(&active_security, &old_security)?;
                 sync_directory(&snapshot)?;
                 sync_directory(root)?;
             }
@@ -222,6 +273,10 @@ fn recover_with_checkpoint(
             move_if_staged(&documents.with_extension("restore.tmp"), &documents)?;
             checkpoint(3)?;
             move_if_staged(&active.with_extension("restore.tmp"), &active)?;
+            if intent.adopt_security {
+                move_if_staged(&root.join("security.restore.tmp"), &active_security)?;
+            }
+            fs::create_dir_all(root.join("Backups"))?;
             checkpoint(4)?;
         }
     }
@@ -250,6 +305,9 @@ mod tests {
                     database: "legalmaster.sqlite".into(),
                     attachments: "attachments".into(),
                     had_attachments: false,
+                    had_database: false,
+                    had_security: false,
+                    adopt_security: false,
                 },
             )
             .unwrap();
@@ -306,6 +364,9 @@ mod tests {
                         database: "legalmaster.sqlite".into(),
                         attachments: "attachments".into(),
                         had_attachments,
+                        had_database: true,
+                        had_security: true,
+                        adopt_security: false,
                     },
                 )
                 .unwrap();
@@ -376,5 +437,173 @@ mod tests {
         );
         assert_eq!(fs::read(root.join("legalmaster.tmp")).unwrap(), b"new db");
         assert!(pending(root));
+    }
+
+    /// Replaces whatever was there, in every combination of what existed and
+    /// whether the archive's security file is adopted, at every interruption.
+    #[test]
+    fn every_interrupted_replacement_of_database_attachments_and_security_rolls_forward() {
+        for had_database in [true, false] {
+            for had_attachments in [true, false] {
+                for had_security in [true, false] {
+                    for adopt_security in [true, false] {
+                        for stop in 1..=5 {
+                            let temp = tempfile::tempdir().unwrap();
+                            let root = temp.path();
+                            let id = uuid::Uuid::new_v4().to_string();
+                            let snapshot = root.join("EmergencySnapshots").join(&id);
+                            if had_database {
+                                fs::write(root.join("legalmaster.sqlite"), b"old db").unwrap();
+                            }
+                            if had_attachments {
+                                fs::create_dir(root.join("attachments")).unwrap();
+                                fs::write(root.join("attachments/old.pdf"), b"old file").unwrap();
+                            }
+                            if had_security {
+                                fs::write(root.join("security.json"), b"old security").unwrap();
+                                if !adopt_security {
+                                    fs::create_dir_all(&snapshot).unwrap();
+                                    fs::write(snapshot.join("security.json"), b"old security")
+                                        .unwrap();
+                                }
+                            }
+                            fs::write(root.join("legalmaster.restore.tmp"), b"new db").unwrap();
+                            fs::create_dir(root.join("attachments.restore.tmp")).unwrap();
+                            fs::write(root.join("attachments.restore.tmp/new.pdf"), b"new file")
+                                .unwrap();
+                            if adopt_security {
+                                fs::write(root.join("security.restore.tmp"), b"new security")
+                                    .unwrap();
+                            }
+                            write_intent(
+                                root,
+                                &Intent {
+                                    version: 1,
+                                    id,
+                                    kind: Kind::Restore,
+                                    database: "legalmaster.sqlite".into(),
+                                    attachments: "attachments".into(),
+                                    had_attachments,
+                                    had_database,
+                                    had_security,
+                                    adopt_security,
+                                },
+                            )
+                            .unwrap();
+                            let _ = recover_with_checkpoint(root, |step| {
+                                if step == stop {
+                                    Err(Error::Operation)
+                                } else {
+                                    Ok(())
+                                }
+                            });
+                            recover(root).unwrap();
+                            recover(root).unwrap();
+                            let case = format!(
+                                "db={had_database} files={had_attachments} security={had_security} adopt={adopt_security} stop={stop}"
+                            );
+                            assert_eq!(
+                                fs::read(root.join("legalmaster.sqlite")).unwrap(),
+                                b"new db",
+                                "{case}"
+                            );
+                            assert_eq!(
+                                fs::read(root.join("attachments/new.pdf")).unwrap(),
+                                b"new file",
+                                "{case}"
+                            );
+                            assert!(!root.join("attachments/old.pdf").exists(), "{case}");
+                            let expected_security: Option<&[u8]> = if adopt_security {
+                                Some(b"new security")
+                            } else if had_security {
+                                Some(b"old security")
+                            } else {
+                                None
+                            };
+                            assert_eq!(
+                                fs::read(root.join("security.json")).ok().as_deref(),
+                                expected_security,
+                                "{case}"
+                            );
+                            if had_database {
+                                assert_eq!(
+                                    fs::read(snapshot.join("database.sqlite")).unwrap(),
+                                    b"old db",
+                                    "{case}"
+                                );
+                            }
+                            if had_attachments {
+                                assert_eq!(
+                                    fs::read(snapshot.join("attachments/old.pdf")).unwrap(),
+                                    b"old file",
+                                    "{case}"
+                                );
+                            }
+                            if had_security {
+                                assert_eq!(
+                                    fs::read(snapshot.join("security.json")).unwrap(),
+                                    b"old security",
+                                    "{case}"
+                                );
+                            }
+                            assert!(root.join("Backups").is_dir(), "{case}");
+                            assert!(!root.join("security.restore.tmp").exists(), "{case}");
+                            assert!(!pending(root), "{case}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn an_intent_written_before_the_security_fields_existed_still_recovers() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        let id = uuid::Uuid::new_v4().to_string();
+        let snapshot = root.join("EmergencySnapshots").join(&id);
+        fs::create_dir_all(&snapshot).unwrap();
+        fs::write(snapshot.join("security.json"), b"old security").unwrap();
+        fs::write(root.join("security.json"), b"old security").unwrap();
+        fs::write(root.join("legalmaster.sqlite"), b"old db").unwrap();
+        fs::write(root.join("legalmaster.restore.tmp"), b"new db").unwrap();
+        fs::create_dir(root.join("attachments.restore.tmp")).unwrap();
+        fs::write(
+            root.join(JOURNAL),
+            format!(
+                r#"{{"version":1,"id":"{id}","kind":"Restore","database":"legalmaster.sqlite","attachments":"attachments","had_attachments":false}}"#
+            ),
+        )
+        .unwrap();
+        recover(root).unwrap();
+        assert_eq!(
+            fs::read(root.join("legalmaster.sqlite")).unwrap(),
+            b"new db"
+        );
+        assert_eq!(
+            fs::read(root.join("security.json")).unwrap(),
+            b"old security"
+        );
+        assert_eq!(
+            fs::read(snapshot.join("database.sqlite")).unwrap(),
+            b"old db"
+        );
+    }
+
+    #[test]
+    fn a_journal_with_fields_this_build_does_not_know_fails_closed() {
+        let temp = tempfile::tempdir().unwrap();
+        fs::write(temp.path().join("legalmaster.sqlite"), b"live").unwrap();
+        fs::write(
+            temp.path().join(JOURNAL),
+            r#"{"version":1,"id":"00000000-0000-0000-0000-000000000000","kind":"Restore","database":"legalmaster.sqlite","attachments":"attachments","had_attachments":false,"from_the_future":true}"#,
+        )
+        .unwrap();
+        assert!(recover(temp.path()).is_err());
+        assert_eq!(
+            fs::read(temp.path().join("legalmaster.sqlite")).unwrap(),
+            b"live"
+        );
+        assert!(pending(temp.path()));
     }
 }
