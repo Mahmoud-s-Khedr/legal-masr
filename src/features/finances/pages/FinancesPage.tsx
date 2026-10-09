@@ -1,3 +1,4 @@
+import { fieldError } from '@/lib/fieldError';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -501,7 +502,7 @@ export function PaymentForm({
         <Field
           label={<>{t('finances.case')}</>}
           required
-          error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
+          error={fieldError(form.formState.errors.caseId, t)}
         >
           <EntityPicker
             ref={(node) => form.register('caseId').ref(node)}
@@ -518,7 +519,7 @@ export function PaymentForm({
         <Field
           label={<>{t('finances.payer')}</>}
           required
-          error={form.formState.errors.payerClientId ? t('forms.invalid') : undefined}
+          error={fieldError(form.formState.errors.payerClientId, t)}
         >
           <EntityPicker
             ref={(node) => form.register('payerClientId').ref(node)}
@@ -537,7 +538,7 @@ export function PaymentForm({
           <Field
             label={<>{t('finances.amount')}</>}
             required
-            error={form.formState.errors.amount ? t('forms.invalid') : undefined}
+            error={fieldError(form.formState.errors.amount, t)}
           >
             <Input
               required
@@ -551,7 +552,7 @@ export function PaymentForm({
           <Field
             label={<>{t('finances.paymentDate')}</>}
             required
-            error={form.formState.errors.date ? t('forms.invalid') : undefined}
+            error={fieldError(form.formState.errors.date, t)}
           >
             <DatePicker
               required
@@ -695,7 +696,7 @@ export function ExpenseForm({
         <div className="settings-two-columns">
           <Field
             label={<>{t('finances.case')}</>}
-            error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
+            error={fieldError(form.formState.errors.caseId, t)}
           >
             <EntityPicker
               value={caseId}
@@ -726,7 +727,7 @@ export function ExpenseForm({
           <Field
             label={<>{t('finances.amount')}</>}
             required
-            error={form.formState.errors.amount ? t('forms.invalid') : undefined}
+            error={fieldError(form.formState.errors.amount, t)}
           >
             <Input
               required
@@ -740,7 +741,7 @@ export function ExpenseForm({
           <Field
             label={<>{t('finances.expenseDate')}</>}
             required
-            error={form.formState.errors.date ? t('forms.invalid') : undefined}
+            error={fieldError(form.formState.errors.date, t)}
           >
             <DatePicker
               required

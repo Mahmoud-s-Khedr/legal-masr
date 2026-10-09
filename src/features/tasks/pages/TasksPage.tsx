@@ -1,3 +1,4 @@
+import { fieldError } from '@/lib/fieldError';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { actionableErrorMessage } from '@/bridge/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -404,7 +405,7 @@ export function TaskForm({
         <Field
           label={<>{t('tasks.task')}</>}
           required
-          error={form.formState.errors.title ? t('forms.invalid') : undefined}
+          error={fieldError(form.formState.errors.title, t)}
         >
           <Input
             required
@@ -419,7 +420,7 @@ export function TaskForm({
           <Field
             label={<>{t('tasks.dueDate')}</>}
             required
-            error={form.formState.errors.dueDate ? t('forms.invalid') : undefined}
+            error={fieldError(form.formState.errors.dueDate, t)}
           >
             <DatePicker
               required

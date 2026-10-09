@@ -85,7 +85,11 @@ export function EntityPicker({
           </ComboboxList>
         </ComboboxContent>
       </Combobox>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-1.5 text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -171,9 +175,13 @@ export function EntityMultiPicker({
           )}
         </ComboboxContent>
       </Combobox>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-1.5 text-sm text-destructive">
+          {error}
+        </p>
+      )}
       {onCreate && (
-        <Button type="button" variant="link" onClick={create}>
+        <Button type="button" variant="link" className="px-0" onClick={create}>
           {t('cases.form.addClientLink')}
         </Button>
       )}

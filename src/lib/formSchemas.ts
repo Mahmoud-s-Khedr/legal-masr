@@ -5,6 +5,7 @@ export const requiredText = z.string().trim().min(1);
 export const optionalText = z.string();
 export const requiredDate = z
   .string()
+  .min(1)
   .refine((value) => !!normalizeTypedDate(value), 'Invalid date');
 export const optionalDate = z
   .string()
@@ -14,6 +15,8 @@ export const timeText = z
   .refine((value) => !value || /^([01]\d|2[0-3]):[0-5]\d$/.test(value), 'Invalid time');
 export const moneyText = z
   .string()
+  .trim()
+  .min(1)
   .refine((value) => (parseMoneyToMinor(value) ?? 0) > 0, 'Invalid amount');
 export const taskDraftSchema = z.object({
   title: requiredText,

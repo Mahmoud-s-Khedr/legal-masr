@@ -867,6 +867,7 @@
     "description": "Keep each power of attorney with its clients and the lawyers named in it.",
     "kicker": "Power of attorney file",
     "add": "Add power of attorney",
+    "editorDescription": "Record who granted the power of attorney, the lawyers it names and where it was issued.",
     "save": "Save power of attorney",
     "editTitle": "Edit power of attorney",
     "saveError": "Could not save the power of attorney. Your entries are kept; please try again.",

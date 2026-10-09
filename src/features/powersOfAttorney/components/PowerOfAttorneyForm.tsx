@@ -6,7 +6,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Field } from '@/components/forms/FormField';
-import { FieldGroup, FieldSet, FieldLegend } from '@/components/ui/field';
+import { FieldGroup } from '@/components/ui/field';
 import { DatePicker } from '@/components/forms/DatePicker';
 import { EntityMultiPicker } from '@/components/forms/EntityPicker';
 import { Button } from '@/components/ui/button';
@@ -86,59 +86,68 @@ export function PowerOfAttorneyForm({
         })}
       >
         <FieldGroup>
-          <Field
-            label={t('poa.fields.internalSequence')}
-            required
-            error={formState.errors.internalSequence ? t('forms.required') : undefined}
-          >
-            <Input dir="ltr" {...register('internalSequence')} autoFocus />
-          </Field>
-          <Field label={t('poa.fields.officialNumber')}>
-            <Input dir="ltr" {...register('officialNumber')} />
-          </Field>
-          <Field
-            label={t('poa.fields.issueDate')}
-            error={formState.errors.issueDate ? t('forms.invalid') : undefined}
-          >
-            <Controller
-              control={control}
-              name="issueDate"
-              render={({ field }) => <DatePicker {...field} />}
-            />
-          </Field>
-          <Field label={t('poa.fields.notaryOffice')}>
-            <CreatableCombobox suggestion="notaryOffice" {...register('notaryOffice')} />
-          </Field>
-          <Field label={t('poa.tabs.clients')}>
-            <Controller
-              control={control}
-              name="clientIds"
-              render={({ field }) => (
-                <EntityMultiPicker
-                  ref={field.ref}
-                  items={(clients.data ?? []).map((c) => ({
-                    value: c.id,
-                    label: c.fullName,
-                    searchText: `${c.internalNumber} ${c.primaryPhone ?? ''}`,
-                    disabled: !!c.archivedAt,
-                  }))}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  placeholder={t('cases.form.clientSearch')}
-                  loading={clients.isLoading}
-                  error={clients.isError ? t('clients.loadError') : undefined}
-                  onCreate={(name) => {
-                    setClientName(name);
-                    setCreating(true);
-                  }}
+          <fieldset className="form-section">
+            <legend className="form-section-title">{t('poa.dataTitle')}</legend>
+            <div className="form-grid">
+              <Field
+                label={t('poa.fields.internalSequence')}
+                required
+                error={formState.errors.internalSequence ? t('forms.required') : undefined}
+              >
+                <Input dir="ltr" {...register('internalSequence')} autoFocus autoComplete="off" />
+              </Field>
+              <Field label={t('poa.fields.officialNumber')}>
+                <Input dir="ltr" {...register('officialNumber')} autoComplete="off" />
+              </Field>
+              <Field
+                label={t('poa.fields.issueDate')}
+                error={formState.errors.issueDate ? t('forms.invalid') : undefined}
+              >
+                <Controller
+                  control={control}
+                  name="issueDate"
+                  render={({ field }) => <DatePicker {...field} />}
                 />
-              )}
-            />
-          </Field>
-          <FieldSet>
-            <FieldLegend>{t('poa.lawyersTitle')}</FieldLegend>
+              </Field>
+              <Field label={t('poa.fields.notaryOffice')}>
+                <CreatableCombobox suggestion="notaryOffice" {...register('notaryOffice')} />
+              </Field>
+            </div>
+          </fieldset>
+          <fieldset className="form-section">
+            <legend className="form-section-title">{t('poa.clientsTitle')}</legend>
+            <p className="form-section-hint">{t('poa.clientsHint')}</p>
+            <Field label={t('poa.tabs.clients')}>
+              <Controller
+                control={control}
+                name="clientIds"
+                render={({ field }) => (
+                  <EntityMultiPicker
+                    ref={field.ref}
+                    items={(clients.data ?? []).map((c) => ({
+                      value: c.id,
+                      label: c.fullName,
+                      searchText: `${c.internalNumber} ${c.primaryPhone ?? ''}`,
+                      disabled: !!c.archivedAt,
+                    }))}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder={t('cases.form.clientSearch')}
+                    loading={clients.isLoading}
+                    error={clients.isError ? t('clients.loadError') : undefined}
+                    onCreate={(name) => {
+                      setClientName(name);
+                      setCreating(true);
+                    }}
+                  />
+                )}
+              />
+            </Field>
+          </fieldset>
+          <fieldset className="form-section">
+            <legend className="form-section-title">{t('poa.lawyersTitle')}</legend>
             {lawyers.map((lawyer, index) => (
-              <FieldGroup key={lawyer.id ?? index}>
+              <div className="form-grid form-grid-3" key={lawyer.id ?? index}>
                 <Field
                   label={t('poa.fields.lawyerName')}
                   required
@@ -149,43 +158,49 @@ export function PowerOfAttorneyForm({
                   <Input {...register(`lawyers.${index}.fullName`)} />
                 </Field>
                 <Field label={t('poa.fields.barNumber')}>
-                  <Input {...register(`lawyers.${index}.barNumber`)} />
+                  <Input dir="ltr" {...register(`lawyers.${index}.barNumber`)} />
                 </Field>
                 <Field label={t('common.notes')}>
                   <Input {...register(`lawyers.${index}.notes`)} />
                 </Field>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() =>
-                    setValue(
-                      'lawyers',
-                      lawyers.filter((_, i) => i !== index),
-                    )
-                  }
-                >
-                  {t('documents.remove')}
-                </Button>
-              </FieldGroup>
+                <div className="span-all">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() =>
+                      setValue(
+                        'lawyers',
+                        lawyers.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    {t('documents.remove')}
+                  </Button>
+                </div>
+              </div>
             ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                setValue('lawyers', [...lawyers, { fullName: '', barNumber: '', notes: '' }])
-              }
-            >
-              {t('poa.addLawyer')}
-            </Button>
-          </FieldSet>
-          <Field label={t('common.notes')}>
-            <Textarea {...register('notes')} />
-          </Field>
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setValue('lawyers', [...lawyers, { fullName: '', barNumber: '', notes: '' }])
+                }
+              >
+                {t('poa.addLawyer')}
+              </Button>
+            </div>
+          </fieldset>
+          <fieldset className="form-section">
+            <Field label={t('common.notes')}>
+              <Textarea {...register('notes')} />
+            </Field>
+          </fieldset>
           <div className="form-actions">
             <Button type="submit" disabled={busy || formState.isSubmitting}>
               {t('poa.save')}
             </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="secondary" onClick={onCancel}>
               {t('common.cancel')}
             </Button>
           </div>

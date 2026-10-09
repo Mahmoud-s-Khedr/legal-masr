@@ -1,3 +1,4 @@
+import { fieldError } from '@/lib/fieldError';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { actionableErrorMessage } from '@/bridge/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -646,7 +647,7 @@ export function HearingForm({
         <Field
           label={<>{t('agenda.fields.case')}</>}
           required
-          error={form.formState.errors.caseId ? t('forms.invalid') : undefined}
+          error={fieldError(form.formState.errors.caseId, t)}
         >
           <EntityPicker
             ref={(node) => form.register('caseId').ref(node)}
@@ -667,7 +668,7 @@ export function HearingForm({
           <Field
             label={<>{t('agenda.fields.date')}</>}
             required
-            error={form.formState.errors.date ? t('forms.invalid') : undefined}
+            error={fieldError(form.formState.errors.date, t)}
           >
             <DatePicker
               required

@@ -40,7 +40,9 @@ export function FormDialog({
         aria-labelledby={titleId}
       >
         <DialogHeader>
-          <DialogTitle id={titleId}>{title}</DialogTitle>
+          <DialogTitle id={titleId} className="text-lg leading-snug font-bold">
+            {title}
+          </DialogTitle>
         </DialogHeader>
         {children}
       </DialogContent>
@@ -53,7 +55,7 @@ export function FormDialogFooter({ className, ...props }: React.ComponentProps<'
     <div
       data-slot="form-dialog-footer"
       className={cn(
-        'sticky bottom-0 -mx-4 mt-5 flex justify-start gap-2.5 border-t bg-popover px-4 pt-3 pb-1',
+        'sticky bottom-0 -mx-4 mt-5 flex justify-start gap-2.5 border-t border-(--line) bg-popover px-4 pt-3 pb-1',
         className,
       )}
       {...props}
