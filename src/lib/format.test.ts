@@ -6,6 +6,7 @@ import {
   formatDateShort,
   formatDateTime,
   formatMoney,
+  formatNameList,
   formatMonthYear,
   formatTime,
 } from './format';
@@ -75,5 +76,17 @@ describe('money and size presentation', () => {
     expect(formatBytes(12_000, 'ar')).toBe('12 ك.ب');
     expect(formatBytes(1_536, 'en')).toBe('1.5 KB');
     expect(formatBytes(5 * 1024 ** 3, 'en')).toBe('5 GB');
+  });
+});
+
+describe('name lists', () => {
+  it('uses the language list separator', () => {
+    expect(formatNameList(['Amal', 'Basma'], 'en')).toBe('Amal, Basma');
+    expect(formatNameList(['أمل', 'بسمة', 'جميلة'], 'ar')).toBe('أمل، بسمة، جميلة');
+  });
+
+  it('returns an empty string for no names and the bare name for one', () => {
+    expect(formatNameList([], 'en')).toBe('');
+    expect(formatNameList(['Amal'], 'ar')).toBe('Amal');
   });
 });

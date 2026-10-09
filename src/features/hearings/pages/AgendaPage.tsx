@@ -81,7 +81,7 @@ export function AgendaPage() {
     return item
       ? t('dashboard.caseContext', {
           caseNumber: item.internalNumber,
-          clients: item.clientNames.join('، '),
+          clients: format.list(item.clientNames),
         })
       : t('dashboard.caseContextUnavailable');
   };
@@ -534,6 +534,7 @@ function AgendaList({
   selectedDate: string;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
+  const format = useFormat();
   return (
     <div className="calendar-agenda-list">
       {[...items.entries()]
@@ -548,9 +549,9 @@ function AgendaList({
           >
             <strong>{dayLabel(date)}</strong>
             <span>
-              {entry.hearings
-                .map((hearing) => hearing.hearingType ?? t('agenda.hearing'))
-                .join('، ') || t('agenda.tasksLabel')}{' '}
+              {format.list(
+                entry.hearings.map((hearing) => hearing.hearingType ?? t('agenda.hearing')),
+              ) || t('agenda.tasksLabel')}{' '}
               ·{' '}
               {t('agenda.dayCounts', {
                 hearings: entry.hearings.length,
@@ -580,6 +581,7 @@ export function HearingForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const form = useForm<z.infer<typeof hearingDraftSchema>>({
     resolver: zodResolver(hearingDraftSchema),
     defaultValues: {
@@ -654,7 +656,7 @@ export function HearingForm({
             items={(cases.data ?? []).map((item) => ({
               value: item.id,
               label: item.clientNames.length
-                ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
+                ? `${item.internalNumber} — ${format.list(item.clientNames)}`
                 : item.internalNumber,
             }))}
             placeholder={t('agenda.fields.casePlaceholder')}

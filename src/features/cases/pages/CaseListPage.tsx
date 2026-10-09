@@ -23,9 +23,11 @@ import { useCaseList } from '../api/casesApi';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { CASE_STATUSES } from '../schemas/case.schema';
 import { CaseStatusBadge, OfficialReference } from '../components/CaseIdentity';
+import { useFormat } from '../../../i18n/LocalePresentation';
 
 export function CaseListPage() {
   const { t } = useTranslation();
+  const format = useFormat();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -137,7 +139,7 @@ export function CaseListPage() {
                       <span className="cell-muted">—</span>
                     )}
                   </td>
-                  <td className="cell-wrap">{caseSummary.clientNames.join('، ') || '—'}</td>
+                  <td className="cell-wrap">{format.list(caseSummary.clientNames) || '—'}</td>
                   <td>
                     <CaseStatusBadge
                       status={caseSummary.status}

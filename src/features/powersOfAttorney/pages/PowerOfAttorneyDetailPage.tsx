@@ -85,7 +85,7 @@ export function PowerOfAttorneyDetailPage() {
             )}
             {item.clients.length > 0 && (
               <span>
-                <bdi dir="auto">{item.clients.map((client) => client.fullName).join('، ')}</bdi>
+                <bdi dir="auto">{format.list(item.clients.map((client) => client.fullName))}</bdi>
               </span>
             )}
           </>
@@ -243,7 +243,7 @@ export function PowerOfAttorneyDetailPage() {
                       <Link to={`/cases/${caseId}`}>
                         <bdi>{linked?.internalNumber ?? t('poa.openCase')}</bdi>
                       </Link>
-                      {linked && <span dir="auto">{linked.clientNames.join('، ')}</span>}
+                      {linked && <span dir="auto">{format.list(linked.clientNames)}</span>}
                     </div>
                     {linked && (
                       <CaseStatusBadge status={linked.status} archived={!!linked.archivedAt} />

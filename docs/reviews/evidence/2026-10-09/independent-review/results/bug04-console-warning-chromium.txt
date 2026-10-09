@@ -1,0 +1,3 @@
+console warnings on deep link: [
+ "Base UI: A component is changing the uncontrolled value state of Select to be controlled.\nElements should not switch from uncontrolled to controlled (or vice versa).\nDecide between using a controlled or uncontrolled Select element for the lifetime of the compo"
+]

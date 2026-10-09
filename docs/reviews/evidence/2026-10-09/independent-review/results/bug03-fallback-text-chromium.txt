@@ -1,0 +1,2 @@
+en ["أدهم منصور — DEMO\nCL-2026-014 · أصيل\nPower of attorney linked","شركة المثال\nدون صفة مسجلة\nEdit\nRemove"] html lang/dir: en/ltr
+ar ["أدهم منصور — DEMO\nCL-2026-014 · أصيل\nتوكيل مرتبط","شركة المثال\nدون صفة مسجلة\nتعديل\nإزالة"] html lang/dir: ar/rtl

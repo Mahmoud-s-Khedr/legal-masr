@@ -139,7 +139,11 @@ export function EntityMultiPicker({
         <ComboboxChips ref={anchor}>
           <ComboboxValue>
             {selected.map((item) => (
-              <ComboboxChip key={item.value} aria-label={String(item.label)}>
+              <ComboboxChip
+                key={item.value}
+                aria-label={String(item.label)}
+                removeLabel={t('forms.removeNamed', { name: String(item.label) })}
+              >
                 {item.label}
               </ComboboxChip>
             ))}

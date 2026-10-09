@@ -1,6 +1,15 @@
 import { remote } from 'webdriverio';
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, access } from 'node:fs/promises';
+import {
+  mkdtemp,
+  mkdir,
+  writeFile,
+  readFile,
+  readdir,
+  rm,
+  access,
+  copyFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -317,6 +326,10 @@ await scenario('wrong-password-refusal', async (h) => {
   assert.equal(await h.browser.$('nav').isExisting(), false);
   await h.unlock();
 });
+const expectedRefusal = {
+  cancel: 'أُلغيت العملية.',
+  corrupt: 'ملف النسخة الاحتياطية تالف أو غير صالح. لم تتغير بياناتك الحالية.',
+};
 for (const choice of ['cancel', 'corrupt'])
   await scenario(`${choice}-restore-preserves-active-data`, async (h) => {
     await h.initialize();
@@ -325,10 +338,161 @@ for (const choice of ['cancel', 'corrupt'])
     await h.nav('/backups');
     await h.click('استعادة من نسخة احتياطية');
     await h.click('تأكيد الاستعادة');
-    await h.browser.$('[role="alert"]').waitForDisplayed({ timeout: 15000 });
+    const alert = await h.browser.$('[role="alert"]');
+    await alert.waitForDisplayed({ timeout: 15000 });
+    // The code must be the one that tells the lawyer what happened, not any alert.
+    assert.equal(await alert.getText(), expectedRefusal[choice]);
     await h.nav('/clients');
     await h.browser.$('a*=E2E-PRESERVED').waitForDisplayed();
   });
+// A workspace with one client, one case and one managed attachment, backed up from the UI.
+async function seedAndBackUp(h, label) {
+  h.checkpoint('seed-client');
+  await h.initialize();
+  await h.client(`E2E-${label}`);
+  h.checkpoint('seed-case');
+  await h.nav('/cases');
+  await h.click('إضافة قضية');
+  await h.input('internalNumber', `E2E-${label}-CASE`);
+  const picker = await h.browser.$('[data-slot="combobox-chip-input"]');
+  await picker.waitForDisplayed();
+  await picker.click();
+  await picker.setValue(`E2E-${label}`);
+  await h.browser.$('[role="option"]').waitForDisplayed();
+  await h.browser.$('[role="option"]').click();
+  await h.click('حفظ القضية');
+  await h.browser.$(`h2*=E2E-${label}-CASE`).waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('seed-attachment');
+  await h.click('المستندات');
+  await h.click('إضافة مستند');
+  await h.click('اختيار ملف');
+  await h.waitText('fictional.pdf');
+  await h.click('حفظ المستند');
+  await h.browser.$('.attachment-rows').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('seed-backup');
+  await h.nav('/backups');
+  await h.click('إنشاء نسخة احتياطية الآن');
+  await h.waitText('تم إنشاء النسخة الاحتياطية بنجاح.');
+  // Carry the backup out of the installation, as a lawyer would to a new machine.
+  await h.close();
+  const [made] = (await readdir(join(h.root, 'vault/Backups'))).filter((name) =>
+    name.endsWith('.lmsbackup'),
+  );
+  await copyFile(join(h.root, 'vault/Backups', made), join(h.root, 'fixtures/portable.lmsbackup'));
+  await h.selection('portable');
+}
+async function expectRestoredWorkspace(h, label) {
+  h.checkpoint('unlock-restored');
+  await h.unlock();
+  await h.nav('/clients');
+  await h.browser.$(`a*=E2E-${label}`).waitForDisplayed();
+  await h.nav('/cases');
+  await h.browser.$(`a*=E2E-${label}-CASE`).click();
+  await h.click('المستندات');
+  await h.waitText('fictional.pdf');
+  h.checkpoint('verify-attachment-bytes');
+  await h.close();
+  const managed = await readdir(join(h.root, 'vault/attachments'));
+  assert.equal(managed.length, 1);
+  assert.deepEqual(await readFile(join(h.root, 'vault/attachments', managed[0])), bytes);
+}
+async function restoreWithPassword(h) {
+  h.checkpoint('open-restore');
+  await h.click('استعادة من نسخة احتياطية');
+  await h.click('اختيار ملف النسخة');
+  const secret = await h.browser.$('input[type="password"]');
+  await secret.waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('wrong-password');
+  await secret.setValue('fictional incorrect password');
+  await h.click('استعادة النسخة');
+  const alert = await h.browser.$('[role="alert"]');
+  await alert.waitForDisplayed({ timeout: 30000 });
+  assert.equal(await alert.getText(), 'كلمة المرور غير صحيحة. تحقق منها وحاول مرة أخرى.');
+  // A refused attempt changes nothing, and the same file is used for the next one.
+  assert.equal(await h.browser.$('nav').isExisting(), false);
+  h.checkpoint('original-password');
+  await secret.setValue(password);
+  await h.click('استعادة النسخة');
+  await h.browser.$('input[name="password"]').waitForDisplayed({ timeout: 60000 });
+}
+await scenario(
+  'fresh-installation-restores-a-portable-backup-with-the-original-password',
+  async (h) => {
+    await seedAndBackUp(h, 'PORTABLE');
+    // A new machine: nothing of the old installation remains.
+    await rm(join(h.root, 'vault'), { recursive: true, force: true });
+    await h.launch();
+    await restoreWithPassword(h);
+    await expectRestoredWorkspace(h, 'PORTABLE');
+  },
+);
+await scenario('incomplete-installation-restores-a-portable-backup', async (h) => {
+  await seedAndBackUp(h, 'RECOVERED');
+  // The database is lost; the security file and attachments remain.
+  await rm(join(h.root, 'vault/legalmaster.sqlite'), { force: true });
+  await h.launch();
+  const notice = await h.browser.$('[role="alert"]');
+  await notice.waitForDisplayed({ timeout: 15000 });
+  assert.match(await notice.getText(), /ملفات مساحة العمل غير مكتملة/);
+  await restoreWithPassword(h);
+  await expectRestoredWorkspace(h, 'RECOVERED');
+  // What was left behind is kept for the lawyer, not deleted.
+  assert.ok((await readdir(join(h.root, 'vault/EmergencySnapshots'))).length >= 1);
+});
+await scenario('opponent-form-announces-missing-name', async (h) => {
+  await h.initialize();
+  await h.client('E2E-OPPONENT-CLIENT');
+  await h.nav('/cases');
+  await h.click('إضافة قضية');
+  await h.input('internalNumber', 'E2E-OPPONENT-CASE');
+  const picker = await h.browser.$('[data-slot="combobox-chip-input"]');
+  await picker.waitForDisplayed();
+  await picker.click();
+  await picker.setValue('E2E-OPPONENT-CLIENT');
+  await h.browser.$('[role="option"]').waitForDisplayed();
+  await h.browser.$('[role="option"]').click();
+  await h.click('حفظ القضية');
+  await h.browser.$('h2*=E2E-OPPONENT-CASE').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('open-opponent-form');
+  await h.click('الأطراف');
+  await h.click('إضافة خصم');
+  const dialog = await h.browser.$('[role="dialog"]');
+  await dialog.waitForDisplayed({ timeout: 15000 });
+  for (const value of ['', '   ']) {
+    h.checkpoint('submit-invalid-opponent');
+    if (value) await dialog.$('input[required]').setValue(value);
+    await h.click('حفظ الخصم');
+    const alert = await dialog.$('[role="alert"]');
+    await alert.waitForDisplayed({ timeout: 15000 });
+    assert.equal(await alert.getText(), 'هذا الحقل مطلوب.');
+    const name = await dialog.$('input[required]');
+    assert.equal(await name.getAttribute('aria-invalid'), 'true');
+    assert.equal(await name.getAttribute('aria-describedby'), await alert.getAttribute('id'));
+  }
+  assert.equal(await dialog.isExisting(), true, 'the dialog keeps the draft open');
+});
+await scenario('settings-display-tab-deep-link-shows-saved-labels', async (h) => {
+  await h.initialize();
+  h.checkpoint('open-display-tab-by-deep-link');
+  // First Settings visit arrives directly on the tab, as history navigation and links do.
+  await h.browser.execute(() => {
+    globalThis.history.pushState({}, '', '/settings?tab=general');
+    globalThis.dispatchEvent(new globalThis.PopStateEvent('popstate'));
+  });
+  await h.browser.$('[data-slot="select-trigger"]').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('read-selected-labels');
+  const labels = await h.browser.execute(() =>
+    [...globalThis.document.querySelectorAll('[data-slot="select-trigger"]')].map((trigger) =>
+      trigger.querySelector('[data-slot="select-value"]')?.textContent.trim(),
+    ),
+  );
+  assert.deepEqual(labels.slice(0, 4), [
+    'العربية',
+    'حسب إعداد الجهاز',
+    'يوم/شهر/سنة (03/10/2026)',
+    'السبت',
+  ]);
+});
 await scenario('restart-persistence', async (h) => {
   await h.initialize();
   await h.client('E2E-PERSISTENT');

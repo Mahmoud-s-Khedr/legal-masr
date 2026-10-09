@@ -1,5 +1,8 @@
 use crate::{
-    dto::LatestSuccessfulBackupDto, errors::Error, services::backup_service, state::AppState,
+    dto::{BackupSelectionDto, LatestSuccessfulBackupDto, RestoreCredentialInput},
+    errors::Error,
+    services::backup_service,
+    state::AppState,
 };
 use tauri::{AppHandle, State};
 
@@ -24,4 +27,22 @@ pub fn backup_validate(app: AppHandle, state: State<AppState>) -> Result<(), Err
 #[tauri::command]
 pub fn backup_restore(app: AppHandle, state: State<AppState>) -> Result<(), Error> {
     backup_service::restore(&app, &state)
+}
+
+#[tauri::command]
+pub fn backup_select_for_restore(
+    app: AppHandle,
+    state: State<AppState>,
+) -> Result<BackupSelectionDto, Error> {
+    backup_service::select_for_restore(&app, &state)
+}
+
+#[tauri::command]
+pub fn backup_restore_selected(
+    app: AppHandle,
+    state: State<AppState>,
+    token: String,
+    credential: RestoreCredentialInput,
+) -> Result<(), Error> {
+    backup_service::restore_selected(&app, &state, &token, &credential)
 }

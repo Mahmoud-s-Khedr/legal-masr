@@ -10,6 +10,7 @@ import {
   formatDateShort,
   formatDateTime,
   formatMoney,
+  formatNameList,
   formatMonthYear,
   formatNumber,
   formatTime,
@@ -75,6 +76,7 @@ export function useFormat() {
       money: (amountMinor: number) => formatMoney(amountMinor, language),
       number: (value: number) => formatNumber(value, language),
       bytes: (value: number) => formatBytes(value, language),
+      list: (items: readonly string[]) => formatNameList(items, language),
     }),
     [language, dateFormat],
   );

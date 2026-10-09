@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { queryKeys } from '../../../lib/queryKeys';
@@ -8,13 +8,15 @@ vi.mock('../../../bridge/commands', () => ({
     createBackup: vi.fn(),
     latestSuccessfulBackup: vi.fn(),
     restoreBackup: vi.fn(),
+    selectBackupForRestore: vi.fn(),
+    restoreSelectedBackup: vi.fn(),
     status: vi.fn(),
     validateBackup: vi.fn(),
   },
 }));
 
 import { bridge } from '../../../bridge/commands';
-import '../../../i18n';
+import i18n from '../../../i18n';
 import { BackupSettingsPanel } from './BackupsPage';
 
 function renderPanel() {
@@ -222,5 +224,64 @@ describe('BackupSettingsPanel', () => {
     expect(bridge.restoreBackup).toHaveBeenCalledTimes(1);
     finish();
     await waitFor(() => expect(bridge.status).toHaveBeenCalled());
+  });
+  it.each(['restore', 'validate'] as const)(
+    'offers the backup password or recovery key when %s finds a backup from another installation',
+    async (action) => {
+      const mismatch = { code: 'BACKUP_KEY_MISMATCH', message: 'safe', details: null };
+      vi.mocked(
+        action === 'validate' ? bridge.validateBackup : bridge.restoreBackup,
+      ).mockRejectedValueOnce(mismatch);
+      vi.mocked(bridge.selectBackupForRestore).mockResolvedValue({
+        token: 'one-time',
+        formatVersion: 2,
+      });
+      vi.mocked(bridge.restoreSelectedBackup).mockResolvedValue(undefined);
+      renderPanel();
+
+      if (action === 'validate') {
+        fireEvent.click(screen.getByRole('button', { name: 'اختيار ملف للفحص' }));
+      } else {
+        fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
+        fireEvent.click(await screen.findByRole('button', { name: 'تأكيد الاستعادة' }));
+      }
+
+      const open = await screen.findByRole('button', {
+        name: i18n.t('backups.restoreWithCredentials'),
+      });
+      expect(screen.getByText(i18n.t('errors.BACKUP_KEY_MISMATCH'))).toBeVisible();
+      fireEvent.click(open);
+      const dialog = await screen.findByRole('dialog');
+      expect(within(dialog).getByText(i18n.t('restoreFrom.replaceWarning'))).toBeVisible();
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: i18n.t('restoreFrom.chooseFile') }),
+      );
+      fireEvent.change(await within(dialog).findByLabelText(i18n.t('restoreFrom.password')), {
+        target: { value: 'a secure local password' },
+      });
+      fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('restoreFrom.submit') }));
+      await waitFor(() =>
+        expect(bridge.restoreSelectedBackup).toHaveBeenCalledWith('one-time', {
+          kind: 'password',
+          secret: 'a secure local password',
+        }),
+      );
+    },
+  );
+
+  it('does not offer a credential restore for an ordinary restore failure', async () => {
+    vi.mocked(bridge.restoreBackup).mockRejectedValueOnce({
+      code: 'BACKUP_CORRUPTED',
+      message: 'safe',
+      details: null,
+    });
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'استعادة من نسخة احتياطية' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'تأكيد الاستعادة' }));
+
+    expect(await screen.findByText(i18n.t('errors.BACKUP_CORRUPTED'))).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('backups.restoreWithCredentials') }),
+    ).not.toBeInTheDocument();
   });
 });

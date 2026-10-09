@@ -7,6 +7,8 @@ vi.mock('@/bridge/commands', async (original) => {
 import { bridge } from '@/bridge/commands';
 import i18n from '@/i18n';
 import { fictionalFailure, fixtures, prepareWorkflowMocks, renderWorkflow } from '@/test/workflow';
+import { LocalePresentationContext } from '@/i18n/LocalePresentation';
+import { enUS, arEG } from 'date-fns/locale';
 import { CaseDetailPage } from './CaseDetailPage';
 
 const completed = {
@@ -160,4 +162,35 @@ it('lists payments and expenses of the case and opens one for inspection', async
   expect(rows).toHaveLength(2);
   fireEvent.click(rows[0]);
   expect(await screen.findByRole('dialog')).toBeInTheDocument();
+});
+
+it.each([
+  ['en', 'DEMO Amal, DEMO Basma'],
+  ['ar', 'DEMO Amal، DEMO Basma'],
+])('separates two clients with the %s list separator', async (language, expected) => {
+  await i18n.changeLanguage(language);
+  const [first] = fixtures.caseItem.clients;
+  vi.mocked(bridge.caseGet).mockResolvedValue({
+    ...fixtures.caseItem,
+    clients: [
+      { ...first, fullName: 'DEMO Amal' },
+      { ...first, clientId: 'demo-client-2', fullName: 'DEMO Basma' },
+    ],
+  });
+  const presentation = {
+    language: language as 'ar' | 'en',
+    direction: language === 'ar' ? ('rtl' as const) : ('ltr' as const),
+    dateLocale: language === 'ar' ? arEG : enUS,
+    weekStartsOn: 6,
+    dateFormat: 'dd/MM/yyyy' as const,
+  };
+  renderWorkflow(
+    <LocalePresentationContext.Provider value={presentation}>
+      <CaseDetailPage />
+    </LocalePresentationContext.Provider>,
+    `/cases/${fixtures.caseItem.id}`,
+    '/cases/:id',
+  );
+
+  expect(await screen.findByText(expected)).toBeInTheDocument();
 });

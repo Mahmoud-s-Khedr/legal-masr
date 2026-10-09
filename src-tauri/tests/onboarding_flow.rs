@@ -1,6 +1,10 @@
 use legalmaster_lib::{
     backup, db,
-    dto::{InitializeInput, LawyerProfileDto, SettingsUpdateInput},
+    dto::{
+        InitializeInput, LawyerProfileDto, RestoreCredentialInput, RestoreCredentialKind,
+        SettingsUpdateInput, VaultState,
+    },
+    errors::Error,
     security,
     services::{app_service, backup_service, settings_service},
     state::AppState,
@@ -71,6 +75,274 @@ fn lawyer_profile_updates_locally_and_rejects_invalid_identity_data() {
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
 }
 
+const ORIGINAL_PASSWORD: &str = "a secure local password";
+
+struct Installation {
+    recovery_key: String,
+    backup: std::path::PathBuf,
+    attachment: Vec<u8>,
+}
+
+/// Sets up an installation with a client and a managed attachment, backs it up,
+/// and returns the backup copied outside the installation, as a lawyer would
+/// carry it to a new machine.
+fn installation_with_backup(
+    handle: &tauri::AppHandle<tauri::test::MockRuntime>,
+    state: &State<AppState>,
+    carry_to: &std::path::Path,
+) -> Installation {
+    let init = app_service::initialize(
+        handle,
+        state,
+        InitializeInput {
+            password: ORIGINAL_PASSWORD.into(),
+            full_name: "محامٍ تجريبي".into(),
+            language: "ar".into(),
+            lock_timeout_minutes: 15,
+        },
+    )
+    .unwrap();
+    let master = state.unlocked().unwrap();
+    let (_, db_path) = db::paths(handle).unwrap();
+    db::open_db(&db_path, &master)
+        .unwrap()
+        .execute(
+            "INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, 'CL-PORTABLE', 'عميل تجريبي', 'now', 'now')",
+            [uuid::Uuid::new_v4().to_string()],
+        )
+        .unwrap();
+    let attachment: Vec<u8> = (0..=255u8).cycle().take(8192).collect();
+    let documents = db::app_dir(handle).unwrap().join("attachments");
+    std::fs::create_dir_all(&documents).unwrap();
+    std::fs::write(documents.join("scan.bin"), &attachment).unwrap();
+    let created = backup_service::create(handle, state).unwrap();
+    let backup = carry_to.join("carried.lmsbackup");
+    std::fs::copy(created, &backup).unwrap();
+    Installation {
+        recovery_key: init.recovery_key,
+        backup,
+        attachment,
+    }
+}
+
+fn credential(kind: RestoreCredentialKind, secret: &str) -> RestoreCredentialInput {
+    RestoreCredentialInput {
+        kind,
+        secret: secret.into(),
+    }
+}
+
+fn restored_client_numbers(
+    handle: &tauri::AppHandle<tauri::test::MockRuntime>,
+    state: &State<AppState>,
+) -> Vec<String> {
+    let (_, db_path) = db::paths(handle).unwrap();
+    let connection = db::open_db(&db_path, &state.unlocked().unwrap()).unwrap();
+    let mut statement = connection
+        .prepare("SELECT internal_number FROM clients ORDER BY internal_number")
+        .unwrap();
+    let rows = statement
+        .query_map([], |row| row.get::<_, String>(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    rows
+}
+
+#[test]
+fn a_backup_restores_into_a_fresh_installation_with_the_original_password() {
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    let carried = tempfile::tempdir().unwrap();
+    let source = installation_with_backup(handle, &state, carried.path());
+
+    // A new machine: no vault, no key in memory.
+    app_service::lock(&state).unwrap();
+    std::fs::remove_dir_all(db::app_dir(handle).unwrap()).unwrap();
+    let status = app_service::get_status(handle, &state).unwrap();
+    assert!(!status.initialized);
+    assert_eq!(status.vault_state, VaultState::Empty);
+
+    let token = state
+        .store_restore_selection(source.backup.clone())
+        .unwrap();
+    let wrong = backup_service::restore_selected(
+        handle,
+        &state,
+        &token,
+        &credential(
+            RestoreCredentialKind::Password,
+            "a different local password",
+        ),
+    );
+    assert!(matches!(wrong, Err(Error::InvalidPassword)));
+    let still_empty = app_service::get_status(handle, &state).unwrap();
+    assert!(
+        !still_empty.initialized,
+        "a wrong password leaves the installation empty"
+    );
+
+    // The selection survives a mistyped password, so the file is not picked again.
+    backup_service::restore_selected(
+        handle,
+        &state,
+        &token,
+        &credential(RestoreCredentialKind::Password, ORIGINAL_PASSWORD),
+    )
+    .unwrap();
+
+    // The vault is locked afterwards, the selection is spent, and the password unlocks it.
+    assert!(matches!(state.unlocked(), Err(Error::Locked)));
+    assert!(matches!(
+        state.peek_restore_selection(&token),
+        Err(Error::Validation)
+    ));
+    let locked = app_service::get_status(handle, &state).unwrap();
+    assert!(locked.initialized && !locked.unlocked);
+    assert_eq!(locked.vault_state, VaultState::Locked);
+    assert!(matches!(
+        app_service::unlock(handle, &state, "a different local password"),
+        Err(Error::InvalidPassword)
+    ));
+    app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
+    assert_eq!(restored_client_numbers(handle, &state), ["CL-PORTABLE"]);
+    assert_eq!(
+        std::fs::read(db::app_dir(handle).unwrap().join("attachments/scan.bin")).unwrap(),
+        source.attachment
+    );
+    // A restored workspace can take another backup, and that one restores too.
+    backup_service::create(handle, &state).unwrap();
+
+    let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
+}
+
+#[test]
+fn a_backup_restores_with_the_recovery_key_and_the_old_password_still_unlocks() {
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    let carried = tempfile::tempdir().unwrap();
+    let source = installation_with_backup(handle, &state, carried.path());
+    app_service::lock(&state).unwrap();
+    std::fs::remove_dir_all(db::app_dir(handle).unwrap()).unwrap();
+
+    let token = state
+        .store_restore_selection(source.backup.clone())
+        .unwrap();
+    let wrong = backup_service::restore_selected(
+        handle,
+        &state,
+        &token,
+        &credential(RestoreCredentialKind::RecoveryKey, "0123456789abcdef"),
+    );
+    assert!(matches!(wrong, Err(Error::InvalidRecovery)));
+    backup_service::restore_selected(
+        handle,
+        &state,
+        &token,
+        &credential(
+            RestoreCredentialKind::RecoveryKey,
+            &source.recovery_key.to_uppercase(),
+        ),
+    )
+    .unwrap();
+    app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
+    assert_eq!(restored_client_numbers(handle, &state), ["CL-PORTABLE"]);
+
+    let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
+}
+
+#[test]
+fn restore_recovers_an_incomplete_installation_but_never_replaces_a_healthy_locked_vault() {
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    let carried = tempfile::tempdir().unwrap();
+    let source = installation_with_backup(handle, &state, carried.path());
+    let token = state
+        .store_restore_selection(source.backup.clone())
+        .unwrap();
+    let secret = credential(RestoreCredentialKind::Password, ORIGINAL_PASSWORD);
+
+    // Locked and healthy: the lock screen cannot replace the vault.
+    app_service::lock(&state).unwrap();
+    let token_again = state
+        .store_restore_selection(source.backup.clone())
+        .unwrap();
+    assert_ne!(token, token_again, "a new selection replaces the old token");
+    assert!(matches!(
+        backup_service::restore_selected(handle, &state, &token_again, &secret),
+        Err(Error::Locked)
+    ));
+    assert_eq!(
+        app_service::get_status(handle, &state).unwrap().vault_state,
+        VaultState::Locked
+    );
+
+    // An unknown token is refused outright.
+    app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
+    assert!(matches!(
+        backup_service::restore_selected(handle, &state, "not-a-token", &secret),
+        Err(Error::Validation)
+    ));
+    app_service::lock(&state).unwrap();
+
+    // The database is lost: the gate is INCOMPLETE and restoring is allowed.
+    let root = db::app_dir(handle).unwrap();
+    std::fs::remove_file(root.join("legalmaster.sqlite")).unwrap();
+    assert_eq!(
+        app_service::get_status(handle, &state).unwrap().vault_state,
+        VaultState::Incomplete
+    );
+    let token = state
+        .store_restore_selection(source.backup.clone())
+        .unwrap();
+    backup_service::restore_selected(handle, &state, &token, &secret).unwrap();
+    app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
+    assert_eq!(restored_client_numbers(handle, &state), ["CL-PORTABLE"]);
+    // What was left behind is kept for the lawyer rather than deleted.
+    assert!(std::fs::read_dir(root.join("EmergencySnapshots"))
+        .unwrap()
+        .next()
+        .is_some());
+
+    let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
+}
+
+#[test]
+fn restore_refuses_while_a_vault_operation_is_pending() {
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    let carried = tempfile::tempdir().unwrap();
+    let source = installation_with_backup(handle, &state, carried.path());
+    app_service::lock(&state).unwrap();
+    let root = db::app_dir(handle).unwrap();
+    std::fs::write(root.join("vault-operation.json"), b"{}").unwrap();
+    let token = state
+        .store_restore_selection(source.backup.clone())
+        .unwrap();
+    let result = backup_service::restore_selected(
+        handle,
+        &state,
+        &token,
+        &credential(RestoreCredentialKind::Password, ORIGINAL_PASSWORD),
+    );
+    assert!(matches!(result, Err(Error::VaultInterrupted)));
+    assert!(root.join("vault-operation.json").exists());
+
+    let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
+}
+
 fn fresh_mock_app() -> tauri::App<tauri::test::MockRuntime> {
     #[cfg(feature = "desktop-e2e")]
     {
@@ -137,7 +409,7 @@ fn onboarding_reaches_an_unlocked_ready_state_with_no_backup_gate() {
     let backup_path = backup_service::create(handle, &state)
         .expect("backup_create must succeed against the auto-computed backup directory");
     assert!(std::path::Path::new(&backup_path).exists());
-    backup::validate(&backup_path, &state.unlocked().unwrap())
+    backup::validate(&backup_path, Some(&state.unlocked().unwrap()), None)
         .expect("the freshly created backup must validate");
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());

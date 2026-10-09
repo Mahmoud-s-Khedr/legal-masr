@@ -10,6 +10,7 @@ use zeroize::Zeroizing;
 pub struct AppState {
     pub master_key: Mutex<Option<Zeroizing<[u8; 32]>>>,
     selected_document_sources: Mutex<HashMap<String, PathBuf>>,
+    selected_restore: Mutex<Option<(String, PathBuf)>>,
     attachment_operations: Mutex<()>,
     security_operations: Mutex<()>,
 }
@@ -47,6 +48,29 @@ impl AppState {
             .map_err(|_| Error::Operation)?
             .remove(token)
             .ok_or(Error::AttachmentSourceMissing)
+    }
+
+    /// The backup file chosen in the native picker for a pending restore. The
+    /// path stays in Rust; the renderer only holds the one-time token. A new
+    /// selection replaces any earlier one.
+    pub fn store_restore_selection(&self, path: PathBuf) -> Result<String, Error> {
+        let token = uuid::Uuid::new_v4().to_string();
+        *self.selected_restore.lock().map_err(|_| Error::Operation)? = Some((token.clone(), path));
+        Ok(token)
+    }
+
+    /// Returns the selected path without consuming it, so a mistyped password
+    /// can be retried without choosing the file again.
+    pub fn peek_restore_selection(&self, token: &str) -> Result<PathBuf, Error> {
+        match &*self.selected_restore.lock().map_err(|_| Error::Operation)? {
+            Some((stored, path)) if stored == token => Ok(path.clone()),
+            _ => Err(Error::Validation),
+        }
+    }
+
+    pub fn clear_restore_selection(&self) -> Result<(), Error> {
+        *self.selected_restore.lock().map_err(|_| Error::Operation)? = None;
+        Ok(())
     }
 
     /// Native-picker source paths are transient capabilities. They must not

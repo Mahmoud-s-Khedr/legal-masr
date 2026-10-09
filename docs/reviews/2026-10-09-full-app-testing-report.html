@@ -1,0 +1,2554 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Legal Masr — testing and bug report — 9 October 2026</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, sans-serif;
+        color: #193532;
+        background: #f5f7f5;
+      }
+      body {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px;
+      }
+      main {
+        background: white;
+        padding: 36px;
+        border-radius: 12px;
+      }
+      h1,
+      h2,
+      h3 {
+        line-height: 1.25;
+      }
+      h2 {
+        margin-top: 42px;
+        border-bottom: 1px solid #ccd9d6;
+        padding-bottom: 12px;
+      }
+      p,
+      li {
+        line-height: 1.65;
+      }
+      a {
+        color: #006958;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      td,
+      th {
+        border: 1px solid #ccd9d6;
+        padding: 10px;
+        min-width: 110px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: #edf5f2;
+      }
+      code,
+      pre {
+        background: #eef2f1;
+      }
+      pre {
+        padding: 18px;
+        overflow: auto;
+      }
+      figure {
+        margin: 0 0 24px;
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ccd9d6;
+        border-radius: 8px;
+      }
+      figcaption {
+        font-size: 14px;
+        margin: 8px 0;
+      }
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+      }
+      .gallery img {
+        max-height: 300px;
+        object-fit: contain;
+        width: 100%;
+        background: #edf2ef;
+      }
+      input {
+        width: min(600px, 90%);
+        padding: 12px;
+        font: inherit;
+        margin-bottom: 24px;
+        border: 1px solid #9ab4aa;
+        border-radius: 8px;
+      }
+      .badge {
+        padding: 12px 16px;
+        background: #fff1de;
+        border-left: 4px solid #a14e16;
+      }
+      .key-images {
+        display: grid;
+        gap: 24px;
+      }
+      footer {
+        margin-top: 40px;
+        font-size: 13px;
+        color: #536e65;
+      }
+      @media (max-width: 700px) {
+        body {
+          padding: 8px;
+        }
+        main {
+          padding: 16px;
+        }
+        .gallery {
+          display: block;
+        }
+      }
+      @media print {
+        main {
+          padding: 0;
+        }
+        .gallery {
+          display: block;
+        }
+        input {
+          display: none;
+        }
+        figure {
+          break-inside: avoid;
+        }
+        a {
+          color: inherit;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="badge">
+        Four confirmed defects · 17 page surfaces · real Linux desktop and renderer testing ·
+        supported-platform acceptance remains open
+      </p>
+      <h1>Legal Masr — end-to-end testing and bug report</h1>
+      <p>
+        Date: 9 October 2026. Application revision:
+        <code>2dda15a5c8c43218d18c097e24728a153fa52703</code>.
+      </p>
+      <p>
+        <strong>Verdict: not ready for use with real client data.</strong> The main local record
+        workflows passed. Four defects were confirmed, including a backup disaster-recovery blocker.
+        Every defined page surface was exercised, but this is
+        <strong>not a claim that every control has passed a real desktop end-to-end test</strong>.
+        OS integrations and several secondary workflows have only component/service coverage or
+        remain unverified. The action matrix and explicit gaps below define the actual coverage.
+      </p>
+      <p>
+        No production application code, migrations, existing visual baselines, or user vaults were
+        changed. New audit runners and this evidence set are the deliverables. All records and
+        attachments used for testing were fictional. Disposable vaults, backups, passwords, and
+        recovery keys are excluded from retained evidence.
+      </p>
+      <h2>Test environment and evidence</h2>
+      <p>
+        The native tests used a freshly rebuilt Tauri desktop harness on Linux with WebKit, real
+        IPC, SQLCipher, encrypted backups, and managed attachment copies. The harness substitutes
+        allowlisted fictional files for native file-picker choices; it does not prove physical
+        dialog behavior. Its binary checksum is recorded in the
+        <a href="evidence/2026-10-09/full-test/native/capture-manifest.json">native manifest</a>.
+      </p>
+      <p>
+        Browser checks used the development capture bridge, whose mutations are no-ops. These
+        establish renderer behavior, not database persistence. The canonical comparisons ran in the
+        repository's pinned Playwright Ubuntu container. Arabic/RTL and English/LTR were exercised
+        at 1366×768 and 1440×900; renderer checks also exercised 760×900. Browser fixtures use a
+        fixed 3 October clock; native workflows use the actual 9 October date in Africa/Cairo.
+      </p>
+      <p>
+        Open the <a href="2026-10-09-full-app-testing-report.html">HTML report</a> for embedded
+        evidence and a searchable screenshot gallery. The
+        <a href="evidence/2026-10-09/full-test/visible-controls.csv">visible-control inventory</a>
+        contains 3,212 control observations across the route/locale/viewport matrix. An observation
+        is an inventory entry, <strong>not an individual successful click assertion</strong>. JSON
+        results and logs are linked below; the final consolidated results include rerun provenance.
+      </p>
+      <h2>Validation results</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer/check</th>
+            <th>Result</th>
+            <th>Evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Frontend tests, controlled complete rerun</td>
+            <td><strong>321 passed / 41 files</strong></td>
+            <td><a href="evidence/2026-10-09/full-test/frontend-tests-serial.log">Full log</a></td>
+          </tr>
+          <tr>
+            <td>Node test suites for scripts</td>
+            <td><strong>60 passed</strong></td>
+            <td><a href="evidence/2026-10-09/full-test/script-tests.log">Full log</a></td>
+          </tr>
+          <tr>
+            <td>Rust unit/integration tests</td>
+            <td><strong>99 passed</strong></td>
+            <td><a href="evidence/2026-10-09/full-test/rust-tests.log">Full log</a></td>
+          </tr>
+          <tr>
+            <td>Browser route/tab/form/keyboard checks</td>
+            <td><strong>176 passed</strong></td>
+            <td><a href="evidence/2026-10-09/full-test/browser/results.json">Results</a></td>
+          </tr>
+          <tr>
+            <td>Canonical screenshot comparison and keyboard checks</td>
+            <td><strong>69 passed</strong>: 68 comparisons + 1 interaction test</td>
+            <td><a href="evidence/2026-10-09/full-test/canonical-visual.log">Full log</a></td>
+          </tr>
+          <tr>
+            <td>Main native workflow matrix</td>
+            <td>
+              <strong>66 unique locale/scenario checks passed after harness corrections</strong>
+            </td>
+            <td>
+              <a href="evidence/2026-10-09/full-test/final-results.json">Consolidated results</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Additional native control checks</td>
+            <td>
+              <strong>11 passed / 2 failed</strong> across 13 unique checks: opponent validation and
+              blank settings values are the product failures
+            </td>
+            <td>
+              <a href="evidence/2026-10-09/full-test/final-results.json">Consolidated results</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Standard native smoke journeys</td>
+            <td><strong>5 passed</strong></td>
+            <td><a href="evidence/2026-10-09/full-test/desktop-smoke/results.json">Results</a></td>
+          </tr>
+          <tr>
+            <td>Backup portability experiment</td>
+            <td>
+              Original-vault validation and destination preservation passed;
+              <strong>3 defect observations</strong>
+            </td>
+            <td><a href="evidence/2026-10-09/full-test/portability/results.json">Results</a></td>
+          </tr>
+          <tr>
+            <td>Typecheck, lint, formatter</td>
+            <td>Passed on final audit files</td>
+            <td>
+              <a href="evidence/2026-10-09/full-test/typecheck-final.log">Typecheck</a>,
+              <a href="evidence/2026-10-09/full-test/lint-final.log">lint</a>,
+              <a href="evidence/2026-10-09/full-test/format-final.log">format</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Cargo formatting / clippy with warnings denied</td>
+            <td>Passed</td>
+            <td>
+              <a href="evidence/2026-10-09/full-test/rust-format.log">Formatting</a>,
+              <a href="evidence/2026-10-09/full-test/rust-clippy.log">clippy</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Renderer and production Rust coverage policy</td>
+            <td>Passed the repository's proposed floors</td>
+            <td><a href="evidence/2026-10-09/full-test/coverage-policy.log">Policy results</a></td>
+          </tr>
+          <tr>
+            <td>Native harness build / normal Debian debug package</td>
+            <td>Passed</td>
+            <td>
+              <a href="evidence/2026-10-09/full-test/native-build.log">Harness build</a>,
+              <a href="evidence/2026-10-09/full-test/production-debug-build.log">normal build</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Production binary excludes test harness markers</td>
+            <td>Passed</td>
+            <td>
+              <a href="evidence/2026-10-09/full-test/production-boundary.log">Boundary scan</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Renderer coverage was 86.26% statements/lines, 82.75% branches, and 74.14% functions.
+        Production Rust coverage was 42.49% lines, 40.34% regions, and 40.37% functions. These are
+        code-coverage measurements, not feature-completeness percentages. In particular, passing the
+        current Rust floor does not establish exhaustive failure-path coverage.
+      </p>
+      <p>
+        The initial parallel frontend run had one 5-second hearing-workflow timeout. That test
+        passed independently, and all 321 tests then passed in a complete single-worker coverage
+        run. The original failure is retained in the
+        <a href="evidence/2026-10-09/full-test/frontend-tests.log">initial log</a>; it is classified
+        as test timing instability under concurrent work, not a reproduced product defect.
+      </p>
+      <h2>Confirmed bugs</h2>
+      <h3>BUG-01 — P1: a standalone backup cannot recover a fresh installation</h3>
+      <p>
+        <strong>Impact:</strong> a lawyer who loses the original vault/security material can retain
+        an intact backup and the original password yet be unable to restore their records. This is a
+        release blocker. It re-confirms the existing B01 risk with fresh execution evidence.
+      </p>
+      <p>Reproduction:</p>
+      <ol>
+        <li>
+          Create a disposable source installation using a known password; create a client and a
+          backup.
+        </li>
+        <li>Validate that backup in the source vault: succeeds.</li>
+        <li>Launch a separate empty installation: setup offers no restore control.</li>
+        <li>
+          Initialize the destination with the <strong>same original password</strong>, copy only the
+          source backup into its permitted test backup location, and attempt validation and restore.
+        </li>
+      </ol>
+      <p>
+        <strong>Expected:</strong> an authenticated disaster-recovery workflow can open the
+        standalone backup using its documented recovery material, without requiring the lost source
+        installation.
+      </p>
+      <p>
+        <strong>Actual:</strong> both <code>backup_validate</code> and
+        <code>backup_restore</code> return <code>BACKUP_CORRUPTED</code>. The destination client
+        survives; the source client is not restored. No restore button exists on fresh-install
+        setup. The archive is demonstrably valid in its original vault, so the error also gives
+        misleading corruption advice for this case.
+      </p>
+      <p>
+        Evidence:
+        <a href="evidence/2026-10-09/full-test/portability/results.json">executed results</a>,
+        <a href="evidence/2026-10-09/full-test/portability/fresh-install-setup.png"
+          >fresh-install screen</a
+        >, <a href="../../scripts/audit-backup-portability.mjs">reproduction runner</a>.
+        <code>src-tauri/src/services/backup_service.rs</code> uses the current unlocked master key
+        for validation/restore; this code observation explains the reproduced key mismatch but is
+        not itself the test evidence.
+      </p>
+      <p>
+        Recommended acceptance: an authenticated portable key envelope and a fresh-install import
+        flow; original-password restore into a new vault with managed attachments; failure leaves
+        the destination unchanged; subsequent Windows↔macOS exercises. Same-vault restore passes do
+        not close this bug.
+      </p>
+      <h3>BUG-02 — P2: saving an empty opponent form gives no validation feedback</h3>
+      <p>
+        <strong>Impact:</strong> Save opponent appears unresponsive and the user receives no
+        explanation. Assistive technology also has no error/invalid-field indication to announce.
+      </p>
+      <p>Reproduction:</p>
+      <ol>
+        <li>Open a case → Parties → Add opponent.</li>
+        <li>Leave Opponent name empty.</li>
+        <li>Click Save opponent.</li>
+      </ol>
+      <p>
+        <strong>Expected:</strong> a visible required-name message, an invalid-field indication
+        associated with the input, and retained draft values.
+      </p>
+      <p>
+        <strong>Actual:</strong> the dialog stays open with zero error alerts and zero elements
+        marked <code>aria-invalid=&quot;true&quot;</code>. No opponent is created. A valid name
+        subsequently works: native creation, editing, cancellation, and removal all passed.
+      </p>
+      <p>
+        Evidence:
+        <a
+          href="evidence/2026-10-09/full-test/native-controls-rerun/opponent-empty-form-visible-feedback.png"
+          >native screenshot</a
+        >,
+        <a href="evidence/2026-10-09/full-test/native-controls-rerun/opponent-validation.json"
+          >native DOM measurements</a
+        >,
+        <a href="evidence/2026-10-09/full-test/bugs/opponent-empty-en.json"
+          >independent Chromium measurements</a
+        >. This was reproduced in both the browser renderer and real Linux desktop.
+        <code>CasePartiesPanel.tsx</code> does not pass the name error into <code>Field</code>; the
+        shared <code>Field</code> sets its accessibility error attributes from that prop.
+      </p>
+      <p>
+        Recommended acceptance: invalid submit visibly identifies the name field and exposes its
+        error through <code>aria-describedby</code>/<code>aria-invalid</code>; valid submit creates
+        exactly one opponent; failure retains the draft.
+      </p>
+      <h3>BUG-03 — P3: English case page displays an Arabic fallback</h3>
+      <p>Reproduction:</p>
+      <ol>
+        <li>
+          Select English and open a case with an opponent whose legal capacity and lawyer name are
+          empty.
+        </li>
+        <li>Open Parties and inspect the opponent row.</li>
+      </ol>
+      <p><strong>Expected:</strong> an English fallback such as “No capacity recorded.”</p>
+      <p>
+        <strong>Actual:</strong> the row displays <code>دون صفة مسجلة</code> even though surrounding
+        app labels are English. Arabic record names are legitimate user data; this particular string
+        is hardcoded application copy in <code>CasePartiesPanel.tsx</code>.
+      </p>
+      <p>
+        Evidence:
+        <a href="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-1.png"
+          >English Parties screenshot</a
+        >. This evidence uses a fictional fixture record; no native persistence claim is needed for
+        this renderer text defect.
+      </p>
+      <p>
+        Recommended acceptance: a translation key with Arabic and English entries and a regression
+        assertion for an opponent with both optional fields absent.
+      </p>
+      <h3>BUG-04 — P2: native settings display blank persisted selection values</h3>
+      <p>
+        <strong>Impact:</strong> a desktop user cannot see the currently saved interface language,
+        appearance, or date format when opening Display and calendar.
+      </p>
+      <p>Reproduction:</p>
+      <ol>
+        <li>Initialize a real Linux desktop vault in English.</li>
+        <li>Open Settings → Display and calendar without opening the dropdowns first.</li>
+        <li>
+          Read persisted settings over real IPC and wait up to five seconds for their labels to
+          appear.
+        </li>
+      </ol>
+      <p>
+        <strong>Expected:</strong> the loaded language, appearance, and date-format labels are
+        visible in the closed selects.
+      </p>
+      <p>
+        <strong>Actual:</strong> the first three displayed values remain empty; Saturday and 60 are
+        shown in the other selects. The backend reports <code>language: &quot;en&quot;</code> and
+        <code>dateFormat: &quot;dd/MM/yyyy&quot;</code>. Selecting Dark and saving does persist and
+        render dark mode, but the untouched language/date-format labels remain blank. A separate
+        fresh-vault rerun reproduced the blank labels after the wait. The Chromium fixture screen
+        shows populated values, so this native regression would be missed by screenshot fixtures
+        alone.
+      </p>
+      <p>
+        Evidence:
+        <a
+          href="evidence/2026-10-09/full-test/native-select-check/settings-persisted-select-values-visible.png"
+          >native screenshot after the wait</a
+        >,
+        <a href="evidence/2026-10-09/full-test/native-select-check/settings-select-values.json"
+          >persisted/displayed measurements</a
+        >,
+        <a href="evidence/2026-10-09/full-test/native-controls-rerun/settings-dark-theme.png"
+          >native dark-theme screenshot</a
+        >,
+        <a href="evidence/2026-10-09/full-test/browser/en-tab--settings-1.png"
+          >populated Chromium comparison</a
+        >.
+      </p>
+      <p>
+        Recommended acceptance: reproduce with asynchronous settings loading in the real WebKit
+        desktop, verify all three labels before interaction and after saving/reopening, and repeat
+        in both locales. The exact root cause remains unconfirmed; investigate the form-reset/Select
+        integration rather than treating a fixture pass as sufficient.
+      </p>
+      <h2>Page coverage: ordered steps and health</h2>
+      <p>
+        All 17 surfaces below have fresh Arabic and English captures at all three renderer sizes.
+        The screenshot links show the English desktop view; the HTML gallery includes the complete
+        matrix. “Pass” applies to the executed route/render checks, not to every possible action on
+        that page.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Surface / route</th>
+            <th>Health and evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>First-run setup / access gates</td>
+            <td>
+              Render and native setup/unlock/recovery passed; fresh-install restore absent — BUG-01.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-onboarding.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Today <code>/</code></td>
+            <td>
+              Route, hearing/task presentation and derived summaries passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-dashboard.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Clients <code>/clients</code></td>
+            <td>
+              Route, table, native search/no-results/clear and archive filter passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-clients.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>New client <code>/clients/new</code></td>
+            <td>
+              Native create and renderer required-field validation passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-new-client.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Client detail <code>/clients/:id</code></td>
+            <td>
+              Tabs, edit persistence and archive/restore passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-client-detail.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Powers of attorney list</td>
+            <td>
+              Route and navigation passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-powers-of-attorney.png"
+                >Screen</a
+              >
+            </td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>New power of attorney</td>
+            <td>
+              Create/edit and required internal sequence passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-new-poa.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Power of attorney detail</td>
+            <td>
+              Five tabs, linked-case deduplication and archive/restore passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-poa-detail.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Cases <code>/cases</code></td>
+            <td>
+              Route/table and navigation passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-cases.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>New case <code>/cases/new</code></td>
+            <td>
+              Native create, client selection and invalid/no-client rejection passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-new-case.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>Case detail <code>/cases/:id</code></td>
+            <td>
+              Six tabs and principal workflows passed; opponent feedback and English copy failed —
+              BUG-02/03.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-case-detail.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>Agenda <code>/calendar</code></td>
+            <td>
+              Month/week/list, period controls, hearing create/decision/follow-up/delete passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-agenda.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td>Tasks <code>/tasks</code></td>
+            <td>
+              Five views, create/edit/complete/reopen/delete passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-tasks.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>14</td>
+            <td>Documents <code>/attachments</code></td>
+            <td>
+              Global/scoped list and owner-managed workflows passed; physical open/reveal remains
+              unverified.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-attachments.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>15</td>
+            <td>Finance <code>/finances</code></td>
+            <td>
+              Payment/expense workflows, payer restriction, fee validation and exact totals passed.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-finances.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>16</td>
+            <td>Backups <code>/backups</code></td>
+            <td>
+              Same-vault create/validate/restore/cancel/corrupt refusal passed; standalone
+              portability failed — BUG-01.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-backups.png">Screen</a>
+            </td>
+          </tr>
+          <tr>
+            <td>17</td>
+            <td>Settings <code>/settings</code></td>
+            <td>
+              Six sections, profile/general save and theme persistence passed; native closed-select
+              labels failed — BUG-04.
+              <a href="evidence/2026-10-09/full-test/browser/en-1440-settings.png">Screen</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <h2>Buttons, forms, and business-rule action matrix</h2>
+      <p>
+        Native checks below include actual persistence assertions. Where test setup or verification
+        used IPC directly, the action is identified separately; it is not counted as a click on a
+        nonexistent UI control.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Executed normal path</th>
+            <th>Executed rejection/cancel path</th>
+            <th>Limit / remaining coverage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Access</td>
+            <td>
+              Setup, recovery-key acknowledgement, lock/unlock, restart locking, password
+              change/recovery
+            </td>
+            <td>
+              Empty setup, wrong password, wrong current password, invalid recovery key,
+              old-password refusal after change
+            </td>
+            <td>
+              Change/recovery normal and failure checks include direct IPC; not every security-form
+              control has a native click assertion. Password visibility and idle-lock behavior have
+              component tests. Native sleep/resume remains unverified.
+            </td>
+          </tr>
+          <tr>
+            <td>Shared shell</td>
+            <td>
+              All 10 sidebar links clicked natively; global-search exact result opens its file;
+              palette opens/closes; mobile drawer Escape
+            </td>
+            <td>
+              Keyboard focus return exercised by canonical test; locking removes legal-record caches
+              in frontend tests
+            </td>
+            <td>
+              External contact buttons only have contract/component coverage; no external contact
+              was sent or opened for certification. Quick-add choices are covered by existing
+              component workflows, not every native menu click.
+            </td>
+          </tr>
+          <tr>
+            <td>Client forms</td>
+            <td>Native create/edit with changed address; relationships/account/documents tabs</td>
+            <td>
+              Duplicate internal number refused; invalid fields and rejected save retain drafts in
+              frontend tests; native search/no-results/clear/filter
+            </td>
+            <td>
+              Probable-duplicate confirm/cancel and inline-client create have frontend coverage; not
+              a complete new native flow for both.
+            </td>
+          </tr>
+          <tr>
+            <td>Client/POA/case archive</td>
+            <td>
+              Native confirmation cancellation and commit for clients/POAs, then restore; native
+              case archive/restore
+            </td>
+            <td>Cancel preserves records</td>
+            <td>
+              Case Archive acts immediately; no confirmation exists for that reversible action. This
+              is recorded behavior, not a failed requirement.
+            </td>
+          </tr>
+          <tr>
+            <td>POA forms</td>
+            <td>Native create/edit, multiple-client links, linked-case uniqueness</td>
+            <td>Required sequence and rejected save tested</td>
+            <td>
+              Lawyer add/remove and all optional-field combinations are component/service coverage
+              rather than a full native matrix.
+            </td>
+          </tr>
+          <tr>
+            <td>Case forms/relationships</td>
+            <td>Native create/edit, relationship-note save and source lookup</td>
+            <td>
+              Empty client list refused; removing a paid client through the relationship editor
+              displays an error and preserves both relationships
+            </td>
+            <td>
+              Extensive schema/component coverage includes dates/identifiers/POA restrictions; not
+              every combination was clicked natively.
+            </td>
+          </tr>
+          <tr>
+            <td>Opponents</td>
+            <td>Native create/edit; remove cancellation/confirmation</td>
+            <td>Empty name fails silently — BUG-02</td>
+            <td>English fallback defect — BUG-03.</td>
+          </tr>
+          <tr>
+            <td>Hearings</td>
+            <td>
+              Native create, calendar selection, exact deep-link editor, decision with persisted
+              next-hearing chain, delete cancel/confirm
+            </td>
+            <td>
+              Invalid forms and rejected saves covered by frontend/Rust tests; deletion failure
+              covered by frontend workflow test
+            </td>
+            <td>Long-label dialog fits its actual containing dialog; see harness triage below.</td>
+          </tr>
+          <tr>
+            <td>Agenda/Today</td>
+            <td>
+              Native month/week/list and previous/next/today controls; renderer date-specific cards
+            </td>
+            <td>
+              Derived dates/completion and unavailable hearing/task states tested in
+              frontend/service suites
+            </td>
+            <td>Physical notifications and all timezone/OS combinations remain unverified.</td>
+          </tr>
+          <tr>
+            <td>Tasks</td>
+            <td>Native create/edit/complete/reopen; task-delete cancel/confirm</td>
+            <td>Invalid fields, missing deep link, mutation failure and cache refresh tested</td>
+            <td>
+              Some create/edit verification uses direct IPC; test names distinguish this from native
+              clicks.
+            </td>
+          </tr>
+          <tr>
+            <td>Fee agreement</td>
+            <td>Native zero-value rejection and exact 3000.25 EGP save</td>
+            <td>Zero/invalid values rejected</td>
+            <td>Not an exhaustive numeric fuzzing campaign.</td>
+          </tr>
+          <tr>
+            <td>Payments</td>
+            <td>Native payer options limited to selected case; 100.01 EGP save; exact summary</td>
+            <td>Zero amount and unrelated payer rejected through real IPC</td>
+            <td>
+              Inspect/edit/filter controls have frontend workflow coverage; not every such control
+              was exercised against a real vault.
+            </td>
+          </tr>
+          <tr>
+            <td>Expenses</td>
+            <td>Native 12.50 EGP save without client/case links</td>
+            <td>Negative amount rejected; failed saves retain draft in frontend tests</td>
+            <td>
+              Expense-owned attachment upload has no UI; full expense inspect/edit/filter native
+              coverage is incomplete.
+            </td>
+          </tr>
+          <tr>
+            <td>Managed attachments</td>
+            <td>
+              Native add, metadata edit through UI, remove cancel/confirm, source-byte preservation,
+              backup restore byte equality
+            </td>
+            <td>
+              Cancelled picker, two-owner payload, missing managed-file Open, copy/metadata/remove
+              failures
+            </td>
+            <td>
+              Actual file-picker UI is substituted. Successful physical viewer launch and Show in
+              folder are not certified. Backend error/path behavior and frontend buttons are tested
+              separately.
+            </td>
+          </tr>
+          <tr>
+            <td>Backup controls</td>
+            <td>
+              Native create, validate, restore confirm, re-unlock; three repeated restores per
+              locale plus standard smoke journey
+            </td>
+            <td>
+              Restore-dialog cancel, picker cancel, corrupt refusal, unchanged destination, corrupt
+              integration inventory cases
+            </td>
+            <td>
+              No portable recovery, scheduling/retention/history UI, configurable destination, or
+              accessible emergency-snapshot recovery certified.
+            </td>
+          </tr>
+          <tr>
+            <td>Settings</td>
+            <td>
+              Native profile save, general save, dark theme selection/persistence/revert; all six
+              sections in renderer
+            </td>
+            <td>
+              Required profile, rejected settings mutations, password validation and notification
+              permission refusal covered by frontend tests
+            </td>
+            <td>
+              BUG-04 in native loading. Notification/autostart/counter switches have
+              component/service coverage, not physical OS sign-off.
+            </td>
+          </tr>
+          <tr>
+            <td>Localization/layout/accessibility</td>
+            <td>
+              RTL/LTR assertions, keyboard tabs/dialog Escape/focus return, 102
+              route/locale/viewport measurements with no document overflow
+            </td>
+            <td>Main form validation messages asserted in both locales</td>
+            <td>
+              No screen-reader, comprehensive contrast, 200% zoom, high-contrast-mode, or
+              accessibility-conformance certification.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <h2>Harness triage and reliability</h2>
+      <p>
+        Initial native capture attempts were blocked by old <code>.field-error</code>,
+        <code>.dialog-surface</code>, checkbox-picker and date-picker selectors. Those selectors
+        were corrected in the <strong>new audit runner</strong>, leaving application behavior
+        unchanged. A duplicate-number check was updated from the old generic error to
+        <code>CLIENT_NUMBER_TAKEN</code>. An exact client search result is now selected rather than
+        assuming the first ranked result is always that client. WebDriver's clear operation was
+        replaced with actual keyboard clearing for the list search. The task-delete setup now
+        invokes the real <code>task_create</code> command.
+      </p>
+      <p>
+        A strict form-width assertion initially reported a hearing layout failure. Fresh geometry
+        showed a 736px form with a 752px scroll width inside a 768px dialog whose own scroll width
+        was also 768px. The form footer intentionally extends into dialog padding. The meaningful
+        containing-dialog check passed in both locales; this is
+        <strong>not a product overflow bug</strong>. Native calendar clicks also worked, but an
+        obsolete assertion required ISO display while the saved date preference displays
+        day/month/year. The corrected checks passed without changing product code. Earlier raw
+        failures are retained, with later results superseding them in
+        <a href="evidence/2026-10-09/full-test/final-results.json">final-results.json</a>.
+      </p>
+      <p>
+        The canonical comparisons prove agreement with the current checked-in candidates, not
+        approval against an external design reference. Screenshots captured too early in entrance
+        transitions were refreshed with animation handling. Gallery images are final renderer
+        captures; native screenshots are included selectively where their state was inspected.
+        Intermediate native tab captures are not presented as proof that their named panel had
+        settled.
+      </p>
+      <h2>Explicit gaps and release risks</h2>
+      <ol>
+        <li>
+          <strong>Windows and macOS:</strong> no physical run, installer/update/uninstall,
+          platform-native dialog, sleep/resume, autostart, or notification validation was executed.
+          A Linux debug Debian build does not pass supported-platform acceptance.
+        </li>
+        <li>
+          <strong>Some buttons remain component/service-only:</strong> secondary payment/expense
+          inspect/edit/filter combinations; every quick-add item; inline-client/probable-duplicate
+          confirmation combinations; POA lawyer controls; successful physical attachment
+          viewer/reveal; external contact launch controls. Their existence is inventoried, and
+          relevant automated coverage ran, but they are not all real-desktop E2E passes.
+        </li>
+        <li>
+          <strong>Backup disaster recovery:</strong> BUG-01 is reproduced. Successful same-vault
+          restores cannot establish standalone or cross-device recovery. The emergency snapshot
+          recovery UI and retention policy remain unverified/incomplete.
+        </li>
+        <li>
+          <strong>Known missing product workflows:</strong> expense attachment upload, visible
+          client JSON export, case/full-installation exports, stable CSV/manifest export, permanent
+          record/application-data deletion, automatic backup/history/destination controls, restore
+          preview, and tray behavior remain outside completed UI coverage because the planned
+          interfaces are absent or unfinished. These are existing plan gaps, not newly invented
+          buttons or fresh regressions.
+        </li>
+        <li>
+          <strong>Scale and interruption:</strong> no large-vault performance soak, disk-full native
+          UI campaign, process-crash timing sweep, long-running operation/lock race campaign, or
+          multi-day reminder run. Repository/service tests cover selected integrity/rollback
+          failures, not every physical interruption.
+        </li>
+        <li>
+          <strong>Accessibility and security scope:</strong> keyboard/RTL/error checks are useful
+          evidence but not a formal accessibility audit or penetration test. Recovery/security tests
+          do not prove the absence of all transient secret copies or side channels.
+        </li>
+      </ol>
+      <h2>Reproduction and handoff</h2>
+      <p>
+        The new runners are <a href="../../scripts/full-app-browser-audit.mjs">browser audit</a>,
+        <a href="../../scripts/full-app-native-audit.mjs">native workflow audit</a>,
+        <a href="../../scripts/full-app-native-controls.mjs">additional native controls</a>, and
+        <a href="../../scripts/audit-backup-portability.mjs">backup portability experiment</a>.
+        Native runners must execute serially because they share the Tauri driver port, and they
+        require a desktop display and the rebuilt isolated harness.
+      </p>
+      <pre><code class="language-bash">pnpm build:desktop:e2e
+# Terminal 1: fictional renderer fixture server
+VITE_CAPTURE_MODE=true pnpm vite --host 127.0.0.1 --port 4173
+# Terminal 2: renderer checks
+node scripts/full-app-browser-audit.mjs
+# Native runs, one at a time; all use disposable marked test vaults
+TZ=Africa/Cairo node scripts/full-app-native-audit.mjs --functional-preflight
+TZ=Africa/Cairo node scripts/full-app-native-controls.mjs
+TZ=Africa/Cairo node scripts/audit-backup-portability.mjs
+</code></pre>
+      <p>
+        The opponent-validation and native-settings assertions intentionally fail while BUG-02/04
+        remain unfixed. Portability reports <code>defect-confirmed</code> outcomes; its process
+        succeeding means the experiment completed, not that portability passed. Keep this
+        distinction when rerunning the evidence.
+      </p>
+      <p>
+        Prioritize portable backup recovery, then native settings labels and opponent feedback, then
+        the translation correction. Retest normal and rejection paths after each fix and complete
+        the supported-platform matrix before approving use with real legal data. No bugs were fixed
+        as part of this testing/reporting task.
+      </p>
+      <h2>Inspected defect screenshots</h2>
+      <div class="key-images">
+        <figure>
+          <a href="evidence/2026-10-09/full-test/portability/fresh-install-setup.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/portability/fresh-install-setup.png"
+              alt="BUG-01: fresh installation has no restore entry point"
+          /></a>
+          <figcaption>BUG-01: fresh installation has no restore entry point</figcaption>
+        </figure>
+        <figure>
+          <a
+            href="evidence/2026-10-09/full-test/native-controls-rerun/opponent-empty-form-visible-feedback.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/native-controls-rerun/opponent-empty-form-visible-feedback.png"
+              alt="BUG-02: required opponent name submitted without feedback"
+          /></a>
+          <figcaption>BUG-02: required opponent name submitted without feedback</figcaption>
+        </figure>
+        <figure>
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-1.png"
+              alt="BUG-03: Arabic fallback within English application copy"
+          /></a>
+          <figcaption>BUG-03: Arabic fallback within English application copy</figcaption>
+        </figure>
+        <figure>
+          <a
+            href="evidence/2026-10-09/full-test/native-select-check/settings-persisted-select-values-visible.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/native-select-check/settings-persisted-select-values-visible.png"
+              alt="BUG-04: persisted settings values remain blank in native desktop"
+          /></a>
+          <figcaption>BUG-04: persisted settings values remain blank in native desktop</figcaption>
+        </figure>
+      </div>
+      <h2>Final renderer evidence gallery</h2>
+      <p>
+        170 screenshots. Filter by route name, ar/en, width, tab, or validation. Click any image to
+        inspect the original.
+      </p>
+      <label for="filter">Filter screenshots</label><br /><input
+        id="filter"
+        type="search"
+        placeholder="e.g. en-tab--settings, ar-760, validation"
+      />
+      <div class="gallery">
+        <figure data-label="ar-1366-agenda.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-agenda.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-agenda.png"
+              alt="ar-1366-agenda.png"
+          /></a>
+          <figcaption>ar-1366-agenda.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-attachments.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-attachments.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-attachments.png"
+              alt="ar-1366-attachments.png"
+          /></a>
+          <figcaption>ar-1366-attachments.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-backups.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-backups.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-backups.png"
+              alt="ar-1366-backups.png"
+          /></a>
+          <figcaption>ar-1366-backups.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-case-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-case-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-case-detail.png"
+              alt="ar-1366-case-detail.png"
+          /></a>
+          <figcaption>ar-1366-case-detail.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-cases.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-cases.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-cases.png"
+              alt="ar-1366-cases.png"
+          /></a>
+          <figcaption>ar-1366-cases.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-client-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-client-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-client-detail.png"
+              alt="ar-1366-client-detail.png"
+          /></a>
+          <figcaption>ar-1366-client-detail.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-clients.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-clients.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-clients.png"
+              alt="ar-1366-clients.png"
+          /></a>
+          <figcaption>ar-1366-clients.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-dashboard.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-dashboard.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-dashboard.png"
+              alt="ar-1366-dashboard.png"
+          /></a>
+          <figcaption>ar-1366-dashboard.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-finances.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-finances.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-finances.png"
+              alt="ar-1366-finances.png"
+          /></a>
+          <figcaption>ar-1366-finances.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-new-case.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-new-case.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-new-case.png"
+              alt="ar-1366-new-case.png"
+          /></a>
+          <figcaption>ar-1366-new-case.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-new-client.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-new-client.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-new-client.png"
+              alt="ar-1366-new-client.png"
+          /></a>
+          <figcaption>ar-1366-new-client.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-new-poa.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-new-poa.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-new-poa.png"
+              alt="ar-1366-new-poa.png"
+          /></a>
+          <figcaption>ar-1366-new-poa.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-onboarding.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-onboarding.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-onboarding.png"
+              alt="ar-1366-onboarding.png"
+          /></a>
+          <figcaption>ar-1366-onboarding.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-poa-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-poa-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-poa-detail.png"
+              alt="ar-1366-poa-detail.png"
+          /></a>
+          <figcaption>ar-1366-poa-detail.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-powers-of-attorney.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-powers-of-attorney.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-powers-of-attorney.png"
+              alt="ar-1366-powers-of-attorney.png"
+          /></a>
+          <figcaption>ar-1366-powers-of-attorney.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-settings.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-settings.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-settings.png"
+              alt="ar-1366-settings.png"
+          /></a>
+          <figcaption>ar-1366-settings.png</figcaption>
+        </figure>
+        <figure data-label="ar-1366-tasks.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1366-tasks.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1366-tasks.png"
+              alt="ar-1366-tasks.png"
+          /></a>
+          <figcaption>ar-1366-tasks.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-agenda.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-agenda.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-agenda.png"
+              alt="ar-1440-agenda.png"
+          /></a>
+          <figcaption>ar-1440-agenda.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-attachments.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-attachments.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-attachments.png"
+              alt="ar-1440-attachments.png"
+          /></a>
+          <figcaption>ar-1440-attachments.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-backups.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-backups.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-backups.png"
+              alt="ar-1440-backups.png"
+          /></a>
+          <figcaption>ar-1440-backups.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-case-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-case-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-case-detail.png"
+              alt="ar-1440-case-detail.png"
+          /></a>
+          <figcaption>ar-1440-case-detail.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-cases.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-cases.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-cases.png"
+              alt="ar-1440-cases.png"
+          /></a>
+          <figcaption>ar-1440-cases.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-client-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-client-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-client-detail.png"
+              alt="ar-1440-client-detail.png"
+          /></a>
+          <figcaption>ar-1440-client-detail.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-clients.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-clients.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-clients.png"
+              alt="ar-1440-clients.png"
+          /></a>
+          <figcaption>ar-1440-clients.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-dashboard.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-dashboard.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-dashboard.png"
+              alt="ar-1440-dashboard.png"
+          /></a>
+          <figcaption>ar-1440-dashboard.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-finances.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-finances.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-finances.png"
+              alt="ar-1440-finances.png"
+          /></a>
+          <figcaption>ar-1440-finances.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-new-case.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-new-case.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-new-case.png"
+              alt="ar-1440-new-case.png"
+          /></a>
+          <figcaption>ar-1440-new-case.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-new-client.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-new-client.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-new-client.png"
+              alt="ar-1440-new-client.png"
+          /></a>
+          <figcaption>ar-1440-new-client.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-new-poa.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-new-poa.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-new-poa.png"
+              alt="ar-1440-new-poa.png"
+          /></a>
+          <figcaption>ar-1440-new-poa.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-onboarding.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-onboarding.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-onboarding.png"
+              alt="ar-1440-onboarding.png"
+          /></a>
+          <figcaption>ar-1440-onboarding.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-poa-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-poa-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-poa-detail.png"
+              alt="ar-1440-poa-detail.png"
+          /></a>
+          <figcaption>ar-1440-poa-detail.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-powers-of-attorney.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-powers-of-attorney.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-powers-of-attorney.png"
+              alt="ar-1440-powers-of-attorney.png"
+          /></a>
+          <figcaption>ar-1440-powers-of-attorney.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-settings.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-settings.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-settings.png"
+              alt="ar-1440-settings.png"
+          /></a>
+          <figcaption>ar-1440-settings.png</figcaption>
+        </figure>
+        <figure data-label="ar-1440-tasks.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-1440-tasks.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-1440-tasks.png"
+              alt="ar-1440-tasks.png"
+          /></a>
+          <figcaption>ar-1440-tasks.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-agenda.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-agenda.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-agenda.png"
+              alt="ar-760-agenda.png"
+          /></a>
+          <figcaption>ar-760-agenda.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-attachments.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-attachments.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-attachments.png"
+              alt="ar-760-attachments.png"
+          /></a>
+          <figcaption>ar-760-attachments.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-backups.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-backups.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-backups.png"
+              alt="ar-760-backups.png"
+          /></a>
+          <figcaption>ar-760-backups.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-case-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-case-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-case-detail.png"
+              alt="ar-760-case-detail.png"
+          /></a>
+          <figcaption>ar-760-case-detail.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-cases.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-cases.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-cases.png"
+              alt="ar-760-cases.png"
+          /></a>
+          <figcaption>ar-760-cases.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-client-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-client-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-client-detail.png"
+              alt="ar-760-client-detail.png"
+          /></a>
+          <figcaption>ar-760-client-detail.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-clients.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-clients.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-clients.png"
+              alt="ar-760-clients.png"
+          /></a>
+          <figcaption>ar-760-clients.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-dashboard.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-dashboard.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-dashboard.png"
+              alt="ar-760-dashboard.png"
+          /></a>
+          <figcaption>ar-760-dashboard.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-finances.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-finances.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-finances.png"
+              alt="ar-760-finances.png"
+          /></a>
+          <figcaption>ar-760-finances.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-new-case.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-new-case.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-new-case.png"
+              alt="ar-760-new-case.png"
+          /></a>
+          <figcaption>ar-760-new-case.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-new-client.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-new-client.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-new-client.png"
+              alt="ar-760-new-client.png"
+          /></a>
+          <figcaption>ar-760-new-client.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-new-poa.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-new-poa.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-new-poa.png"
+              alt="ar-760-new-poa.png"
+          /></a>
+          <figcaption>ar-760-new-poa.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-onboarding.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-onboarding.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-onboarding.png"
+              alt="ar-760-onboarding.png"
+          /></a>
+          <figcaption>ar-760-onboarding.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-poa-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-poa-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-poa-detail.png"
+              alt="ar-760-poa-detail.png"
+          /></a>
+          <figcaption>ar-760-poa-detail.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-powers-of-attorney.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-powers-of-attorney.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-powers-of-attorney.png"
+              alt="ar-760-powers-of-attorney.png"
+          /></a>
+          <figcaption>ar-760-powers-of-attorney.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-settings.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-settings.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-settings.png"
+              alt="ar-760-settings.png"
+          /></a>
+          <figcaption>ar-760-settings.png</figcaption>
+        </figure>
+        <figure data-label="ar-760-tasks.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-760-tasks.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-760-tasks.png"
+              alt="ar-760-tasks.png"
+          /></a>
+          <figcaption>ar-760-tasks.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--cases-demo-case-14-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-0.png"
+              alt="ar-tab--cases-demo-case-14-0.png"
+          /></a>
+          <figcaption>ar-tab--cases-demo-case-14-0.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--cases-demo-case-14-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-1.png"
+              alt="ar-tab--cases-demo-case-14-1.png"
+          /></a>
+          <figcaption>ar-tab--cases-demo-case-14-1.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--cases-demo-case-14-2.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-2.png"
+              alt="ar-tab--cases-demo-case-14-2.png"
+          /></a>
+          <figcaption>ar-tab--cases-demo-case-14-2.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--cases-demo-case-14-3.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-3.png"
+              alt="ar-tab--cases-demo-case-14-3.png"
+          /></a>
+          <figcaption>ar-tab--cases-demo-case-14-3.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--cases-demo-case-14-4.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-4.png"
+              alt="ar-tab--cases-demo-case-14-4.png"
+          /></a>
+          <figcaption>ar-tab--cases-demo-case-14-4.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--cases-demo-case-14-5.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-5.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--cases-demo-case-14-5.png"
+              alt="ar-tab--cases-demo-case-14-5.png"
+          /></a>
+          <figcaption>ar-tab--cases-demo-case-14-5.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--clients-demo-client-adel-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-0.png"
+              alt="ar-tab--clients-demo-client-adel-0.png"
+          /></a>
+          <figcaption>ar-tab--clients-demo-client-adel-0.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--clients-demo-client-adel-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-1.png"
+              alt="ar-tab--clients-demo-client-adel-1.png"
+          /></a>
+          <figcaption>ar-tab--clients-demo-client-adel-1.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--clients-demo-client-adel-2.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-2.png"
+              alt="ar-tab--clients-demo-client-adel-2.png"
+          /></a>
+          <figcaption>ar-tab--clients-demo-client-adel-2.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--clients-demo-client-adel-3.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-3.png"
+              alt="ar-tab--clients-demo-client-adel-3.png"
+          /></a>
+          <figcaption>ar-tab--clients-demo-client-adel-3.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--clients-demo-client-adel-4.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--clients-demo-client-adel-4.png"
+              alt="ar-tab--clients-demo-client-adel-4.png"
+          /></a>
+          <figcaption>ar-tab--clients-demo-client-adel-4.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--finances-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--finances-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--finances-0.png"
+              alt="ar-tab--finances-0.png"
+          /></a>
+          <figcaption>ar-tab--finances-0.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--finances-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--finances-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--finances-1.png"
+              alt="ar-tab--finances-1.png"
+          /></a>
+          <figcaption>ar-tab--finances-1.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--powers-of-attorney-demo-poa-1-0.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-0.png"
+              alt="ar-tab--powers-of-attorney-demo-poa-1-0.png"
+          /></a>
+          <figcaption>ar-tab--powers-of-attorney-demo-poa-1-0.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--powers-of-attorney-demo-poa-1-1.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-1.png"
+              alt="ar-tab--powers-of-attorney-demo-poa-1-1.png"
+          /></a>
+          <figcaption>ar-tab--powers-of-attorney-demo-poa-1-1.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--powers-of-attorney-demo-poa-1-2.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-2.png"
+              alt="ar-tab--powers-of-attorney-demo-poa-1-2.png"
+          /></a>
+          <figcaption>ar-tab--powers-of-attorney-demo-poa-1-2.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--powers-of-attorney-demo-poa-1-3.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-3.png"
+              alt="ar-tab--powers-of-attorney-demo-poa-1-3.png"
+          /></a>
+          <figcaption>ar-tab--powers-of-attorney-demo-poa-1-3.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--powers-of-attorney-demo-poa-1-4.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--powers-of-attorney-demo-poa-1-4.png"
+              alt="ar-tab--powers-of-attorney-demo-poa-1-4.png"
+          /></a>
+          <figcaption>ar-tab--powers-of-attorney-demo-poa-1-4.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--settings-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--settings-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--settings-0.png"
+              alt="ar-tab--settings-0.png"
+          /></a>
+          <figcaption>ar-tab--settings-0.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--settings-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--settings-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--settings-1.png"
+              alt="ar-tab--settings-1.png"
+          /></a>
+          <figcaption>ar-tab--settings-1.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--settings-2.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--settings-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--settings-2.png"
+              alt="ar-tab--settings-2.png"
+          /></a>
+          <figcaption>ar-tab--settings-2.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--settings-3.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--settings-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--settings-3.png"
+              alt="ar-tab--settings-3.png"
+          /></a>
+          <figcaption>ar-tab--settings-3.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--settings-4.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--settings-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--settings-4.png"
+              alt="ar-tab--settings-4.png"
+          /></a>
+          <figcaption>ar-tab--settings-4.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--settings-5.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--settings-5.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--settings-5.png"
+              alt="ar-tab--settings-5.png"
+          /></a>
+          <figcaption>ar-tab--settings-5.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--tasks-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--tasks-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--tasks-0.png"
+              alt="ar-tab--tasks-0.png"
+          /></a>
+          <figcaption>ar-tab--tasks-0.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--tasks-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--tasks-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--tasks-1.png"
+              alt="ar-tab--tasks-1.png"
+          /></a>
+          <figcaption>ar-tab--tasks-1.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--tasks-2.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--tasks-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--tasks-2.png"
+              alt="ar-tab--tasks-2.png"
+          /></a>
+          <figcaption>ar-tab--tasks-2.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--tasks-3.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--tasks-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--tasks-3.png"
+              alt="ar-tab--tasks-3.png"
+          /></a>
+          <figcaption>ar-tab--tasks-3.png</figcaption>
+        </figure>
+        <figure data-label="ar-tab--tasks-4.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-tab--tasks-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-tab--tasks-4.png"
+              alt="ar-tab--tasks-4.png"
+          /></a>
+          <figcaption>ar-tab--tasks-4.png</figcaption>
+        </figure>
+        <figure data-label="ar-validation--calendar-create-hearing.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-validation--calendar-create-hearing.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-validation--calendar-create-hearing.png"
+              alt="ar-validation--calendar-create-hearing.png"
+          /></a>
+          <figcaption>ar-validation--calendar-create-hearing.png</figcaption>
+        </figure>
+        <figure data-label="ar-validation--cases-new.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-validation--cases-new.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-validation--cases-new.png"
+              alt="ar-validation--cases-new.png"
+          /></a>
+          <figcaption>ar-validation--cases-new.png</figcaption>
+        </figure>
+        <figure data-label="ar-validation--clients-new.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-validation--clients-new.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-validation--clients-new.png"
+              alt="ar-validation--clients-new.png"
+          /></a>
+          <figcaption>ar-validation--clients-new.png</figcaption>
+        </figure>
+        <figure data-label="ar-validation--powers-of-attorney-new.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-validation--powers-of-attorney-new.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-validation--powers-of-attorney-new.png"
+              alt="ar-validation--powers-of-attorney-new.png"
+          /></a>
+          <figcaption>ar-validation--powers-of-attorney-new.png</figcaption>
+        </figure>
+        <figure data-label="ar-validation--tasks-create-task.png">
+          <a href="evidence/2026-10-09/full-test/browser/ar-validation--tasks-create-task.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/ar-validation--tasks-create-task.png"
+              alt="ar-validation--tasks-create-task.png"
+          /></a>
+          <figcaption>ar-validation--tasks-create-task.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-agenda.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-agenda.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-agenda.png"
+              alt="en-1366-agenda.png"
+          /></a>
+          <figcaption>en-1366-agenda.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-attachments.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-attachments.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-attachments.png"
+              alt="en-1366-attachments.png"
+          /></a>
+          <figcaption>en-1366-attachments.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-backups.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-backups.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-backups.png"
+              alt="en-1366-backups.png"
+          /></a>
+          <figcaption>en-1366-backups.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-case-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-case-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-case-detail.png"
+              alt="en-1366-case-detail.png"
+          /></a>
+          <figcaption>en-1366-case-detail.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-cases.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-cases.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-cases.png"
+              alt="en-1366-cases.png"
+          /></a>
+          <figcaption>en-1366-cases.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-client-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-client-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-client-detail.png"
+              alt="en-1366-client-detail.png"
+          /></a>
+          <figcaption>en-1366-client-detail.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-clients.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-clients.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-clients.png"
+              alt="en-1366-clients.png"
+          /></a>
+          <figcaption>en-1366-clients.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-dashboard.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-dashboard.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-dashboard.png"
+              alt="en-1366-dashboard.png"
+          /></a>
+          <figcaption>en-1366-dashboard.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-finances.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-finances.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-finances.png"
+              alt="en-1366-finances.png"
+          /></a>
+          <figcaption>en-1366-finances.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-new-case.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-new-case.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-new-case.png"
+              alt="en-1366-new-case.png"
+          /></a>
+          <figcaption>en-1366-new-case.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-new-client.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-new-client.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-new-client.png"
+              alt="en-1366-new-client.png"
+          /></a>
+          <figcaption>en-1366-new-client.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-new-poa.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-new-poa.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-new-poa.png"
+              alt="en-1366-new-poa.png"
+          /></a>
+          <figcaption>en-1366-new-poa.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-onboarding.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-onboarding.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-onboarding.png"
+              alt="en-1366-onboarding.png"
+          /></a>
+          <figcaption>en-1366-onboarding.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-poa-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-poa-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-poa-detail.png"
+              alt="en-1366-poa-detail.png"
+          /></a>
+          <figcaption>en-1366-poa-detail.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-powers-of-attorney.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-powers-of-attorney.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-powers-of-attorney.png"
+              alt="en-1366-powers-of-attorney.png"
+          /></a>
+          <figcaption>en-1366-powers-of-attorney.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-settings.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-settings.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-settings.png"
+              alt="en-1366-settings.png"
+          /></a>
+          <figcaption>en-1366-settings.png</figcaption>
+        </figure>
+        <figure data-label="en-1366-tasks.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1366-tasks.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1366-tasks.png"
+              alt="en-1366-tasks.png"
+          /></a>
+          <figcaption>en-1366-tasks.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-agenda.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-agenda.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-agenda.png"
+              alt="en-1440-agenda.png"
+          /></a>
+          <figcaption>en-1440-agenda.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-attachments.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-attachments.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-attachments.png"
+              alt="en-1440-attachments.png"
+          /></a>
+          <figcaption>en-1440-attachments.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-backups.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-backups.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-backups.png"
+              alt="en-1440-backups.png"
+          /></a>
+          <figcaption>en-1440-backups.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-case-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-case-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-case-detail.png"
+              alt="en-1440-case-detail.png"
+          /></a>
+          <figcaption>en-1440-case-detail.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-cases.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-cases.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-cases.png"
+              alt="en-1440-cases.png"
+          /></a>
+          <figcaption>en-1440-cases.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-client-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-client-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-client-detail.png"
+              alt="en-1440-client-detail.png"
+          /></a>
+          <figcaption>en-1440-client-detail.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-clients.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-clients.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-clients.png"
+              alt="en-1440-clients.png"
+          /></a>
+          <figcaption>en-1440-clients.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-dashboard.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-dashboard.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-dashboard.png"
+              alt="en-1440-dashboard.png"
+          /></a>
+          <figcaption>en-1440-dashboard.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-finances.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-finances.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-finances.png"
+              alt="en-1440-finances.png"
+          /></a>
+          <figcaption>en-1440-finances.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-new-case.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-new-case.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-new-case.png"
+              alt="en-1440-new-case.png"
+          /></a>
+          <figcaption>en-1440-new-case.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-new-client.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-new-client.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-new-client.png"
+              alt="en-1440-new-client.png"
+          /></a>
+          <figcaption>en-1440-new-client.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-new-poa.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-new-poa.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-new-poa.png"
+              alt="en-1440-new-poa.png"
+          /></a>
+          <figcaption>en-1440-new-poa.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-onboarding.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-onboarding.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-onboarding.png"
+              alt="en-1440-onboarding.png"
+          /></a>
+          <figcaption>en-1440-onboarding.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-poa-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-poa-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-poa-detail.png"
+              alt="en-1440-poa-detail.png"
+          /></a>
+          <figcaption>en-1440-poa-detail.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-powers-of-attorney.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-powers-of-attorney.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-powers-of-attorney.png"
+              alt="en-1440-powers-of-attorney.png"
+          /></a>
+          <figcaption>en-1440-powers-of-attorney.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-settings.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-settings.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-settings.png"
+              alt="en-1440-settings.png"
+          /></a>
+          <figcaption>en-1440-settings.png</figcaption>
+        </figure>
+        <figure data-label="en-1440-tasks.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-1440-tasks.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-1440-tasks.png"
+              alt="en-1440-tasks.png"
+          /></a>
+          <figcaption>en-1440-tasks.png</figcaption>
+        </figure>
+        <figure data-label="en-760-agenda.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-agenda.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-agenda.png"
+              alt="en-760-agenda.png"
+          /></a>
+          <figcaption>en-760-agenda.png</figcaption>
+        </figure>
+        <figure data-label="en-760-attachments.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-attachments.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-attachments.png"
+              alt="en-760-attachments.png"
+          /></a>
+          <figcaption>en-760-attachments.png</figcaption>
+        </figure>
+        <figure data-label="en-760-backups.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-backups.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-backups.png"
+              alt="en-760-backups.png"
+          /></a>
+          <figcaption>en-760-backups.png</figcaption>
+        </figure>
+        <figure data-label="en-760-case-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-case-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-case-detail.png"
+              alt="en-760-case-detail.png"
+          /></a>
+          <figcaption>en-760-case-detail.png</figcaption>
+        </figure>
+        <figure data-label="en-760-cases.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-cases.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-cases.png"
+              alt="en-760-cases.png"
+          /></a>
+          <figcaption>en-760-cases.png</figcaption>
+        </figure>
+        <figure data-label="en-760-client-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-client-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-client-detail.png"
+              alt="en-760-client-detail.png"
+          /></a>
+          <figcaption>en-760-client-detail.png</figcaption>
+        </figure>
+        <figure data-label="en-760-clients.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-clients.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-clients.png"
+              alt="en-760-clients.png"
+          /></a>
+          <figcaption>en-760-clients.png</figcaption>
+        </figure>
+        <figure data-label="en-760-dashboard.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-dashboard.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-dashboard.png"
+              alt="en-760-dashboard.png"
+          /></a>
+          <figcaption>en-760-dashboard.png</figcaption>
+        </figure>
+        <figure data-label="en-760-finances.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-finances.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-finances.png"
+              alt="en-760-finances.png"
+          /></a>
+          <figcaption>en-760-finances.png</figcaption>
+        </figure>
+        <figure data-label="en-760-new-case.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-new-case.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-new-case.png"
+              alt="en-760-new-case.png"
+          /></a>
+          <figcaption>en-760-new-case.png</figcaption>
+        </figure>
+        <figure data-label="en-760-new-client.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-new-client.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-new-client.png"
+              alt="en-760-new-client.png"
+          /></a>
+          <figcaption>en-760-new-client.png</figcaption>
+        </figure>
+        <figure data-label="en-760-new-poa.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-new-poa.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-new-poa.png"
+              alt="en-760-new-poa.png"
+          /></a>
+          <figcaption>en-760-new-poa.png</figcaption>
+        </figure>
+        <figure data-label="en-760-onboarding.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-onboarding.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-onboarding.png"
+              alt="en-760-onboarding.png"
+          /></a>
+          <figcaption>en-760-onboarding.png</figcaption>
+        </figure>
+        <figure data-label="en-760-poa-detail.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-poa-detail.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-poa-detail.png"
+              alt="en-760-poa-detail.png"
+          /></a>
+          <figcaption>en-760-poa-detail.png</figcaption>
+        </figure>
+        <figure data-label="en-760-powers-of-attorney.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-powers-of-attorney.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-powers-of-attorney.png"
+              alt="en-760-powers-of-attorney.png"
+          /></a>
+          <figcaption>en-760-powers-of-attorney.png</figcaption>
+        </figure>
+        <figure data-label="en-760-settings.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-settings.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-settings.png"
+              alt="en-760-settings.png"
+          /></a>
+          <figcaption>en-760-settings.png</figcaption>
+        </figure>
+        <figure data-label="en-760-tasks.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-760-tasks.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-760-tasks.png"
+              alt="en-760-tasks.png"
+          /></a>
+          <figcaption>en-760-tasks.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--cases-demo-case-14-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-0.png"
+              alt="en-tab--cases-demo-case-14-0.png"
+          /></a>
+          <figcaption>en-tab--cases-demo-case-14-0.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--cases-demo-case-14-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-1.png"
+              alt="en-tab--cases-demo-case-14-1.png"
+          /></a>
+          <figcaption>en-tab--cases-demo-case-14-1.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--cases-demo-case-14-2.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-2.png"
+              alt="en-tab--cases-demo-case-14-2.png"
+          /></a>
+          <figcaption>en-tab--cases-demo-case-14-2.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--cases-demo-case-14-3.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-3.png"
+              alt="en-tab--cases-demo-case-14-3.png"
+          /></a>
+          <figcaption>en-tab--cases-demo-case-14-3.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--cases-demo-case-14-4.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-4.png"
+              alt="en-tab--cases-demo-case-14-4.png"
+          /></a>
+          <figcaption>en-tab--cases-demo-case-14-4.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--cases-demo-case-14-5.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-5.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--cases-demo-case-14-5.png"
+              alt="en-tab--cases-demo-case-14-5.png"
+          /></a>
+          <figcaption>en-tab--cases-demo-case-14-5.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--clients-demo-client-adel-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-0.png"
+              alt="en-tab--clients-demo-client-adel-0.png"
+          /></a>
+          <figcaption>en-tab--clients-demo-client-adel-0.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--clients-demo-client-adel-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-1.png"
+              alt="en-tab--clients-demo-client-adel-1.png"
+          /></a>
+          <figcaption>en-tab--clients-demo-client-adel-1.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--clients-demo-client-adel-2.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-2.png"
+              alt="en-tab--clients-demo-client-adel-2.png"
+          /></a>
+          <figcaption>en-tab--clients-demo-client-adel-2.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--clients-demo-client-adel-3.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-3.png"
+              alt="en-tab--clients-demo-client-adel-3.png"
+          /></a>
+          <figcaption>en-tab--clients-demo-client-adel-3.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--clients-demo-client-adel-4.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--clients-demo-client-adel-4.png"
+              alt="en-tab--clients-demo-client-adel-4.png"
+          /></a>
+          <figcaption>en-tab--clients-demo-client-adel-4.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--finances-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--finances-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--finances-0.png"
+              alt="en-tab--finances-0.png"
+          /></a>
+          <figcaption>en-tab--finances-0.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--finances-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--finances-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--finances-1.png"
+              alt="en-tab--finances-1.png"
+          /></a>
+          <figcaption>en-tab--finances-1.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--powers-of-attorney-demo-poa-1-0.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-0.png"
+              alt="en-tab--powers-of-attorney-demo-poa-1-0.png"
+          /></a>
+          <figcaption>en-tab--powers-of-attorney-demo-poa-1-0.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--powers-of-attorney-demo-poa-1-1.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-1.png"
+              alt="en-tab--powers-of-attorney-demo-poa-1-1.png"
+          /></a>
+          <figcaption>en-tab--powers-of-attorney-demo-poa-1-1.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--powers-of-attorney-demo-poa-1-2.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-2.png"
+              alt="en-tab--powers-of-attorney-demo-poa-1-2.png"
+          /></a>
+          <figcaption>en-tab--powers-of-attorney-demo-poa-1-2.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--powers-of-attorney-demo-poa-1-3.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-3.png"
+              alt="en-tab--powers-of-attorney-demo-poa-1-3.png"
+          /></a>
+          <figcaption>en-tab--powers-of-attorney-demo-poa-1-3.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--powers-of-attorney-demo-poa-1-4.png">
+          <a
+            href="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--powers-of-attorney-demo-poa-1-4.png"
+              alt="en-tab--powers-of-attorney-demo-poa-1-4.png"
+          /></a>
+          <figcaption>en-tab--powers-of-attorney-demo-poa-1-4.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--settings-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--settings-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--settings-0.png"
+              alt="en-tab--settings-0.png"
+          /></a>
+          <figcaption>en-tab--settings-0.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--settings-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--settings-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--settings-1.png"
+              alt="en-tab--settings-1.png"
+          /></a>
+          <figcaption>en-tab--settings-1.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--settings-2.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--settings-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--settings-2.png"
+              alt="en-tab--settings-2.png"
+          /></a>
+          <figcaption>en-tab--settings-2.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--settings-3.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--settings-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--settings-3.png"
+              alt="en-tab--settings-3.png"
+          /></a>
+          <figcaption>en-tab--settings-3.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--settings-4.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--settings-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--settings-4.png"
+              alt="en-tab--settings-4.png"
+          /></a>
+          <figcaption>en-tab--settings-4.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--settings-5.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--settings-5.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--settings-5.png"
+              alt="en-tab--settings-5.png"
+          /></a>
+          <figcaption>en-tab--settings-5.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--tasks-0.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--tasks-0.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--tasks-0.png"
+              alt="en-tab--tasks-0.png"
+          /></a>
+          <figcaption>en-tab--tasks-0.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--tasks-1.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--tasks-1.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--tasks-1.png"
+              alt="en-tab--tasks-1.png"
+          /></a>
+          <figcaption>en-tab--tasks-1.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--tasks-2.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--tasks-2.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--tasks-2.png"
+              alt="en-tab--tasks-2.png"
+          /></a>
+          <figcaption>en-tab--tasks-2.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--tasks-3.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--tasks-3.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--tasks-3.png"
+              alt="en-tab--tasks-3.png"
+          /></a>
+          <figcaption>en-tab--tasks-3.png</figcaption>
+        </figure>
+        <figure data-label="en-tab--tasks-4.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-tab--tasks-4.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-tab--tasks-4.png"
+              alt="en-tab--tasks-4.png"
+          /></a>
+          <figcaption>en-tab--tasks-4.png</figcaption>
+        </figure>
+        <figure data-label="en-validation--calendar-create-hearing.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-validation--calendar-create-hearing.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-validation--calendar-create-hearing.png"
+              alt="en-validation--calendar-create-hearing.png"
+          /></a>
+          <figcaption>en-validation--calendar-create-hearing.png</figcaption>
+        </figure>
+        <figure data-label="en-validation--cases-new.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-validation--cases-new.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-validation--cases-new.png"
+              alt="en-validation--cases-new.png"
+          /></a>
+          <figcaption>en-validation--cases-new.png</figcaption>
+        </figure>
+        <figure data-label="en-validation--clients-new.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-validation--clients-new.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-validation--clients-new.png"
+              alt="en-validation--clients-new.png"
+          /></a>
+          <figcaption>en-validation--clients-new.png</figcaption>
+        </figure>
+        <figure data-label="en-validation--powers-of-attorney-new.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-validation--powers-of-attorney-new.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-validation--powers-of-attorney-new.png"
+              alt="en-validation--powers-of-attorney-new.png"
+          /></a>
+          <figcaption>en-validation--powers-of-attorney-new.png</figcaption>
+        </figure>
+        <figure data-label="en-validation--tasks-create-task.png">
+          <a href="evidence/2026-10-09/full-test/browser/en-validation--tasks-create-task.png"
+            ><img
+              loading="lazy"
+              src="evidence/2026-10-09/full-test/browser/en-validation--tasks-create-task.png"
+              alt="en-validation--tasks-create-task.png"
+          /></a>
+          <figcaption>en-validation--tasks-create-task.png</figcaption>
+        </figure>
+      </div>
+      <footer>
+        Offline local evidence. Fictional records only. Screenshots are retained at their original
+        resolution. Historical harness failures are excluded from this gallery.
+      </footer>
+    </main>
+    <script>
+      document.getElementById('filter').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        document
+          .querySelectorAll('.gallery figure')
+          .forEach((x) => (x.hidden = !x.dataset.label.toLowerCase().includes(q)));
+      });
+    </script>
+  </body>
+</html>

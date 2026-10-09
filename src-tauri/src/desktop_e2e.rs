@@ -47,6 +47,15 @@ pub fn selection(kind: &str) -> Result<PathBuf, Error> {
             }
             Ok(path)
         }
+        // A backup carried out of the installation that made it, as a lawyer would
+        // carry it to a new machine. The runner copies it into the fixtures.
+        ("backup", "portable") => {
+            let path = root.join("fixtures/portable.lmsbackup");
+            if path.canonicalize()?.parent() != Some(root.join("fixtures").as_path()) {
+                return Err(Error::Operation);
+            }
+            Ok(path)
+        }
         ("backup", "backup") => {
             let mut backups = fs::read_dir(root.join("vault/Backups"))?
                 .filter_map(Result::ok)

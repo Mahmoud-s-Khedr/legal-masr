@@ -1,0 +1,36 @@
+[
+  {
+    "n": "status-with-security-json-only",
+    "status": {
+      "unlocked": false,
+      "initialized": true,
+      "vaultState": "INCOMPLETE"
+    }
+  },
+  {
+    "n": "unlock-with-original-password",
+    "ok": false,
+    "code": "VAULT_MISSING"
+  },
+  {
+    "n": "status-after-unlock",
+    "status": {
+      "unlocked": false,
+      "initialized": true,
+      "vaultState": "INCOMPLETE"
+    }
+  },
+  {
+    "n": "restore-attempt",
+    "ok": false,
+    "code": "APP_LOCKED"
+  },
+  {
+    "n": "ui-text",
+    "body": "English\n\nملفات مساحة العمل غير مكتملة. احتفظ بها واسترد مساحة العمل قبل المتابعة.\n\nإعادة المحاولة"
+  },
+  {
+    "n": "vault-files",
+    "files": ["Backups", "logs", "security.json"]
+  }
+]

@@ -147,7 +147,8 @@ function AppContent() {
   return (
     <>
       <LanguageSwitcher className="language-switcher-fixed" />
-      {isError || status?.vaultState === 'INCOMPLETE' || status?.vaultState === 'INTERRUPTED' ? (
+      {(isError || status?.vaultState === 'INCOMPLETE' || status?.vaultState === 'INTERRUPTED') &&
+      !(status?.vaultState === 'INCOMPLETE' && gate === 'restore') ? (
         <main className="gate loading" role="alert">
           <div>
             <p>
@@ -160,6 +161,13 @@ function AppContent() {
             <Button type="button" onClick={() => void refetch()}>
               {t('app.retry')}
             </Button>
+            {/* A lost or damaged workspace can be brought back from a backup. A pending
+                operation must finish first, so it is never offered there. */}
+            {status?.vaultState === 'INCOMPLETE' && (
+              <Button type="button" variant="secondary" onClick={() => setManualGate('restore')}>
+                {t('gate.restoreFromBackup')}
+              </Button>
+            )}
           </div>
         </main>
       ) : gate === 'loading' ? (
@@ -173,6 +181,9 @@ function AppContent() {
           recoveryKey={recoveryKey}
           onSwitchToRecovery={() => setManualGate('recovery')}
           onBackToUnlock={() => setManualGate(null)}
+          onSwitchToRestore={() => setManualGate('restore')}
+          onLeaveRestore={() => setManualGate(null)}
+          onRestored={() => setManualGate(null)}
           onSetupSucceeded={(newRecoveryKey) => {
             setRecoveryKey(newRecoveryKey);
             setManualGate('recovery-key');

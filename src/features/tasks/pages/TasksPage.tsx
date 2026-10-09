@@ -142,7 +142,7 @@ export function TasksPage() {
               ...(cases.data ?? []).map((item) => ({
                 value: item.id,
                 label: item.clientNames.length
-                  ? `${item.internalNumber} — ${item.clientNames.join('، ')}`
+                  ? `${item.internalNumber} — ${format.list(item.clientNames)}`
                   : item.internalNumber,
               })),
             ]}

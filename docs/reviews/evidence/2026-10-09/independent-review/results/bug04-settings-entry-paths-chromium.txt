@@ -1,0 +1,4 @@
+chromium full-load deep link: ["","","","Saturday","60"]
+chromium SPA pushState deep link: ["","","","Saturday","60"]
+chromium sidebar+tab click: ["العربية","فاتح","سنة-شهر-يوم (2026-10-03)","السبت","60"]
+chromium history back: ["","","","السبت","60"]

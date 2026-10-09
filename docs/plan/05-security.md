@@ -26,6 +26,8 @@ The key must not be derived directly and permanently from the password. Instead:
 
 6. Use the recovered master key to open SQLCipher.
 7. Create a separate recovery-key envelope for the same master key.
+8. Every backup embeds a copy of both envelopes so the password or recovery key
+   can open it without this installation (see [07-backup-format.md](07-backup-format.md)).
 
 ### Security file
 

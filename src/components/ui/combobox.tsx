@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Combobox as ComboboxPrimitive } from '@base-ui/react';
 import { cn } from '@/lib/utils';
 
@@ -18,9 +19,11 @@ function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
 }
 
 function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Trigger.Props) {
+  const { t } = useTranslation();
   return (
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
+      aria-label={t('forms.showOptions')}
       className={cn("[&_svg:not([class*='size-'])]:size-4", className)}
       {...props}
     >
@@ -31,9 +34,11 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
 }
 
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
+  const { t } = useTranslation();
   return (
     <ComboboxPrimitive.Clear
       data-slot="combobox-clear"
+      aria-label={t('forms.clearSelection')}
       render={<InputGroupButton variant="ghost" size="icon-xs" />}
       className={cn(className)}
       {...props}
@@ -210,10 +215,14 @@ function ComboboxChip({
   className,
   children,
   showRemove = true,
+  removeLabel,
   ...props
 }: ComboboxPrimitive.Chip.Props & {
   showRemove?: boolean;
+  /** Accessible name of the remove button, e.g. «Remove Amal». */
+  removeLabel?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <ComboboxPrimitive.Chip
       data-slot="combobox-chip"
@@ -229,6 +238,7 @@ function ComboboxChip({
           render={<Button variant="ghost" size="icon-xs" />}
           className="-ms-1 opacity-50 hover:opacity-100"
           data-slot="combobox-chip-remove"
+          aria-label={removeLabel ?? t('forms.removeItem')}
         >
           <IconX className="pointer-events-none" />
         </ComboboxPrimitive.ChipRemove>

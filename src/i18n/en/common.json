@@ -168,13 +168,15 @@
       "setup": "Welcome to Legal Masr",
       "recovery": "Recover access",
       "recoveryKey": "Important step",
-      "unlock": "Welcome back"
+      "unlock": "Welcome back",
+      "restore": "Restore"
     },
     "title": {
       "setup": "Set up your office",
       "recovery": "Use your recovery key",
       "recoveryKey": "Save your recovery key",
-      "unlock": "Unlock Legal Masr"
+      "unlock": "Unlock Legal Masr",
+      "restore": "Restore from a backup"
     },
     "recoveryKeyWarning": "This key is shown only once, and nobody can recover it for you if you lose it.",
     "recoveryKeySavedButton": "Continue to workspace",
@@ -198,7 +200,8 @@
       "setup": "Your records are kept on this computer and encrypted with your password, with no account or internet needed.",
       "unlock": "Enter your password to open your files.",
       "recovery": "Enter the recovery key you saved during setup, then choose a new password.",
-      "recoveryKey": "This key is the only way to open your files if you forget your password."
+      "recoveryKey": "This key is the only way to open your files if you forget your password.",
+      "restore": "Choose a backup file, then enter the password it was protected with when the backup was made, or your recovery key."
     },
     "points": {
       "encrypted": "Your database and backups are encrypted. Managed files remain plaintext.",
@@ -220,7 +223,10 @@
       "difference": "The password opens the app every day; the recovery key is for emergencies only."
     },
     "recoveryKeyConfirm": "I have written the key down and stored it safely",
-    "backToUnlock": "Back to password sign-in"
+    "backToUnlock": "Back to password sign-in",
+    "restoreFromBackup": "Restore from a backup",
+    "backToSetup": "Back to setup",
+    "backToStatus": "Back"
   },
   "backups": {
     "kicker": "Office",
@@ -257,7 +263,10 @@
     "restoreHint": "Replaces your current data with an earlier backup; an emergency copy is kept automatically.",
     "offsiteAdvice": "Copy the backup file to a USB drive or external disk kept away from this computer; a backup on the same computer does not protect you if it is damaged or stolen.",
     "loadingLatest": "Loading the latest backup…",
-    "none": "No successful backup yet."
+    "none": "No successful backup yet.",
+    "restoreWithCredentials": "Restore with the backup's password or recovery key",
+    "restoreOtherHint": "This backup was made on another installation. You can still restore it if you have its password or its recovery key.",
+    "restoreOtherTitle": "Restore a backup from another installation"
   },
   "dashboard": {
     "today": "Today",
@@ -613,6 +622,7 @@
       "address": "Address",
       "empty": "No opponents recorded yet. Add the opponent, their capacity and their lawyer if any.",
       "editTitle": "Edit opponent",
+      "noDetails": "No capacity recorded",
       "lawyerLine": "Lawyer: {{name}}",
       "saveError": "Could not save the opponent. Your entries are kept; please try again.",
       "removeTitle": "Remove opponent",
@@ -676,7 +686,11 @@
   "forms": {
     "required": "This field is required.",
     "invalid": "Check the value you entered.",
-    "notSpecified": "Not specified"
+    "notSpecified": "Not specified",
+    "showOptions": "Show options",
+    "clearSelection": "Clear selection",
+    "removeItem": "Remove",
+    "removeNamed": "Remove {{name}}"
   },
   "records": {
     "archive": "Archive",
@@ -724,7 +738,9 @@
     "VAULT_NEWER_SCHEMA": "This workspace requires a newer version of Legal Masr.",
     "VAULT_INTERRUPTED": "An interrupted workspace operation needs recovery. Keep all workspace files and retry. Setup and unlock are disabled until recovery completes.",
     "CASE_CLIENT_HAS_PAYMENTS": "This client has case payments and cannot be removed.",
-    "CLIENT_ARCHIVED": "Archived clients cannot be added."
+    "CLIENT_ARCHIVED": "Archived clients cannot be added.",
+    "BACKUP_KEY_MISMATCH": "This backup was made by a different installation. Restore it with its password or recovery key; a backup made by an older version can only be restored on the device that created it. Your current data is unchanged.",
+    "BACKUP_NEWER_VERSION": "This backup was made by a newer version of the app. Update the app, then try again. Your current data is unchanged."
   },
   "finances": {
     "kicker": "Office",
@@ -903,5 +919,24 @@
     "pagination": "Record pages",
     "previous": "Previous",
     "next": "Next"
+  },
+  "restoreFrom": {
+    "chooseFile": "Choose backup file",
+    "choosing": "Waiting for the file…",
+    "chosen": "Backup file selected.",
+    "chooseAnother": "Choose another file",
+    "openWith": "Open the backup with",
+    "password": "Backup password",
+    "recoveryKey": "Backup recovery key",
+    "passwordHint": "The password this backup was protected with when it was made. If you changed your password afterwards, use the older one or your recovery key.",
+    "recoveryHint": "Type the recovery key exactly as you saved it.",
+    "olderFormat": "This backup was made by an older version, so it can only be restored on the device that created it. Open it there and make a new backup.",
+    "replaceWarning": "Restoring replaces your current workspace. A copy of it is kept in the emergency snapshots folder.",
+    "afterwards": "Afterwards, sign in with this backup's password.",
+    "submit": "Restore backup",
+    "restoring": "Restoring…",
+    "secretRequired": "Enter the password or recovery key.",
+    "optionPassword": "Password",
+    "optionRecoveryKey": "Recovery key"
   }
 }

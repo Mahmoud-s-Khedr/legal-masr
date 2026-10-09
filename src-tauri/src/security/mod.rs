@@ -17,13 +17,13 @@ use uuid::Uuid;
 
 const XCHACHA_NONCE_BYTES: usize = 24;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Envelope {
     pub nonce: String,
     pub ciphertext: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SecurityFile {
     pub version: u8,
     pub salt: String,

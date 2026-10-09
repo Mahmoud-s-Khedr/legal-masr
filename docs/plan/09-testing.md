@@ -15,7 +15,13 @@ Rust unit and integration coverage includes:
   path resolution, backup creation/validation/restore, and corrupt restore
   staging safety;
 - password/recovery envelopes, safe error diagnostic redaction, reminder
-  deduplication, and local settings validation.
+  deduplication, and local settings validation;
+- portable backup recovery (format v2): restore into an empty and an incomplete
+  installation with the password and with the recovery key, wrong password and
+  wrong recovery key, every altered header field, truncated/garbage/non-JSON
+  files, newer envelope/manifest/database versions, bounded key-derivation cost,
+  v1 compatibility, the failure paths leaving the destination byte-identical, and
+  every journal interruption for the new replacement fields.
 
 Frontend Vitest/React Testing Library coverage includes bridge payload
 contracts, typed error mapping, canonical query invalidation including failure
@@ -56,7 +62,10 @@ default; `pnpm build:desktop:e2e` builds in a separate target directory. It
 refuses unmarked launches and uses a unique runner-created temporary vault and
 allowlisted dialog fixtures. `pnpm test:desktop` exercises initialization,
 records, attachments, backup/restore, locked gate, wrong passwords, cancelled
-and corrupt restore, and restart persistence. Reports contain sanitized outcomes
+and corrupt restore (asserting the refusal message, not just an alert), restore
+of a carried backup into a fresh and an incomplete installation, the opponent
+form's validation feedback, the Settings display tab opened by deep link, and
+restart persistence. Reports contain sanitized outcomes
 and binary checksums only. No vaults, backups, secrets or security-screen captures
 are uploaded. Packaging binaries are scanned for harness markers.
 
@@ -103,14 +112,14 @@ when a coverage floor fails.
 The suite is intentionally layered; no single test type proves the whole
 application.
 
-| Layer                              | What it proves                                                                                                                               | Important failure paths                                                                                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rust unit/service tests            | Input validation, safe error mapping, password/recovery envelopes, date-only and money rules, reminder timing, and managed-file compensation | invalid passwords/dates/money, missing records, failed file copy/delete, malformed notification times                                                          |
-| Rust repository/schema integration | SQLCipher/SQLite invariants and transactions using a real database                                                                           | duplicate identifiers, invalid FK relationships, unsupported task states, invalid attachment ownership, payer outside its case, archive/delete rules           |
-| Backup integration                 | Encrypted snapshot, manifest/checksum inventory, staged restore, and rollback protection                                                     | bad nonce/key/checksum, missing or unlisted archive entries, duplicate ZIP names, path traversal, newer schema, corrupt restore leaving active vault unchanged |
-| Frontend component/workflow tests  | Typed bridge payloads, rendered RTL forms, query invalidation, navigation, and accessible controls                                           | locked vault does not query settings, locking clears legal-record cache, invalid forms, rejected mutations, absent payer options, keyboard/dialog behavior     |
-| Build/package checks               | Type compatibility, lint/static rules, formatter conformance, and desktop packaging                                                          | compilation or bundle regressions; package creation is not a substitute for target-device testing                                                              |
-| Manual target-device matrix        | Native dialogs, OS notifications/autostart, sleep/resume locking, installer behavior, encrypted restore, and visual/accessibility quality    | OS-specific permission, lifecycle, rendering, install, and recovery failures that mocks cannot establish                                                       |
+| Layer                              | What it proves                                                                                                                                | Important failure paths                                                                                                                                                                                        |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust unit/service tests            | Input validation, safe error mapping, password/recovery envelopes, date-only and money rules, reminder timing, and managed-file compensation  | invalid passwords/dates/money, missing records, failed file copy/delete, malformed notification times                                                                                                          |
+| Rust repository/schema integration | SQLCipher/SQLite invariants and transactions using a real database                                                                            | duplicate identifiers, invalid FK relationships, unsupported task states, invalid attachment ownership, payer outside its case, archive/delete rules                                                           |
+| Backup integration                 | Encrypted snapshot, manifest/checksum inventory, staged restore, rollback protection, and restore from the backup's own password/recovery key | bad nonce/key/checksum, wrong password or recovery key, altered header, missing or unlisted archive entries, duplicate ZIP names, path traversal, newer schema, corrupt restore leaving active vault unchanged |
+| Frontend component/workflow tests  | Typed bridge payloads, rendered RTL forms, query invalidation, navigation, and accessible controls                                            | locked vault does not query settings, locking clears legal-record cache, invalid forms, rejected mutations, absent payer options, keyboard/dialog behavior                                                     |
+| Build/package checks               | Type compatibility, lint/static rules, formatter conformance, and desktop packaging                                                           | compilation or bundle regressions; package creation is not a substitute for target-device testing                                                                                                              |
+| Manual target-device matrix        | Native dialogs, OS notifications/autostart, sleep/resume locking, installer behavior, encrypted restore, and visual/accessibility quality     | OS-specific permission, lifecycle, rendering, install, and recovery failures that mocks cannot establish                                                                                                       |
 
 The automated suite establishes contract and regression confidence. Candidate
 screenshot repeatability does not establish design approval, and disposable
@@ -149,9 +158,11 @@ Use [the device runbook](../device-validation-runbook.md) and
 [the evidence template](../device-validation-template.md) on Windows 10,
 Windows 11, macOS Intel and Apple Silicon. All physical execution remains
 pending. Run three same-vault restore iterations per device. Windows↔macOS
-portable restore remains separately blocked: the current archive key requires
-the original random master key, not only the password. A copied security
-envelope must not be counted as a portability pass.
+portable restore remains a separate physical gate. Format v2 backups carry the
+password and recovery envelopes and restore into an empty installation on Linux
+(automated), but a Linux automated restore must not be counted as a Windows or
+macOS portability pass: make a backup on one platform, restore it into a fresh
+installation on the other with the original password, and record the result.
 
 See [the hardening evidence](../testing-hardening-report-2026-10-05.md) for actual
 counts, coverage, defects, artifacts and pending acceptance gates.

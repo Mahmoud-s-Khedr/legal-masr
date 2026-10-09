@@ -11,6 +11,8 @@ vi.mock('../bridge/commands', () => ({
     createBackup: vi.fn(),
     validateBackup: vi.fn(),
     restoreBackup: vi.fn(),
+    selectBackupForRestore: vi.fn(),
+    restoreSelectedBackup: vi.fn(),
     settings: vi.fn(),
     updateSettings: vi.fn(),
     clientList: vi.fn(),
@@ -87,6 +89,89 @@ describe('application gate', () => {
       expect(bridge.unlock).not.toHaveBeenCalled();
     },
   );
+
+  it('offers a restore from a backup on setup and on an incomplete workspace, but not while an operation is pending', async () => {
+    const { unmount } = render(<App />);
+    expect(
+      await screen.findByRole('button', { name: i18n.t('gate.restoreFromBackup') }),
+    ).toBeInTheDocument();
+    unmount();
+
+    queryClient.clear();
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: false,
+      vaultState: 'INTERRUPTED',
+    });
+    const interrupted = render(<App />);
+    await screen.findByRole('alert');
+    expect(
+      screen.queryByRole('button', { name: i18n.t('gate.restoreFromBackup') }),
+    ).not.toBeInTheDocument();
+    interrupted.unmount();
+
+    queryClient.clear();
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: false,
+      vaultState: 'INCOMPLETE',
+    });
+    render(<App />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(i18n.t('errors.VAULT_INCOMPLETE'));
+    expect(
+      screen.getByRole('button', { name: i18n.t('gate.restoreFromBackup') }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'إعادة المحاولة' })).toBeInTheDocument();
+  });
+
+  it('restores an incomplete workspace from a backup and then asks for the backup password', async () => {
+    vi.mocked(bridge.status).mockResolvedValue({
+      initialized: true,
+      unlocked: false,
+      vaultState: 'INCOMPLETE',
+    });
+    vi.mocked(bridge.selectBackupForRestore).mockResolvedValue({
+      token: 'one-time',
+      formatVersion: 2,
+    });
+    vi.mocked(bridge.restoreSelectedBackup).mockImplementation(async () => {
+      // The native layer has rebuilt the workspace and locked it.
+      vi.mocked(bridge.status).mockResolvedValue({
+        initialized: true,
+        unlocked: false,
+        vaultState: 'LOCKED',
+      });
+    });
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: i18n.t('gate.restoreFromBackup') }));
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('gate.title.restore') }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('restoreFrom.chooseFile') }));
+    fireEvent.change(await screen.findByLabelText(i18n.t('restoreFrom.password')), {
+      target: { value: 'a secure local password' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('restoreFrom.submit') }));
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('gate.title.unlock') }),
+    ).toBeInTheDocument();
+    expect(bridge.restoreSelectedBackup).toHaveBeenCalledWith('one-time', {
+      kind: 'password',
+      secret: 'a secure local password',
+    });
+    expect(bridge.initialize).not.toHaveBeenCalled();
+  });
+
+  it('returns from the restore screen to setup without calling the native layer', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: i18n.t('gate.restoreFromBackup') }));
+    await screen.findByRole('heading', { name: i18n.t('gate.title.restore') });
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.cancel') }));
+    expect(await screen.findByRole('heading', { name: 'جهّز مكتبك' })).toBeInTheDocument();
+    expect(bridge.selectBackupForRestore).not.toHaveBeenCalled();
+  });
 
   it('displays the recovery key returned by vault initialization', async () => {
     vi.mocked(bridge.initialize).mockResolvedValue({ recoveryKey: 'test-recovery-key' });

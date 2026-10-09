@@ -14,9 +14,11 @@ import { Skeleton } from '../../../components/ui/skeleton';
 import { RecordTable } from '@/components/forms/RecordTable';
 
 import { usePowerOfAttorneyList } from '../api/powersOfAttorneyApi';
+import { useFormat } from '../../../i18n/LocalePresentation';
 
 export function PowersOfAttorneyPage() {
   const { t } = useTranslation();
+  const format = useFormat();
   const [query, setQuery] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
   const powers = usePowerOfAttorneyList({ query: query || undefined, includeArchived });
@@ -93,7 +95,7 @@ export function PowersOfAttorneyPage() {
                   <td className="mono">
                     {power.officialNumber ? <bdi>{power.officialNumber}</bdi> : '—'}
                   </td>
-                  <td className="cell-wrap">{power.clientNames.join('، ') || '—'}</td>
+                  <td className="cell-wrap">{format.list(power.clientNames) || '—'}</td>
                   <td>
                     <Badge variant="secondary">
                       {power.archivedAt ? t('records.archived') : t('clients.active')}

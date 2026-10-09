@@ -1,0 +1,67 @@
+[
+  {
+    "scenario": "all-sidebar-navigation-links",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "client-search-archive-filter-clear",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "case-archive-and-restore-buttons",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "opponent-empty-form-visible-feedback",
+    "result": "failed",
+    "errorCode": "ERR_ASSERTION"
+  },
+  {
+    "scenario": "opponent-create-edit-cancel-remove",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "task-delete-cancel-confirm-through-ui",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "hearing-create-edit-date-and-delete-through-ui",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "client-and-poa-archive-confirmations",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "case-relationships-save-and-paid-client-removal-refused",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "attachment-ui-edit-missing-open-cancel-confirm-remove",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "settings-persisted-select-values-visible",
+    "result": "failed",
+    "errorCode": "AUDIT_CONTROL_FAILED"
+  },
+  {
+    "scenario": "settings-theme-save-and-revert-through-ui",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "calendar-month-week-list-period-buttons",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  }
+]

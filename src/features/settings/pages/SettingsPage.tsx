@@ -27,6 +27,7 @@ import {
 } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
 import { BackupSettingsPanel } from '../../backups/pages/BackupsPage';
+import type { Settings } from '../../../bridge/types';
 import { developerDiagnostic } from '../../../bridge/devDiagnostics';
 import {
   useChangePassword,
@@ -43,8 +44,7 @@ import { SettingsFormValues, settingsSchema } from '../schemas/settings.schema';
 type Tab = 'profile' | 'general' | 'security' | 'backups' | 'privacy' | 'about';
 
 export function SettingsPage() {
-  const { t, i18n } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useTranslation();
   const {
     data: settings,
     isError: settingsLoadFailed,
@@ -52,6 +52,61 @@ export function SettingsPage() {
     error: settingsError,
     refetch,
   } = useSettings();
+  // Start the profile request together with settings, as before the form was split out,
+  // so the profile form is not re-registered after its first values arrive.
+  useProfile();
+  if (settingsLoading) {
+    return (
+      <section className="settings settings-workspace">
+        <p className="loading" role="status">
+          {t('settings.loading')}
+        </p>
+      </section>
+    );
+  }
+
+  if (settingsLoadFailed || !settings) {
+    const diagnostic = developerDiagnostic('settings_get', settingsError);
+    return (
+      <section className="settings settings-workspace">
+        <div className="settings-section">
+          <Alert variant="destructive">
+            <AlertDescription>{t('settings.loadError')}</AlertDescription>
+          </Alert>
+          {diagnostic && (
+            <pre className="developer-diagnostic" aria-label={t('settings.developerDiagnostic')}>
+              {diagnostic}
+            </pre>
+          )}
+          <div className="form-actions">
+            <Button type="button" onClick={() => void refetch()}>
+              {t('settings.retry')}
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+  return <SettingsWorkspace settings={settings} />;
+}
+
+const toFormValues = (settings: Settings): SettingsFormValues => ({
+  language: settings.language,
+  theme: settings.theme,
+  dateFormat: settings.dateFormat,
+  weekStartsOn: settings.weekStartsOn,
+  defaultReminderMinutes: settings.defaultReminderMinutes,
+  lockTimeoutMinutes: settings.lockTimeoutMinutes,
+});
+
+/**
+ * Mounted only once settings are loaded, so the form values are defined on the
+ * first render of every Select. Base UI fixes a Select as controlled or
+ * uncontrolled on its first render; a later reset() cannot change that.
+ */
+function SettingsWorkspace({ settings }: { settings: Settings }) {
+  const { t, i18n } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: profile } = useProfile();
   const updateSettings = useUpdateSettings();
   const updateProfile = useUpdateProfile();
@@ -93,51 +148,14 @@ export function SettingsPage() {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<SettingsFormValues>({ resolver: zodResolver(settingsSchema) });
+  } = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: toFormValues(settings),
+  });
 
   useEffect(() => {
-    if (settings)
-      reset({
-        language: settings.language,
-        theme: settings.theme,
-        dateFormat: settings.dateFormat,
-        weekStartsOn: settings.weekStartsOn,
-        defaultReminderMinutes: settings.defaultReminderMinutes,
-        lockTimeoutMinutes: settings.lockTimeoutMinutes,
-      });
+    reset(toFormValues(settings));
   }, [settings, reset]);
-  if (settingsLoading) {
-    return (
-      <section className="settings settings-workspace">
-        <p className="loading" role="status">
-          {t('settings.loading')}
-        </p>
-      </section>
-    );
-  }
-
-  if (settingsLoadFailed || !settings) {
-    const diagnostic = developerDiagnostic('settings_get', settingsError);
-    return (
-      <section className="settings settings-workspace">
-        <div className="settings-section">
-          <Alert variant="destructive">
-            <AlertDescription>{t('settings.loadError')}</AlertDescription>
-          </Alert>
-          {diagnostic && (
-            <pre className="developer-diagnostic" aria-label={t('settings.developerDiagnostic')}>
-              {diagnostic}
-            </pre>
-          )}
-          <div className="form-actions">
-            <Button type="button" onClick={() => void refetch()}>
-              {t('settings.retry')}
-            </Button>
-          </div>
-        </div>
-      </section>
-    );
-  }
   const requested = searchParams.get('tab');
   const selectedTab: Tab =
     requested &&
