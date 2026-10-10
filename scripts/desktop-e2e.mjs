@@ -331,6 +331,7 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.nav('/clients');
   await h.browser.$('a*=E2E-ORIGINAL').waitForDisplayed();
   assert.equal(await h.browser.$('a*=E2E-AFTER').isExisting(), false);
+  h.checkpoint('restored-case-route');
   await h.nav('/cases');
   const restoredCaseLink = await h.browser.$('table tbody a[href^="/cases/"]');
   await restoredCaseLink.waitForDisplayed({ timeout: 15000 });
@@ -344,16 +345,13 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
         ),
     true,
   );
-  if (process.platform !== 'win32') {
-    // Scroll synchronously so the native click cannot race smooth scrolling in headless WebKit.
-    await h.browser.execute(
-      (target) =>
-        target.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' }),
-      restoredCaseLink,
-    );
+  h.checkpoint('restored-case-open');
+  // WebKit's native scrolling click can stall on this link; use keyboard activation there.
+  if (process.platform === 'win32') await restoredCaseLink.click();
+  else {
+    await h.browser.execute((target) => target.focus(), restoredCaseLink);
+    await h.browser.keys('Enter');
   }
-  await restoredCaseLink.waitForClickable({ timeout: 15000 });
-  await restoredCaseLink.click();
   h.checkpoint('verify-restored-attachment');
   await h.click('المستندات');
   await h.waitText('fictional.pdf');
