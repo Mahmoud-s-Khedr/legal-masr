@@ -331,8 +331,27 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.nav('/clients');
   await h.browser.$('a*=E2E-ORIGINAL').waitForDisplayed();
   assert.equal(await h.browser.$('a*=E2E-AFTER').isExisting(), false);
+  h.checkpoint('restored-case-route');
   await h.nav('/cases');
-  await h.browser.$('a*=E2E-CASE').click();
+  const restoredCaseLink = await h.browser.$('table tbody a[href^="/cases/"]');
+  await restoredCaseLink.waitForDisplayed({ timeout: 15000 });
+  assert.equal(
+    process.platform === 'win32'
+      ? (await restoredCaseLink.getText()) === 'E2E-CASE'
+      : await h.browser.execute(
+          (target, expected) => target.textContent === expected,
+          restoredCaseLink,
+          'E2E-CASE',
+        ),
+    true,
+  );
+  h.checkpoint('restored-case-open');
+  // WebKit's native scrolling click can stall on this link; use keyboard activation there.
+  if (process.platform === 'win32') await restoredCaseLink.click();
+  else {
+    await h.browser.execute((target) => target.focus(), restoredCaseLink);
+    await h.browser.keys('Enter');
+  }
   h.checkpoint('verify-restored-attachment');
   await h.click('المستندات');
   await h.waitText('fictional.pdf');
