@@ -334,6 +334,16 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.nav('/cases');
   const restoredCaseLink = await h.browser.$('table tbody a[href^="/cases/"]');
   await restoredCaseLink.waitForDisplayed({ timeout: 15000 });
+  assert.equal(
+    process.platform === 'win32'
+      ? (await restoredCaseLink.getText()) === 'E2E-CASE'
+      : await h.browser.execute(
+          (target, expected) => target.textContent === expected,
+          restoredCaseLink,
+          'E2E-CASE',
+        ),
+    true,
+  );
   if (process.platform !== 'win32') {
     // Scroll synchronously so the native click cannot race smooth scrolling in headless WebKit.
     await h.browser.execute(
