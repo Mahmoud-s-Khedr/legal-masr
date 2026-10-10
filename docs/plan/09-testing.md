@@ -85,7 +85,13 @@ version mismatch, occupied profile, application exit, connection refusal or
 request timeout); only these categories are retained in JSON and CI output.
 Windows launches the marked application directly with a reserved loopback debugging
 port, waits for the local WebView endpoint and its `tauri.localhost` page target,
-then drives that target through the Chrome DevTools Protocol. Current EdgeDriver
+then drives that target through the Chrome DevTools Protocol. The CDP adapter
+scrolls targets into view and sends browser pointer events so composite inputs
+receive focus and pointer handlers. It rejects disabled or obscured clicks and
+supports scoped dialog queries, field collections, attributes and enabled-state
+polling used by the restore and validation journeys. DOM/protocol regression
+tests cover these interactions and refusal paths. Linux sidebar navigation uses
+focus plus Enter and waits for the requested route after activation. Current EdgeDriver
 builds can attach a separate blank page to this WebView2 setup, so Windows does
 not use it. Linux retains Tauri's WebDriver application-launch path.
 WebView2 150+ ignores environment-supplied browser arguments on elevated hosts,

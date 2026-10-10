@@ -1,14 +1,15 @@
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-function selectorExpression(selector) {
+function selectorExpression(selector, scope = 'document') {
   if (selector.startsWith('//')) {
-    return `document.evaluate(${JSON.stringify(selector)}, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue`;
+    const xpath = scope === 'document' ? selector : `.${selector}`;
+    return `document.evaluate(${JSON.stringify(xpath)}, ${scope}, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue`;
   }
   const textMatch = /^(\w+)\*=([\s\S]+)$/.exec(selector);
   if (textMatch) {
-    return `Array.from(document.querySelectorAll(${JSON.stringify(textMatch[1])})).find((node) => node.textContent.includes(${JSON.stringify(textMatch[2])}))`;
+    return `Array.from((${scope}).querySelectorAll(${JSON.stringify(textMatch[1])})).find((node) => node.textContent.includes(${JSON.stringify(textMatch[2])}))`;
   }
-  return `document.querySelector(${JSON.stringify(selector)})`;
+  return `(${scope}).querySelector(${JSON.stringify(selector)})`;
 }
 
 export function applicationTarget(targets) {
@@ -22,8 +23,7 @@ export function applicationTarget(targets) {
   });
 }
 
-function visibleExpression(selector) {
-  const target = selectorExpression(selector);
+function visibleExpression(target) {
   return `(() => { const node = ${target}; if (!node) return false; const style = getComputedStyle(node); return style.display !== 'none' && style.visibility !== 'hidden' && node.getClientRects().length > 0; })()`;
 }
 
@@ -103,22 +103,65 @@ export class CdpBrowser {
     this.#socket.close();
   }
 
+  async waitUntil(condition, { timeout = 15_000 } = {}) {
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+      if (await condition()) return;
+      await delay(100);
+    }
+    throw new Error('CDP_CONDITION_TIMEOUT');
+  }
+
+  async $$(selector) {
+    return this.#elements(selector, 'document');
+  }
+
+  async #elements(selector, scope) {
+    const nodes = `(${scope}).querySelectorAll(${JSON.stringify(selector)})`;
+    const count = await this.#evaluate(`${nodes}.length`);
+    return Array.from({ length: count }, (_, index) => this.#element(`${nodes}[${index}]`));
+  }
+
   $(selector) {
-    const target = selectorExpression(selector);
+    return this.#element(selectorExpression(selector));
+  }
+
+  #element(target) {
+    const enabled = `(() => { const node = ${target}; return Boolean(node && !node.disabled && node.getAttribute('aria-disabled') !== 'true'); })()`;
     return {
-      waitForDisplayed: async ({ timeout } = {}) =>
-        this.#wait(visibleExpression(selector), timeout),
+      $: (selector) => this.#element(selectorExpression(selector, target)),
+      $$: (selector) => this.#elements(selector, target),
+      isEnabled: async () => Boolean(await this.#evaluate(enabled)),
+      getAttribute: async (name) =>
+        this.#evaluate(`(${target})?.getAttribute(${JSON.stringify(name)}) ?? null`),
+      waitForDisplayed: async ({ timeout } = {}) => this.#wait(visibleExpression(target), timeout),
       waitForClickable: async ({ timeout } = {}) =>
-        this.#wait(visibleExpression(selector), timeout),
+        this.#wait(`(${visibleExpression(target)}) && (${enabled})`, timeout),
       click: async () => {
-        await this.#wait(visibleExpression(selector));
-        const clicked = await this.#evaluate(
-          `(() => { const node = ${target}; if (!node) return false; node.click(); return true; })()`,
+        await this.#wait(visibleExpression(target));
+        await this.#wait(enabled);
+        const point = await this.#evaluate(
+          `(() => { const node = ${target}; if (!node) return null; node.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' }); const rect = node.getBoundingClientRect(); const x = rect.x + rect.width / 2; const y = rect.y + rect.height / 2; const hit = document.elementFromPoint(x, y); return hit && (hit === node || node.contains(hit)) ? { x, y } : null; })()`,
         );
-        if (!clicked) throw new Error('CDP_ELEMENT_MISSING');
+        if (!point) throw new Error('CDP_ELEMENT_OBSCURED');
+        await this.#command('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point });
+        await this.#command('Input.dispatchMouseEvent', {
+          type: 'mousePressed',
+          ...point,
+          button: 'left',
+          buttons: 1,
+          clickCount: 1,
+        });
+        await this.#command('Input.dispatchMouseEvent', {
+          type: 'mouseReleased',
+          ...point,
+          button: 'left',
+          buttons: 0,
+          clickCount: 1,
+        });
       },
       setValue: async (value) => {
-        await this.#wait(visibleExpression(selector));
+        await this.#wait(visibleExpression(target));
         const written = await this.#evaluate(
           `(() => { const node = ${target}; if (!node) return false; const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; setter.call(node, ${JSON.stringify(value)}); node.dispatchEvent(new Event('input', { bubbles: true })); node.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`,
         );

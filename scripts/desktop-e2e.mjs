@@ -168,7 +168,15 @@ async function scenario(name, exercise) {
       );
     }
     await link.waitForClickable({ timeout: 15000 });
-    await link.click();
+    if (process.platform === 'win32') await link.click();
+    else {
+      await browser.execute((target) => target.focus(), link);
+      await browser.keys('Enter');
+    }
+    await browser.waitUntil(
+      () => browser.execute((expected) => globalThis.location.pathname === expected, href),
+      { timeout: 15000 },
+    );
   };
   const input = async (name, value) => {
     const element = await browser.$(`input[name="${name}"]`);
