@@ -1,6 +1,6 @@
 # Legal Masr — Feature list and testing guide
 
-Review date: 2026-10-13. Version: pre-beta 0.1.0.
+Review date: 2026-10-14. Version: pre-beta 0.1.0.
 
 Legal Masr is an offline desktop app for individual Egyptian lawyers. It manages clients, cases, powers of attorney, hearings, tasks, documents, and finances inside a password-protected local workspace.
 
@@ -247,16 +247,28 @@ These should not be counted as available:
 
 ## Review validation
 
-The following checks ran on 2026-10-13, after the feature removals:
+The latest validation and PR follow-up are recorded in the
+[PR #9 readiness review](reviews/2026-10-14-pr-9-readiness.md). The review covers
+the feature removals, relationship rules, development fixtures and regression
+checks. Physical-device acceptance remains separate.
 
-| Check                                                           | Result           |
-| --------------------------------------------------------------- | ---------------- |
-| `pnpm typecheck`                                                | Passed           |
-| `pnpm test` — frontend                                          | 577 tests passed |
-| `pnpm test` — Node scripts                                      | 60 tests passed  |
-| `cargo test --manifest-path src-tauri/Cargo.toml --lib --tests` | 177 tests passed |
+| Check                                                              | Result                                          |
+| ------------------------------------------------------------------ | ----------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, frontend build | Passed                                          |
+| `pnpm test` — frontend                                             | 578 tests passed                                |
+| `pnpm test` — Node scripts                                         | 60 tests passed                                 |
+| Rust format, clippy with all targets/features and warnings denied  | Passed                                          |
+| `cargo test --manifest-path src-tauri/Cargo.toml --all-features`   | 177 tests passed                                |
+| Frontend/Rust coverage and existing coverage floors                | Passed                                          |
+| Canonical browser comparison                                       | 71 tests passed; 68 candidate captures verified |
+| Native Linux desktop journeys                                      | 11 scenarios passed                             |
+| Linux debug Debian package and production harness scan             | Passed                                          |
 
-Tests emitted non-failing mock/setup warnings. No fresh interactive desktop walkthrough or physical Windows/macOS validation was performed during this review. The manual steps above are test instructions, not a claim that every step was executed. The application remains pre-beta.
+Tests emitted non-failing mock/setup warnings. Native Linux desktop journeys ran
+against disposable fixtures. No manual target-device walkthrough or physical
+Windows/macOS validation was performed during this review. The manual steps
+above are test instructions, not a claim that every step was executed. The
+application remains pre-beta.
 
 ## References
 

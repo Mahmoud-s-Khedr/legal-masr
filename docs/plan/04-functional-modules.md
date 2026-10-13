@@ -11,8 +11,7 @@ and displays a recovery key once. The lock screen unlocks locally; password
 change rewraps the master key and recovery sets a replacement password.
 
 Settings provide profile (name, bar number, phone, office address), Arabic or
-English UI, theme, date format, week start, lock timeout, aggregate
-usage-counter consent,
+English UI, theme, date format, week start, lock timeout,
 manual backup controls, privacy/data-location information, and About. Backup
 setup never blocks onboarding. About credits developer Mahmoud Khedr and offers
 email, phone, WhatsApp, Telegram, and LinkedIn contact actions. The workspace

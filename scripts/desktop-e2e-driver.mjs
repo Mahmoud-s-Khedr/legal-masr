@@ -44,6 +44,8 @@ export const SAFE_DESKTOP_CHECKPOINTS = Object.freeze([
   'original-password',
   'unlock-restored',
   'restored-clients',
+  'restored-client-route',
+  'restored-client-identity',
   'restored-case',
   'restored-case-route',
   'restored-case-identity',

@@ -14,8 +14,8 @@ Rust unit and integration coverage includes:
 - managed attachment durability, copy failure cleanup, removal behavior, native
   path resolution, backup creation/validation/restore, and corrupt restore
   staging safety;
-- password/recovery envelopes, safe error diagnostic redaction, reminder
-  deduplication, and local settings validation;
+- password/recovery envelopes, safe error diagnostic redaction and local
+  settings validation;
 - portable backup recovery (format v2): restore into an empty and an incomplete
   installation with the password and with the recovery key, wrong password and
   wrong recovery key, every altered header field, truncated/garbage/non-JSON
@@ -75,9 +75,9 @@ link, and restart persistence. Reports are retained after each scenario and cont
 and binary checksums only. No vaults, backups, secrets or security-screen captures
 are uploaded. Packaging binaries are scanned for harness markers.
 
-Print-media tests verify that hearing rolls and synthetic recovery-key sheets
-exclude workspace chrome and unrelated records and fit a single A4 page for the
-fixture. Offline validation uses a network namespace for Rust/native journeys and
+Print-media tests verify that synthetic recovery-key sheets exclude workspace
+chrome and unrelated content. Agenda tests verify that the retired hearing-roll
+printing control is absent. Offline validation uses a network namespace for Rust/native journeys and
 Docker `--network none` for browser PDF checks. These checks do not certify physical
 printers or Windows/macOS. See the [integration review](../reviews/2026-10-10-integration.md).
 
@@ -132,12 +132,12 @@ application.
 
 | Layer                              | What it proves                                                                                                                                | Important failure paths                                                                                                                                                                                        |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rust unit/service tests            | Input validation, safe error mapping, password/recovery envelopes, date-only and money rules, reminder timing, and managed-file compensation  | invalid passwords/dates/money, missing records, failed file copy/delete, malformed notification times                                                                                                          |
+| Rust unit/service tests            | Input validation, safe error mapping, password/recovery envelopes, date-only and money rules, and managed-file compensation                   | invalid passwords/dates/money, missing records, failed file copy/delete                                                                                                                                        |
 | Rust repository/schema integration | SQLCipher/SQLite invariants and transactions using a real database                                                                            | duplicate identifiers, invalid FK relationships, unsupported task states, invalid attachment ownership, payer outside its case, archive/delete rules                                                           |
 | Backup integration                 | Encrypted snapshot, manifest/checksum inventory, staged restore, rollback protection, and restore from the backup's own password/recovery key | bad nonce/key/checksum, wrong password or recovery key, altered header, missing or unlisted archive entries, duplicate ZIP names, path traversal, newer schema, corrupt restore leaving active vault unchanged |
 | Frontend component/workflow tests  | Typed bridge payloads, rendered RTL forms, query invalidation, navigation, and accessible controls                                            | locked vault does not query settings, locking clears legal-record cache, invalid forms, rejected mutations, absent payer options, keyboard/dialog behavior                                                     |
 | Build/package checks               | Type compatibility, lint/static rules, formatter conformance, and desktop packaging                                                           | compilation or bundle regressions; package creation is not a substitute for target-device testing                                                                                                              |
-| Manual target-device matrix        | Native dialogs, OS notifications/autostart, sleep/resume locking, installer behavior, encrypted restore, and visual/accessibility quality     | OS-specific permission, lifecycle, rendering, install, and recovery failures that mocks cannot establish                                                                                                       |
+| Manual target-device matrix        | Native dialogs, recovery-key printing, sleep/resume locking, installer behavior, encrypted restore, and visual/accessibility quality          | OS-specific permission, lifecycle, rendering, install, and recovery failures that mocks cannot establish                                                                                                       |
 
 The automated suite establishes contract and regression confidence. Candidate
 screenshot repeatability does not establish design approval, and disposable

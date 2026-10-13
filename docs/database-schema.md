@@ -32,10 +32,10 @@ authoritative executable definition.
 
 ## Lawyer settings
 
-| Table            | Purpose                                                                                                                                   |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `lawyer_profile` | Singleton profile created at setup: required full name, optional bar number, phone, and office address.                                  |
-| `app_settings`   | Required singleton settings: language, theme, date format, week start, lock timeout, and aggregate-counter consent.                       |
+| Table            | Purpose                                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `lawyer_profile` | Singleton profile created at setup: required full name, optional bar number, phone, and office address.             |
+| `app_settings`   | Required singleton settings: language, theme, date format, week start, lock timeout, and aggregate-counter consent. |
 
 The migration creates the `app_settings` row with canonical defaults. Its
 constrained values include Arabic/English language, the three supported themes,
@@ -76,27 +76,27 @@ clients ──< power_of_attorney_clients >── powers_of_attorney
 
 ### POA relationships
 
-| Table                       | Relationship and purpose                                                                                                      |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Table                       | Relationship and purpose                                                                                                                                                                     |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `power_of_attorney_clients` | Many-to-many link between POAs and clients. A POA deletion cascades to its links; a client with a POA link cannot be deleted. A client has at most one **active** POA (triggers, see below). |
-| `power_of_attorney_lawyers` | Descriptive lawyer rows for a POA. Deleting the POA cascades to these rows.                                                   |
+| `power_of_attorney_lawyers` | Descriptive lawyer rows for a POA. Deleting the POA cascades to these rows.                                                                                                                  |
 
 ### Case relationships
 
-| Table            | Relationship and purpose                                                                                                                                                                                                           |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `case_clients`   | Many-to-many client/case link with legal capacity and notes. `power_of_attorney_id` is **retired** (always `NULL`, a trigger rejects writes): a case shows its client's POA through the `client_current_poa` view.                |
-| `case_opponents` | Opponents associated with one case; case deletion cascades.                                                                                                                                                                        |
+| Table            | Relationship and purpose                                                                                                                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `case_clients`   | Many-to-many client/case link with legal capacity and notes. `power_of_attorney_id` is **retired** (always `NULL`, a trigger rejects writes): a case shows its client's POA through the `client_current_poa` view.        |
+| `case_opponents` | Opponents associated with one case; case deletion cascades.                                                                                                                                                               |
 | `hearings`       | Required case and hearing date, optional time/details, and an optional self-reference to a previous hearing. Deleting the prior hearing sets its successors’ `previous_hearing_id` to `NULL`; deleting the case cascades. |
-| `tasks`          | Optional client **or** case link (never both: a case already knows its clients), required due date and constrained completion state. Deleting the linked client or case sets the link to `NULL`.         |
+| `tasks`          | Optional client **or** case link (never both: a case already knows its clients), required due date and constrained completion state. Deleting the linked client or case sets the link to `NULL`.                          |
 
 ## Financial records
 
-| Table                 | Purpose and integrity rules                                                                                                                           |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `case_fee_agreements` | One fee agreement per case. The case relationship is unique and cascades on case deletion.                                                            |
-| `payments`            | A positive payment amount from a payer linked to the same case. A composite foreign key references `case_clients(case_id, client_id)`.                |
-| `expenses`            | Positive case or office expense with a constrained type. Linked to a case **or** a client, never both; deleting either sets its link to `NULL`.       |
+| Table                 | Purpose and integrity rules                                                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `case_fee_agreements` | One fee agreement per case. The case relationship is unique and cascades on case deletion.                                                      |
+| `payments`            | A positive payment amount from a payer linked to the same case. A composite foreign key references `case_clients(case_id, client_id)`.          |
+| `expenses`            | Positive case or office expense with a constrained type. Linked to a case **or** a client, never both; deleting either sets its link to `NULL`. |
 
 A client's own view derives case work: its tasks and expenses are those linked
 to it directly plus those of the cases it belongs to.
@@ -123,11 +123,11 @@ write.
 
 ## Local and derived records
 
-| Table                 | Purpose                                                                                                                |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `search_index`        | Normalized prefix/exact lookup rows for clients, cases, and POAs. It is derived data, rebuilt by application services. |
-| `backup_history`      | Local backup attempt/status history behind the latest-backup status. It records no backup destination paths.           |
-| `usage_counters`      | Optional aggregate-only counters for selected actions; no individual legal-record data is stored.                      |
+| Table            | Purpose                                                                                                                |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `search_index`   | Normalized prefix/exact lookup rows for clients, cases, and POAs. It is derived data, rebuilt by application services. |
+| `backup_history` | Local backup attempt/status history behind the latest-backup status. It records no backup destination paths.           |
+| `usage_counters` | Optional aggregate-only counters for selected actions; no individual legal-record data is stored.                      |
 
 ## Deletion behavior summary
 

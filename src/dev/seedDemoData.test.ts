@@ -56,6 +56,10 @@ describe('development demo seeder', () => {
     );
     expect(bridge.hearingCreate).toHaveBeenCalledTimes(2);
     expect(bridge.taskCreate).toHaveBeenCalledTimes(3);
+    for (const [input] of vi.mocked(bridge.taskCreate).mock.calls) {
+      expect(input.caseId).toBe('case-1');
+      expect(input.clientId).toBeUndefined();
+    }
     expect(bridge.taskComplete).toHaveBeenCalledWith('task-1');
     expect(bridge.feeAgreementSave).toHaveBeenCalledWith(
       expect.objectContaining({ caseId: 'case-1', amountMinor: 1_200_000 }),
@@ -66,6 +70,7 @@ describe('development demo seeder', () => {
     expect(bridge.expenseSave).toHaveBeenCalledWith(
       expect.objectContaining({ caseId: 'case-1', expenseType: 'COURT_FEE' }),
     );
+    expect(vi.mocked(bridge.expenseSave).mock.calls[0][0].clientId).toBeUndefined();
 
     const datedInputs = [
       vi.mocked(bridge.powerOfAttorneyCreate).mock.calls[0][0].issueDate,
@@ -111,6 +116,17 @@ describe('development demo seeder', () => {
     expect(bridge.caseCreate).not.toHaveBeenCalled();
     expect(bridge.hearingCreate).not.toHaveBeenCalled();
     expect(bridge.paymentSave).not.toHaveBeenCalled();
+  });
+
+  it('stops before finances when a task fails to save', async () => {
+    vi.mocked(bridge.taskCreate).mockRejectedValueOnce(new Error('Task command failed'));
+
+    await expect(seedDemoData()).rejects.toThrow('Task command failed');
+
+    expect(bridge.taskComplete).not.toHaveBeenCalled();
+    expect(bridge.feeAgreementSave).not.toHaveBeenCalled();
+    expect(bridge.paymentSave).not.toHaveBeenCalled();
+    expect(bridge.expenseSave).not.toHaveBeenCalled();
   });
 
   it('shares one in-flight seed across duplicate development mounts', async () => {

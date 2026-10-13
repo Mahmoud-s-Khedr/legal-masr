@@ -59,12 +59,12 @@ to any case.
 
 ## 1. System and metadata tables
 
-| Table | Columns | Used for |
-|---|---|---|
-| `schema_migrations` | `version`, `applied_at` | Records which numbered migrations have run. This is the only source of truth for the schema version. |
+| Table                | Columns                                                     | Used for                                                                                                                         |
+| -------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `schema_migrations`  | `version`, `applied_at`                                     | Records which numbered migrations have run. This is the only source of truth for the schema version.                             |
 | `migration_baseline` | `id=1`, `name` (must be `canonical-pre-release-2026-09-04`) | Marks the starting schema, so the app refuses to open a vault from an older, discarded migration chain instead of corrupting it. |
-| `app_metadata` | `installation_uuid`, timestamps | A random ID for this installation. |
-| `spike_records` | `id`, `value`, `created_at` | Used only by tests (lifecycle and concurrent-writer checks). Not part of the legal data. |
+| `app_metadata`       | `installation_uuid`, timestamps                             | A random ID for this installation.                                                                                               |
+| `spike_records`      | `id`, `value`, `created_at`                                 | Used only by tests (lifecycle and concurrent-writer checks). Not part of the legal data.                                         |
 
 ## 2. Lawyer and settings (single-row tables)
 
@@ -164,11 +164,11 @@ POA.
 
 ## 4. Financial records
 
-| Table | Columns | Rules |
-|---|---|---|
-| `case_fee_agreements` | `case_id` (UNIQUE), `amount_minor`, `agreement_date`, `notes` | The agreed fee (الأتعاب). At most one per case. |
-| `payments` | `case_id`, `payer_client_id`, `amount_minor`, `payment_date`, `payment_method` (CASH / BANK_TRANSFER / CHEQUE / ELECTRONIC / OTHER), `notes` | The foreign key `(case_id, payer_client_id)` points to `case_clients`, so **the payer must be a client of that case**. That link can't be removed while a payment uses it. |
-| `expenses` | `case_id` or `client_id` (never both), `amount_minor`, `expense_date`, `expense_type` (COURT_FEE / TRANSPORT / OFFICE_SUPPLIES / EXPERT_FEE / OTHER), `notes` | Money the office spent. With neither link set, it's a general office expense. |
+| Table                 | Columns                                                                                                                                                       | Rules                                                                                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `case_fee_agreements` | `case_id` (UNIQUE), `amount_minor`, `agreement_date`, `notes`                                                                                                 | The agreed fee (الأتعاب). At most one per case.                                                                                                                            |
+| `payments`            | `case_id`, `payer_client_id`, `amount_minor`, `payment_date`, `payment_method` (CASH / BANK_TRANSFER / CHEQUE / ELECTRONIC / OTHER), `notes`                  | The foreign key `(case_id, payer_client_id)` points to `case_clients`, so **the payer must be a client of that case**. That link can't be removed while a payment uses it. |
+| `expenses`            | `case_id` or `client_id` (never both), `amount_minor`, `expense_date`, `expense_type` (COURT_FEE / TRANSPORT / OFFICE_SUPPLIES / EXPERT_FEE / OTHER), `notes` | Money the office spent. With neither link set, it's a general office expense.                                                                                              |
 
 The amount still owed on a case is the fee agreement minus its payments. It
 isn't stored anywhere; the app calculates it.
@@ -192,11 +192,11 @@ managed folder:
 
 ## 6. Supporting tables
 
-| Table | Used for |
-|---|---|
-| `search_index` | A flattened search table: `(entity_type, entity_id)` → `title`, `subtitle`, `normalized_text`. Covers clients, cases and POAs, with Arabic text normalized for prefix search. The app rebuilds it from the real tables. |
+| Table            | Used for                                                                                                                                                                                                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `search_index`   | A flattened search table: `(entity_type, entity_id)` → `title`, `subtitle`, `normalized_text`. Covers clients, cases and POAs, with Arabic text normalized for prefix search. The app rebuilds it from the real tables.                                                          |
 | `backup_history` | Each backup attempt: `started_at`, `status` (RUNNING / SUCCEEDED / FAILED), `archive_size_bytes`, `error_code`. A CHECK requires `completed_at` once the backup finishes. The latest successful row drives the "last backup" status. It deliberately stores no destination path. |
-| `usage_counters` | Opt-in counts only, such as `CASE_CREATED` or `BACKUP_CREATED`. No record data. |
+| `usage_counters` | Opt-in counts only, such as `CASE_CREATED` or `BACKUP_CREATED`. No record data.                                                                                                                                                                                                  |
 
 ## 7. What happens on delete
 

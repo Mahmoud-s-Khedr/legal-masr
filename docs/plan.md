@@ -70,3 +70,14 @@ refresh are implemented. The final contract is in
 platform risks are recorded in [the integration review](reviews/2026-10-10-integration.md).
 Physical Windows/macOS journeys and the remaining roadmap release blockers are
 still open; this development merge does not certify public-beta readiness.
+
+## Current product scope — 2026-10-14
+
+The [feature inventory and testing guide](feature-list-and-testing.md) describes
+the implemented pre-beta workflows. Notifications, reminder values, autostart,
+hearing-roll printing and individual client export have been removed. Automatic
+backup schedules, retention policies, a configurable primary backup destination
+and backup-history UI are out of scope. Immutable migrations `0001`–`0004`
+define the current schema. Restore preparation and preview are implemented;
+physical Windows/macOS acceptance and the remaining export/deletion/support
+work remain open. Local aggregate-counter consent remains backend-only.

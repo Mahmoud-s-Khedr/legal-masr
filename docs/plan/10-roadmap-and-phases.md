@@ -24,12 +24,15 @@ Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
    empty or incomplete installation with the original password or recovery key
    (implemented and tested on Linux, 2026-10-09); the Windows↔macOS and repeated
    physical-device exercises remain open.
-3. Restore preview.
-4. Documented case/full-installation exports, permanent deletion, and redacted
+3. Documented case/full-installation exports, permanent deletion, and redacted
    support bundle.
-5. Tray behavior.
-6. Native Windows and macOS runner, package, install/update, and device checks.
-7. Egyptian privacy legal review before public claims or release.
+4. Tray behavior.
+5. Native Windows and macOS runner, package, install/update, and device checks.
+6. Egyptian privacy legal review before public claims or release.
+
+Restore preparation and preview are implemented. Notifications, reminders,
+autostart and hearing-roll printing were removed on 2026-10-13. See the
+[current feature inventory](../feature-list-and-testing.md).
 
 ## Later work
 

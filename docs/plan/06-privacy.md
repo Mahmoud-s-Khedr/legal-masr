@@ -17,12 +17,14 @@ the privacy notice and marketing must not claim blanket legal compliance.
 
 ## Implemented controls
 
-- SQLCipher database with password and recovery-key envelopes; passwords and
-  master keys do not leave Rust.
+- SQLCipher database with password and recovery-key envelopes. Authentication
+  inputs are collected locally in the renderer and sent through typed commands;
+  cryptographic processing and the database master key remain in Rust.
 - Managed-copy attachments accessed only by opaque ID/source-token commands;
   React never receives an arbitrary local path capability.
-- Settings → Privacy identifies the local-data model, network policy, and
-  aggregate usage-counter opt-in. Counters are local aggregate values only.
+- Settings → Privacy identifies the local-data model, managed-document storage,
+  and network policy. Aggregate-counter consent remains backend-only; the UI
+  has no opt-in control.
 - The app shows no operating-system notifications, so no record details are
   surfaced outside the unlocked window.
 - Local daily logs include only version, OS family, stable error codes, and

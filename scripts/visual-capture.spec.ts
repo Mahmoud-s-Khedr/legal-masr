@@ -34,6 +34,9 @@ for (const language of languages)
             caret: 'hide',
             threshold: 0.2,
             maxDiffPixelRatio: 0.001,
+            // Full-page capture needs two stable frames; allow slow CI workers
+            // enough time to acquire them without changing pixel tolerances.
+            timeout: 15_000,
           },
         );
       });
@@ -56,24 +59,14 @@ test('keyboard route navigation and dialog focus return', async ({ page }) => {
   await expect(add).toBeFocused();
 });
 
-test('hearing roll printing excludes workspace chrome and unrelated records', async ({ page }) => {
+test('agenda has no retired hearing-roll printing controls', async ({ page }) => {
   await page.clock.setFixedTime(new Date(fixtureTime));
   await page.goto('/calendar?captureLocale=en');
   await expect(page.locator('.agenda-item').first()).toBeVisible();
-  await expect(page.locator('.hearing-roll')).toBeHidden();
-  await page.getByRole('button', { name: 'Print the hearing roll', exact: true }).click();
-  await expect(page.locator('.hearing-roll')).toHaveCount(1);
-  await page.emulateMedia({ media: 'print' });
-  await expect(page.locator('.hearing-roll')).toBeVisible();
-  for (const navigation of await page.locator('nav').all()) await expect(navigation).toBeHidden();
-  await expect(page.locator('.calendar-layout')).toBeHidden();
-  await expect(page.locator('.developer-contacts')).toBeHidden();
-  await expect(page.locator('.hearing-roll tbody tr')).toHaveCount(1);
-  await page.pdf({
-    path: 'test-results/visual/hearing-roll.pdf',
-    format: 'A4',
-    printBackground: true,
-  });
+  await expect(
+    page.getByRole('button', { name: 'Print the hearing roll', exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator('.hearing-roll')).toHaveCount(0);
 });
 
 test('recovery key printing includes only the fictional key sheet', async ({ page }) => {

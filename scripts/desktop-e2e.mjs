@@ -471,7 +471,22 @@ async function expectRestoredWorkspace(h, label, value = password) {
   await h.unlock(value);
   h.checkpoint('restored-clients');
   await h.nav('/clients');
-  await h.browser.$(`a*=E2E-${label}`).waitForDisplayed();
+  h.checkpoint('restored-client-route');
+  // WebKit's text selector can time out on mixed Arabic/Latin link labels.
+  // Locate the record structurally, then verify the complete restored identity.
+  const restoredClient = await h.browser.$('table tbody a[href^="/clients/"]');
+  await restoredClient.waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('restored-client-identity');
+  assert.equal(
+    process.platform === 'win32'
+      ? (await restoredClient.getText()) === `موكل خيالي E2E-${label}`
+      : await h.browser.execute(
+          (target, expected) => target.textContent === expected,
+          restoredClient,
+          `موكل خيالي E2E-${label}`,
+        ),
+    true,
+  );
   h.checkpoint('restored-case');
   await h.nav('/cases');
   h.checkpoint('restored-case-route');
