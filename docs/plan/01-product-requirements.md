@@ -210,9 +210,9 @@ A global search field should remain visible in the application header.
 - Unsaved-change confirmation before navigation.
 - Single application instance.
 - Optional minimize-to-tray behavior.
-- Optional launch-at-startup for reliable reminders.
 
-Tauri provides official plugins for native notifications, single-instance behavior and autostart on Windows and macOS.
+Desktop notifications, reminder lead times, and launch-at-startup are out of
+scope; the Today dashboard and Agenda are the way upcoming work is surfaced.
 
 ---
 

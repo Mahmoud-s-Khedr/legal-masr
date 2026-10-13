@@ -7,7 +7,6 @@ pub mod documents;
 pub mod finances;
 pub mod hearings;
 pub mod powers_of_attorney;
-pub mod reminders;
 pub mod search;
 pub mod settings;
 pub mod tasks;

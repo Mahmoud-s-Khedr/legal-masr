@@ -11,11 +11,6 @@ vi.mock('../../../bridge/commands', () => ({
   },
 }));
 
-vi.mock('@tauri-apps/plugin-notification', () => ({
-  isPermissionGranted: vi.fn(),
-  requestPermission: vi.fn(),
-}));
-
 import { bridge } from '../../../bridge/commands';
 import i18n from '../../../i18n';
 import { SettingsPage } from './SettingsPage';
@@ -25,8 +20,6 @@ const settings = {
   theme: 'system' as const,
   dateFormat: 'dd/MM/yyyy' as const,
   weekStartsOn: 6,
-  defaultReminderMinutes: 60,
-  autostartEnabled: false,
   lockTimeoutMinutes: 15,
   usageCountersEnabled: false,
 };

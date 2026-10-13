@@ -169,22 +169,6 @@ await scenario('extended-recovery-key-reset-and-persisted-language', async h => 
  await h.close(); await h.launch(); await h.input('password','fictional recovered password 2026'); await h.click(t('gate.submit.unlock')); await h.browser.$('nav').waitForDisplayed({timeout:15000}); await h.browser.waitUntil(async()=>await h.browser.$('html').getAttribute('lang')==='en',{timeout:15000}); assert.equal(await h.browser.$('html').getAttribute('dir'),'ltr'); await h.click('العربية'); await h.browser.waitUntil(async()=>await h.browser.$('html').getAttribute('dir')==='rtl',{timeout:15000});
 });
 
-
-await scenario('regression-task-edit-preserves-custom-reminder', async h => {
- await h.initialize();
- const created=await h.browser.execute(async()=>await globalThis.__TAURI_INTERNALS__.invoke('task_create',{input:{title:'QA CUSTOM REMINDER',dueDate:'2026-10-10',reminderMinutes:120}}));
- assert.equal(created.reminderMinutes,120); await h.nav('/tasks'); await h.click(t('tasks.views.ALL')); await h.click('QA CUSTOM REMINDER'); await field(h,t('tasks.task'),'QA CUSTOM REMINDER EDITED'); await h.click(t('tasks.save')); await absentDialog(h);
- const rows=await h.browser.execute(async()=>await globalThis.__TAURI_INTERNALS__.invoke('task_list',{input:{view:'ALL',referenceDate:'2026-10-10'}})); const after=rows.find(r=>r.id===created.id);
- const dir=process.env.LEGALMASTER_E2E_OUTPUT_DIRECTORY ?? 'test-results/desktop'; await mkdir(dir,{recursive:true}); await writeFile(join(dir,'task-reminder-observation.json'),JSON.stringify({fixture:'fictional task seeded via existing typed IPC',before:created.reminderMinutes,after:after.reminderMinutes,editedTitlePersisted:after.title==='QA CUSTOM REMINDER EDITED'},null,2)); qaAction='assert:custom-task-reminder-preserved'; assert.equal(after.reminderMinutes,120,'Editing a title must preserve its existing reminder override');
-});
-await scenario('regression-hearing-edit-preserves-custom-reminder', async h => {
- await seedCase(h,'QA-REMINDER');
- const created=await h.browser.execute(async()=>{const [record]=await globalThis.__TAURI_INTERNALS__.invoke('case_list',{input:{}});return await globalThis.__TAURI_INTERNALS__.invoke('hearing_create',{input:{caseId:record.id,hearingDate:'2026-10-10',hearingTime:'09:30',location:'QA CUSTOM REMINDER COURT',reminderMinutes:120}});});
- assert.equal(created.reminderMinutes,120); await h.close(); await h.launch(); await h.unlock(); await h.nav('/cases'); await h.browser.$('a*=QA-REMINDER-CASE').waitForDisplayed({timeout:15000}); await h.browser.$('a*=QA-REMINDER-CASE').click(); await h.browser.$('h2*=QA-REMINDER-CASE').waitForDisplayed({timeout:15000}); await h.click(t('cases.detail.tabs.hearings')); await h.click(t('agenda.editHearing')); await field(h,t('agenda.fields.location'),'QA CUSTOM REMINDER COURT EDITED'); await h.click(t('agenda.save')); await absentDialog(h);
- const after=await h.browser.execute(async id=>await globalThis.__TAURI_INTERNALS__.invoke('hearing_get',{id}),created.id);
- const dir=process.env.LEGALMASTER_E2E_OUTPUT_DIRECTORY ?? 'test-results/desktop'; await mkdir(dir,{recursive:true}); await writeFile(join(dir,'hearing-reminder-observation.json'),JSON.stringify({fixture:'fictional hearing seeded via existing typed IPC',before:created.reminderMinutes,after:after.reminderMinutes,editedLocationPersisted:after.location==='QA CUSTOM REMINDER COURT EDITED'},null,2)); qaAction='assert:custom-hearing-reminder-preserved'; assert.equal(after.reminderMinutes,120,'Editing a location must preserve its existing reminder override');
-});
-
 `;
 const generated = new URL('./.full-app-native-generated.mjs', import.meta.url);
 try {

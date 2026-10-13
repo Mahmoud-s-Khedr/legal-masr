@@ -22,14 +22,7 @@ pub fn insert_initial_profile_and_settings(
     Ok(())
 }
 pub fn get_settings(conn: &Connection) -> Result<SettingsDto, Error> {
-    conn.query_row("SELECT language, theme, date_format, week_starts_on, default_reminder_minutes, autostart_enabled, usage_counters_enabled, lock_timeout_minutes FROM app_settings WHERE id = 1", [], |row| Ok(SettingsDto { language: row.get(0)?, theme: row.get(1)?, date_format: row.get(2)?, week_starts_on: row.get(3)?, default_reminder_minutes: row.get(4)?, autostart_enabled: row.get(5)?, usage_counters_enabled: row.get(6)?, lock_timeout_minutes: row.get(7)? })).map_err(Error::from)
-}
-pub fn update_autostart(conn: &Connection, enabled: bool) -> Result<(), Error> {
-    conn.execute(
-        "UPDATE app_settings SET autostart_enabled = ?1, updated_at = ?2 WHERE id = 1",
-        rusqlite::params![enabled, db::now()],
-    )?;
-    Ok(())
+    conn.query_row("SELECT language, theme, date_format, week_starts_on, usage_counters_enabled, lock_timeout_minutes FROM app_settings WHERE id = 1", [], |row| Ok(SettingsDto { language: row.get(0)?, theme: row.get(1)?, date_format: row.get(2)?, week_starts_on: row.get(3)?, usage_counters_enabled: row.get(4)?, lock_timeout_minutes: row.get(5)? })).map_err(Error::from)
 }
 pub fn update_usage_counters(conn: &Connection, enabled: bool) -> Result<(), Error> {
     conn.execute(
@@ -39,7 +32,7 @@ pub fn update_usage_counters(conn: &Connection, enabled: bool) -> Result<(), Err
     Ok(())
 }
 pub fn update_settings(conn: &Connection, input: &SettingsUpdateInput) -> Result<(), Error> {
-    conn.execute("UPDATE app_settings SET language = ?1, theme = ?2, date_format = ?3, week_starts_on = ?4, default_reminder_minutes = ?5, lock_timeout_minutes = ?6, updated_at = ?7 WHERE id = 1", rusqlite::params![input.language, input.theme, input.date_format, input.week_starts_on, input.default_reminder_minutes, input.lock_timeout_minutes, db::now()])?;
+    conn.execute("UPDATE app_settings SET language = ?1, theme = ?2, date_format = ?3, week_starts_on = ?4, lock_timeout_minutes = ?5, updated_at = ?6 WHERE id = 1", rusqlite::params![input.language, input.theme, input.date_format, input.week_starts_on, input.lock_timeout_minutes, db::now()])?;
     Ok(())
 }
 pub fn get_profile(conn: &Connection) -> Result<LawyerProfileDto, Error> {

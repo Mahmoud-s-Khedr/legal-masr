@@ -160,13 +160,12 @@ release risk; they must not be skipped.
 | ----------------------------------------- | --------: | -------: | ----------: | ------------------: |
 | Vault initialize/unlock/recovery          |  Required | Required |    Required |            Required |
 | Managed attachment picker/open/reveal     |  Required | Required |    Required |            Required |
-| Native notification and autostart         |  Required | Required |    Required |            Required |
 | Manual backup and corrupt-archive refusal |  Required | Required |    Required |            Required |
 | Repeated restore/disaster exercise        |  Required | Required |    Required |            Required |
 | Installer/update/uninstall                |       N/A | Required |    Required |            Required |
 | 1440×900 and 1366×768 visual comparison   |  Required | Required |    Required |            Required |
 
-No visual, notification, autostart, installer, or device claim is satisfied by
+No visual, installer, or device claim is satisfied by
 unit tests alone. The current correction-plan closeout still needs approval of
 the seeded viewport baseline and physical Windows/macOS validation.
 

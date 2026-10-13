@@ -14,18 +14,20 @@ installation identity only.
 
 | Area                  | Tables                                                                         | Key rules                                                                                                                                                              |
 | --------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Installation          | `app_metadata`, `lawyer_profile`, `app_settings`                               | One-row records; profile has name/bar number/phone/office address; settings hold language, theme, date/week, reminder, lock, autostart, and aggregate-counter consent. |
+| Installation          | `app_metadata`, `lawyer_profile`, `app_settings`                               | One-row records; profile has name/bar number/phone/office address; settings hold language, theme, date/week, lock timeout, and aggregate-counter consent.                |
 | Clients               | `clients`                                                                      | Unique `internal_number`; name required; optional ID, phone, email, address, notes, and archive time. No organization/contact submodel.                                |
 | POAs                  | `powers_of_attorney`, `power_of_attorney_clients`, `power_of_attorney_lawyers` | Unique internal sequence; official number may repeat; multiple client links and descriptive lawyer rows.                                                               |
 | Cases                 | `cases`, `case_clients`, `case_opponents`                                      | Unique internal number; optional official number/year; each client relationship holds capacity, POA, notes. POA ownership is enforced by a composite foreign key.      |
-| Schedule              | `hearings`, `tasks`, `reminder_deliveries`                                     | Hearings belong to a case and optionally chain to a prior hearing. Tasks have due date/details/notes/a case-or-client link/reminder and constrained `completed` state only.            |
+| Schedule              | `hearings`, `tasks`                                                            | Hearings belong to a case and optionally chain to a prior hearing. Tasks have due date/details/notes/a case-or-client link and constrained `completed` state only.                     |
 | Finance               | `case_fee_agreements`, `payments`, `expenses`                                  | One agreement per case. Payment payer must be a client linked to the same case. Expense case/client links are independently optional.                                  |
 | Attachments           | `attachments`                                                                  | Managed-copy metadata only, with exactly one owner: client, case, POA, or expense.                                                                                     |
 | Derived/local history | `search_index`, `backup_history`, `usage_counters`                             | Search indexes Clients/Cases/POAs; backup history excludes destination paths; counters are aggregate-only.                                                             |
 
 Removed concepts include generic `case_events`, task priority/status enums,
 external file references, generic financial transactions, client contacts and
-organizations, activity history, and a metadata schema-version field.
+organizations, activity history, a metadata schema-version field, and (since
+migration `0004`) reminder lead times, the reminder delivery log, and the
+launch-at-login preference.
 
 ## Domain constraints
 
@@ -47,7 +49,7 @@ organizations, activity history, and a metadata schema-version field.
 
 ### Hearings and tasks
 
-- Hearing date is required; time and reminder are optional. Status is one of
+- Hearing date is required; time is optional. Status is one of
   `SCHEDULED`, `COMPLETED`, or `CANCELLED`.
 - `previous_hearing_id` is optional and becomes `NULL` if its source is removed.
 - A task has a required due date and a `completed` boolean constrained to `0`
@@ -56,8 +58,6 @@ organizations, activity history, and a metadata schema-version field.
   status field.
 - A task (and an expense) links a case or a client, never both; a client's view
   derives the work of its cases through `case_clients`.
-- Reminder delivery deduplicates by `(entity_type, entity_id, reminder_date)`
-  for canonical `HEARING` and `TASK` entities.
 
 ### Finance and attachments
 

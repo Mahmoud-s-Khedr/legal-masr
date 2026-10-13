@@ -1,7 +1,7 @@
 use crate::{dto::TaskDto, errors::Error};
 use rusqlite::{params, Connection};
 
-const SELECT: &str = "SELECT id, client_id, case_id, title, details, notes, due_date, reminder_minutes, completed, completed_at, created_at, updated_at FROM tasks";
+const SELECT: &str = "SELECT id, client_id, case_id, title, details, notes, due_date, completed, completed_at, created_at, updated_at FROM tasks";
 
 fn row(row: &rusqlite::Row<'_>) -> rusqlite::Result<TaskDto> {
     Ok(TaskDto {
@@ -12,11 +12,10 @@ fn row(row: &rusqlite::Row<'_>) -> rusqlite::Result<TaskDto> {
         details: row.get(4)?,
         notes: row.get(5)?,
         due_date: row.get(6)?,
-        reminder_minutes: row.get(7)?,
-        completed: row.get::<_, i64>(8)? != 0,
-        completed_at: row.get(9)?,
-        created_at: row.get(10)?,
-        updated_at: row.get(11)?,
+        completed: row.get::<_, i64>(7)? != 0,
+        completed_at: row.get(8)?,
+        created_at: row.get(9)?,
+        updated_at: row.get(10)?,
     })
 }
 
@@ -29,12 +28,12 @@ pub fn get(conn: &Connection, id: &str) -> Result<TaskDto, Error> {
 }
 
 pub fn insert(conn: &Connection, task: &TaskDto) -> Result<(), Error> {
-    conn.execute("INSERT INTO tasks (id, client_id, case_id, title, details, notes, due_date, reminder_minutes, completed, completed_at, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)", params![task.id, task.client_id, task.case_id, task.title, task.details, task.notes, task.due_date, task.reminder_minutes, task.completed, task.completed_at, task.created_at])?;
+    conn.execute("INSERT INTO tasks (id, client_id, case_id, title, details, notes, due_date, completed, completed_at, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)", params![task.id, task.client_id, task.case_id, task.title, task.details, task.notes, task.due_date, task.completed, task.completed_at, task.created_at])?;
     Ok(())
 }
 
 pub fn update(conn: &Connection, task: &TaskDto) -> Result<(), Error> {
-    if conn.execute("UPDATE tasks SET client_id = ?2, case_id = ?3, title = ?4, details = ?5, notes = ?6, due_date = ?7, reminder_minutes = ?8, updated_at = ?9 WHERE id = ?1", params![task.id, task.client_id, task.case_id, task.title, task.details, task.notes, task.due_date, task.reminder_minutes, task.updated_at])? == 0 {
+    if conn.execute("UPDATE tasks SET client_id = ?2, case_id = ?3, title = ?4, details = ?5, notes = ?6, due_date = ?7, updated_at = ?8 WHERE id = ?1", params![task.id, task.client_id, task.case_id, task.title, task.details, task.notes, task.due_date, task.updated_at])? == 0 {
         return Err(Error::TaskNotFound);
     }
     Ok(())
@@ -91,7 +90,6 @@ mod tests {
             details: None,
             notes: None,
             due_date: due_date.into(),
-            reminder_minutes: None,
             completed,
             completed_at: completed.then_some("done".into()),
             created_at: "now".into(),

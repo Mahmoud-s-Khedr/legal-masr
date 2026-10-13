@@ -122,7 +122,6 @@ const hearing: HearingDto = {
   decisionText: null,
   status: 'SCHEDULED',
   completedAt: null,
-  reminderMinutes: 60,
   createdAt: stamp,
   updatedAt: stamp,
 };
@@ -134,7 +133,6 @@ const task: TaskDto = {
   details: 'بيان عرض فقط',
   notes: null,
   dueDate: '2026-10-03',
-  reminderMinutes: 60,
   completed: false,
   completedAt: null,
   createdAt: stamp,
@@ -200,8 +198,6 @@ const settings = (): Settings => ({
   theme: 'light',
   dateFormat: 'yyyy-MM-dd',
   weekStartsOn: 6,
-  defaultReminderMinutes: 60,
-  autostartEnabled: false,
   usageCountersEnabled: false,
   lockTimeoutMinutes: 15,
 });

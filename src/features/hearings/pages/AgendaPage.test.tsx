@@ -113,33 +113,13 @@ it('tells a new lawyer to add a case first instead of showing an empty case list
   expect(dialog.querySelector('a[href="/cases/new"]')).not.toBeNull();
 });
 
-it('prints the day’s hearing roll with the case, clients and court of each hearing', async () => {
-  const { fireEvent, within, waitFor } = await import('@testing-library/react');
-  vi.mocked(bridge.print).mockResolvedValue(undefined);
+it('lists the selected day’s hearings without offering to print a hearing roll', async () => {
   renderAgenda(completed.id);
 
-  fireEvent.click(await screen.findByRole('button', { name: 'طباعة رول الجلسات' }));
-  await waitFor(() => expect(bridge.print).toHaveBeenCalledOnce());
-  const roll = document.querySelector<HTMLElement>('.hearing-roll')!;
-  expect(roll).toHaveTextContent('رول الجلسات');
-  const rows = within(roll).getAllByRole('row', { hidden: true });
-  // A header row and one row per hearing of the day.
-  expect(rows).toHaveLength(3);
-  expect(roll).toHaveTextContent(fixtures.caseItem.internalNumber);
-  expect(roll).toHaveTextContent('تأجيل لجلسة لاحقة — DEMO');
-});
-
-it('says so when the print window cannot open', async () => {
-  const { fireEvent } = await import('@testing-library/react');
-  vi.mocked(bridge.print).mockRejectedValue({
-    code: 'OPERATION_FAILED',
-    message: 'x',
-    details: null,
-  });
-  renderAgenda(completed.id);
-
-  fireEvent.click(await screen.findByRole('button', { name: 'طباعة رول الجلسات' }));
-  expect(await screen.findByText('تعذر فتح نافذة الطباعة. حاول مرة أخرى.')).toBeVisible();
+  expect(await screen.findAllByText('تأجيل لجلسة لاحقة — DEMO')).not.toHaveLength(0);
+  expect(screen.queryByRole('button', { name: /طباعة/ })).toBeNull();
+  expect(document.querySelector('.hearing-roll')).toBeNull();
+  expect(bridge.print).not.toHaveBeenCalled();
 });
 
 it('shows each hearing’s time and case in the week view, not just counts', async () => {

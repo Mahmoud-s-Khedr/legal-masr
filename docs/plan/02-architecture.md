@@ -41,7 +41,7 @@ operations:
 - task create/update/list, complete/reopen, and removal;
 - attachment source selection, managed-copy add/list/update/open/reveal/remove;
 - fee-agreement save, payment/expense save/list, and case/client summaries;
-- dashboard, reminders, normalized global search, and index rebuilding;
+- dashboard, normalized global search, and index rebuilding;
 - manual backup creation, token-based selection/preparation/commit/cancellation,
   latest-successful summary, save-copy/reveal and profile/settings operations.
 
@@ -69,9 +69,9 @@ results at session boundaries. Paths, staged keys and prepared snapshots stay na
 
 ## Native capabilities and logging
 
-The main capability grants core window behavior, notification permission
-queries/prompts, and window-state persistence. The Rust application also uses
-narrow dialog, opener, autostart, single-instance, and notification plugins.
+The main capability grants core window behavior and window-state persistence.
+The Rust application also uses narrow dialog, opener, and single-instance
+plugins.
 No shell, HTTP, filesystem, or SQL plugin permission is granted to React.
 
 Logs are local and daily-rotated. Production entries contain application

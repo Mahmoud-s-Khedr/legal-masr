@@ -11,8 +11,8 @@ and displays a recovery key once. The lock screen unlocks locally; password
 change rewraps the master key and recovery sets a replacement password.
 
 Settings provide profile (name, bar number, phone, office address), Arabic or
-English UI, theme, date format, week start, default reminder lead time, lock
-timeout, autostart, notification permission, aggregate usage-counter consent,
+English UI, theme, date format, week start, lock timeout, aggregate
+usage-counter consent,
 manual backup controls, privacy/data-location information, and About. Backup
 setup never blocks onboarding. About credits developer Mahmoud Khedr and offers
 email, phone, WhatsApp, Telegram, and LinkedIn contact actions. The workspace
@@ -45,13 +45,13 @@ upcoming hearings. Agenda supports month/week/list views using date-only data.
 
 Tasks have title, details, notes, required due date, an optional case **or** client
 link (never both: a client's task list also includes its cases' tasks),
-optional reminder, and a semantic completion checkbox. Today, Overdue,
+and a semantic completion checkbox. Today, Overdue,
 Upcoming, Completed, and All are derived list views. There is no priority,
 assignee, time-of-day, source-event, or cancellation workflow.
 
-Reminder selection and delivery deduplication cover canonical hearing and task
-records. Notification copy is privacy-safe. Autostart is optional; tray behavior
-and physical Windows/macOS notification/autostart validation remain open.
+The app sends no desktop notifications or reminders, does not start with the
+operating system, and does not print hearing rolls; these were removed from the
+product and are not planned.
 
 ### Finance
 
@@ -97,19 +97,17 @@ client who has case payments fails with `CASE_CLIENT_HAS_PAYMENTS`; relationship
 and the search index remain unchanged. The dedicated `case_set_clients` command
 updates relationships and indexing in one transaction without changing unrelated
 case fields. Expense-owned attachments are supported by Rust, but expense dialogs
-still do not expose attachment upload. Client JSON export remains a backend
-command without a visible UI action.
+still do not expose attachment upload.
 
-- Backups are manual and saved to the app-data backup folder; there is no
-  configurable destination, automatic schedule, retention policy, or history
-  list UI.
+- Backups are manual and saved to the app-data backup folder; a copy can be
+  saved elsewhere on demand. Automatic schedules, retention policies, a
+  configurable primary destination, and a backup-history list are out of scope.
 - Restore uses authenticated preparation, preview and journaled replacement,
   including fresh/incomplete installations, foreign vaults and recovery with a
   staged new password. Physical cross-platform restoration remains unverified;
   see [07-backup-format.md](07-backup-format.md).
-- The current client export is a manually chosen `client-{id}.json` file.
-  Documented full-installation, case, and stable CSV/manifest exports are not
-  implemented.
+- There is no per-client export. Documented full-installation, case, and stable
+  CSV/manifest exports are not implemented.
 - Permanent client/case/application-data deletion and redacted support-bundle
   workflows are not implemented.
 - Case-folder export, minimize-to-tray behavior, and physical target-platform

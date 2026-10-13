@@ -17,12 +17,7 @@ fn clean(value: Option<String>) -> Option<String> {
     value.and_then(|value| (!value.trim().is_empty()).then(|| value.trim().to_owned()))
 }
 fn validate(input: &TaskInput) -> Result<(), Error> {
-    if input.title.trim().is_empty()
-        || !valid_date(&input.due_date)
-        || input
-            .reminder_minutes
-            .is_some_and(|minutes| minutes > 10_080)
-    {
+    if input.title.trim().is_empty() || !valid_date(&input.due_date) {
         return Err(Error::Validation);
     }
     // A task of a case reaches its client through the case: it never carries a client of its own.
@@ -67,7 +62,6 @@ pub fn save<R: Runtime>(
         details: clean(input.details),
         notes: clean(input.notes),
         due_date: input.due_date,
-        reminder_minutes: input.reminder_minutes,
         completed: existing.as_ref().is_some_and(|task| task.completed),
         completed_at: existing.as_ref().and_then(|task| task.completed_at.clone()),
         created_at: existing
@@ -147,7 +141,6 @@ mod tests {
             details: None,
             notes: None,
             due_date: "2026-08-24".into(),
-            reminder_minutes: Some(60),
         };
         assert!(validate(&input).is_ok());
         assert!(!valid_date("2026-08-24T09:00:00Z"));
@@ -162,7 +155,6 @@ mod tests {
             details: None,
             notes: None,
             due_date: "2026-08-24".into(),
-            reminder_minutes: None,
         }
     }
 

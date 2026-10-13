@@ -52,7 +52,6 @@ describe('a task links a case or a client, never both', () => {
       details: null,
       notes: null,
       dueDate: '2026-10-13',
-      reminderMinutes: null,
       completed: false,
       completedAt: null,
       createdAt: 'now',

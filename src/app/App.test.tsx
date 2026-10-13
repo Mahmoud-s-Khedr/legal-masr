@@ -20,7 +20,6 @@ vi.mock('../bridge/commands', () => ({
     clientList: vi.fn(),
     caseList: vi.fn(),
     dashboardSummary: vi.fn(),
-    refreshReminders: vi.fn(),
   },
 }));
 import { bridge } from '../bridge/commands';
@@ -224,8 +223,6 @@ describe('application gate', () => {
       theme: 'system',
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
-      defaultReminderMinutes: 60,
-      autostartEnabled: false,
       lockTimeoutMinutes: 15,
       usageCountersEnabled: false,
     });
@@ -259,8 +256,6 @@ describe('application gate', () => {
       theme: 'system',
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
-      defaultReminderMinutes: 60,
-      autostartEnabled: false,
       lockTimeoutMinutes: 15,
       usageCountersEnabled: false,
     });
@@ -306,8 +301,6 @@ describe('application gate', () => {
       theme: 'system',
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
-      defaultReminderMinutes: 60,
-      autostartEnabled: false,
       lockTimeoutMinutes: 15,
       usageCountersEnabled: false,
     });
@@ -353,8 +346,6 @@ describe('application gate', () => {
       theme: 'system',
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
-      defaultReminderMinutes: 60,
-      autostartEnabled: false,
       lockTimeoutMinutes: 15,
       usageCountersEnabled: false,
     });
@@ -385,8 +376,6 @@ describe('application gate', () => {
       theme: 'system',
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
-      defaultReminderMinutes: 60,
-      autostartEnabled: false,
       lockTimeoutMinutes: 15,
       usageCountersEnabled: false,
     });
@@ -402,8 +391,6 @@ describe('application gate', () => {
       theme: 'system' as const,
       dateFormat: 'dd/MM/yyyy' as const,
       weekStartsOn: 6,
-      defaultReminderMinutes: 60,
-      autostartEnabled: false,
       lockTimeoutMinutes: 15,
       usageCountersEnabled: false,
     };
@@ -466,8 +453,6 @@ it('keeps the unlocked gate and records when the native lock fails', async () =>
     theme: 'light',
     dateFormat: 'yyyy-MM-dd',
     weekStartsOn: 6,
-    defaultReminderMinutes: 60,
-    autostartEnabled: false,
     lockTimeoutMinutes: 15,
     usageCountersEnabled: false,
   });

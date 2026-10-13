@@ -37,11 +37,6 @@ pub fn run() {
         .manage(AppState::default())
         .plugin(navigation::guard())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_autostart::init(
-            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-            None,
-        ))
         .plugin(tauri_plugin_opener::init());
     #[cfg(not(feature = "desktop-e2e"))]
     let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
@@ -75,7 +70,6 @@ pub fn run() {
             commands::settings::settings_update,
             commands::settings::profile_get,
             commands::settings::profile_update,
-            commands::settings::settings_set_autostart,
             commands::settings::settings_set_usage_counters,
             commands::clients::client_create,
             commands::clients::client_update,
@@ -83,7 +77,6 @@ pub fn run() {
             commands::clients::client_list,
             commands::clients::client_archive,
             commands::clients::client_restore,
-            commands::clients::client_export,
             commands::powers_of_attorney::power_of_attorney_create,
             commands::powers_of_attorney::power_of_attorney_update,
             commands::powers_of_attorney::power_of_attorney_get,
@@ -130,8 +123,7 @@ pub fn run() {
             commands::finances::expense_list,
             commands::finances::expense_delete,
             commands::finances::finance_case_summary,
-            commands::finances::finance_client_summary,
-            commands::reminders::reminders_refresh
+            commands::finances::finance_client_summary
         ])
         .run(tauri::generate_context!())
         .expect("error while running Legal Masr");

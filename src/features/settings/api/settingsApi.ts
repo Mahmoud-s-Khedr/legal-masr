@@ -29,7 +29,6 @@ export function useUpdateSettings() {
       queryClient.setQueryData(SETTINGS_QUERY_KEY, (current: Settings | undefined) => ({
         ...current,
         ...next,
-        autostartEnabled: current?.autostartEnabled ?? false,
         usageCountersEnabled: current?.usageCountersEnabled ?? false,
       }));
       return { previous };
@@ -65,10 +64,3 @@ export const useChangePassword = () =>
       newPassword: string;
     }) => bridge.changePassword(currentPassword, newPassword),
   });
-export const useSetAutostart = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: bridge.setAutostart,
-    onSuccess: (settings) => queryClient.setQueryData(SETTINGS_QUERY_KEY, settings),
-  });
-};

@@ -62,8 +62,6 @@ pub struct SettingsDto {
     pub theme: String,
     pub date_format: String,
     pub week_starts_on: u8,
-    pub default_reminder_minutes: u32,
-    pub autostart_enabled: bool,
     pub usage_counters_enabled: bool,
     pub lock_timeout_minutes: u32,
 }
@@ -75,7 +73,6 @@ pub struct SettingsUpdateInput {
     pub theme: String,
     pub date_format: String,
     pub week_starts_on: u8,
-    pub default_reminder_minutes: u32,
     pub lock_timeout_minutes: u32,
 }
 
@@ -484,7 +481,6 @@ pub struct TaskDto {
     pub details: Option<String>,
     pub notes: Option<String>,
     pub due_date: String,
-    pub reminder_minutes: Option<u32>,
     pub completed: bool,
     pub completed_at: Option<String>,
     pub created_at: String,
@@ -501,7 +497,6 @@ pub struct TaskInput {
     pub details: Option<String>,
     pub notes: Option<String>,
     pub due_date: String,
-    pub reminder_minutes: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -678,7 +673,6 @@ pub struct HearingDto {
     pub decision_text: Option<String>,
     pub status: String,
     pub completed_at: Option<String>,
-    pub reminder_minutes: Option<u32>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -695,7 +689,6 @@ pub struct HearingInput {
     pub circuit_name: Option<String>,
     pub required_documents: Option<String>,
     pub notes: Option<String>,
-    pub reminder_minutes: Option<u32>,
 }
 
 #[derive(Deserialize)]

@@ -3,8 +3,9 @@
 This document describes the SQLite/SQLCipher schema created by
 [`0001_canonical_legal_masr.sql`](../src-tauri/migrations/0001_canonical_legal_masr.sql)
 and extended by
-[`0002_case_judicial_year.sql`](../src-tauri/migrations/0002_case_judicial_year.sql) and
-[`0003_case_or_client_links.sql`](../src-tauri/migrations/0003_case_or_client_links.sql).
+[`0002_case_judicial_year.sql`](../src-tauri/migrations/0002_case_judicial_year.sql),
+[`0003_case_or_client_links.sql`](../src-tauri/migrations/0003_case_or_client_links.sql) and
+[`0004_remove_reminders_and_autostart.sql`](../src-tauri/migrations/0004_remove_reminders_and_autostart.sql).
 It is a reference for the application model; the migration remains the
 authoritative executable definition.
 
@@ -33,12 +34,12 @@ authoritative executable definition.
 
 | Table            | Purpose                                                                                                                                   |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `lawyer_profile` | Optional singleton profile: full name, bar number, phone, and office address.                                                             |
-| `app_settings`   | Required singleton settings: language, theme, date format, week start, reminders, lock timeout, autostart, and aggregate-counter consent. |
+| `lawyer_profile` | Singleton profile created at setup: required full name, optional bar number, phone, and office address.                                  |
+| `app_settings`   | Required singleton settings: language, theme, date format, week start, lock timeout, and aggregate-counter consent.                       |
 
 The migration creates the `app_settings` row with canonical defaults. Its
 constrained values include Arabic/English language, the three supported themes,
-and valid ranges for reminder and lock timeout settings.
+and a valid range for the lock timeout.
 
 ## Core legal records
 
@@ -62,6 +63,7 @@ clients ──< power_of_attorney_clients >── powers_of_attorney
    ├──< case_clients >── cases ──< case_opponents
    │          │              ├──< hearings ──> previous hearing (optional)
    │          │              ├──< tasks
+   │          │              ├──< expenses ──< attachments
    │          │              ├── 1 case_fee_agreement
    │          │              ├──< payments
    │          │              └──< attachments
@@ -85,8 +87,8 @@ clients ──< power_of_attorney_clients >── powers_of_attorney
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `case_clients`   | Many-to-many client/case link with legal capacity and notes. `power_of_attorney_id` is **retired** (always `NULL`, a trigger rejects writes): a case shows its client's POA through the `client_current_poa` view.                |
 | `case_opponents` | Opponents associated with one case; case deletion cascades.                                                                                                                                                                        |
-| `hearings`       | Required case and hearing date, optional time/reminder/details, and an optional self-reference to a previous hearing. Deleting the prior hearing sets its successors’ `previous_hearing_id` to `NULL`; deleting the case cascades. |
-| `tasks`          | Optional client **or** case link (never both: a case already knows its clients), required due date, optional reminder, and constrained completion state. Deleting the linked client or case sets the link to `NULL`.         |
+| `hearings`       | Required case and hearing date, optional time/details, and an optional self-reference to a previous hearing. Deleting the prior hearing sets its successors’ `previous_hearing_id` to `NULL`; deleting the case cascades. |
+| `tasks`          | Optional client **or** case link (never both: a case already knows its clients), required due date and constrained completion state. Deleting the linked client or case sets the link to `NULL`.         |
 
 ## Financial records
 
@@ -124,15 +126,16 @@ write.
 | Table                 | Purpose                                                                                                                |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `search_index`        | Normalized prefix/exact lookup rows for clients, cases, and POAs. It is derived data, rebuilt by application services. |
-| `reminder_deliveries` | De-duplicates notifications by `(entity_type, entity_id, reminder_date)` for hearings and tasks.                       |
-| `backup_history`      | Local backup attempt/status history. It records no backup destination paths.                                           |
+| `backup_history`      | Local backup attempt/status history behind the latest-backup status. It records no backup destination paths.           |
 | `usage_counters`      | Optional aggregate-only counters for selected actions; no individual legal-record data is stored.                      |
 
 ## Deletion behavior summary
 
 - Deleting a case cascades to its case-client links, opponents, hearings,
   fee agreement, and case-owned attachments. Tasks and expenses retain their
-  records with the case link set to `NULL`.
+  records with the case link set to `NULL`. A case with any payment cannot be
+  deleted: the payment restricts removal of its case-client link. (The
+  application offers archiving, not permanent deletion.)
 - Clients are restricted from deletion while POA or case relationships remain.
   Optional task/expense links become `NULL`; client-owned attachments cascade.
 - Deleting a POA cascades to its client links, lawyer rows, and POA-owned
@@ -158,13 +161,19 @@ already exist.
   the migration sets existing pointers to `NULL`. The column and its composite
   foreign key remain because SQLite cannot drop a column that an index and foreign
   key use.
-- Vaults that already hold two active POAs for one client keep both rows until one
-  is edited; the view picks the newest deterministically.
+- Vaults that already hold two active POAs for one client keep both rows until
+  one is archived or the client is removed from it (editing a POA does not
+  re-check existing links); the view picks the newest deterministically.
 
 ## Change policy
 
-`0001` is the pre-release baseline, `0002` adds `cases.judicial_year`, and `0003`
-adds the link rules above. Do not
+`0001` is the pre-release baseline, `0002` adds `cases.judicial_year`, `0003`
+adds the link rules above, and `0004` drops the removed reminder and
+launch-at-login state (`app_settings.default_reminder_minutes`,
+`app_settings.autostart_enabled`, `hearings.reminder_minutes`,
+`tasks.reminder_minutes`, and the `reminder_deliveries` table). `0004` uses
+`ALTER TABLE … DROP COLUMN`, which rewrites rows in place rather than rebuilding
+the tables, so no cascade fires. Do not
 edit an applied migration. A schema change needs an explicit migration-policy
 decision before implementation (B10/P3-03 in the remediation register recorded
 the one for `0002`); update this reference in the same change.

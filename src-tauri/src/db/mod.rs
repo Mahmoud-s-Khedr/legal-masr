@@ -24,6 +24,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
         3,
         include_str!("../../migrations/0003_case_or_client_links.sql"),
     ),
+    (
+        4,
+        include_str!("../../migrations/0004_remove_reminders_and_autostart.sql"),
+    ),
 ];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
@@ -316,6 +320,107 @@ mod tests {
             })
             .unwrap();
         assert_eq!(applied, latest_schema_version());
+    }
+
+    fn column_exists(conn: &Connection, table: &str, column: &str) -> bool {
+        conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info(?1) WHERE name = ?2",
+            [table, column],
+            |row| row.get::<_, i64>(0),
+        )
+        .unwrap()
+            > 0
+    }
+
+    #[test]
+    fn removing_reminders_keeps_scheduled_work_and_drops_only_reminder_state() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+        for (version, sql) in &MIGRATIONS[..3] {
+            conn.execute_batch(sql).unwrap();
+            conn.execute(
+                "INSERT INTO schema_migrations (version, applied_at) VALUES (?1, 'now')",
+                [version],
+            )
+            .unwrap();
+        }
+        let (client_id, case_id, hearing_id, task_id, expense_id, attachment_id) = (
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+        );
+        conn.execute("INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, 'CL-1', 'أحمد', 'now', 'now')", [&client_id]).unwrap();
+        conn.execute("INSERT INTO cases (id, internal_number, created_at, updated_at) VALUES (?1, 'CA-1', 'now', 'now')", [&case_id]).unwrap();
+        conn.execute("INSERT INTO hearings (id, case_id, hearing_date, hearing_time, reminder_minutes, created_at, updated_at) VALUES (?1, ?2, '2026-10-03', '09:30', 30, 'now', 'now')", rusqlite::params![hearing_id, case_id]).unwrap();
+        conn.execute("INSERT INTO tasks (id, case_id, title, due_date, reminder_minutes, created_at, updated_at) VALUES (?1, ?2, 'مراجعة', '2026-10-04', 60, 'now', 'now')", rusqlite::params![task_id, case_id]).unwrap();
+        conn.execute("INSERT INTO expenses (id, client_id, amount_minor, expense_date, expense_type, created_at, updated_at) VALUES (?1, ?2, 1000, '2026-10-04', 'OTHER', 'now', 'now')", rusqlite::params![expense_id, client_id]).unwrap();
+        conn.execute("INSERT INTO attachments (id, expense_id, original_filename, stored_filename, relative_path, file_size_bytes, sha256, created_at, updated_at) VALUES (?1, ?2, 'a.pdf', 'a.pdf', 'a.pdf', 1, ?3, 'now', 'now')", rusqlite::params![attachment_id, expense_id, "0".repeat(64)]).unwrap();
+        conn.execute("INSERT INTO reminder_deliveries (entity_type, entity_id, reminder_date, delivered_at) VALUES ('TASK', ?1, '2026-10-04', 'now')", [&task_id]).unwrap();
+        conn.execute(
+            "UPDATE app_settings SET default_reminder_minutes = 15, autostart_enabled = 1, lock_timeout_minutes = 20 WHERE id = 1",
+            [],
+        )
+        .unwrap();
+
+        migrate(&conn).unwrap();
+
+        assert_eq!(schema_version(&conn), latest_schema_version());
+        for (table, column) in [
+            ("app_settings", "default_reminder_minutes"),
+            ("app_settings", "autostart_enabled"),
+            ("hearings", "reminder_minutes"),
+            ("tasks", "reminder_minutes"),
+        ] {
+            assert!(!column_exists(&conn, table, column), "{table}.{column}");
+        }
+        let reminder_table: Option<String> = conn
+            .query_row(
+                "SELECT name FROM sqlite_master WHERE name = 'reminder_deliveries'",
+                [],
+                |row| row.get(0),
+            )
+            .optional()
+            .unwrap();
+        assert_eq!(reminder_table, None);
+        let (date, time): (String, String) = conn
+            .query_row(
+                "SELECT hearing_date, hearing_time FROM hearings WHERE id = ?1",
+                [&hearing_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!((date.as_str(), time.as_str()), ("2026-10-03", "09:30"));
+        let due: String = conn
+            .query_row(
+                "SELECT due_date FROM tasks WHERE id = ?1",
+                [&task_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(due, "2026-10-04");
+        let lock_timeout: i64 = conn
+            .query_row(
+                "SELECT lock_timeout_minutes FROM app_settings WHERE id = 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(lock_timeout, 20);
+        // The expense-owned document survived: no cascade fired during the upgrade.
+        let attachments: i64 = conn
+            .query_row("SELECT COUNT(*) FROM attachments", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(attachments, 1);
+        // The case-or-client trigger on tasks still guards new writes.
+        assert!(conn
+            .execute(
+                "UPDATE tasks SET client_id = ?2 WHERE id = ?1",
+                rusqlite::params![task_id, client_id]
+            )
+            .is_err());
     }
 
     #[test]

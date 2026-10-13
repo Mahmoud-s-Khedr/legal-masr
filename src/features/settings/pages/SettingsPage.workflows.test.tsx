@@ -11,7 +11,6 @@ vi.mock('../../../bridge/commands', () => ({
     updateProfile: vi.fn(),
     updateSettings: vi.fn(),
     changePassword: vi.fn(),
-    setAutostart: vi.fn(),
     replaceRecoveryKey: vi.fn(),
     saveRecoveryKey: vi.fn(),
     print: vi.fn(),
@@ -24,12 +23,6 @@ vi.mock('../../../bridge/commands', () => ({
   },
 }));
 
-vi.mock('@tauri-apps/plugin-notification', () => ({
-  isPermissionGranted: vi.fn(),
-  requestPermission: vi.fn(),
-}));
-
-import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { bridge } from '../../../bridge/commands';
 import i18n from '../../../i18n';
 import { SettingsPage } from './SettingsPage';
@@ -41,8 +34,6 @@ const settings = {
   theme: 'system' as const,
   dateFormat: 'dd/MM/yyyy' as const,
   weekStartsOn: 6,
-  defaultReminderMinutes: 60,
-  autostartEnabled: false,
   lockTimeoutMinutes: 15,
   usageCountersEnabled: false,
 };
@@ -138,7 +129,6 @@ describe('SettingsPage workflows', () => {
           theme: 'system',
           dateFormat: 'dd/MM/yyyy',
           weekStartsOn: 6,
-          defaultReminderMinutes: 60,
           lockTimeoutMinutes: 15,
         }),
       );
@@ -184,31 +174,12 @@ describe('SettingsPage workflows', () => {
       );
     });
 
-    it('turns start-with-device on and reports a failure to change it', async () => {
-      vi.mocked(bridge.setAutostart).mockResolvedValueOnce({ ...settings, autostartEnabled: true });
+    it('offers no reminder, notification or launch-at-login controls', async () => {
       renderSettings('/settings?tab=security');
-
-      const autostart = await screen.findByRole('switch', {
-        name: t('settings.security.autostart'),
-      });
-      expect(autostart).not.toBeChecked();
-      fireEvent.click(autostart);
-      await waitFor(() => expect(vi.mocked(bridge.setAutostart).mock.calls[0]?.[0]).toBe(true));
-      await waitFor(() =>
-        expect(
-          screen.getByRole('switch', { name: t('settings.security.autostart') }),
-        ).toBeChecked(),
-      );
-
-      vi.mocked(bridge.setAutostart).mockRejectedValueOnce(new Error('denied'));
-      fireEvent.click(screen.getByRole('switch', { name: t('settings.security.autostart') }));
-      expect(await screen.findByText(t('settings.security.autostartError'))).toBeVisible();
-    });
-
-    it('no longer offers the usage counters switch', async () => {
-      renderSettings('/settings?tab=security');
-      await screen.findByRole('switch', { name: t('settings.security.autostart') });
+      await screen.findByRole('button', { name: t('settings.security.lockSave') });
+      expect(screen.queryByRole('switch')).toBeNull();
       expect(screen.queryByText(/إحصاءات/)).toBeNull();
+      expect(screen.queryByText(/إشعار|تنبيه/)).toBeNull();
     });
 
     it('issues a new recovery key only with the current password, and offers to keep it', async () => {
@@ -246,50 +217,6 @@ describe('SettingsPage workflows', () => {
 
       fireEvent.click(screen.getByRole('button', { name: t('settings.security.recoveryDone') }));
       expect(screen.queryByText(/01234567 89abcdef/)).toBeNull();
-    });
-
-    it('does not ask again once notification permission is already granted', async () => {
-      vi.mocked(isPermissionGranted).mockResolvedValue(true);
-      renderSettings('/settings?tab=security');
-
-      fireEvent.click(
-        await screen.findByRole('button', { name: t('settings.security.notificationsAllow') }),
-      );
-
-      expect(
-        await screen.findByRole('button', { name: t('settings.security.notificationsGranted') }),
-      ).toBeVisible();
-      expect(requestPermission).not.toHaveBeenCalled();
-    });
-
-    it('requests notification permission and explains a refusal', async () => {
-      vi.mocked(isPermissionGranted).mockResolvedValue(false);
-      vi.mocked(requestPermission).mockResolvedValue('denied');
-      renderSettings('/settings?tab=security');
-
-      fireEvent.click(
-        await screen.findByRole('button', { name: t('settings.security.notificationsAllow') }),
-      );
-
-      expect(await screen.findByText(t('settings.security.notificationsDenied'))).toBeVisible();
-      expect(requestPermission).toHaveBeenCalledTimes(1);
-    });
-
-    it('requests notification permission and shows it granted', async () => {
-      vi.mocked(isPermissionGranted).mockResolvedValue(false);
-      vi.mocked(requestPermission).mockResolvedValue('granted');
-      renderSettings('/settings?tab=security');
-
-      fireEvent.click(
-        await screen.findByRole('button', { name: t('settings.security.notificationsAllow') }),
-      );
-
-      expect(
-        await screen.findByRole('button', { name: t('settings.security.notificationsGranted') }),
-      ).toBeVisible();
-      expect(
-        screen.queryByText(t('settings.security.notificationsDenied')),
-      ).not.toBeInTheDocument();
     });
   });
 
@@ -443,7 +370,6 @@ describe('SettingsPage workflows', () => {
             theme: 'dark',
             dateFormat: 'yyyy-MM-dd',
             weekStartsOn: 0,
-            defaultReminderMinutes: 60,
             lockTimeoutMinutes: 15,
           }),
         );

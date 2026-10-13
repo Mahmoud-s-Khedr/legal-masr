@@ -523,7 +523,6 @@ async function run(language) {
         location: caseInput.courtName,
         circuitName: caseInput.circuitName,
         requiredDocuments: language === 'ar' ? 'مذكرة تجريبية' : 'Fictional pleading',
-        reminderMinutes: 60,
       },
     });
     const task = await h.invoke('task_create', {

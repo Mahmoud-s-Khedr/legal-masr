@@ -1193,33 +1193,6 @@
   .settings-section textarea:not([data-slot]) {
     min-height: 78px;
   }
-  .settings-toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    border-bottom: 1px solid var(--line);
-    padding: 0.85rem 0;
-  }
-  .settings-toggle-row > div {
-    display: grid;
-    gap: 0.25rem;
-  }
-  .settings-toggle-row strong {
-    font-size: 0.82rem;
-  }
-  .settings-toggle-row span,
-  .reminder-disclosure {
-    color: var(--muted);
-    font-size: 0.72rem;
-    line-height: 1.65;
-  }
-  .settings-toggle-row button:not([data-slot]) {
-    flex: none;
-  }
-  .reminder-disclosure {
-    margin: 0.8rem 0 0;
-  }
   .security-note {
     display: flex;
     align-items: flex-start;
@@ -1872,10 +1845,6 @@
     .privacy-list div {
       grid-template-columns: minmax(0, 1fr);
     }
-    .settings-toggle-row {
-      align-items: stretch;
-      flex-direction: column;
-    }
     .settings-nav {
       display: flex;
       overflow-x: auto;
@@ -2345,8 +2314,6 @@
   .privacy-list dt,
   .next-event-card > span,
   .next-event-card > small,
-  .settings-toggle-row span,
-  .reminder-disclosure,
   .security-note p,
   .settings-section .card-title > div > p,
   .timeline-list span,
@@ -2365,7 +2332,6 @@
   .compact-records a,
   .compact-records strong,
   .settings-nav button:not([data-slot]),
-  .settings-toggle-row strong,
   .privacy-list dd {
     font-size: 0.9rem !important;
   }
@@ -3295,56 +3261,12 @@
   .day-line-task {
     color: var(--muted);
   }
-  .calendar-detail-actions {
-    display: grid;
-    gap: 0.5rem;
-    margin: -0.4rem 0 0.9rem;
-  }
-  .calendar-detail-actions > button {
-    justify-self: start;
-  }
   @media (max-width: 1100px) {
     .calendar-layout {
       grid-template-columns: 1fr;
     }
     .calendar-detail {
       position: static;
-    }
-  }
-  .hearing-roll table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 10pt;
-  }
-  .hearing-roll th,
-  .hearing-roll td {
-    border: 1px solid #888;
-    padding: 4pt 6pt;
-    text-align: start;
-    vertical-align: top;
-  }
-  .hearing-roll h2 {
-    margin: 0 0 4pt;
-    font-size: 15pt;
-  }
-  .hearing-roll header p {
-    margin: 0 0 10pt;
-  }
-  .hearing-roll-decision {
-    width: 22%;
-  }
-  .hearing-roll td:first-child {
-    white-space: nowrap;
-  }
-  .hearing-roll td:nth-child(3) {
-    min-width: 8em;
-  }
-  @media print {
-    .hearing-roll {
-      direction: inherit;
-    }
-    .hearing-roll tr {
-      break-inside: avoid;
     }
   }
 }
@@ -3380,9 +3302,6 @@
   .settings-nav button:not([data-slot]).active {
     border-inline-end: 0;
     font-weight: 800;
-  }
-  .settings-toggle-row:last-child {
-    border-bottom: 0;
   }
 }
 

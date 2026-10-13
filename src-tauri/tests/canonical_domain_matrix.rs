@@ -203,7 +203,6 @@ fn relationship_capacity_opponents_hearing_chains_task_views_and_finance_totals_
                 details: None,
                 notes: None,
                 due_date: due_date.into(),
-                reminder_minutes: None,
                 completed,
                 completed_at: completed.then_some("now".into()),
                 created_at: "now".into(),

@@ -33,8 +33,8 @@ aligned with the implementation, a source-boundary scan is complete, and
 fresh visual sign-off is blocked until a seeded running-app capture environment
 is available.
 
-The product is not yet public-beta ready. Cross-device restore, automatic
-backup/retention, documented complete exports, permanent deletion, a redacted
+The product is not yet public-beta ready. Cross-device restore, documented
+complete exports, permanent deletion, a redacted
 support bundle, visual capture comparison, and physical Windows/macOS
 validation remain release risks. The authoritative correction decision record
 is [finalized-domain-correction-plan.md](finalized-domain-correction-plan.md);

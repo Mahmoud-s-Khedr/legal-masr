@@ -55,8 +55,6 @@ export type Settings = {
   theme: 'system' | 'light' | 'dark';
   dateFormat: 'dd/MM/yyyy' | 'yyyy-MM-dd';
   weekStartsOn: number;
-  defaultReminderMinutes: number;
-  autostartEnabled: boolean;
   usageCountersEnabled: boolean;
   lockTimeoutMinutes: number;
 };
@@ -65,7 +63,6 @@ export type SettingsUpdateInput = {
   theme: Settings['theme'];
   dateFormat: Settings['dateFormat'];
   weekStartsOn: number;
-  defaultReminderMinutes: number;
   lockTimeoutMinutes: number;
 };
 /** A backup chosen in the native picker. The path stays in Rust; only the token is held here. */
@@ -359,7 +356,6 @@ export type HearingDto = {
   decisionText: string | null;
   status: HearingStatus;
   completedAt: string | null;
-  reminderMinutes: number | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -373,7 +369,6 @@ export type HearingInput = {
   circuitName?: string;
   requiredDocuments?: string;
   notes?: string;
-  reminderMinutes?: number;
 };
 export type HearingListInput = {
   caseId?: string;
@@ -395,7 +390,6 @@ export type TaskDto = {
   details: string | null;
   notes: string | null;
   dueDate: string;
-  reminderMinutes: number | null;
   completed: boolean;
   completedAt: string | null;
   createdAt: string;
@@ -409,7 +403,6 @@ export type TaskInput = {
   details?: string;
   notes?: string;
   dueDate: string;
-  reminderMinutes?: number;
 };
 export type TaskListInput = {
   view?: 'TODAY' | 'OVERDUE' | 'UPCOMING' | 'COMPLETED' | 'ALL';

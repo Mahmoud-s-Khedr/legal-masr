@@ -14,9 +14,6 @@ import { EntityPicker } from '@/components/forms/EntityPicker';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { HearingDto, HearingInput, TaskDto } from '../../../bridge/types';
-import { bridge } from '../../../bridge/commands';
-import { useMutation } from '@tanstack/react-query';
-import { byHearingTime, HearingRoll } from '../components/HearingRoll';
 import { DatePicker } from '../../../components/forms/DatePicker';
 import { Button } from '../../../components/ui/button';
 import { ConfirmDialog, FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
@@ -44,6 +41,9 @@ const localDate = (date = new Date()) => localDateOnly(date);
 const plusDays = (date: Date, days: number) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 const formatDate = (date: Date) => localDate(date);
+/** Hearings without a time come last, the rest in court order. */
+const byHearingTime = (a: HearingDto, b: HearingDto) =>
+  (a.hearingTime ?? '99:99').localeCompare(b.hearingTime ?? '99:99');
 
 export function AgendaPage() {
   const { t } = useTranslation();
@@ -107,13 +107,6 @@ export function AgendaPage() {
   }, [hearings.data, tasks.data]);
   const selected = items.get(selectedDate) ?? { hearings: [], tasks: [] };
   const detailRef = useRef<HTMLElement>(null);
-  const print = useMutation({ gcTime: 0, mutationFn: bridge.print });
-  // The printed roll joins the page on the first request, then the print dialog opens.
-  const [printRequests, setPrintRequests] = useState(0);
-  const { mutate: printPage } = print;
-  useEffect(() => {
-    if (printRequests) printPage();
-  }, [printRequests, printPage]);
   // On narrow windows the day's details sit below the calendar; bring them into view so
   // choosing a day visibly does something.
   const selectDay = (date: string) => {
@@ -278,25 +271,6 @@ export function AgendaPage() {
           <h3>
             <time dateTime={selectedDate}>{format.dateLong(selectedDate)}</time>
           </h3>
-          {selected.hearings.length > 0 && (
-            <div className="calendar-detail-actions">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={print.isPending}
-                onClick={() => setPrintRequests((count) => count + 1)}
-              >
-                <Icon name="printer" size={16} />
-                {t('agenda.printRoll')}
-              </Button>
-              {print.isError && (
-                <Alert variant="destructive">
-                  <AlertDescription>{t('agenda.printError')}</AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
           {unavailable && (
             <div className="record-unavailable" role="alert">
               <p>{t('agenda.recordUnavailable')}</p>
@@ -389,9 +363,6 @@ export function AgendaPage() {
           ))}
         </aside>
       </div>
-      {printRequests > 0 && (
-        <HearingRoll date={selectedDate} hearings={selected.hearings} cases={cases.data ?? []} />
-      )}
       <ConfirmDialog
         open={Boolean(removing)}
         onOpenChange={(open) => !open && setRemoving(null)}
@@ -905,7 +876,6 @@ export function DecisionForm({
                   circuitName: hearing.circuitName ?? undefined,
                   requiredDocuments: hearing.requiredDocuments ?? undefined,
                   notes: undefined,
-                  reminderMinutes: hearing.reminderMinutes ?? undefined,
                 }
               : undefined,
           });
