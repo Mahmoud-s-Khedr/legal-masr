@@ -88,7 +88,6 @@ export const bridge = {
   settings: () => invoke<Settings>('settings_get'),
   updateSettings: (settings: SettingsUpdateInput) =>
     invoke<Settings>('settings_update', { input: settings }),
-  setAutostart: (enabled: boolean) => invoke<Settings>('settings_set_autostart', { enabled }),
   setUsageCounters: (enabled: boolean) =>
     invoke<Settings>('settings_set_usage_counters', { enabled }),
   profile: () => invoke<LawyerProfile>('profile_get'),
@@ -100,7 +99,6 @@ export const bridge = {
   clientList: (input: ClientListInput) => invoke<ClientSummary[]>('client_list', { input }),
   clientArchive: (id: string) => invoke<ClientDto>('client_archive', { id }),
   clientRestore: (id: string) => invoke<ClientDto>('client_restore', { id }),
-  clientExport: (id: string) => invoke<string>('client_export', { id }),
 
   powerOfAttorneyCreate: (input: PowerOfAttorneyInput) =>
     invoke<PowerOfAttorneyDto>('power_of_attorney_create', { input }),
@@ -138,8 +136,6 @@ export const bridge = {
   searchGlobal: (query: string) => invoke<SearchHit[]>('search_global', { query }),
   searchRebuildIndex: () => invoke<SearchRebuildResult>('search_rebuild_index'),
   dashboardSummary: (today: string) => invoke<DashboardSummary>('dashboard_get_summary', { today }),
-  refreshReminders: (today: string, nowTime: string) =>
-    invoke<number>('reminders_refresh', { today, nowTime }),
   taskCreate: (input: TaskInput) => invoke<TaskDto>('task_create', { input }),
   taskUpdate: (input: TaskInput) => invoke<TaskDto>('task_update', { input }),
   taskList: (input: TaskListInput) => invoke<TaskDto[]>('task_list', { input }),

@@ -731,11 +731,13 @@ export function ExpenseForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const form = useForm<z.infer<typeof expenseDraftSchema>>({
     resolver: zodResolver(expenseDraftSchema),
     defaultValues: {
       caseId: initial?.caseId ?? initialCaseId ?? '',
-      clientId: initial?.clientId ?? '',
+      // A case already knows its clients: an expense of a case never carries a client of its own.
+      clientId: (initial?.caseId ?? initialCaseId) ? '' : (initial?.clientId ?? ''),
       amount: initial ? minorToInput(initial.amountMinor) : '',
       date: initial?.expenseDate ?? today(),
       type: initial?.expenseType ?? 'COURT_FEE',
@@ -744,11 +746,14 @@ export function ExpenseForm({
   });
 
   const caseId = useWatch({ control: form.control, name: 'caseId' });
-  const setCaseId = (value: string) =>
+  const setCaseId = (value: string) => {
     form.setValue('caseId', value, {
       shouldDirty: true,
       shouldValidate: form.formState.isSubmitted,
     });
+    if (value) form.setValue('clientId', '', { shouldDirty: true });
+  };
+  const caseClientNames = useCase(caseId).data?.clients.map((client) => client.fullName);
   const clientId = useWatch({ control: form.control, name: 'clientId' });
   const setClientId = (value: string) =>
     form.setValue('clientId', value, {
@@ -810,9 +815,15 @@ export function ExpenseForm({
           </Field>
           <Field
             label={<>{t('finances.client')}</>}
+            hint={
+              caseId
+                ? t('forms.clientFromCase', { names: format.list(caseClientNames ?? []) })
+                : undefined
+            }
             error={form.formState.errors.clientId ? t('forms.invalid') : undefined}
           >
             <EntityPicker
+              disabled={Boolean(caseId)}
               value={clientId}
               onValueChange={(value) => setClientId(value ?? '')}
               items={[

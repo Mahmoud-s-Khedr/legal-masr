@@ -18,7 +18,7 @@ export function prepareWorkflowMocks() {
   vi.mocked(bridge.caseList).mockResolvedValue([fixtures.caseSummary]);
   vi.mocked(bridge.caseGet).mockResolvedValue(fixtures.caseItem);
   vi.mocked(bridge.powerOfAttorneyList).mockResolvedValue([
-    { ...fixtures.poa, clientNames: [fixtures.client.fullName] },
+    { ...fixtures.poa, clientNames: [fixtures.client.fullName], clientIds: [fixtures.client.id] },
   ]);
   vi.mocked(bridge.powerOfAttorneyGet).mockResolvedValue(fixtures.poa);
   vi.mocked(bridge.hearingList).mockResolvedValue([fixtures.hearing]);

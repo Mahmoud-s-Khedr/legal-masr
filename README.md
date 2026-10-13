@@ -45,7 +45,7 @@ backups keep working.
 The canonical Legal Masr domain is implemented through migration
 `0001_canonical_legal_masr.sql`: clients, powers of attorney, cases and their
 client relationships/opponents, hearings, tasks, managed-copy attachments,
-fee agreements, payments, expenses, reminders, local search, and aggregate
+fee agreements, payments, expenses, local search, and aggregate
 opt-in usage counters.
 
 The application uses a Tauri 2 / React / TypeScript shell and a Rust-only
@@ -56,8 +56,8 @@ Rust commands; React does not access SQLite or arbitrary local paths.
 
 Available privacy and recovery features include password/recovery-key vault
 access, locking, local manual encrypted backups with checksum validation,
-staged restore with rollback protection, backup history, native safe
-reminders, optional autostart, and an in-app privacy/data-location screen.
+staged restore with rollback protection, latest-backup status, and an in-app
+privacy/data-location screen.
 
 ## Known release blockers
 
@@ -66,19 +66,13 @@ This is not ready for a public beta. The following work remains:
 - visual sign-off from fresh seeded application captures at 1440×900 and
   1366×768;
 - repeated portable restore and native Windows/macOS runner/device validation;
-- automatic backup/retention and restore preview;
+- restore preview;
 - documented full-installation and case exports, permanent deletion, and a
   redacted support bundle.
 
 See [the finalized correction plan](docs/finalized-domain-correction-plan.md)
 and its [Phase 7 report](docs/finalized-domain-phase-7-report.md) for the
 current decision record and evidence.
-
-## Illustrated user guides
-
-Arabic and English guides are available as Markdown, offline HTML, and PDF in
-[docs/user-guide](docs/user-guide/README.md). They include annotated screenshots
-and a validation report from the native desktop walkthrough.
 
 ## Local development
 

@@ -215,7 +215,7 @@ submissions are isolated by DraftForm. FormDialog provides size variants,
 scrolling, and a persistent action footer.
 
 Case Parties → Clients in this case → Edit exposes linked client chips and each
-relationship's legal capacity, optional client-owned POA, and notes. Archived
+relationship's legal capacity and notes; the client's POA is shown read-only. Archived
 retained relationships remain visible; new archived clients cannot be added.
 Removing a payer fails without changing stored links. Relationship edits use
 `case_set_clients`, independently from the core case form.

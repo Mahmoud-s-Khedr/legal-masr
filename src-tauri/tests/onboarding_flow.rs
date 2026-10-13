@@ -476,7 +476,6 @@ fn general_settings_update_without_backup_configuration() {
             theme: "light".into(),
             date_format: "yyyy-MM-dd".into(),
             week_starts_on: 0,
-            default_reminder_minutes: 30,
             lock_timeout_minutes: 10,
         },
     )
@@ -949,58 +948,4 @@ fn restore_tokens_are_one_use_and_cancel_or_lock_removes_preparation() {
             .file_name()
             .to_string_lossy()
             .starts_with(".prepared-")));
-}
-
-#[test]
-fn local_client_export_preserves_live_data_and_refuses_unwritable_destinations() {
-    use legalmaster_lib::{dto::ClientCreateInput, services::client_service};
-    let _guard = lock_app_dir();
-    let app = fresh_mock_app();
-    app.manage(AppState::default());
-    let state: State<AppState> = app.state();
-    app_service::initialize(app.handle(), &state, setup_input()).unwrap();
-    let client = client_service::create(
-        app.handle(),
-        &state,
-        ClientCreateInput {
-            internal_number: "EXPORT-1".into(),
-            full_name: "Fictional export client".into(),
-            national_id: None,
-            primary_phone: None,
-            email: None,
-            address: None,
-            notes: None,
-            confirm_duplicate: false,
-        },
-    )
-    .unwrap();
-    let destination = tempfile::tempdir().unwrap();
-    let exported =
-        client_service::export(app.handle(), &state, &client.id, destination.path()).unwrap();
-    let contents: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(&exported).unwrap()).unwrap();
-    assert_eq!(contents["client"]["id"], client.id);
-    assert_eq!(contents["client"]["internalNumber"], "EXPORT-1");
-    assert_eq!(contents["cases"], serde_json::json!([]));
-    assert_eq!(contents["payments"], serde_json::json!([]));
-    let before = std::fs::read(&exported).unwrap();
-    assert!(client_service::export(
-        app.handle(),
-        &state,
-        &client.id,
-        &destination.path().join("missing")
-    )
-    .is_err());
-    assert_eq!(std::fs::read(&exported).unwrap(), before);
-    assert_eq!(
-        client_service::get(app.handle(), &state, &client.id)
-            .unwrap()
-            .internal_number,
-        "EXPORT-1"
-    );
-    app_service::lock(&state).unwrap();
-    assert!(matches!(
-        client_service::export(app.handle(), &state, &client.id, destination.path()),
-        Err(Error::Locked)
-    ));
 }

@@ -50,19 +50,8 @@ pub fn replace_clients(
         .iter()
         .filter(|client_id| !client_ids.contains(client_id))
         .collect::<Vec<_>>();
-    // Check every removal before changing anything, so a refusal leaves the
-    // stored associations exactly as they were. Associations a case still
-    // relies on are kept when unchanged and refused when removed.
-    for client_id in &removed {
-        let relied_on: bool = conn.query_row(
-            "SELECT EXISTS(SELECT 1 FROM case_clients WHERE power_of_attorney_id = ?1 AND client_id = ?2)",
-            params![id, client_id],
-            |row| row.get(0),
-        )?;
-        if relied_on {
-            return Err(Error::PowerOfAttorneyClientInUse);
-        }
-    }
+    // Cases no longer point at a POA: they derive it from the client (`client_current_poa`),
+    // so a client can always be removed from a POA.
     for client_id in removed {
         conn.execute(
             "DELETE FROM power_of_attorney_clients WHERE power_of_attorney_id = ?1 AND client_id = ?2",
@@ -151,7 +140,7 @@ pub fn hydrate(
         })?
         .collect::<Result<_, _>>()?;
     let mut cases = conn.prepare(
-        "SELECT DISTINCT case_id FROM case_clients WHERE power_of_attorney_id = ?1 ORDER BY case_id",
+        "SELECT DISTINCT cc.case_id FROM case_clients cc JOIN client_current_poa cp ON cp.client_id = cc.client_id WHERE cp.power_of_attorney_id = ?1 ORDER BY cc.case_id",
     )?;
     poa.case_ids = cases
         .query_map([&poa.id], |row| row.get(0))?
@@ -171,7 +160,7 @@ pub fn list(
         .map(|value| normalize::like_pattern(&normalize::normalize_text(value)));
     // Matching clients in a subquery keeps every client of a matching POA in its list.
     let mut statement = conn.prepare(
-        "SELECT p.id, p.internal_sequence, p.official_number, p.issue_year, p.archived_at, COALESCE(group_concat(c.full_name, '، '), '')
+        "SELECT p.id, p.internal_sequence, p.official_number, p.issue_year, p.archived_at, COALESCE(group_concat(c.full_name, '، '), ''), COALESCE(group_concat(c.id, ','), '')
          FROM powers_of_attorney p
          LEFT JOIN power_of_attorney_clients pc ON pc.power_of_attorney_id = p.id
          LEFT JOIN clients c ON c.id = pc.client_id
@@ -186,12 +175,18 @@ pub fn list(
     let rows = statement
         .query_map(params![include_archived, like, client_id], |row| {
             let client_names = row.get::<_, String>(5)?;
+            let client_ids = row.get::<_, String>(6)?;
             Ok(PowerOfAttorneySummary {
                 id: row.get(0)?,
                 internal_sequence: row.get(1)?,
                 official_number: row.get(2)?,
                 issue_year: row.get(3)?,
                 archived_at: row.get(4)?,
+                client_ids: client_ids
+                    .split(',')
+                    .filter(|id| !id.is_empty())
+                    .map(str::to_owned)
+                    .collect(),
                 client_names: if client_names.is_empty() {
                     vec![]
                 } else {
@@ -214,6 +209,7 @@ pub fn list(
 mod tests {
     use super::*;
     use crate::db;
+    use rusqlite::OptionalExtension;
     use uuid::Uuid;
 
     fn id() -> String {
@@ -272,8 +268,8 @@ mod tests {
             .case_ids
             .is_empty());
         connection.execute("INSERT INTO cases (id, internal_number, status, created_at, updated_at) VALUES (?1, 'CA-1', 'ACTIVE', 'now', 'now')", [&case_id]).unwrap();
-        connection.execute("INSERT INTO case_clients (case_id, client_id, power_of_attorney_id, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')", params![case_id, first_client, poa_id]).unwrap();
-        connection.execute("INSERT INTO case_clients (case_id, client_id, power_of_attorney_id, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')", params![case_id, second_client, poa_id]).unwrap();
+        connection.execute("INSERT INTO case_clients (case_id, client_id, created_at, updated_at) VALUES (?1, ?2, 'now', 'now')", params![case_id, first_client]).unwrap();
+        connection.execute("INSERT INTO case_clients (case_id, client_id, created_at, updated_at) VALUES (?1, ?2, 'now', 'now')", params![case_id, second_client]).unwrap();
 
         let saved = hydrate(&connection, get(&connection, &poa_id).unwrap()).unwrap();
         assert_eq!(saved.clients.len(), 2);
@@ -294,9 +290,9 @@ mod tests {
         ));
     }
 
-    /// A power of attorney linking two clients, with a case that relies on the
-    /// association for the first client. Returns (connection, poa, first, second).
-    fn poa_relied_on_by_a_case() -> (Connection, String, String, String) {
+    /// A power of attorney linking two clients, with a case of the first client. The case
+    /// derives its POA from the client. Returns (connection, poa, first, second).
+    fn poa_with_a_case() -> (Connection, String, String, String) {
         let connection = Connection::open_in_memory().unwrap();
         db::migrate(&connection).unwrap();
         let (first, second, poa_id, case_id) = (id(), id(), id(), id());
@@ -313,7 +309,7 @@ mod tests {
         )
         .unwrap();
         connection.execute("INSERT INTO cases (id, internal_number, status, created_at, updated_at) VALUES (?1, 'CA-1', 'ACTIVE', 'now', 'now')", [&case_id]).unwrap();
-        connection.execute("INSERT INTO case_clients (case_id, client_id, power_of_attorney_id, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')", params![case_id, first, poa_id]).unwrap();
+        connection.execute("INSERT INTO case_clients (case_id, client_id, created_at, updated_at) VALUES (?1, ?2, 'now', 'now')", params![case_id, first]).unwrap();
         (connection, poa_id, first, second)
     }
 
@@ -329,8 +325,8 @@ mod tests {
     }
 
     #[test]
-    fn resaving_an_unchanged_client_set_keeps_associations_a_case_relies_on() {
-        let (connection, poa_id, first, second) = poa_relied_on_by_a_case();
+    fn resaving_an_unchanged_client_set_keeps_the_links() {
+        let (connection, poa_id, first, second) = poa_with_a_case();
 
         replace_clients(
             &connection,
@@ -343,14 +339,6 @@ mod tests {
         let mut expected = vec![first, second];
         expected.sort();
         assert_eq!(linked_clients(&connection, &poa_id), expected);
-        let still_referenced: i64 = connection
-            .query_row(
-                "SELECT COUNT(*) FROM case_clients WHERE power_of_attorney_id = ?1",
-                [&poa_id],
-                |row| row.get(0),
-            )
-            .unwrap();
-        assert_eq!(still_referenced, 1);
         let created_at: String = connection
             .query_row(
                 "SELECT created_at FROM power_of_attorney_clients WHERE power_of_attorney_id = ?1 LIMIT 1",
@@ -365,8 +353,8 @@ mod tests {
     }
 
     #[test]
-    fn adding_a_client_keeps_the_associations_a_case_relies_on() {
-        let (connection, poa_id, first, second) = poa_relied_on_by_a_case();
+    fn adding_a_client_keeps_the_existing_links() {
+        let (connection, poa_id, first, second) = poa_with_a_case();
         let third = id();
         connection.execute("INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, 'CL-3', 'منى', 'now', 'now')", [&third]).unwrap();
 
@@ -384,44 +372,62 @@ mod tests {
     }
 
     #[test]
-    fn removing_an_unreferenced_client_is_allowed() {
-        let (connection, poa_id, first, second) = poa_relied_on_by_a_case();
+    fn removing_a_client_is_allowed_and_its_case_then_shows_no_poa() {
+        let (connection, poa_id, first, second) = poa_with_a_case();
 
         replace_clients(
             &connection,
             &poa_id,
-            std::slice::from_ref(&first),
+            std::slice::from_ref(&second),
             "second-save",
         )
         .unwrap();
 
-        assert_eq!(linked_clients(&connection, &poa_id), vec![first]);
-        assert!(!linked_clients(&connection, &poa_id).contains(&second));
+        assert_eq!(linked_clients(&connection, &poa_id), vec![second]);
+        // The case belongs to the removed client, so the POA no longer lists it.
+        assert!(hydrate(&connection, get(&connection, &poa_id).unwrap())
+            .unwrap()
+            .case_ids
+            .is_empty());
+        let derived: Option<String> = connection
+            .query_row(
+                "SELECT power_of_attorney_id FROM client_current_poa WHERE client_id = ?1",
+                [&first],
+                |row| row.get(0),
+            )
+            .optional()
+            .unwrap();
+        assert_eq!(derived, None);
     }
 
     #[test]
-    fn refusing_to_remove_a_client_a_case_relies_on_changes_nothing() {
-        let (connection, poa_id, first, second) = poa_relied_on_by_a_case();
-        let before = linked_clients(&connection, &poa_id);
+    fn a_second_active_poa_for_a_client_is_refused_and_changes_nothing() {
+        let (connection, poa_id, first, second) = poa_with_a_case();
+        let other = id();
+        let mut other_poa = poa(other.clone());
+        other_poa.internal_sequence = "TA-2".into();
+        insert(&connection, &other_poa).unwrap();
 
-        // Removing both: the unreferenced removal must not be applied on its own.
-        let result = replace_clients(&connection, &poa_id, &[], "second-save");
-        assert!(matches!(result, Err(Error::PowerOfAttorneyClientInUse)));
-        assert_eq!(linked_clients(&connection, &poa_id), before);
-
-        let result = replace_clients(&connection, &poa_id, std::slice::from_ref(&second), "x");
-        assert!(matches!(result, Err(Error::PowerOfAttorneyClientInUse)));
-        assert_eq!(linked_clients(&connection, &poa_id), before);
-        assert!(before.contains(&first) && before.contains(&second));
+        // The second client is free; the first already holds `poa_id`. The service saves inside a
+        // transaction, so the refusal must leave nothing behind once it rolls back.
+        let tx = connection.unchecked_transaction().unwrap();
+        let result = replace_clients(&tx, &other, &[second.clone(), first.clone()], "x");
+        assert!(matches!(result, Err(Error::ClientHasActivePowerOfAttorney)));
+        drop(tx);
+        assert!(linked_clients(&connection, &other).is_empty());
+        assert!(linked_clients(&connection, &poa_id).contains(&first));
     }
 
     #[test]
     fn poa_search_matches_notary_office_and_any_client_but_lists_every_client() {
         let connection = Connection::open_in_memory().unwrap();
         db::migrate(&connection).unwrap();
-        let (ahmed, sara) = (id(), id());
-        for (client_id, number, name) in [(&ahmed, "CL-1", "أحمد"), (&sara, "CL-2", "سارة")]
-        {
+        let (ahmed, sara, mona) = (id(), id(), id());
+        for (client_id, number, name) in [
+            (&ahmed, "CL-1", "أحمد"),
+            (&sara, "CL-2", "سارة"),
+            (&mona, "CL-3", "منى"),
+        ] {
             connection.execute("INSERT INTO clients (id, internal_number, full_name, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')", params![client_id, number, name]).unwrap();
         }
         let shared = id();
@@ -437,7 +443,8 @@ mod tests {
             },
         )
         .unwrap();
-        replace_clients(&connection, &other, &[sara], "now").unwrap();
+        // A client holds one active POA, so the second POA belongs to a different client.
+        replace_clients(&connection, &other, &[mona], "now").unwrap();
         let search = |query: &str| list(&connection, Some(query), false, None).unwrap();
 
         let by_client = search("احمد");

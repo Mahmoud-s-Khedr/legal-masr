@@ -39,16 +39,6 @@ pub fn profile_update(
 }
 
 #[tauri::command]
-pub fn settings_set_autostart(
-    app: AppHandle,
-    state: State<AppState>,
-    enabled: bool,
-) -> Result<SettingsDto, Error> {
-    let _operation = state.operation()?;
-    settings_service::set_autostart(&app, &state, enabled)
-}
-
-#[tauri::command]
 pub fn settings_set_usage_counters(
     app: AppHandle,
     state: State<AppState>,

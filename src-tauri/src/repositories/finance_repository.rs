@@ -109,7 +109,7 @@ pub fn list_expenses(
     from: Option<&str>,
     to: Option<&str>,
 ) -> Result<Vec<ExpenseDto>, Error> {
-    let mut stmt = conn.prepare("SELECT id, case_id, client_id, amount_minor, expense_date, expense_type, notes, created_at, updated_at FROM expenses WHERE (?1 IS NULL OR client_id = ?1) AND (?2 IS NULL OR case_id = ?2) AND (?3 IS NULL OR expense_date >= ?3) AND (?4 IS NULL OR expense_date <= ?4) ORDER BY expense_date DESC, created_at DESC")?;
+    let mut stmt = conn.prepare("SELECT id, case_id, client_id, amount_minor, expense_date, expense_type, notes, created_at, updated_at FROM expenses WHERE (?1 IS NULL OR client_id = ?1 OR case_id IN (SELECT case_id FROM case_clients WHERE client_id = ?1)) AND (?2 IS NULL OR case_id = ?2) AND (?3 IS NULL OR expense_date >= ?3) AND (?4 IS NULL OR expense_date <= ?4) ORDER BY expense_date DESC, created_at DESC")?;
     let rows = stmt
         .query_map(params![client_id, case_id, from, to], expense_row)?
         .collect::<Result<Vec<_>, _>>()?;
@@ -145,7 +145,7 @@ pub fn client_summary(conn: &Connection, client_id: &str) -> Result<ClientFinanc
         |row| row.get(0),
     )?;
     let expenses: i64 = conn.query_row(
-        "SELECT COALESCE(SUM(amount_minor), 0) FROM expenses WHERE client_id = ?1",
+        "SELECT COALESCE(SUM(amount_minor), 0) FROM expenses WHERE client_id = ?1 OR case_id IN (SELECT case_id FROM case_clients WHERE client_id = ?1)",
         [client_id],
         |row| row.get(0),
     )?;

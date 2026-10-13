@@ -35,10 +35,7 @@
     "check:coverage": "node scripts/check-coverage.mjs",
     "capture:visual:canonical": "node scripts/visual-container.mjs compare",
     "update:visual:canonical": "node scripts/visual-container.mjs update",
-    "probe:visual:canonical": "node scripts/visual-container.mjs probe",
-    "guide:capture": "node scripts/capture-user-guide.mjs",
-    "guide:build": "node scripts/build-user-guide.mjs",
-    "guide:verify": "node scripts/verify-user-guide.mjs"
+    "probe:visual:canonical": "node scripts/visual-container.mjs probe"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -48,7 +45,6 @@
     "@tanstack/react-table": "^8.21.3",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-dialog": "^2.4.0",
-    "@tauri-apps/plugin-notification": "^2.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",

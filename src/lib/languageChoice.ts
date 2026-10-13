@@ -25,6 +25,5 @@ export const settingsWithLanguage = (
   theme: settings.theme,
   dateFormat: settings.dateFormat,
   weekStartsOn: settings.weekStartsOn,
-  defaultReminderMinutes: settings.defaultReminderMinutes,
   lockTimeoutMinutes: settings.lockTimeoutMinutes,
 });

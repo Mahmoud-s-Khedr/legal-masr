@@ -36,7 +36,6 @@ const settingsInput: SettingsUpdateInput = {
   theme: 'system',
   dateFormat: 'dd/MM/yyyy',
   weekStartsOn: 6,
-  defaultReminderMinutes: 60,
   lockTimeoutMinutes: 15,
 };
 const profile: LawyerProfile = {
@@ -77,7 +76,6 @@ const hearingCreate: HearingInput = {
   circuitName: 'الدائرة الأولى',
   requiredDocuments: 'التوكيل',
   notes: 'مراجعة الملف',
-  reminderMinutes: 60,
 };
 const hearingUpdate: HearingInput = { ...hearingCreate, id: 'hearing-1' };
 const hearingDecision: HearingDecisionInput = {
@@ -101,7 +99,6 @@ const caseCreate: CaseCreateInput = {
     {
       clientId: 'client-1',
       legalCapacity: 'مدعٍ',
-      powerOfAttorneyId: 'poa-1',
       notes: 'العميل الأساسي',
     },
   ],
@@ -124,7 +121,6 @@ const taskCreate: TaskInput = {
   details: 'قبل الجلسة',
   notes: 'هام',
   dueDate: '2026-10-04',
-  reminderMinutes: 30,
 };
 const taskUpdate: TaskInput = { ...taskCreate, id: 'task-1' };
 const attachmentCreate: AttachmentInput = {
@@ -267,7 +263,6 @@ const contracts = [
     [{ input: settingsInput }],
     () => bridge.updateSettings(settingsInput),
   ],
-  ['setAutostart', 'settings_set_autostart', [{ enabled: true }], () => bridge.setAutostart(true)],
   [
     'setUsageCounters',
     'settings_set_usage_counters',
@@ -297,7 +292,6 @@ const contracts = [
   ],
   ['clientArchive', 'client_archive', [{ id: 'client-1' }], () => bridge.clientArchive('client-1')],
   ['clientRestore', 'client_restore', [{ id: 'client-1' }], () => bridge.clientRestore('client-1')],
-  ['clientExport', 'client_export', [{ id: 'client-1' }], () => bridge.clientExport('client-1')],
   [
     'powerOfAttorneyCreate',
     'power_of_attorney_create',
@@ -428,12 +422,6 @@ const contracts = [
     'dashboard_get_summary',
     [{ today: '2026-10-04' }],
     () => bridge.dashboardSummary('2026-10-04'),
-  ],
-  [
-    'refreshReminders',
-    'reminders_refresh',
-    [{ today: '2026-10-04', nowTime: '09:30' }],
-    () => bridge.refreshReminders('2026-10-04', '09:30'),
   ],
   ['taskCreate', 'task_create', [{ input: taskCreate }], () => bridge.taskCreate(taskCreate)],
   ['taskUpdate', 'task_update', [{ input: taskUpdate }], () => bridge.taskUpdate(taskUpdate)],

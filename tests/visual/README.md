@@ -31,7 +31,7 @@ updates. `pnpm probe:visual:canonical` intentionally
 changes spacing and must fail. Actuals/diffs/traces live in ignored
 `test-results/visual/`; the ignored HTML report is `playwright-report/`.
 
-The expected matrix is 16 routes × Arabic/English × 1366×768/1440×900. Browser
+The expected matrix is 17 routes × Arabic/English × 1366×768/1440×900. Browser
 clock: 2026-10-03T09:00:00Z; timezone: Africa/Cairo; light theme; animations and
 caret disabled; fonts and route content loaded. PNGs are full-page, so their
 height can exceed the viewport. Width must match it exactly.

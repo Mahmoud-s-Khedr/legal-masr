@@ -183,7 +183,8 @@ const details = [
     archive: 'powerOfAttorneyArchive',
     restore: 'powerOfAttorneyRestore',
     item: fixtures.poa,
-    label: fixtures.poa.internalSequence,
+    // The header now reads «توكيل <number>», with the number bidi-isolated.
+    label: new RegExp(`توكيل .*${fixtures.poa.internalSequence}`),
     confirm: 'أرشفة التوكيل',
   },
 ] as const;
@@ -417,6 +418,8 @@ it('creates a POA with multiple clients/lawyers and retains a rejected draft', a
       internalNumber: 'CL-SECOND',
     },
   ]);
+  // Neither client holds an active power of attorney yet, so both are offered.
+  vi.mocked(bridge.powerOfAttorneyList).mockResolvedValue([]);
   vi.mocked(bridge.powerOfAttorneyCreate)
     .mockRejectedValueOnce(fictionalFailure)
     .mockResolvedValue(fixtures.poa);
@@ -483,9 +486,7 @@ it('edits a case while preserving its client and POA relationships', async () =>
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(vi.mocked(bridge.caseUpdate).mock.calls.at(-1)?.[0]).toMatchObject({
     internalNumber: 'CASE-EDITED',
-    clients: [
-      { clientId: fixtures.client.id, powerOfAttorneyId: fixtures.poa.id, legalCapacity: 'أصيل' },
-    ],
+    clients: [{ clientId: fixtures.client.id, legalCapacity: 'أصيل' }],
   });
 });
 it('creates/edits hearings and records a decision with a next hearing', async () => {

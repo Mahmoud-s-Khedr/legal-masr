@@ -57,7 +57,8 @@ export async function seedDemoData(): Promise<DemoSeedResult> {
     confirmDuplicate: true,
   });
 
-  const powerOfAttorney = await bridge.powerOfAttorneyCreate({
+  // The case derives this POA from its client, so the case below does not name it.
+  await bridge.powerOfAttorneyCreate({
     internalSequence: 'DEMO-POA-001',
     officialNumber: '1187',
     issueDate: localDate(-45),
@@ -89,7 +90,6 @@ export async function seedDemoData(): Promise<DemoSeedResult> {
       {
         clientId: primaryClient.id,
         legalCapacity: 'مدعٍ',
-        powerOfAttorneyId: powerOfAttorney.id,
       },
       {
         clientId: coClient.id,
@@ -115,7 +115,6 @@ export async function seedDemoData(): Promise<DemoSeedResult> {
     circuitName: 'الدائرة المدنية الثالثة',
     requiredDocuments: 'أصل العقد وكشف الحساب',
     notes: 'متابعة طلب التعويض.',
-    reminderMinutes: 120,
   });
   await bridge.hearingCreate({
     caseId: legalCase.id,
@@ -123,27 +122,21 @@ export async function seedDemoData(): Promise<DemoSeedResult> {
     hearingTime: '09:00',
     hearingType: 'جلسة حكم',
     location: 'محكمة جنوب القاهرة',
-    reminderMinutes: 60,
   });
 
   await bridge.taskCreate({
-    clientId: primaryClient.id,
     caseId: legalCase.id,
     title: 'مراجعة أصل العقد',
     details: 'مطابقة النسخة المقدمة مع أصل العقد قبل الجلسة.',
     dueDate: localDate(-1),
-    reminderMinutes: 60,
   });
   await bridge.taskCreate({
-    clientId: primaryClient.id,
     caseId: legalCase.id,
     title: 'تجهيز مذكرة المرافعة',
     details: 'تجهيز مذكرة مختصرة بالنقاط الرئيسية.',
     dueDate: today,
-    reminderMinutes: 90,
   });
   const completedTask = await bridge.taskCreate({
-    clientId: coClient.id,
     caseId: legalCase.id,
     title: 'استلام المستندات من الموكل',
     dueDate: localDate(-3),
@@ -166,7 +159,6 @@ export async function seedDemoData(): Promise<DemoSeedResult> {
   });
   await bridge.expenseSave({
     caseId: legalCase.id,
-    clientId: primaryClient.id,
     amountMinor: 15_000,
     expenseDate: localDate(-2),
     expenseType: 'COURT_FEE',

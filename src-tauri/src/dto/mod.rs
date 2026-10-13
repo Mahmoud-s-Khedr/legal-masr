@@ -62,8 +62,6 @@ pub struct SettingsDto {
     pub theme: String,
     pub date_format: String,
     pub week_starts_on: u8,
-    pub default_reminder_minutes: u32,
-    pub autostart_enabled: bool,
     pub usage_counters_enabled: bool,
     pub lock_timeout_minutes: u32,
 }
@@ -75,7 +73,6 @@ pub struct SettingsUpdateInput {
     pub theme: String,
     pub date_format: String,
     pub week_starts_on: u8,
-    pub default_reminder_minutes: u32,
     pub lock_timeout_minutes: u32,
 }
 
@@ -307,8 +304,21 @@ pub struct CaseClientDto {
     pub full_name: String,
     pub internal_number: String,
     pub legal_capacity: Option<String>,
+    /// Derived from the client's own power of attorney; never chosen per case.
     pub power_of_attorney_id: Option<String>,
+    pub power_of_attorney: Option<CasePowerOfAttorneyRef>,
     pub notes: Option<String>,
+}
+
+/// What a case page needs to label the client's power of attorney.
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CasePowerOfAttorneyRef {
+    pub id: String,
+    pub internal_sequence: String,
+    pub official_number: Option<String>,
+    pub issue_year: Option<i64>,
+    pub archived: bool,
 }
 
 #[derive(Serialize, Clone)]
@@ -372,7 +382,6 @@ pub struct CaseCreateInput {
 pub struct CaseClientInput {
     pub client_id: String,
     pub legal_capacity: Option<String>,
-    pub power_of_attorney_id: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -472,7 +481,6 @@ pub struct TaskDto {
     pub details: Option<String>,
     pub notes: Option<String>,
     pub due_date: String,
-    pub reminder_minutes: Option<u32>,
     pub completed: bool,
     pub completed_at: Option<String>,
     pub created_at: String,
@@ -489,7 +497,6 @@ pub struct TaskInput {
     pub details: Option<String>,
     pub notes: Option<String>,
     pub due_date: String,
-    pub reminder_minutes: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -596,6 +603,7 @@ pub struct PowerOfAttorneySummary {
     pub official_number: Option<String>,
     pub issue_year: Option<i64>,
     pub client_names: Vec<String>,
+    pub client_ids: Vec<String>,
     pub archived_at: Option<String>,
 }
 
@@ -665,7 +673,6 @@ pub struct HearingDto {
     pub decision_text: Option<String>,
     pub status: String,
     pub completed_at: Option<String>,
-    pub reminder_minutes: Option<u32>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -682,7 +689,6 @@ pub struct HearingInput {
     pub circuit_name: Option<String>,
     pub required_documents: Option<String>,
     pub notes: Option<String>,
-    pub reminder_minutes: Option<u32>,
 }
 
 #[derive(Deserialize)]

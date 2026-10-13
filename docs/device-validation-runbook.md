@@ -20,8 +20,6 @@ screenshots containing them to CI or defect reports.
 | Native attachment picker | Cancel; then select a disposable file from the client/case/POA owner view                                        | Cancel makes no record; selection copies file and preserves source |
 | Open/reveal              | Open and reveal a managed attachment, including a missing-file failure                                           | Actual target application/folder behavior; stable error only       |
 | Native backup picker     | Cancel restore and validation; select a valid archive and a corrupt archive                                      | Cancellation preserves live data; corruption refuses replacement   |
-| Notifications            | Grant, deny and revisit permission; schedule a fictional reminder                                                | Platform permission and delivery behavior; privacy-safe content    |
-| Autostart                | Enable, log out/reboot and verify startup; disable and repeat                                                    | Enabled/disabled behavior and startup locked gate                  |
 | Sleep/resume             | Unlock, leave a legal record open, sleep and resume                                                              | Locked gate and removed cached record display                      |
 | Visual/keyboard          | Inspect Arabic RTL and English LTR at 1366×768 and 1440×900; navigate by keyboard; open/close dialogs            | Viewport, clipping, focus, date/money/filename direction defects   |
 | Same-vault restore ×3    | Follow the restore exercise below three times on the same vault                                                  | Three distinct iteration results                                   |
@@ -40,13 +38,13 @@ For each same-vault restore iteration:
 4. Record the iteration, result and defects. A pass requires all checks; do not
    infer the result from a previous iteration.
 
-Cross-device Windows→macOS and macOS→Windows restore is a **separate blocked
-criterion**. The current backup key derives from the unlocked vault's random
-master key. An independently initialized destination cannot restore with only
-the original password. Record expected refusal and preservation of the new
-vault as safety evidence, but keep portability **blocked**. Copying a security
-envelope is not a portability pass. Repeat both directions and all repeated
-restore exercises after a portable restore design is implemented.
+Cross-device Windows→macOS and macOS→Windows restore is a **separate pending
+criterion**. Format v2 archives carry authenticated password and recovery
+envelopes. Create a backup on each source platform, restore into a fresh
+installation on the other with the original password, and verify records and
+managed-file checksums. Repeat using the recovery key and a new password.
+Wrong credentials must leave the destination unchanged. Local automated
+restoration does not pass this physical-device gate.
 
 Native automated Linux/Windows setup follows the [official Tauri manual
 WebDriver setup](https://v2.tauri.app/develop/tests/webdriver/manual-setup/).

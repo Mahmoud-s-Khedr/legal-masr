@@ -33,8 +33,8 @@ aligned with the implementation, a source-boundary scan is complete, and
 fresh visual sign-off is blocked until a seeded running-app capture environment
 is available.
 
-The product is not yet public-beta ready. Cross-device restore, automatic
-backup/retention, documented complete exports, permanent deletion, a redacted
+The product is not yet public-beta ready. Cross-device restore, documented
+complete exports, permanent deletion, a redacted
 support bundle, visual capture comparison, and physical Windows/macOS
 validation remain release risks. The authoritative correction decision record
 is [finalized-domain-correction-plan.md](finalized-domain-correction-plan.md);
@@ -70,3 +70,14 @@ refresh are implemented. The final contract is in
 platform risks are recorded in [the integration review](reviews/2026-10-10-integration.md).
 Physical Windows/macOS journeys and the remaining roadmap release blockers are
 still open; this development merge does not certify public-beta readiness.
+
+## Current product scope — 2026-10-14
+
+The [feature inventory and testing guide](feature-list-and-testing.md) describes
+the implemented pre-beta workflows. Notifications, reminder values, autostart,
+hearing-roll printing and individual client export have been removed. Automatic
+backup schedules, retention policies, a configurable primary backup destination
+and backup-history UI are out of scope. Immutable migrations `0001`–`0004`
+define the current schema. Restore preparation and preview are implemented;
+physical Windows/macOS acceptance and the remaining export/deletion/support
+work remain open. Local aggregate-counter consent remains backend-only.

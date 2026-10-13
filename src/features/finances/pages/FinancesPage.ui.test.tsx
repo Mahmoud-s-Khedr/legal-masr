@@ -147,6 +147,7 @@ describe('FinancesPage', () => {
                 internalNumber: 'CL-1',
                 legalCapacity: null,
                 powerOfAttorneyId: null,
+                powerOfAttorney: null,
                 notes: null,
               },
             ]
@@ -205,6 +206,36 @@ describe('FinancesPage', () => {
         expect.objectContaining({ caseId: undefined, clientId: undefined, amountMinor: 1_250 }),
       ),
     );
+  });
+
+  it('links an expense to a case or a client, never both', async () => {
+    renderPage();
+    await screen.findByRole('combobox', { name: 'القضية' });
+    fireEvent.click(screen.getByRole('tab', { name: 'المصروفات' }));
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة مصروف' }));
+    const dialog = await screen.findByRole('dialog', { name: 'إضافة مصروف' });
+    const pick = async (label: string, option: string | RegExp) => {
+      const input = within(dialog).getByRole('combobox', { name: label });
+      input.focus();
+      fireEvent.click(input);
+      fireEvent.keyDown(input, { key: 'ArrowDown' });
+      fireEvent.click(await screen.findByRole('option', { name: option }));
+    };
+    await pick('الموكل', 'منى');
+    await pick('القضية', /^CA-1( —|$)/);
+
+    // The case already knows its clients, so the client link is cleared and locked.
+    const client = within(dialog).getByRole('combobox', { name: 'الموكل' });
+    expect(client).toBeDisabled();
+    expect(client).toHaveValue('');
+    expect(await within(dialog).findByText(/الموكل يأتي من القضية.*أحمد/)).toBeVisible();
+
+    fireEvent.change(within(dialog).getByLabelText('المبلغ (ج.م)'), { target: { value: '12.50' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'حفظ المصروف' }));
+    await waitFor(() => expect(bridge.expenseSave).toHaveBeenCalled());
+    const sent = vi.mocked(bridge.expenseSave).mock.calls[0][0];
+    expect(sent.caseId).toBe('case-1');
+    expect(sent.clientId).toBeUndefined();
   });
 
   it('chooses the payer for a case with a single client and saves the payment', async () => {

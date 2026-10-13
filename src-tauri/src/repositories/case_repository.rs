@@ -1,5 +1,8 @@
 use crate::{
-    dto::{CaseClientDto, CaseClientInput, CaseDto, CaseOpponentDto, CaseSummary},
+    dto::{
+        CaseClientDto, CaseClientInput, CaseDto, CaseOpponentDto, CasePowerOfAttorneyRef,
+        CaseSummary,
+    },
     errors::Error,
     normalize,
 };
@@ -60,18 +63,38 @@ pub fn get(conn: &Connection, id: &str) -> Result<CaseDto, Error> {
 }
 
 pub fn hydrate(conn: &Connection, mut case: CaseDto) -> Result<CaseDto, Error> {
+    // The POA is the client's own (`client_current_poa`), never a per-case choice.
     let mut clients = conn.prepare(
-        "SELECT cc.client_id, c.full_name, c.internal_number, cc.legal_capacity, cc.power_of_attorney_id, cc.notes FROM case_clients cc JOIN clients c ON c.id = cc.client_id WHERE cc.case_id = ?1 ORDER BY c.full_name",
+        "SELECT cc.client_id, c.full_name, c.internal_number, cc.legal_capacity, cc.notes,
+                p.id, p.internal_sequence, p.official_number, p.issue_year, p.archived_at IS NOT NULL
+         FROM case_clients cc
+         JOIN clients c ON c.id = cc.client_id
+         LEFT JOIN client_current_poa cp ON cp.client_id = cc.client_id
+         LEFT JOIN powers_of_attorney p ON p.id = cp.power_of_attorney_id
+         WHERE cc.case_id = ?1 ORDER BY c.full_name",
     )?;
     case.clients = clients
         .query_map([&case.id], |row| {
+            let power_of_attorney = row
+                .get::<_, Option<String>>(5)?
+                .map(|id| -> rusqlite::Result<CasePowerOfAttorneyRef> {
+                    Ok(CasePowerOfAttorneyRef {
+                        id,
+                        internal_sequence: row.get(6)?,
+                        official_number: row.get(7)?,
+                        issue_year: row.get(8)?,
+                        archived: row.get(9)?,
+                    })
+                })
+                .transpose()?;
             Ok(CaseClientDto {
                 client_id: row.get(0)?,
                 full_name: row.get(1)?,
                 internal_number: row.get(2)?,
                 legal_capacity: row.get(3)?,
-                power_of_attorney_id: row.get(4)?,
-                notes: row.get(5)?,
+                power_of_attorney_id: power_of_attorney.as_ref().map(|poa| poa.id.clone()),
+                power_of_attorney,
+                notes: row.get(4)?,
             })
         })?
         .collect::<Result<_, _>>()?;
@@ -128,12 +151,6 @@ pub fn replace_clients(
         if archived && !retained {
             return Err(Error::ClientArchived);
         }
-        if let Some(poa) = &client.power_of_attorney_id {
-            let owned: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM power_of_attorney_clients WHERE power_of_attorney_id = ?1 AND client_id = ?2)", params![poa, client.client_id], |row| row.get(0))?;
-            if !owned {
-                return Err(Error::Validation);
-            }
-        }
     }
     let mut payers =
         conn.prepare("SELECT DISTINCT payer_client_id FROM payments WHERE case_id = ?1")?;
@@ -148,8 +165,8 @@ pub fn replace_clients(
     }
     for client in clients {
         conn.execute(
-            "INSERT INTO case_clients (case_id, client_id, legal_capacity, power_of_attorney_id, notes, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6) ON CONFLICT(case_id, client_id) DO UPDATE SET legal_capacity = excluded.legal_capacity, power_of_attorney_id = excluded.power_of_attorney_id, notes = excluded.notes, updated_at = excluded.updated_at",
-            params![case_id, client.client_id, client.legal_capacity, client.power_of_attorney_id, client.notes, now],
+            "INSERT INTO case_clients (case_id, client_id, legal_capacity, notes, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5) ON CONFLICT(case_id, client_id) DO UPDATE SET legal_capacity = excluded.legal_capacity, notes = excluded.notes, updated_at = excluded.updated_at",
+            params![case_id, client.client_id, client.legal_capacity, client.notes, now],
         )?;
     }
     let mut statement = conn.prepare("SELECT client_id FROM case_clients WHERE case_id = ?1")?;
@@ -330,7 +347,7 @@ mod tests {
         }
     }
     #[test]
-    fn persists_case_clients_with_capacity_and_client_specific_poa() {
+    fn persists_case_clients_with_capacity_and_derives_the_clients_poa() {
         let conn = Connection::open_in_memory().unwrap();
         db::migrate(&conn).unwrap();
         let first = seed_client(&conn, "CL-1", "أحمد");
@@ -347,13 +364,11 @@ mod tests {
                 CaseClientInput {
                     client_id: first.clone(),
                     legal_capacity: Some("مدعٍ".into()),
-                    power_of_attorney_id: Some(poa),
                     notes: Some("ملاحظة".into()),
                 },
                 CaseClientInput {
                     client_id: second,
                     legal_capacity: None,
-                    power_of_attorney_id: None,
                     notes: None,
                 },
             ],
@@ -363,30 +378,22 @@ mod tests {
         let saved = hydrate(&conn, get(&conn, &case_id).unwrap()).unwrap();
         assert_eq!(saved.clients.len(), 2);
         assert_eq!(saved.clients[0].legal_capacity.as_deref(), Some("مدعٍ"));
+        // Derived from the client, not chosen per case: only the first client has a POA.
+        let derived = saved.clients[0].power_of_attorney.as_ref().unwrap();
+        assert_eq!(derived.id, poa);
+        assert_eq!(derived.internal_sequence, "TA-1");
+        assert!(!derived.archived);
+        assert_eq!(
+            saved.clients[0].power_of_attorney_id.as_deref(),
+            Some(poa.as_str())
+        );
+        assert!(saved.clients[1].power_of_attorney.is_none());
+        assert!(saved.clients[1].power_of_attorney_id.is_none());
     }
     #[test]
-    fn rejects_case_client_poa_for_another_client_and_reports_missing_case() {
+    fn reports_a_missing_case() {
         let conn = Connection::open_in_memory().unwrap();
         db::migrate(&conn).unwrap();
-        let owner = seed_client(&conn, "CL-1", "أحمد");
-        let other = seed_client(&conn, "CL-2", "سارة");
-        let poa = id();
-        let case_id = id();
-        conn.execute("INSERT INTO powers_of_attorney (id, internal_sequence, created_at, updated_at) VALUES (?1, 'TA-1', 'now', 'now')", [&poa]).unwrap();
-        conn.execute("INSERT INTO power_of_attorney_clients (power_of_attorney_id, client_id, created_at) VALUES (?1, ?2, 'now')", params![poa, owner]).unwrap();
-        insert(&conn, &case(case_id.clone())).unwrap();
-        assert!(replace_clients(
-            &conn,
-            &case_id,
-            &[CaseClientInput {
-                client_id: other,
-                legal_capacity: None,
-                power_of_attorney_id: Some(poa),
-                notes: None
-            }],
-            "now"
-        )
-        .is_err());
         assert!(matches!(get(&conn, "missing"), Err(Error::CaseNotFound)));
     }
     #[test]
@@ -402,7 +409,6 @@ mod tests {
             &[CaseClientInput {
                 client_id: client,
                 legal_capacity: None,
-                power_of_attorney_id: None,
                 notes: None,
             }],
             "now",
@@ -459,7 +465,6 @@ mod tests {
             &[CaseClientInput {
                 client_id: client.into(),
                 legal_capacity: None,
-                power_of_attorney_id: None,
                 notes: None,
             }],
             "now",

@@ -21,7 +21,7 @@ import { Input } from '../../../components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 
 import { Textarea } from '../../../components/ui/textarea';
-import { useCaseList } from '../../cases/api/casesApi';
+import { useCase, useCaseList } from '../../cases/api/casesApi';
 import { caseOption, clientOption } from '../../cases/components/caseOptions';
 import { useClientList } from '../../clients/api/clientsApi';
 import {
@@ -396,13 +396,16 @@ export function TaskForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const form = useForm<z.infer<typeof taskDraftSchema>>({
     resolver: zodResolver(taskDraftSchema),
     defaultValues: {
       title: initial?.title ?? '',
       dueDate: initial?.dueDate ?? initialDate ?? localDate(),
       caseId: initial?.caseId ?? initialCaseId ?? '',
-      clientId: initial?.clientId ?? initialClientId ?? '',
+      // A case already knows its clients: a task of a case never carries a client of its own.
+      clientId:
+        (initial?.caseId ?? initialCaseId) ? '' : (initial?.clientId ?? initialClientId ?? ''),
       details: initial?.details ?? '',
       notes: initial?.notes ?? '',
     },
@@ -421,11 +424,14 @@ export function TaskForm({
       shouldValidate: form.formState.isSubmitted,
     });
   const caseId = useWatch({ control: form.control, name: 'caseId' });
-  const setCaseId = (value: string) =>
+  const setCaseId = (value: string) => {
     form.setValue('caseId', value, {
       shouldDirty: true,
       shouldValidate: form.formState.isSubmitted,
     });
+    if (value) form.setValue('clientId', '', { shouldDirty: true });
+  };
+  const caseClientNames = useCase(caseId).data?.clients.map((client) => client.fullName);
   const clientId = useWatch({ control: form.control, name: 'clientId' });
   const setClientId = (value: string) =>
     form.setValue('clientId', value, {
@@ -508,9 +514,15 @@ export function TaskForm({
         </div>
         <Field
           label={<>{t('tasks.client')}</>}
+          hint={
+            caseId
+              ? t('forms.clientFromCase', { names: format.list(caseClientNames ?? []) })
+              : undefined
+          }
           error={form.formState.errors.clientId ? t('forms.invalid') : undefined}
         >
           <EntityPicker
+            disabled={Boolean(caseId)}
             value={clientId}
             onValueChange={(value) => setClientId(value ?? '')}
             items={[

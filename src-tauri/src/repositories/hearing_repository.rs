@@ -1,7 +1,7 @@
 use crate::{dto::HearingDto, errors::Error};
 use rusqlite::{params, Connection};
 
-const SELECT: &str = "SELECT id, case_id, previous_hearing_id, hearing_date, hearing_time, hearing_type, location, circuit_name, required_documents, notes, decision_text, status, completed_at, reminder_minutes, created_at, updated_at FROM hearings";
+const SELECT: &str = "SELECT id, case_id, previous_hearing_id, hearing_date, hearing_time, hearing_type, location, circuit_name, required_documents, notes, decision_text, status, completed_at, created_at, updated_at FROM hearings";
 fn row(row: &rusqlite::Row<'_>) -> rusqlite::Result<HearingDto> {
     Ok(HearingDto {
         id: row.get(0)?,
@@ -17,9 +17,8 @@ fn row(row: &rusqlite::Row<'_>) -> rusqlite::Result<HearingDto> {
         decision_text: row.get(10)?,
         status: row.get(11)?,
         completed_at: row.get(12)?,
-        reminder_minutes: row.get(13)?,
-        created_at: row.get(14)?,
-        updated_at: row.get(15)?,
+        created_at: row.get(13)?,
+        updated_at: row.get(14)?,
     })
 }
 pub fn get(conn: &Connection, id: &str) -> Result<HearingDto, Error> {
@@ -43,11 +42,11 @@ pub fn list(
     Ok(result)
 }
 pub fn insert(conn: &Connection, hearing: &HearingDto) -> Result<(), Error> {
-    conn.execute("INSERT INTO hearings (id, case_id, previous_hearing_id, hearing_date, hearing_time, hearing_type, location, circuit_name, required_documents, notes, status, reminder_minutes, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'SCHEDULED', ?11, ?12, ?12)", params![hearing.id, hearing.case_id, hearing.previous_hearing_id, hearing.hearing_date, hearing.hearing_time, hearing.hearing_type, hearing.location, hearing.circuit_name, hearing.required_documents, hearing.notes, hearing.reminder_minutes, hearing.created_at])?;
+    conn.execute("INSERT INTO hearings (id, case_id, previous_hearing_id, hearing_date, hearing_time, hearing_type, location, circuit_name, required_documents, notes, status, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'SCHEDULED', ?11, ?11)", params![hearing.id, hearing.case_id, hearing.previous_hearing_id, hearing.hearing_date, hearing.hearing_time, hearing.hearing_type, hearing.location, hearing.circuit_name, hearing.required_documents, hearing.notes, hearing.created_at])?;
     Ok(())
 }
 pub fn update(conn: &Connection, hearing: &HearingDto) -> Result<(), Error> {
-    if conn.execute("UPDATE hearings SET hearing_date=?2, hearing_time=?3, hearing_type=?4, location=?5, circuit_name=?6, required_documents=?7, notes=?8, reminder_minutes=?9, updated_at=?10 WHERE id=?1", params![hearing.id, hearing.hearing_date, hearing.hearing_time, hearing.hearing_type, hearing.location, hearing.circuit_name, hearing.required_documents, hearing.notes, hearing.reminder_minutes, hearing.updated_at])? == 0 { return Err(Error::HearingNotFound); };
+    if conn.execute("UPDATE hearings SET hearing_date=?2, hearing_time=?3, hearing_type=?4, location=?5, circuit_name=?6, required_documents=?7, notes=?8, updated_at=?9 WHERE id=?1", params![hearing.id, hearing.hearing_date, hearing.hearing_time, hearing.hearing_type, hearing.location, hearing.circuit_name, hearing.required_documents, hearing.notes, hearing.updated_at])? == 0 { return Err(Error::HearingNotFound); };
     Ok(())
 }
 pub fn complete(
@@ -86,7 +85,6 @@ mod tests {
             decision_text: None,
             status: "SCHEDULED".into(),
             completed_at: None,
-            reminder_minutes: Some(30),
             created_at: "now".into(),
             updated_at: "now".into(),
         }

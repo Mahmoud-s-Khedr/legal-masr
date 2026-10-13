@@ -10,11 +10,9 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
-import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { DeveloperContacts } from '../../../components/layout/DeveloperContacts';
 import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
-import { Switch } from '../../../components/ui/switch';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { Input } from '../../../components/ui/input';
 import {
@@ -33,7 +31,6 @@ import { developerDiagnostic } from '../../../bridge/devDiagnostics';
 import {
   useChangePassword,
   useProfile,
-  useSetAutostart,
   useSettings,
   useUpdateProfile,
   useUpdateSettings,
@@ -95,7 +92,6 @@ const toFormValues = (settings: Settings): SettingsFormValues => ({
   theme: settings.theme,
   dateFormat: settings.dateFormat,
   weekStartsOn: settings.weekStartsOn,
-  defaultReminderMinutes: settings.defaultReminderMinutes,
   lockTimeoutMinutes: settings.lockTimeoutMinutes,
 });
 
@@ -111,10 +107,6 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
   const updateSettings = useUpdateSettings();
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
-  const setAutostart = useSetAutostart();
-  const [notificationStatus, setNotificationStatus] = useState<'unknown' | 'granted' | 'denied'>(
-    'unknown',
-  );
   const [saved, setSaved] = useState(false);
   const passwordForm = useForm<z.infer<typeof passwordDraftSchema>>({
     resolver: zodResolver(passwordDraftSchema),
@@ -171,12 +163,6 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
       newPassword: passwords.next,
     });
     setPasswords({ current: '', next: '', confirm: '' });
-  };
-  const enableNotifications = async () => {
-    const granted = await isPermissionGranted();
-    if (granted) return setNotificationStatus('granted');
-    const permission = await requestPermission();
-    setNotificationStatus(permission === 'granted' ? 'granted' : 'denied');
   };
 
   return (
@@ -433,40 +419,6 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
                         )}
                       />
                     </Field>
-                    <Field label={<>{t('settings.display.reminder')}</>}>
-                      <Controller
-                        control={control}
-                        name="defaultReminderMinutes"
-                        render={({ field }) => {
-                          const values = [
-                            ...new Set(
-                              [...[0, 15, 30, 60, 120, 1440], field.value].filter(
-                                (value) => value !== undefined,
-                              ),
-                            ),
-                          ];
-                          return (
-                            <Select
-                              value={String(field.value)}
-                              onValueChange={(value) => field.onChange(Number(value))}
-                            >
-                              <SelectTrigger ref={field.ref}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectGroup>
-                                  {values.map((value) => (
-                                    <SelectItem key={value} value={String(value)}>
-                                      {value} {t('settings.minutes')}
-                                    </SelectItem>
-                                  ))}
-                                </SelectGroup>
-                              </SelectContent>
-                            </Select>
-                          );
-                        }}
-                      />
-                    </Field>
                   </div>
                   {Object.keys(errors).length > 0 && (
                     <Alert variant="destructive">
@@ -550,53 +502,6 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
                     </div>
                   </FieldGroup>
                 </DraftForm>
-              </section>
-              <section className="settings-section">
-                <div className="card-title">
-                  <div>
-                    <h3>{t('settings.security.remindersTitle')}</h3>
-                    <p>{t('settings.security.remindersHint')}</p>
-                  </div>
-                </div>
-                <div className="settings-toggle-row">
-                  <div>
-                    <strong>{t('settings.security.autostart')}</strong>
-                    <span>{t('settings.security.autostartHint')}</span>
-                  </div>
-                  <Switch
-                    aria-label={t('settings.security.autostart')}
-                    checked={settings.autostartEnabled}
-                    disabled={setAutostart.isPending}
-                    onCheckedChange={(checked) => setAutostart.mutate(checked)}
-                  />
-                </div>
-                <div className="settings-toggle-row">
-                  <div>
-                    <strong>{t('settings.security.notifications')}</strong>
-                    <span>{t('settings.security.notificationsHint')}</span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-
-                    onClick={enableNotifications}
-                  >
-                    {notificationStatus === 'granted'
-                      ? t('settings.security.notificationsGranted')
-                      : t('settings.security.notificationsAllow')}
-                  </Button>
-                </div>
-                {notificationStatus === 'denied' && (
-                  <p className="warning">{t('settings.security.notificationsDenied')}</p>
-                )}
-                {setAutostart.isError && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{t('settings.security.autostartError')}</AlertDescription>
-                  </Alert>
-                )}
-                <p className="muted reminder-disclosure">
-                  {t('settings.security.remindersDisclosure')}
-                </p>
               </section>
               <section className="settings-section">
                 <div className="card-title">

@@ -487,12 +487,10 @@ async function run(language) {
         {
           clientId: client.id,
           legalCapacity: language === 'ar' ? 'مدعٍ' : 'Claimant',
-          powerOfAttorneyId: poa.id,
         },
         {
           clientId: second.id,
           legalCapacity: language === 'ar' ? 'مدعٍ' : 'Claimant',
-          powerOfAttorneyId: poa.id,
         },
       ],
     };
@@ -525,13 +523,11 @@ async function run(language) {
         location: caseInput.courtName,
         circuitName: caseInput.circuitName,
         requiredDocuments: language === 'ar' ? 'مذكرة تجريبية' : 'Fictional pleading',
-        reminderMinutes: 60,
       },
     });
     const task = await h.invoke('task_create', {
       input: {
         caseId: caseItem.id,
-        clientId: client.id,
         title: language === 'ar' ? 'مراجعة مذكرة تجريبية' : 'Review fictional pleading',
         dueDate: today,
         details:
@@ -580,7 +576,6 @@ async function run(language) {
     const expense = await h.invoke('expense_save', {
       input: {
         caseId: caseItem.id,
-        clientId: client.id,
         amountMinor: 25000,
         expenseDate: today,
         expenseType: 'COURT_FEE',

@@ -15,6 +15,7 @@ import { CaseStatusBadge, OfficialReference } from '../../cases/components/CaseI
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
 import { useClientFinanceSummary } from '../../finances/api/financesApi';
 import { usePowerOfAttorneyList } from '../../powersOfAttorney/api/powersOfAttorneyApi';
+import { poaTitle } from '../../powersOfAttorney/poaOptions';
 import { ClientForm } from '../forms/ClientForm';
 import { useArchiveClient, useClient, useRestoreClient, useUpdateClient } from '../api/clientsApi';
 
@@ -269,7 +270,7 @@ export function ClientDetailPage() {
                 <li key={poa.id}>
                   <div className="record-copy">
                     <Link to={`/powers-of-attorney/${poa.id}`}>
-                      <bdi>{poa.internalSequence}</bdi>
+                      <bdi>{poaTitle(poa)}</bdi>
                     </Link>
                     <span>
                       {poa.officialNumber ? (

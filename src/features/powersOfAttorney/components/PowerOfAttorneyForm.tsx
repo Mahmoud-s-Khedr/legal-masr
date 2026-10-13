@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { IconPlus } from '@tabler/icons-react';
 import { Field } from '@/components/forms/FormField';
 import { FieldGroup } from '@/components/ui/field';
 import { DatePicker } from '@/components/forms/DatePicker';
@@ -15,6 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { optionalDate, requiredText } from '@/lib/formSchemas';
 import type { PowerOfAttorneyDto, PowerOfAttorneyInput } from '@/bridge/types';
 import { useClientList } from '../../clients/api/clientsApi';
+import { usePowerOfAttorneyList } from '../api/powersOfAttorneyApi';
+import { poaTitle } from '../poaOptions';
 import { InlineClientCreateDialog } from '../../clients/components/InlineClientCreateDialog';
 const schema = z.object({
   internalSequence: requiredText,
@@ -50,6 +53,12 @@ export function PowerOfAttorneyForm({
 }) {
   const { t } = useTranslation();
   const clients = useClientList({ includeArchived: true });
+  // A client has one active power of attorney: those already on another one are not offered here.
+  const activePowers = usePowerOfAttorneyList({ includeArchived: false });
+  const holders = new Map<string, string>();
+  for (const power of activePowers.data ?? [])
+    if (power.id !== powerOfAttorney?.id)
+      for (const clientId of power.clientIds) holders.set(clientId, poaTitle(power));
   const [clientName, setClientName] = useState('');
   const [creating, setCreating] = useState(false);
   const { register, control, handleSubmit, formState, setValue, getValues } = useForm<
@@ -139,9 +148,11 @@ export function PowerOfAttorneyForm({
                     ref={field.ref}
                     items={(clients.data ?? []).map((c) => ({
                       value: c.id,
-                      label: c.fullName,
+                      label: holders.has(c.id)
+                        ? `${c.fullName} · ${holders.get(c.id)}`
+                        : c.fullName,
                       searchText: `${c.internalNumber} ${c.primaryPhone ?? ''}`,
-                      disabled: !!c.archivedAt,
+                      disabled: !!c.archivedAt || holders.has(c.id),
                     }))}
                     value={field.value}
                     onValueChange={field.onChange}
@@ -193,16 +204,19 @@ export function PowerOfAttorneyForm({
                 </div>
               </div>
             ))}
-            <div>
+            <div className="flex">
               <Button
                 type="button"
                 variant="outline"
+                size="lg"
+                className="min-h-11"
                 onClick={() =>
                   setValue('lawyers', [...lawyers, { fullName: '', barNumber: '', notes: '' }], {
                     shouldDirty: true,
                   })
                 }
               >
+                <IconPlus data-icon="inline-start" />
                 {t('poa.addLawyer')}
               </Button>
             </div>

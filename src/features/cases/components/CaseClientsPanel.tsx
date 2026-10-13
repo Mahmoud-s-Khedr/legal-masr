@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { CaseClientInput } from '@/bridge/types';
 import { errorMessage } from '@/bridge/errors';
 import { FormDialog } from '@/components/forms/FormDialog';
-import { EntityPicker, EntityMultiPicker } from '@/components/forms/EntityPicker';
+import { EntityMultiPicker } from '@/components/forms/EntityPicker';
 import { Field } from '@/components/forms/FormField';
 import { FieldGroup } from '@/components/ui/field';
 
@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClientList } from '../../clients/api/clientsApi';
-import { usePowerOfAttorneyList } from '../../powersOfAttorney/api/powersOfAttorneyApi';
+import { poaLabel } from '../../powersOfAttorney/poaOptions';
 import { useSetCaseClients } from '../api/casesApi';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -54,12 +54,13 @@ export function CaseClientsPanel({
                 {client.legalCapacity ?? t('cases.clientsPanel.noCapacity')}
               </span>
             </div>
-            {client.powerOfAttorneyId ? (
+            {client.powerOfAttorney ? (
               <Badge
                 variant="secondary"
-                render={<Link to={`/powers-of-attorney/${client.powerOfAttorneyId}`} />}
+                render={<Link to={`/powers-of-attorney/${client.powerOfAttorney.id}`} />}
               >
-                {t('cases.clientsPanel.poaLinked')}
+                {poaLabel(client.powerOfAttorney)}
+                {client.powerOfAttorney.archived && ` · ${t('records.archived')}`}
               </Badge>
             ) : (
               <Badge variant="secondary">{t('cases.clientsPanel.noPoa')}</Badge>
@@ -86,7 +87,6 @@ function RelationshipEditor({ caseDto, onClose }: { caseDto: CaseDto; onClose: (
             z.object({
               clientId: z.string().min(1),
               legalCapacity: z.string().optional(),
-              powerOfAttorneyId: z.string().optional(),
               notes: z.string().optional(),
             }),
           )
@@ -98,7 +98,6 @@ function RelationshipEditor({ caseDto, onClose }: { caseDto: CaseDto; onClose: (
       clients: caseDto.clients.map((c) => ({
         clientId: c.clientId,
         legalCapacity: c.legalCapacity ?? '',
-        powerOfAttorneyId: c.powerOfAttorneyId ?? '',
         notes: c.notes ?? '',
       })),
     },
@@ -111,10 +110,7 @@ function RelationshipEditor({ caseDto, onClose }: { caseDto: CaseDto; onClose: (
         try {
           await save.mutateAsync({
             caseId: caseDto.id,
-            clients: values.clients.map((c) => ({
-              ...c,
-              powerOfAttorneyId: c.powerOfAttorneyId || undefined,
-            })),
+            clients: values.clients,
           });
           onClose();
         } catch {
@@ -158,7 +154,6 @@ function RelationshipEditor({ caseDto, onClose }: { caseDto: CaseDto; onClose: (
                               .map((c) => ({
                                 clientId: id,
                                 legalCapacity: c.legalCapacity ?? '',
-                                powerOfAttorneyId: c.powerOfAttorneyId ?? '',
                                 notes: c.notes ?? '',
                               }))[0] ?? { clientId: id },
                         ),
@@ -213,7 +208,6 @@ function RelationshipFields({
   onChange: (client: CaseClientInput) => void;
 }) {
   const { t } = useTranslation();
-  const powers = usePowerOfAttorneyList({ clientId: client.clientId, includeArchived: true });
   return (
     <FieldGroup>
       <strong>{name}</strong>
@@ -222,15 +216,6 @@ function RelationshipFields({
           suggestion="legalCapacity"
           value={client.legalCapacity ?? ''}
           onChange={(e) => onChange({ ...client, legalCapacity: e.target.value })}
-        />
-      </Field>
-      <Field label={t('cases.clientsPanel.poa')}>
-        <EntityPicker
-          items={(powers.data ?? []).map((p) => ({ value: p.id, label: p.internalSequence }))}
-          value={client.powerOfAttorneyId ?? ''}
-          onValueChange={(id) => onChange({ ...client, powerOfAttorneyId: id || undefined })}
-          loading={powers.isLoading}
-          error={powers.isError ? t('poa.loadError') : undefined}
         />
       </Field>
       <Field label={t('common.notes')}>

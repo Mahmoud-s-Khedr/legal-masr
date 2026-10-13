@@ -67,6 +67,19 @@ fn ensure_payer_membership(
     }
     Ok(())
 }
+fn validate_expense(input: &ExpenseInput) -> Result<(), Error> {
+    if input.amount_minor <= 0
+        || !valid_date(&input.expense_date)
+        || !EXPENSE_TYPES.contains(&input.expense_type.as_str())
+    {
+        return Err(Error::Validation);
+    }
+    // An expense of a case reaches its client through the case: it never carries a client of its own.
+    if input.case_id.is_some() && input.client_id.is_some() {
+        return Err(Error::LinkCaseOrClient);
+    }
+    Ok(())
+}
 pub fn save_fee_agreement<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
@@ -140,12 +153,7 @@ pub fn save_expense<R: Runtime>(
     state: &AppState,
     input: ExpenseInput,
 ) -> Result<ExpenseDto, Error> {
-    if input.amount_minor <= 0
-        || !valid_date(&input.expense_date)
-        || !EXPENSE_TYPES.contains(&input.expense_type.as_str())
-    {
-        return Err(Error::Validation);
-    }
+    validate_expense(&input)?;
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
@@ -280,5 +288,28 @@ mod tests {
         assert!(!valid_date("2026-02-30"));
         assert!(!METHODS.contains(&"CARD"));
         assert!(EXPENSE_TYPES.contains(&"COURT_FEE"));
+    }
+
+    fn expense(case_id: Option<&str>, client_id: Option<&str>) -> ExpenseInput {
+        ExpenseInput {
+            id: None,
+            case_id: case_id.map(Into::into),
+            client_id: client_id.map(Into::into),
+            amount_minor: 500,
+            expense_date: "2026-08-24".into(),
+            expense_type: "COURT_FEE".into(),
+            notes: None,
+        }
+    }
+
+    #[test]
+    fn an_expense_links_a_case_or_a_client_but_not_both() {
+        assert!(validate_expense(&expense(Some("case"), None)).is_ok());
+        assert!(validate_expense(&expense(None, Some("client"))).is_ok());
+        assert!(validate_expense(&expense(None, None)).is_ok());
+        assert!(matches!(
+            validate_expense(&expense(Some("case"), Some("client"))),
+            Err(Error::LinkCaseOrClient)
+        ));
     }
 }

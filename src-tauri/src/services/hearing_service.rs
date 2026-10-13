@@ -20,9 +20,6 @@ fn valid(input: &HearingInput) -> bool {
             .hearing_time
             .as_deref()
             .is_none_or(|time| time.len() == 5 && Time::parse(time, TIME).is_ok())
-        && input
-            .reminder_minutes
-            .is_none_or(|minutes| minutes <= 10_080)
 }
 fn clean(value: Option<String>) -> Option<String> {
     value.and_then(|value| (!value.trim().is_empty()).then(|| value.trim().to_owned()))
@@ -52,7 +49,6 @@ fn make(
             .map(|item| item.status.clone())
             .unwrap_or_else(|| "SCHEDULED".into()),
         completed_at: existing.as_ref().and_then(|item| item.completed_at.clone()),
-        reminder_minutes: input.reminder_minutes,
         created_at: existing
             .as_ref()
             .map(|item| item.created_at.clone())

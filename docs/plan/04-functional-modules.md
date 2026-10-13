@@ -11,8 +11,7 @@ and displays a recovery key once. The lock screen unlocks locally; password
 change rewraps the master key and recovery sets a replacement password.
 
 Settings provide profile (name, bar number, phone, office address), Arabic or
-English UI, theme, date format, week start, default reminder lead time, lock
-timeout, autostart, notification permission, aggregate usage-counter consent,
+English UI, theme, date format, week start, lock timeout,
 manual backup controls, privacy/data-location information, and About. Backup
 setup never blocks onboarding. About credits developer Mahmoud Khedr and offers
 email, phone, WhatsApp, Telegram, and LinkedIn contact actions. The workspace
@@ -32,7 +31,7 @@ attachments, archive/restore, list/search, and a tabbed detail view.
 
 Cases have explicit internal and optional official identifiers, court/circuit,
 type/litigation degree, status, dates, subject, notes, one or more client
-relationships (each with legal capacity, optional client-owned POA, and notes),
+relationships (each with legal capacity and notes; the client's POA is shown, not chosen per case),
 lightweight opponents, archive/restore, account, hearings, tasks, and
 attachments. There is no generic party model or global case legal capacity.
 
@@ -43,21 +42,22 @@ an independently editable next hearing linked by `previous_hearing_id` in the
 same transaction. Today shows today's hearings/tasks, overdue tasks, and
 upcoming hearings. Agenda supports month/week/list views using date-only data.
 
-Tasks have title, details, notes, required due date, optional client/case link,
-optional reminder, and a semantic completion checkbox. Today, Overdue,
+Tasks have title, details, notes, required due date, an optional case **or** client
+link (never both: a client's task list also includes its cases' tasks),
+and a semantic completion checkbox. Today, Overdue,
 Upcoming, Completed, and All are derived list views. There is no priority,
 assignee, time-of-day, source-event, or cancellation workflow.
 
-Reminder selection and delivery deduplication cover canonical hearing and task
-records. Notification copy is privacy-safe. Autostart is optional; tray behavior
-and physical Windows/macOS notification/autostart validation remain open.
+The app sends no desktop notifications or reminders, does not start with the
+operating system, and does not print hearing rolls; these were removed from the
+product and are not planned.
 
 ### Finance
 
 A case can have one fee agreement. Payments are separate from expenses. Payment
 payers are restricted to the clients linked to the selected case; both the
 service and the database enforce that relationship. Expenses use a constrained
-type and have independently optional client/case links. Case and client account
+type and link a case **or** a client, never both. Case and client account
 summaries calculate agreed, received, outstanding, expenses, and net cash from
 integer EGP minor units. Deletion requires confirmation and refreshes affected
 totals; an expense with attachments is refused with a specific explanation.
@@ -91,24 +91,22 @@ must not flip (dates, identifiers, money, phones, filenames, versions) use
 
 Case relationships can be edited independently from the Parties tab. The editor
 requires at least one distinct existing client, preserves retained metadata,
-allows a client-owned POA, and displays archived retained selections. Removing a
+shows each client's own POA (it is derived, not chosen), and displays archived retained selections. Removing a
 client who has case payments fails with `CASE_CLIENT_HAS_PAYMENTS`; relationships
 and the search index remain unchanged. The dedicated `case_set_clients` command
 updates relationships and indexing in one transaction without changing unrelated
 case fields. Expense-owned attachments are supported by Rust, but expense dialogs
-still do not expose attachment upload. Client JSON export remains a backend
-command without a visible UI action.
+still do not expose attachment upload.
 
-- Backups are manual and saved to the app-data backup folder; there is no
-  configurable destination, automatic schedule, retention policy, or history
-  list UI.
+- Backups are manual and saved to the app-data backup folder; a copy can be
+  saved elsewhere on demand. Automatic schedules, retention policies, a
+  configurable primary destination, and a backup-history list are out of scope.
 - Restore uses authenticated preparation, preview and journaled replacement,
   including fresh/incomplete installations, foreign vaults and recovery with a
   staged new password. Physical cross-platform restoration remains unverified;
   see [07-backup-format.md](07-backup-format.md).
-- The current client export is a manually chosen `client-{id}.json` file.
-  Documented full-installation, case, and stable CSV/manifest exports are not
-  implemented.
+- There is no per-client export. Documented full-installation, case, and stable
+  CSV/manifest exports are not implemented.
 - Permanent client/case/application-data deletion and redacted support-bundle
   workflows are not implemented.
 - Case-folder export, minimize-to-tray behavior, and physical target-platform

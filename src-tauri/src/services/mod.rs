@@ -7,7 +7,6 @@ pub mod document_service;
 pub mod finance_service;
 pub mod hearing_service;
 pub mod power_of_attorney_service;
-pub mod reminder_service;
 pub mod search_service;
 pub mod settings_service;
 pub mod task_service;

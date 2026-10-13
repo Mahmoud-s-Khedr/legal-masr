@@ -22,9 +22,9 @@ function renderDetail() {
   );
 }
 
-it('explains why a client cannot be removed from a power of attorney a case relies on, and keeps the draft', async () => {
+it('explains that a client already has an active power of attorney, and keeps the draft', async () => {
   vi.mocked(bridge.powerOfAttorneyUpdate).mockRejectedValue({
-    code: 'POWER_OF_ATTORNEY_CLIENT_IN_USE',
+    code: 'CLIENT_ALREADY_HAS_POWER_OF_ATTORNEY',
     message: 'safe',
     details: null,
   });
@@ -39,7 +39,7 @@ it('explains why a client cannot be removed from a power of attorney a case reli
   fireEvent.click(within(dialog).getByRole('button', { name: 'حفظ التوكيل' }));
 
   const alert = await within(dialog).findByRole('alert');
-  expect(alert).toHaveTextContent('توجد قضية تعتمد على هذا التوكيل');
+  expect(alert).toHaveTextContent('توكيل ساري بالفعل');
   expect(alert).not.toHaveTextContent('أعد المحاولة');
   expect(notes).toHaveValue('DEMO retained draft');
 });
@@ -56,4 +56,19 @@ it('closes the editor after a successful save of a power of attorney a case reli
   expect(bridge.powerOfAttorneyUpdate).toHaveBeenCalledWith(
     expect.objectContaining({ id: fixtures.poa.id }),
   );
+});
+
+it("lists the cases of the power of attorney's clients with their court, and a labelled title", async () => {
+  vi.mocked(bridge.powerOfAttorneyGet).mockResolvedValue({
+    ...fixtures.poa,
+    caseIds: [fixtures.caseSummary.id],
+  });
+  renderDetail();
+
+  expect(await screen.findByRole('heading', { name: /توكيل .*007/ })).toBeInTheDocument();
+  fireEvent.click(await screen.findByRole('tab', { name: /القضايا/ }));
+  const link = await screen.findByRole('link', { name: fixtures.caseSummary.internalNumber });
+  expect(link).toHaveAttribute('href', `/cases/${fixtures.caseSummary.id}`);
+  expect(link.closest('li')).toHaveTextContent(fixtures.caseSummary.courtName!);
+  expect(link.closest('li')).toHaveTextContent(fixtures.client.fullName);
 });

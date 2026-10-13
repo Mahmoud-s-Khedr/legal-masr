@@ -176,17 +176,6 @@
     "noCasesTitle": "There are no cases yet.",
     "noCasesHint": "A hearing belongs to a case; add the case first, then come back to add the hearing.",
     "nextHearingNotLater": "Note: this date is not after the current hearing ({{date}}). Check the year.",
-    "printRoll": "Print the hearing roll",
-    "printError": "Could not open the print window. Try again.",
-    "rollTitle": "Hearing roll",
-    "rollColumns": {
-      "time": "Time",
-      "case": "Case",
-      "clients": "Clients",
-      "court": "Court and circuit",
-      "preparation": "To prepare",
-      "decision": "Decision"
-    },
     "showPast_zero": "Show earlier days",
     "showPast_one": "Show the earlier day",
     "showPast_two": "Show earlier days ({{count}})",
@@ -241,7 +230,7 @@
       "local": "They stay on your computer and are never uploaded",
       "backup": "Encrypted backups you control"
     },
-    "fullNameHint": "Shown on printed reports; you can change it later.",
+    "fullNameHint": "You can change it later in Settings.",
     "passwordHint": "At least {{count}} characters. A short sentence you remember is easier and stronger.",
     "passwordTooShort": "The password is too short; use at least {{count}} characters.",
     "passwordMismatch": "The passwords do not match.",
@@ -379,7 +368,7 @@
     "retry": "Try again",
     "tabs": {
       "general": "Display and calendar",
-      "security": "Security and reminders",
+      "security": "Security",
       "backups": "Backups",
       "profile": "Office details",
       "privacy": "Privacy and data",
@@ -391,12 +380,12 @@
       "dark": "Dark"
     },
     "title": "Settings",
-    "description": "Your office details, security, and display and reminder preferences.",
+    "description": "Your office details, security, and display preferences.",
     "sectionsLabel": "Settings sections",
     "saveError": "Could not save the settings. Please try again.",
     "profile": {
       "title": "Lawyer details",
-      "hint": "Shown only in the header of printed reports.",
+      "hint": "Your name and office details as a lawyer.",
       "fullName": "Lawyer name",
       "barNumber": "Bar registration number",
       "phone": "Phone number",
@@ -415,24 +404,12 @@
       "saturday": "Saturday",
       "sunday": "Sunday",
       "monday": "Monday",
-      "reminder": "Reminder before a hearing or task (minutes)",
       "invalid": "Check the values you entered, then save again."
     },
     "security": {
       "lockTitle": "Automatic lock",
       "lockHint": "Legal Masr locks itself when left unused, to protect your clients' data.",
       "lockSave": "Save lock time",
-      "remindersTitle": "Reminders",
-      "remindersHint": "Allow notifications to get a reminder before a hearing or task. Reminders appear only while Legal Masr is open and unlocked.",
-      "autostart": "Start Legal Masr with the computer",
-      "autostartHint": "The app starts locked, so you will still need to enter your password. You can turn this off at any time.",
-      "autostartError": "Could not change the start-up setting. Please try again.",
-      "notifications": "Reminder notifications",
-      "notificationsHint": "Notifications never show a client name or case details.",
-      "notificationsAllow": "Allow notifications",
-      "notificationsGranted": "Notifications allowed",
-      "notificationsDenied": "Notification permission was denied. You can allow it in your system settings.",
-      "remindersDisclosure": "Reminders cannot arrive while the app is closed or locked. It locks after the idle time you set and after every restart, so unlock it and keep it open while you work.",
       "passwordTitle": "Change password",
       "passwordHint": "Change the password you use to open the app. Your recovery key stays the same.",
       "currentPassword": "Current password",
@@ -743,6 +720,7 @@
     }
   },
   "forms": {
+    "clientFromCase": "The client comes from the case: {{names}}. Clear the case to link a client directly.",
     "required": "This field is required.",
     "invalid": "Check the value you entered.",
     "notSpecified": "Not specified",
@@ -816,7 +794,8 @@
     "CLIENT_NOT_FOUND": "This client could not be found. It may have been archived or removed.",
     "CASE_NOT_FOUND": "This case could not be found. It may have been archived or removed.",
     "POWER_OF_ATTORNEY_NOT_FOUND": "This power of attorney could not be found. It may have been archived or removed.",
-    "POWER_OF_ATTORNEY_CLIENT_IN_USE": "A case relies on this power of attorney for that client, so the client cannot be removed from it.",
+    "CLIENT_ALREADY_HAS_POWER_OF_ATTORNEY": "One of these clients already has an active power of attorney. Archive that one first, or remove the client from this one.",
+    "LINK_CASE_OR_CLIENT": "Link this to a case or to a client, not both. A case already knows its clients.",
     "HEARING_NOT_FOUND": "This hearing could not be found. It may have been deleted.",
     "CLIENT_PROBABLE_DUPLICATE": "A client with the same name or phone number already exists.",
     "CLIENT_NUMBER_TAKEN": "This client number is already used by another client. Enter a different number and save again.",
@@ -986,6 +965,7 @@
     "chooseOwnerContinue": "Continue"
   },
   "poa": {
+    "labelPrefix": "POA {{number}}",
     "listKicker": "Records",
     "title": "Powers of attorney",
     "description": "Keep each power of attorney with its clients and the lawyers named in it.",

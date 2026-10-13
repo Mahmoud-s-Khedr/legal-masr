@@ -54,8 +54,10 @@ pub enum Error {
     CaseNotFound,
     #[error("power of attorney not found")]
     PowerOfAttorneyNotFound,
-    #[error("power of attorney client is relied on by a case")]
-    PowerOfAttorneyClientInUse,
+    #[error("client already has an active power of attorney")]
+    ClientHasActivePowerOfAttorney,
+    #[error("a record is linked to a case or to a client, not both")]
+    LinkCaseOrClient,
     #[error("hearing not found")]
     HearingNotFound,
     #[error("client is a probable duplicate")]
@@ -104,6 +106,18 @@ pub enum Error {
     Zip(#[from] zip::result::ZipError),
 }
 
+/// The message a migration-`0003` trigger raised with `RAISE(ABORT, …)`.
+fn raised_rule(error: &rusqlite::Error) -> Option<&str> {
+    match error {
+        rusqlite::Error::SqliteFailure(failure, Some(message))
+            if failure.extended_code == rusqlite::ffi::SQLITE_CONSTRAINT_TRIGGER =>
+        {
+            Some(message.as_str())
+        }
+        _ => None,
+    }
+}
+
 /// A UNIQUE rule a lawyer can run into by reusing a number. Only these are
 /// reported as their own error; any other database failure stays opaque.
 fn violated_unique_column(error: &rusqlite::Error) -> Option<&str> {
@@ -123,7 +137,13 @@ impl From<rusqlite::Error> for Error {
             Some("clients.internal_number") => Self::ClientNumberTaken,
             Some("cases.internal_number") => Self::CaseNumberTaken,
             Some("powers_of_attorney.internal_sequence") => Self::PowerOfAttorneyNumberTaken,
-            _ => Self::Sql(error),
+            _ => match raised_rule(&error) {
+                Some("CLIENT_ALREADY_HAS_POWER_OF_ATTORNEY") => {
+                    Self::ClientHasActivePowerOfAttorney
+                }
+                Some("LINK_CASE_OR_CLIENT") => Self::LinkCaseOrClient,
+                _ => Self::Sql(error),
+            },
         }
     }
 }
@@ -149,7 +169,8 @@ impl Error {
             Self::ClientNotFound => "CLIENT_NOT_FOUND",
             Self::CaseNotFound => "CASE_NOT_FOUND",
             Self::PowerOfAttorneyNotFound => "POWER_OF_ATTORNEY_NOT_FOUND",
-            Self::PowerOfAttorneyClientInUse => "POWER_OF_ATTORNEY_CLIENT_IN_USE",
+            Self::ClientHasActivePowerOfAttorney => "CLIENT_ALREADY_HAS_POWER_OF_ATTORNEY",
+            Self::LinkCaseOrClient => "LINK_CASE_OR_CLIENT",
             Self::HearingNotFound => "HEARING_NOT_FOUND",
             Self::ClientProbableDuplicate(_) => "CLIENT_PROBABLE_DUPLICATE",
             Self::ClientNumberTaken => "CLIENT_NUMBER_TAKEN",
@@ -198,9 +219,10 @@ impl Error {
             Self::ClientNotFound => "لم يتم العثور على الموكل.",
             Self::CaseNotFound => "لم يتم العثور على القضية.",
             Self::PowerOfAttorneyNotFound => "لم يتم العثور على التوكيل.",
-            Self::PowerOfAttorneyClientInUse => {
-                "لا يمكن إزالة موكل يعتمد عليه التوكيل في إحدى القضايا."
+            Self::ClientHasActivePowerOfAttorney => {
+                "لهذا الموكل توكيل ساري بالفعل؛ أرشفه أولًا قبل إضافة توكيل آخر."
             }
+            Self::LinkCaseOrClient => "اربط السجل بقضية أو بموكل، وليس بالاثنين معًا.",
             Self::HearingNotFound => "لم يتم العثور على الجلسة.",
             Self::ClientProbableDuplicate(_) => "يوجد موكل مشابه محتمل بالفعل.",
             Self::ClientNumberTaken => "رقم الموكل مستخدم بالفعل.",

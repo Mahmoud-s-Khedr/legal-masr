@@ -5,7 +5,6 @@ vi.mock('@/bridge/commands', async (original) => {
   const module = await original<typeof import('@/bridge/commands')>();
   return { bridge: Object.fromEntries(Object.keys(module.bridge).map((key) => [key, vi.fn()])) };
 });
-vi.mock('@tauri-apps/plugin-notification', () => ({ isPermissionGranted: vi.fn() }));
 import i18n from '@/i18n';
 import { prepareWorkflowMocks, renderWorkflow } from '@/test/workflow';
 import { AgendaPage } from './hearings/pages/AgendaPage';

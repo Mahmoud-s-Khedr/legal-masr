@@ -3,16 +3,11 @@ use crate::{
     dto::{ClientCreateInput, ClientDto, ClientListInput, ClientSummary, ClientUpdateInput},
     errors::Error,
     normalize,
-    repositories::{
-        case_repository, client_repository, document_repository, finance_repository,
-        hearing_repository, search_repository, task_repository,
-    },
+    repositories::{client_repository, search_repository},
     services::search_service,
     state::AppState,
 };
-use std::fs;
 use tauri::{AppHandle, Runtime};
-use tauri_plugin_dialog::DialogExt;
 use uuid::Uuid;
 
 fn upsert_search_entry(
@@ -184,56 +179,4 @@ pub fn restore<R: Runtime>(
     id: &str,
 ) -> Result<ClientDto, Error> {
     set_archived(app, state, id, false)
-}
-
-/// Shows the native folder picker. It blocks until the dialog closes, so it must run off
-/// the main thread (see `commands::threads`).
-pub fn pick_export_folder<R: Runtime>(app: &AppHandle<R>) -> Result<std::path::PathBuf, Error> {
-    app.dialog()
-        .file()
-        .blocking_pick_folder()
-        .ok_or(Error::Cancelled)?
-        .into_path()
-        .map_err(|_| Error::Operation)
-}
-
-pub fn export<R: Runtime>(
-    app: &AppHandle<R>,
-    state: &AppState,
-    id: &str,
-    destination: &std::path::Path,
-) -> Result<String, Error> {
-    let master = state.unlocked()?;
-    let (_, db_path) = db::paths(app)?;
-    let conn = db::open_db(&db_path, &master)?;
-    let client = client_repository::find_by_id(&conn, id)?;
-    let cases = case_repository::list(&conn, None, None, Some(id), true)?;
-    let case_records: Vec<_> = cases
-        .iter()
-        .map(|summary| case_repository::hydrate(&conn, case_repository::get(&conn, &summary.id)?))
-        .collect::<Result<_, _>>()?;
-    let hearings = case_records
-        .iter()
-        .map(|case_record| hearing_repository::list(&conn, Some(&case_record.id), None, None, None))
-        .collect::<Result<Vec<_>, _>>()?
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
-    let tasks = task_repository::list(&conn, Some("ALL"), "9999-12-31", None, Some(id))?;
-    let attachments = document_repository::list(&conn, None, Some(id), None, None)?;
-    let payments = finance_repository::list_payments(&conn, Some(id), None, None, None)?;
-    let expenses = finance_repository::list_expenses(&conn, Some(id), None, None, None)?;
-    let path = destination.join(format!("client-{}.json", client.id));
-    let export = serde_json::json!({
-        "formatVersion": 1,
-        "client": client,
-        "cases": case_records,
-        "hearings": hearings,
-        "tasks": tasks,
-        "attachments": attachments,
-        "payments": payments,
-        "expenses": expenses,
-    });
-    fs::write(&path, serde_json::to_vec_pretty(&export)?)?;
-    Ok(path.to_string_lossy().into_owned())
 }

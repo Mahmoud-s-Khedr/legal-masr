@@ -5,9 +5,6 @@ vi.mock('../bridge/commands', async (importOriginal) => {
   const original = await importOriginal<typeof import('../bridge/commands')>();
   return { bridge: Object.fromEntries(Object.keys(original.bridge).map((key) => [key, vi.fn()])) };
 });
-vi.mock('@tauri-apps/plugin-notification', () => ({
-  isPermissionGranted: vi.fn().mockResolvedValue(false),
-}));
 
 import { bridge } from '../bridge/commands';
 import i18n from '../i18n';
@@ -45,8 +42,6 @@ function ready(language: 'ar' | 'en') {
     theme: 'light',
     dateFormat: 'yyyy-MM-dd',
     weekStartsOn: 6,
-    defaultReminderMinutes: 60,
-    autostartEnabled: false,
     usageCountersEnabled: false,
     lockTimeoutMinutes: 0,
   });
