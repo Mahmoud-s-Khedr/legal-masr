@@ -9,7 +9,9 @@ not add the missing export, deletion, tray or support-bundle features.
 - Demo tasks and the demo case expense still supplied both `caseId` and
   `clientId`, violating migration `0003` and Rust validation. The redundant
   client links are removed. Seeder tests check every task/expense payload and
-  verify that a failed task stops later financial writes.
+  verify that a failed task stops later financial writes. The screenshot bridge
+  also uses case-only task/expense fixtures; a regression test checks list,
+  dashboard and mutation fixtures. That test failed before the fixture repair.
 - The browser suite still clicked the removed hearing-roll print button.
   It now asserts that the control and print surface are absent. Recovery-key
   printing remains covered.
@@ -37,7 +39,7 @@ No schema migration is edited by these follow-up fixes. The PR adds immutable
 | ------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | Format, lint and TypeScript checks                            | Passed                                                                 |
 | Seeder tests                                                  | 7 passed                                                               |
-| Frontend coverage suite                                       | 578 passed; statements/lines 88.01%, branches 85.41%, functions 79.67% |
+| Frontend coverage suite                                       | 579 passed; statements/lines 88.00%, branches 85.32%, functions 79.67% |
 | Node script tests                                             | 60 passed                                                              |
 | Rust format and clippy, all targets/features, warnings denied | Passed                                                                 |
 | Rust tests, all features                                      | 177 passed                                                             |
@@ -56,6 +58,10 @@ fresh run with one worker and unchanged test assertions/time limits. One local
 Rust coverage attempt was interrupted; the complete rerun passed. The initial
 browser comparison was also interrupted after reproducing stale snapshots;
 the final candidate is generated and compared separately.
+
+Rust, native and package evidence predates the final capture-fixture-only
+correction. That correction changes development fixtures and tests; published-head
+CI rechecks the complete tree.
 
 ## Remaining acceptance
 

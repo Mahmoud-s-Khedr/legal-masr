@@ -127,7 +127,7 @@ const hearing: HearingDto = {
 };
 const task: TaskDto = {
   id: 'demo-task-1',
-  clientId: client.id,
+  clientId: null,
   caseId: caseItem.id,
   title: 'مراجعة مذكرة الجلسة',
   details: 'بيان عرض فقط',
@@ -185,7 +185,7 @@ const payment: PaymentDto = {
 const expense: ExpenseDto = {
   id: 'demo-expense-1',
   caseId: caseItem.id,
-  clientId: client.id,
+  clientId: null,
   amountMinor: 25000,
   expenseDate: '2026-10-02',
   expenseType: 'COURT_FEE',

@@ -255,7 +255,7 @@ checks. Physical-device acceptance remains separate.
 | Check                                                              | Result                                          |
 | ------------------------------------------------------------------ | ----------------------------------------------- |
 | `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, frontend build | Passed                                          |
-| `pnpm test` — frontend                                             | 578 tests passed                                |
+| `pnpm test` — frontend                                             | 579 tests passed                                |
 | `pnpm test` — Node scripts                                         | 60 tests passed                                 |
 | Rust format, clippy with all targets/features and warnings denied  | Passed                                          |
 | `cargo test --manifest-path src-tauri/Cargo.toml --all-features`   | 177 tests passed                                |
