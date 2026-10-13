@@ -32,7 +32,7 @@ attachments, archive/restore, list/search, and a tabbed detail view.
 
 Cases have explicit internal and optional official identifiers, court/circuit,
 type/litigation degree, status, dates, subject, notes, one or more client
-relationships (each with legal capacity, optional client-owned POA, and notes),
+relationships (each with legal capacity and notes; the client's POA is shown, not chosen per case),
 lightweight opponents, archive/restore, account, hearings, tasks, and
 attachments. There is no generic party model or global case legal capacity.
 
@@ -43,7 +43,8 @@ an independently editable next hearing linked by `previous_hearing_id` in the
 same transaction. Today shows today's hearings/tasks, overdue tasks, and
 upcoming hearings. Agenda supports month/week/list views using date-only data.
 
-Tasks have title, details, notes, required due date, optional client/case link,
+Tasks have title, details, notes, required due date, an optional case **or** client
+link (never both: a client's task list also includes its cases' tasks),
 optional reminder, and a semantic completion checkbox. Today, Overdue,
 Upcoming, Completed, and All are derived list views. There is no priority,
 assignee, time-of-day, source-event, or cancellation workflow.
@@ -57,7 +58,7 @@ and physical Windows/macOS notification/autostart validation remain open.
 A case can have one fee agreement. Payments are separate from expenses. Payment
 payers are restricted to the clients linked to the selected case; both the
 service and the database enforce that relationship. Expenses use a constrained
-type and have independently optional client/case links. Case and client account
+type and link a case **or** a client, never both. Case and client account
 summaries calculate agreed, received, outstanding, expenses, and net cash from
 integer EGP minor units. Deletion requires confirmation and refreshes affected
 totals; an expense with attachments is refused with a specific explanation.
@@ -91,7 +92,7 @@ must not flip (dates, identifiers, money, phones, filenames, versions) use
 
 Case relationships can be edited independently from the Parties tab. The editor
 requires at least one distinct existing client, preserves retained metadata,
-allows a client-owned POA, and displays archived retained selections. Removing a
+shows each client's own POA (it is derived, not chosen), and displays archived retained selections. Removing a
 client who has case payments fails with `CASE_CLIENT_HAS_PAYMENTS`; relationships
 and the search index remain unchanged. The dedicated `case_set_clients` command
 updates relationships and indexing in one transaction without changing unrelated

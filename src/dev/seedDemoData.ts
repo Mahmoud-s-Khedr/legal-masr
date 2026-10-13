@@ -57,7 +57,8 @@ export async function seedDemoData(): Promise<DemoSeedResult> {
     confirmDuplicate: true,
   });
 
-  const powerOfAttorney = await bridge.powerOfAttorneyCreate({
+  // The case derives this POA from its client, so the case below does not name it.
+  await bridge.powerOfAttorneyCreate({
     internalSequence: 'DEMO-POA-001',
     officialNumber: '1187',
     issueDate: localDate(-45),
@@ -89,7 +90,6 @@ export async function seedDemoData(): Promise<DemoSeedResult> {
       {
         clientId: primaryClient.id,
         legalCapacity: 'مدعٍ',
-        powerOfAttorneyId: powerOfAttorney.id,
       },
       {
         clientId: coClient.id,

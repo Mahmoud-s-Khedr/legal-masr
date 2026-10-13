@@ -71,7 +71,12 @@ export function EntityPicker({
         }}
         inputValue={query}
         onInputValueChange={(next, details) => {
-          if (details.reason !== 'escape-key') setQuery(next);
+          if (details.reason === 'escape-key') return;
+          // Only what the lawyer types is remembered. A selection, a clear or a reset shows the
+          // chosen item's label, so a value cleared from outside (a case replacing a client)
+          // cannot leave the old label behind in the input.
+          if (details.reason === 'input-change') setQuery(next);
+          else setSearch(null);
         }}
         itemToStringLabel={(item) => String(item.label)}
         itemToStringValue={(item) => item.value}

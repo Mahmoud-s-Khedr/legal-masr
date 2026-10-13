@@ -25,6 +25,10 @@ fn validate(input: &TaskInput) -> Result<(), Error> {
     {
         return Err(Error::Validation);
     }
+    // A task of a case reaches its client through the case: it never carries a client of its own.
+    if input.case_id.is_some() && input.client_id.is_some() {
+        return Err(Error::LinkCaseOrClient);
+    }
     Ok(())
 }
 
@@ -39,6 +43,12 @@ pub fn save<R: Runtime>(
     let conn = db::open_db(&path, &master)?;
     if let Some(case_id) = &input.case_id {
         case_repository::ensure_active(&conn, case_id)?;
+    }
+    if let Some(client_id) = &input.client_id {
+        conn.query_row("SELECT 1 FROM clients WHERE id = ?1", [client_id], |_| {
+            Ok(())
+        })
+        .map_err(|_| Error::ClientNotFound)?;
     }
     let now = db::now();
     let is_new = input.id.is_none();
@@ -141,5 +151,29 @@ mod tests {
         };
         assert!(validate(&input).is_ok());
         assert!(!valid_date("2026-08-24T09:00:00Z"));
+    }
+
+    fn task_input(case_id: Option<&str>, client_id: Option<&str>) -> TaskInput {
+        TaskInput {
+            id: None,
+            client_id: client_id.map(Into::into),
+            case_id: case_id.map(Into::into),
+            title: "مراجعة الملف".into(),
+            details: None,
+            notes: None,
+            due_date: "2026-08-24".into(),
+            reminder_minutes: None,
+        }
+    }
+
+    #[test]
+    fn a_task_links_a_case_or_a_client_but_not_both() {
+        assert!(validate(&task_input(Some("case"), None)).is_ok());
+        assert!(validate(&task_input(None, Some("client"))).is_ok());
+        assert!(validate(&task_input(None, None)).is_ok());
+        assert!(matches!(
+            validate(&task_input(Some("case"), Some("client"))),
+            Err(Error::LinkCaseOrClient)
+        ));
     }
 }

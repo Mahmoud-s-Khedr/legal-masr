@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Button } from '../../../components/ui/button';
 import { AttachmentPanel } from '../../documents/components/AttachmentPanel';
 import { PowerOfAttorneyForm } from '../components/PowerOfAttorneyForm';
+import { poaTitle } from '../poaOptions';
 import {
   useArchivePowerOfAttorney,
   usePowerOfAttorney,
@@ -58,7 +59,7 @@ export function PowerOfAttorneyDetailPage() {
       <RecordHeader
         icon="poa"
         kicker={t('poa.kicker')}
-        title={<bdi>{item.internalSequence}</bdi>}
+        title={<bdi>{poaTitle(item)}</bdi>}
         badges={item.archivedAt && <Badge variant="secondary">{t('records.archived')}</Badge>}
         meta={
           <>
@@ -243,7 +244,13 @@ export function PowerOfAttorneyDetailPage() {
                       <Link to={`/cases/${caseId}`}>
                         <bdi>{linked?.internalNumber ?? t('poa.openCase')}</bdi>
                       </Link>
-                      {linked && <span dir="auto">{format.list(linked.clientNames)}</span>}
+                      {linked && (
+                        <span dir="auto">
+                          {[linked.courtName, format.list(linked.clientNames)]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      )}
                     </div>
                     {linked && (
                       <CaseStatusBadge status={linked.status} archived={!!linked.archivedAt} />

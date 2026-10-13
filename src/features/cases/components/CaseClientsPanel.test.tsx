@@ -37,10 +37,75 @@ it('retains relationship metadata and a failed draft, then refreshes both sets o
       expect.objectContaining({
         clientId: fixtures.client.id,
         legalCapacity: 'أصيل',
-        powerOfAttorneyId: fixtures.poa.id,
         notes: 'DEMO retained notes',
       }),
     ],
   });
   expect(invalidate).toHaveBeenCalled();
+});
+
+const withPower = (
+  powerOfAttorney: (typeof fixtures.caseItem.clients)[number]['powerOfAttorney'],
+) => ({
+  ...fixtures.caseItem,
+  clients: fixtures.caseItem.clients.map((client) => ({
+    ...client,
+    powerOfAttorneyId: powerOfAttorney?.id ?? null,
+    powerOfAttorney,
+  })),
+});
+
+it("shows the client's own power of attorney with its number and links to it", () => {
+  renderWorkflow(
+    <CaseClientsPanel
+      caseDto={withPower({
+        id: 'poa-7',
+        internalSequence: '7',
+        officialNumber: '123',
+        issueYear: 2026,
+        archived: false,
+      })}
+    />,
+    '/cases/demo-case-14',
+    '/cases/:id',
+  );
+  const link = screen.getByRole('link', { name: /توكيل .*7/ });
+  expect(link).toHaveAttribute('href', '/powers-of-attorney/poa-7');
+  expect(link).toHaveTextContent(/123/);
+  expect(screen.queryByText('لا يوجد توكيل')).not.toBeInTheDocument();
+});
+
+it('marks an archived power of attorney and says plainly when the client has none', () => {
+  const { unmount } = renderWorkflow(
+    <CaseClientsPanel
+      caseDto={withPower({
+        id: 'poa-7',
+        internalSequence: '7',
+        officialNumber: null,
+        issueYear: null,
+        archived: true,
+      })}
+    />,
+    '/cases/demo-case-14',
+    '/cases/:id',
+  );
+  expect(screen.getByRole('link', { name: /توكيل .*7.*مؤرشف/ })).toBeInTheDocument();
+  unmount();
+  renderWorkflow(
+    <CaseClientsPanel caseDto={withPower(null)} />,
+    '/cases/demo-case-14',
+    '/cases/:id',
+  );
+  expect(screen.getByText(i18n.t('cases.clientsPanel.noPoa'))).toBeInTheDocument();
+});
+
+it('has no per-case power-of-attorney picker: the power of attorney belongs to the client', async () => {
+  renderWorkflow(
+    <CaseClientsPanel caseDto={fixtures.caseItem} />,
+    '/cases/demo-case-14',
+    '/cases/:id',
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'تعديل' }));
+  const dialog = await screen.findByRole('dialog');
+  expect(within(dialog).queryByLabelText(i18n.t('cases.clientsPanel.poa'))).not.toBeInTheDocument();
 });

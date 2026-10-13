@@ -20,6 +20,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
         2,
         include_str!("../../migrations/0002_case_judicial_year.sql"),
     ),
+    (
+        3,
+        include_str!("../../migrations/0003_case_or_client_links.sql"),
+    ),
 ];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {

@@ -19,7 +19,10 @@
   font-weight: 200 1000;
   font-display: swap;
   src: url('/fonts/cairo-arabic.woff2') format('woff2');
-  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFC;
+  /* The space and no-break space belong to this face, not the Latin one. WebKitGTK splits an
+     Arabic run at every space that comes from another face, and then draws any word carrying a
+     below-baseline mark (kasratan in "محامٍ", "جارٍ") dropped under the line with the mark lost. */
+  unicode-range: U+0020, U+00A0, U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFC;
 }
 @font-face {
   font-family: Cairo;
@@ -28,7 +31,8 @@
   font-display: swap;
   src: url('/fonts/cairo-latin.woff2') format('woff2');
   unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC;
+    U+0021-007E, U+0080-009F, U+00A1-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+2000-206F, U+20AC;
 }
 @layer base {
   :root {
@@ -3544,34 +3548,6 @@
     gap: 0.6rem;
     font-size: 0.92rem;
     opacity: 0.92;
-  }
-  .password-input:not([data-slot]) {
-    position: relative;
-    display: block;
-  }
-}
-@layer base {
-  html[dir='rtl'] .password-input:not([data-slot]) input:not([data-slot]) {
-    padding-left: 4.75rem;
-    text-align: right;
-  }
-  html[dir='ltr'] .password-input:not([data-slot]) input:not([data-slot]) {
-    padding-right: 4.75rem;
-  }
-}
-@layer components {
-  .password-toggle {
-    position: absolute;
-    inset-block: 0.35rem;
-    inset-inline-end: 0.35rem;
-    border: 0;
-    border-radius: var(--radius-sm);
-    padding: 0 0.7rem;
-    background: var(--canvas-warm);
-    color: var(--accent-strong);
-    font-size: var(--text-xs);
-    font-weight: 800;
-    cursor: pointer;
   }
   .recovery-key-step {
     display: grid;

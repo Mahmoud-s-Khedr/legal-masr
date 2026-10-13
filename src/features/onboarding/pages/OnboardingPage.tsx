@@ -19,6 +19,12 @@ import { Card } from '../../../components/ui/card';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Field } from '../../../components/forms/FormField';
 import { Input } from '../../../components/ui/input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '@/components/ui/input-group';
 import { RestoreFromBackup } from '../../backups/components/RestoreFromBackup';
 import { useInitializeVault, useRecoverAccess, useUnlockVault } from '../api/onboardingApi';
 import {
@@ -210,8 +216,8 @@ const PasswordInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInput
     const { t } = useTranslation();
     const [visible, setVisible] = useState(false);
     return (
-      <span className="password-input">
-        <Input
+      <InputGroup>
+        <InputGroupInput
           {...props}
           ref={ref}
           type={visible ? 'text' : 'password'}
@@ -219,16 +225,16 @@ const PasswordInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInput
           autoComplete="off"
           spellCheck={false}
         />
-        <button
-          type="button"
-          className="password-toggle"
-          aria-pressed={visible}
-          aria-label={visible ? t('gate.hidePassword') : t('gate.showPassword')}
-          onClick={() => setVisible((current) => !current)}
-        >
-          {visible ? t('gate.hide') : t('gate.show')}
-        </button>
-      </span>
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            aria-pressed={visible}
+            aria-label={visible ? t('gate.hidePassword') : t('gate.showPassword')}
+            onClick={() => setVisible((current) => !current)}
+          >
+            {visible ? t('gate.hide') : t('gate.show')}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
     );
   },
 );

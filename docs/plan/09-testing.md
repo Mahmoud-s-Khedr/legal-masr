@@ -22,6 +22,12 @@ Rust unit and integration coverage includes:
   files, newer envelope/manifest/database versions, bounded key-derivation cost,
   rejection of every other format, preview/cancellation leaving live data unchanged, and
   every journal interruption for the new replacement fields.
+- link consistency (`tests/case_client_poa_links.rs`): a task/expense links a case or
+  a client but never both (service and database), a client's view derives its cases'
+  tasks/expenses, one active POA per client (link, archive-then-relink, restore
+  refusal), a case's POA and a POA's cases derived from the client including archived
+  POAs, the retired per-case pointer, typed errors from trigger refusals, and the
+  upgrade of a populated `0002` vault.
 
 Frontend Vitest/React Testing Library coverage includes bridge payload
 contracts, typed error mapping, canonical query invalidation including failure

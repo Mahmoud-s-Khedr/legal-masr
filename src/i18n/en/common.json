@@ -743,6 +743,7 @@
     }
   },
   "forms": {
+    "clientFromCase": "The client comes from the case: {{names}}. Clear the case to link a client directly.",
     "required": "This field is required.",
     "invalid": "Check the value you entered.",
     "notSpecified": "Not specified",
@@ -816,7 +817,8 @@
     "CLIENT_NOT_FOUND": "This client could not be found. It may have been archived or removed.",
     "CASE_NOT_FOUND": "This case could not be found. It may have been archived or removed.",
     "POWER_OF_ATTORNEY_NOT_FOUND": "This power of attorney could not be found. It may have been archived or removed.",
-    "POWER_OF_ATTORNEY_CLIENT_IN_USE": "A case relies on this power of attorney for that client, so the client cannot be removed from it.",
+    "CLIENT_ALREADY_HAS_POWER_OF_ATTORNEY": "One of these clients already has an active power of attorney. Archive that one first, or remove the client from this one.",
+    "LINK_CASE_OR_CLIENT": "Link this to a case or to a client, not both. A case already knows its clients.",
     "HEARING_NOT_FOUND": "This hearing could not be found. It may have been deleted.",
     "CLIENT_PROBABLE_DUPLICATE": "A client with the same name or phone number already exists.",
     "CLIENT_NUMBER_TAKEN": "This client number is already used by another client. Enter a different number and save again.",
@@ -986,6 +988,7 @@
     "chooseOwnerContinue": "Continue"
   },
   "poa": {
+    "labelPrefix": "POA {{number}}",
     "listKicker": "Records",
     "title": "Powers of attorney",
     "description": "Keep each power of attorney with its clients and the lawyers named in it.",

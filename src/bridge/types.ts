@@ -31,7 +31,8 @@ export type AppErrorCode =
   | 'CLIENT_NOT_FOUND'
   | 'CASE_NOT_FOUND'
   | 'POWER_OF_ATTORNEY_NOT_FOUND'
-  | 'POWER_OF_ATTORNEY_CLIENT_IN_USE'
+  | 'CLIENT_ALREADY_HAS_POWER_OF_ATTORNEY'
+  | 'LINK_CASE_OR_CLIENT'
   | 'HEARING_NOT_FOUND'
   | 'CLIENT_PROBABLE_DUPLICATE'
   | 'CLIENT_NUMBER_TAKEN'
@@ -151,12 +152,23 @@ export type ClientListInput = { query?: string; includeArchived?: boolean };
 
 export type CaseStatus = 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
+/** The client's own power of attorney, as a case page labels it. */
+export type CasePowerOfAttorneyRef = {
+  id: string;
+  internalSequence: string;
+  officialNumber: string | null;
+  issueYear: number | null;
+  archived: boolean;
+};
+
 export type CaseClientDto = {
   clientId: string;
   fullName: string;
   internalNumber: string;
   legalCapacity: string | null;
+  /** Derived from the client; a case never stores its own power of attorney. */
   powerOfAttorneyId: string | null;
+  powerOfAttorney: CasePowerOfAttorneyRef | null;
   notes: string | null;
 };
 
@@ -252,7 +264,6 @@ export type CaseListInput = {
 export type CaseClientInput = {
   clientId: string;
   legalCapacity?: string;
-  powerOfAttorneyId?: string;
   notes?: string;
 };
 
@@ -315,7 +326,7 @@ export type PowerOfAttorneyDto = {
 export type PowerOfAttorneySummary = Pick<
   PowerOfAttorneyDto,
   'id' | 'internalSequence' | 'officialNumber' | 'issueYear' | 'archivedAt'
-> & { clientNames: string[] };
+> & { clientNames: string[]; clientIds: string[] };
 export type PowerOfAttorneyInput = {
   id?: string;
   internalSequence: string;

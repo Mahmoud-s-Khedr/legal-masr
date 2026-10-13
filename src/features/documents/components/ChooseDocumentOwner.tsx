@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { DraftValueObserver } from '../../../components/forms/DraftProtection';
-import { useFormat } from '../../../i18n/LocalePresentation';
 import { EntityPicker, type EntityOption } from '../../../components/forms/EntityPicker';
 import { Field } from '../../../components/forms/FormField';
 import { FormDialog, FormDialogFooter } from '../../../components/forms/FormDialog';
 import { Button } from '../../../components/ui/button';
 import { useCaseList } from '../../cases/api/casesApi';
+import { poaOption } from '../../powersOfAttorney/poaOptions';
 import { caseOption, clientOption } from '../../cases/components/caseOptions';
 import { useClientList } from '../../clients/api/clientsApi';
 import { usePowerOfAttorneyList } from '../../powersOfAttorney/api/powersOfAttorneyApi';
@@ -27,7 +27,6 @@ export function ChooseDocumentOwner({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const format = useFormat();
   const navigate = useNavigate();
   const [kind, setKind] = useState<OwnerKind>('case');
   const [ownerId, setOwnerId] = useState('');
@@ -37,13 +36,7 @@ export function ChooseDocumentOwner({
   const options: Record<OwnerKind, EntityOption[]> = {
     case: (cases.data ?? []).map(caseOption),
     client: (clients.data ?? []).map(clientOption),
-    powerOfAttorney: (powers.data ?? []).map((item) => ({
-      value: item.id,
-      label: item.clientNames.length
-        ? `${item.internalSequence} — ${format.list(item.clientNames)}`
-        : item.internalSequence,
-      searchText: item.officialNumber ?? '',
-    })),
+    powerOfAttorney: (powers.data ?? []).map(poaOption),
   };
   const loading = {
     case: cases.isLoading,

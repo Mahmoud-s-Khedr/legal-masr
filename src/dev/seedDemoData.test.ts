@@ -49,7 +49,7 @@ describe('development demo seeder', () => {
     expect(bridge.caseCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         clients: [
-          expect.objectContaining({ clientId: 'client-primary', powerOfAttorneyId: 'poa-1' }),
+          expect.objectContaining({ clientId: 'client-primary' }),
           expect.objectContaining({ clientId: 'client-co-client' }),
         ],
       }),

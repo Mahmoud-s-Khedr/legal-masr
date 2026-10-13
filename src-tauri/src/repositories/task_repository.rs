@@ -62,7 +62,7 @@ pub fn list(
         None | Some("ALL") => "1 = 1",
         Some(_) => return Err(Error::Validation),
     };
-    let mut statement = conn.prepare(&format!("{SELECT} WHERE {condition} AND (?2 IS NULL OR case_id = ?2) AND (?3 IS NULL OR client_id = ?3) ORDER BY due_date, title"))?;
+    let mut statement = conn.prepare(&format!("{SELECT} WHERE {condition} AND (?2 IS NULL OR case_id = ?2) AND (?3 IS NULL OR client_id = ?3 OR case_id IN (SELECT case_id FROM case_clients WHERE client_id = ?3)) ORDER BY due_date, title"))?;
     let rows = statement
         .query_map(params![reference_date, case_id, client_id], row)?
         .collect::<Result<Vec<_>, _>>()?;

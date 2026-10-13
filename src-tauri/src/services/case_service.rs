@@ -385,7 +385,6 @@ mod tests {
         let clients = vec![CaseClientInput {
             client_id: "a".into(),
             legal_capacity: Some("مدعٍ".into()),
-            power_of_attorney_id: None,
             notes: None,
         }];
         assert!(validate_case(
@@ -407,7 +406,6 @@ mod tests {
         let duplicate = CaseClientInput {
             client_id: "a".into(),
             legal_capacity: None,
-            power_of_attorney_id: None,
             notes: None,
         };
         assert!(validate_case(
@@ -445,7 +443,6 @@ mod tests {
         let client = CaseClientInput {
             client_id: "a".into(),
             legal_capacity: None,
-            power_of_attorney_id: None,
             notes: None,
         };
         validate_case(

@@ -774,7 +774,6 @@ export function CaseDetailPage() {
                 clients: caseDto.clients.map((client) => ({
                   clientId: client.clientId,
                   legalCapacity: client.legalCapacity ?? undefined,
-                  powerOfAttorneyId: client.powerOfAttorneyId ?? undefined,
                   notes: client.notes ?? undefined,
                 })),
               });

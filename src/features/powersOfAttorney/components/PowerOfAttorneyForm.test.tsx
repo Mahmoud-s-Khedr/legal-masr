@@ -80,3 +80,44 @@ it('says a power of attorney needs a client on that field instead of failing to 
   ).toBeInTheDocument();
   expect(onSubmit).not.toHaveBeenCalled();
 });
+
+const otherPower = {
+  id: 'demo-poa-other',
+  internalSequence: '9',
+  officialNumber: '555',
+  issueYear: 2026,
+  archivedAt: null,
+  clientNames: [fixtures.client.fullName],
+  clientIds: [fixtures.client.id],
+};
+
+async function openClientOptions(name: string) {
+  const input = screen.getByPlaceholderText(i18n.t('cases.form.clientSearch'));
+  input.focus();
+  fireEvent.click(input);
+  fireEvent.change(input, { target: { value: name } });
+  fireEvent.keyDown(input, { key: 'ArrowDown' });
+  return screen.findByRole('option', { name: new RegExp(name) });
+}
+
+it('does not offer a client who already holds another active power of attorney, and says which', async () => {
+  vi.mocked(bridge.powerOfAttorneyList).mockResolvedValue([otherPower]);
+  renderWorkflow(<PowerOfAttorneyForm busy={false} onSubmit={vi.fn()} onCancel={vi.fn()} />);
+  const option = await openClientOptions(fixtures.client.fullName);
+  await waitFor(() => expect(option).toHaveAttribute('aria-disabled', 'true'));
+  expect(option).toHaveTextContent(/توكيل .*9/);
+});
+
+it('still offers the clients of the power of attorney being edited', async () => {
+  vi.mocked(bridge.powerOfAttorneyList).mockResolvedValue([{ ...otherPower, id: fixtures.poa.id }]);
+  renderWorkflow(
+    <PowerOfAttorneyForm
+      powerOfAttorney={{ ...fixtures.poa, clients: [] }}
+      busy={false}
+      onSubmit={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  );
+  const option = await openClientOptions(fixtures.client.fullName);
+  expect(option).not.toHaveAttribute('aria-disabled', 'true');
+});

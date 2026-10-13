@@ -3,7 +3,8 @@
 This document describes the SQLite/SQLCipher schema created by
 [`0001_canonical_legal_masr.sql`](../src-tauri/migrations/0001_canonical_legal_masr.sql)
 and extended by
-[`0002_case_judicial_year.sql`](../src-tauri/migrations/0002_case_judicial_year.sql).
+[`0002_case_judicial_year.sql`](../src-tauri/migrations/0002_case_judicial_year.sql) and
+[`0003_case_or_client_links.sql`](../src-tauri/migrations/0003_case_or_client_links.sql).
 It is a reference for the application model; the migration remains the
 authoritative executable definition.
 
@@ -64,7 +65,7 @@ clients ──< power_of_attorney_clients >── powers_of_attorney
    │          │              ├── 1 case_fee_agreement
    │          │              ├──< payments
    │          │              └──< attachments
-   │          └── optional POA for that same client
+   │          └── POA derived from that client (`client_current_poa`)
    │
    ├──< tasks
    ├──< expenses ──< attachments
@@ -75,17 +76,17 @@ clients ──< power_of_attorney_clients >── powers_of_attorney
 
 | Table                       | Relationship and purpose                                                                                                      |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `power_of_attorney_clients` | Many-to-many link between POAs and clients. A POA deletion cascades to its links; a client with a POA link cannot be deleted. |
+| `power_of_attorney_clients` | Many-to-many link between POAs and clients. A POA deletion cascades to its links; a client with a POA link cannot be deleted. A client has at most one **active** POA (triggers, see below). |
 | `power_of_attorney_lawyers` | Descriptive lawyer rows for a POA. Deleting the POA cascades to these rows.                                                   |
 
 ### Case relationships
 
 | Table            | Relationship and purpose                                                                                                                                                                                                           |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `case_clients`   | Many-to-many client/case link with legal capacity, notes, and an optional POA. Its composite foreign key guarantees the selected POA is linked to the same client.                                                                 |
+| `case_clients`   | Many-to-many client/case link with legal capacity and notes. `power_of_attorney_id` is **retired** (always `NULL`, a trigger rejects writes): a case shows its client's POA through the `client_current_poa` view.                |
 | `case_opponents` | Opponents associated with one case; case deletion cascades.                                                                                                                                                                        |
 | `hearings`       | Required case and hearing date, optional time/reminder/details, and an optional self-reference to a previous hearing. Deleting the prior hearing sets its successors’ `previous_hearing_id` to `NULL`; deleting the case cascades. |
-| `tasks`          | Optional client and case links, required due date, optional reminder, and constrained completion state. Deleting the linked client or case sets the corresponding link to `NULL`.                                                  |
+| `tasks`          | Optional client **or** case link (never both: a case already knows its clients), required due date, optional reminder, and constrained completion state. Deleting the linked client or case sets the link to `NULL`.         |
 
 ## Financial records
 
@@ -93,7 +94,10 @@ clients ──< power_of_attorney_clients >── powers_of_attorney
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `case_fee_agreements` | One fee agreement per case. The case relationship is unique and cascades on case deletion.                                                            |
 | `payments`            | A positive payment amount from a payer linked to the same case. A composite foreign key references `case_clients(case_id, client_id)`.                |
-| `expenses`            | Positive case or office expense with a constrained type. Client and case links are independent and optional; deleting either sets its link to `NULL`. |
+| `expenses`            | Positive case or office expense with a constrained type. Linked to a case **or** a client, never both; deleting either sets its link to `NULL`.       |
+
+A client's own view derives case work: its tasks and expenses are those linked
+to it directly plus those of the cases it belongs to.
 
 Deleting a client/case link that is referenced by a payment is restricted. This
 prevents retaining a payment whose payer is no longer valid for its case.
@@ -132,12 +136,35 @@ write.
 - Clients are restricted from deletion while POA or case relationships remain.
   Optional task/expense links become `NULL`; client-owned attachments cascade.
 - Deleting a POA cascades to its client links, lawyer rows, and POA-owned
-  attachments. A POA still referenced by `case_clients` cannot be removed.
+  attachments. Cases do not reference POAs, so nothing blocks removal.
 - Payments restrict deletion of their referenced case/client relationship.
+
+### Link rules added by `0003`
+
+`0003` adds triggers, a view and data repair only (no table rebuild: `attachments`
+cascade from `expenses` and `PRAGMA foreign_keys` cannot be switched off inside the
+migration transaction). Triggers guard new writes; they do not reject rows that
+already exist.
+
+- `tasks_case_or_client_*` and `expenses_case_or_client_*` abort an insert/update
+  that sets both `case_id` and `client_id` (`LINK_CASE_OR_CLIENT`). The migration
+  clears `client_id` on existing rows that have a case.
+- `poa_clients_one_active_poa` aborts linking a client to a second active POA, and
+  `poa_restore_one_active_poa` aborts restoring an archived POA that would give a
+  client two (`CLIENT_ALREADY_HAS_POWER_OF_ATTORNEY`). Archived POAs do not count.
+- `client_current_poa(client_id, power_of_attorney_id)` returns the client's active
+  POA, else its newest archived one. Case pages and a POA's case list both read it.
+- `case_clients_poa_pointer_retired_*` abort any non-`NULL` write of the old pointer;
+  the migration sets existing pointers to `NULL`. The column and its composite
+  foreign key remain because SQLite cannot drop a column that an index and foreign
+  key use.
+- Vaults that already hold two active POAs for one client keep both rows until one
+  is edited; the view picks the newest deterministically.
 
 ## Change policy
 
-`0001` is the pre-release baseline and `0002` adds `cases.judicial_year`. Do not
+`0001` is the pre-release baseline, `0002` adds `cases.judicial_year`, and `0003`
+adds the link rules above. Do not
 edit an applied migration. A schema change needs an explicit migration-policy
 decision before implementation (B10/P3-03 in the remediation register recorded
 the one for `0002`); update this reference in the same change.

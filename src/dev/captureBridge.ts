@@ -85,6 +85,13 @@ const caseItem: CaseDto = {
       internalNumber: client.internalNumber,
       legalCapacity: 'أصيل',
       powerOfAttorneyId: 'demo-poa-1',
+      powerOfAttorney: {
+        id: 'demo-poa-1',
+        internalSequence: '007',
+        officialNumber: '123',
+        issueYear: 2026,
+        archived: false,
+      },
       notes: null,
     },
   ],
@@ -135,7 +142,7 @@ const task: TaskDto = {
 };
 const poa: PowerOfAttorneyDto = {
   id: 'demo-poa-1',
-  internalSequence: 'توكيل ٠٠٧',
+  internalSequence: '007',
   officialNumber: '123',
   issueYear: 2026,
   issueDate: '2026-08-21',
@@ -249,6 +256,7 @@ export async function captureInvoke<T>(command: string): Promise<T> {
         issueYear: poa.issueYear,
         archivedAt: null,
         clientNames: [client.fullName],
+        clientIds: [client.id],
       },
     ] satisfies PowerOfAttorneySummary[],
     power_of_attorney_get: poa,

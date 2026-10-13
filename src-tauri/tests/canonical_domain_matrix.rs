@@ -115,10 +115,11 @@ fn relationship_capacity_opponents_hearing_chains_task_views_and_finance_totals_
         .unwrap();
     connection
         .execute(
-            "INSERT INTO case_clients (case_id, client_id, legal_capacity, power_of_attorney_id, notes, created_at, updated_at) VALUES (?1, ?2, 'مدعٍ', ?3, 'صفة مستقلة', 'now', 'now')",
-            params![case_id, payer, poa_id],
+            "INSERT INTO case_clients (case_id, client_id, legal_capacity, notes, created_at, updated_at) VALUES (?1, ?2, 'مدعٍ', 'صفة مستقلة', 'now', 'now')",
+            params![case_id, payer],
         )
         .unwrap();
+    // The per-case POA pointer is retired: a case derives its POA from the client.
     assert!(connection
         .execute(
             "INSERT INTO case_clients (case_id, client_id, power_of_attorney_id, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')",
@@ -196,7 +197,7 @@ fn relationship_capacity_opponents_hearing_chains_task_views_and_finance_totals_
             &connection,
             &TaskDto {
                 id: id(),
-                client_id: Some(payer.clone()),
+                client_id: None,
                 case_id: Some(case_id.clone()),
                 title: "مهمة".into(),
                 details: None,
@@ -257,7 +258,6 @@ fn relationship_capacity_opponents_hearing_chains_task_views_and_finance_totals_
         (None, None, 10),
         (Some(case_id.clone()), None, 20),
         (None, Some(payer.clone()), 30),
-        (Some(case_id.clone()), Some(payer.clone()), 40),
     ] {
         finance_repository::insert_expense(
             &connection,
@@ -278,10 +278,11 @@ fn relationship_capacity_opponents_hearing_chains_task_views_and_finance_totals_
     let summary = finance_repository::case_summary(&connection, &case_id).unwrap();
     assert_eq!(summary.received_minor, 400);
     assert_eq!(summary.outstanding_minor, 600);
-    assert_eq!(summary.expenses_minor, 60);
-    assert_eq!(summary.net_cash_minor, 340);
+    assert_eq!(summary.expenses_minor, 20);
+    assert_eq!(summary.net_cash_minor, 380);
+    // The client view derives case expenses: its own 30 plus the 20 of its case.
     let client_summary = finance_repository::client_summary(&connection, &payer).unwrap();
-    assert_eq!(client_summary.expenses_minor, 70);
+    assert_eq!(client_summary.expenses_minor, 50);
 }
 
 #[test]
@@ -330,15 +331,17 @@ fn every_foreign_key_delete_policy_and_its_cascade_or_restriction_are_enforced()
     connection.execute("INSERT INTO powers_of_attorney (id, internal_sequence, created_at, updated_at) VALUES (?1, 'TA-1', 'now', 'now')", [&poa_id]).unwrap();
     connection.execute("INSERT INTO power_of_attorney_clients (power_of_attorney_id, client_id, created_at) VALUES (?1, ?2, 'now')", params![poa_id, client_id]).unwrap();
     connection.execute("INSERT INTO power_of_attorney_lawyers (id, power_of_attorney_id, full_name, created_at, updated_at) VALUES (?1, ?2, 'محامٍ', 'now', 'now')", params![id(), poa_id]).unwrap();
-    connection.execute("INSERT INTO case_clients (case_id, client_id, power_of_attorney_id, created_at, updated_at) VALUES (?1, ?2, ?3, 'now', 'now')", params![case_id, client_id, poa_id]).unwrap();
+    connection.execute("INSERT INTO case_clients (case_id, client_id, created_at, updated_at) VALUES (?1, ?2, 'now', 'now')", params![case_id, client_id]).unwrap();
     connection.execute("INSERT INTO case_opponents (id, case_id, full_name, created_at, updated_at) VALUES (?1, ?2, 'خصم', 'now', 'now')", params![id(), case_id]).unwrap();
     connection.execute("INSERT INTO hearings (id, case_id, hearing_date, created_at, updated_at) VALUES (?1, ?2, '2026-08-24', 'now', 'now')", params![id(), case_id]).unwrap();
-    connection.execute("INSERT INTO tasks (id, client_id, case_id, title, due_date, created_at, updated_at) VALUES (?1, ?2, ?3, 'مهمة', '2026-08-24', 'now', 'now')", params![id(), client_id, case_id]).unwrap();
+    connection.execute("INSERT INTO tasks (id, case_id, title, due_date, created_at, updated_at) VALUES (?1, ?2, 'مهمة', '2026-08-24', 'now', 'now')", params![id(), case_id]).unwrap();
+    connection.execute("INSERT INTO tasks (id, client_id, title, due_date, created_at, updated_at) VALUES (?1, ?2, 'مهمة', '2026-08-24', 'now', 'now')", params![id(), client_id]).unwrap();
     connection.execute("INSERT INTO case_fee_agreements (id, case_id, amount_minor, created_at, updated_at) VALUES (?1, ?2, 100, 'now', 'now')", params![id(), case_id]).unwrap();
     let payment_id = id();
     connection.execute("INSERT INTO payments (id, case_id, payer_client_id, amount_minor, payment_date, created_at, updated_at) VALUES (?1, ?2, ?3, 100, '2026-08-24', 'now', 'now')", params![payment_id, case_id, client_id]).unwrap();
     let expense_id = id();
-    connection.execute("INSERT INTO expenses (id, case_id, client_id, amount_minor, expense_date, expense_type, created_at, updated_at) VALUES (?1, ?2, ?3, 10, '2026-08-24', 'OTHER', 'now', 'now')", params![expense_id, case_id, client_id]).unwrap();
+    connection.execute("INSERT INTO expenses (id, case_id, amount_minor, expense_date, expense_type, created_at, updated_at) VALUES (?1, ?2, 10, '2026-08-24', 'OTHER', 'now', 'now')", params![expense_id, case_id]).unwrap();
+    connection.execute("INSERT INTO expenses (id, client_id, amount_minor, expense_date, expense_type, created_at, updated_at) VALUES (?1, ?2, 10, '2026-08-24', 'OTHER', 'now', 'now')", params![id(), client_id]).unwrap();
     for (owner_column, owner_id) in [
         ("case_id", &case_id),
         ("client_id", &client_id),
@@ -379,17 +382,23 @@ fn every_foreign_key_delete_policy_and_its_cascade_or_restriction_are_enforced()
     );
     assert_eq!(
         connection
-            .query_row("SELECT case_id FROM tasks", [], |row| row
-                .get::<_, Option<String>>(0))
+            .query_row(
+                "SELECT COUNT(*) FROM tasks WHERE case_id IS NOT NULL",
+                [],
+                |row| row.get::<_, i64>(0)
+            )
             .unwrap(),
-        None
+        0
     );
     assert_eq!(
         connection
-            .query_row("SELECT case_id FROM expenses", [], |row| row
-                .get::<_, Option<String>>(0))
+            .query_row(
+                "SELECT COUNT(*) FROM expenses WHERE case_id IS NOT NULL",
+                [],
+                |row| row.get::<_, i64>(0)
+            )
             .unwrap(),
-        None
+        0
     );
     connection
         .execute("DELETE FROM powers_of_attorney WHERE id = ?1", [&poa_id])
@@ -399,17 +408,23 @@ fn every_foreign_key_delete_policy_and_its_cascade_or_restriction_are_enforced()
         .is_ok());
     assert_eq!(
         connection
-            .query_row("SELECT client_id FROM tasks", [], |row| row
-                .get::<_, Option<String>>(0))
+            .query_row(
+                "SELECT COUNT(*) FROM tasks WHERE client_id IS NOT NULL",
+                [],
+                |row| row.get::<_, i64>(0)
+            )
             .unwrap(),
-        None
+        0
     );
     assert_eq!(
         connection
-            .query_row("SELECT client_id FROM expenses", [], |row| row
-                .get::<_, Option<String>>(0))
+            .query_row(
+                "SELECT COUNT(*) FROM expenses WHERE client_id IS NOT NULL",
+                [],
+                |row| row.get::<_, i64>(0)
+            )
             .unwrap(),
-        None
+        0
     );
     connection
         .execute("DELETE FROM expenses WHERE id = ?1", [&expense_id])

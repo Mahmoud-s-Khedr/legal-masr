@@ -307,8 +307,21 @@ pub struct CaseClientDto {
     pub full_name: String,
     pub internal_number: String,
     pub legal_capacity: Option<String>,
+    /// Derived from the client's own power of attorney; never chosen per case.
     pub power_of_attorney_id: Option<String>,
+    pub power_of_attorney: Option<CasePowerOfAttorneyRef>,
     pub notes: Option<String>,
+}
+
+/// What a case page needs to label the client's power of attorney.
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CasePowerOfAttorneyRef {
+    pub id: String,
+    pub internal_sequence: String,
+    pub official_number: Option<String>,
+    pub issue_year: Option<i64>,
+    pub archived: bool,
 }
 
 #[derive(Serialize, Clone)]
@@ -372,7 +385,6 @@ pub struct CaseCreateInput {
 pub struct CaseClientInput {
     pub client_id: String,
     pub legal_capacity: Option<String>,
-    pub power_of_attorney_id: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -596,6 +608,7 @@ pub struct PowerOfAttorneySummary {
     pub official_number: Option<String>,
     pub issue_year: Option<i64>,
     pub client_names: Vec<String>,
+    pub client_ids: Vec<String>,
     pub archived_at: Option<String>,
 }
 

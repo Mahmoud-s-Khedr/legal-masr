@@ -79,13 +79,11 @@ fn case_round_trips_internal_official_numbers_client_capacity_poa_and_opponents(
             CaseClientInput {
                 client_id: first_client,
                 legal_capacity: Some("مدعٍ".into()),
-                power_of_attorney_id: Some(poa_id),
                 notes: Some("بموجب توكيل".into()),
             },
             CaseClientInput {
                 client_id: second_client,
                 legal_capacity: Some("متدخل".into()),
-                power_of_attorney_id: None,
                 notes: None,
             },
         ],
@@ -128,39 +126,8 @@ fn case_round_trips_internal_official_numbers_client_capacity_poa_and_opponents(
 }
 
 #[test]
-fn case_repository_rejects_a_poa_for_another_client_and_missing_cases() {
+fn case_repository_reports_a_missing_case() {
     let (_dir, conn) = open_migrated_test_db();
-    let poa_client = seed_client(&conn, "CL-1", "أحمد");
-    let linked_client = seed_client(&conn, "CL-2", "سارة");
-    let poa_id = id();
-    let case_id = id();
-    conn.execute(
-        "INSERT INTO powers_of_attorney (id, internal_sequence, created_at, updated_at) VALUES (?1, 'TA-1', 'now', 'now')",
-        [&poa_id],
-    )
-    .unwrap();
-    conn.execute(
-        "INSERT INTO power_of_attorney_clients (power_of_attorney_id, client_id, created_at) VALUES (?1, ?2, 'now')",
-        params![poa_id, poa_client],
-    )
-    .unwrap();
-    case_repository::insert(&conn, &canonical_case(case_id.clone(), "CA-1")).unwrap();
-
-    let result = case_repository::replace_clients(
-        &conn,
-        &case_id,
-        &[CaseClientInput {
-            client_id: linked_client,
-            legal_capacity: None,
-            power_of_attorney_id: Some(poa_id),
-            notes: None,
-        }],
-        "now",
-    );
-    assert!(
-        result.is_err(),
-        "the composite foreign key must enforce POA ownership"
-    );
     assert!(matches!(
         case_repository::get(&conn, "missing"),
         Err(Error::CaseNotFound)
@@ -215,7 +182,6 @@ fn relationship_replacement_validates_before_writes_and_retains_archived_links()
     let rel = |id: &str| CaseClientInput {
         client_id: id.into(),
         legal_capacity: Some("capacity".into()),
-        power_of_attorney_id: None,
         notes: Some("DEMO note".into()),
     };
     case_repository::replace_clients(&conn, &case_id, &[rel(&a)], "now").unwrap();

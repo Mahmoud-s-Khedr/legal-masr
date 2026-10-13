@@ -101,7 +101,6 @@ const caseCreate: CaseCreateInput = {
     {
       clientId: 'client-1',
       legalCapacity: 'مدعٍ',
-      powerOfAttorneyId: 'poa-1',
       notes: 'العميل الأساسي',
     },
   ],
