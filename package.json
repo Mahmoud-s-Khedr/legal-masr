@@ -35,7 +35,10 @@
     "check:coverage": "node scripts/check-coverage.mjs",
     "capture:visual:canonical": "node scripts/visual-container.mjs compare",
     "update:visual:canonical": "node scripts/visual-container.mjs update",
-    "probe:visual:canonical": "node scripts/visual-container.mjs probe"
+    "probe:visual:canonical": "node scripts/visual-container.mjs probe",
+    "test:office": "node scripts/full-app-native-audit.mjs --functional-preflight",
+    "test:desktop:controls": "node scripts/full-app-native-controls.mjs",
+    "test:e2e": "pnpm test:desktop && pnpm test:office && pnpm test:desktop:controls"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

@@ -8,6 +8,10 @@ This inventory describes the user-facing data-entry, access, and settings forms 
 
 - Lawyer full name — **required**
 - Password — **required**, at least 12 characters
+- Password confirmation — **required**, must match the password
+
+The language switcher is available before setup. The recovery-key step requires
+acknowledgment that the key has been saved before entering the workspace.
 
 **Code evidence:** [OnboardingPage.tsx](../src/features/onboarding/pages/OnboardingPage.tsx) (`SetupForm`)
 
@@ -21,6 +25,7 @@ This inventory describes the user-facing data-entry, access, and settings forms 
 
 - Recovery key — **required**
 - New password — **required**, at least 12 characters
+- Password confirmation — **required**, must match the new password
 
 **Code evidence:** [OnboardingPage.tsx](../src/features/onboarding/pages/OnboardingPage.tsx) (`RecoveryForm`)
 
@@ -122,6 +127,7 @@ Choosing a next-hearing date creates a follow-up hearing using the current heari
 - Notes
 
 Existing tasks also expose a complete/reopen status action.
+The case and client links are mutually exclusive.
 
 **Code evidence:** [TasksPage.tsx](../src/features/tasks/pages/TasksPage.tsx) (`TaskForm`)
 
@@ -148,6 +154,7 @@ Existing tasks also expose a complete/reopen status action.
 - Notes
 
 An expense can have neither a linked case nor a linked client.
+It cannot have both links.
 
 **Code evidence:** [FinancesPage.tsx](../src/features/finances/pages/FinancesPage.tsx) (`ExpenseForm`)
 
@@ -181,7 +188,6 @@ Editing an attachment changes only its category, description, and document date.
 - Theme
 - Date format
 - Week-start day
-- Default reminder lead time
 
 **Code evidence:** [SettingsPage.tsx](../src/features/settings/pages/SettingsPage.tsx) (general section)
 
@@ -195,13 +201,28 @@ Editing an attachment changes only its category, description, and document date.
 
 **Code evidence:** [SettingsPage.tsx](../src/features/settings/pages/SettingsPage.tsx) (security section)
 
-### Toggle settings
+### Recovery key replacement
 
-- Autostart enabled/disabled
-- Notification permission
-- Local aggregate-usage-counter consent
+- Current password — **required** to replace the recovery key
+- Completion action after viewing/saving the replacement key
 
-**Code evidence:** [SettingsPage.tsx](../src/features/settings/pages/SettingsPage.tsx) (security section)
+**Code evidence:** [RecoveryKeySection.tsx](../src/features/settings/components/RecoveryKeySection.tsx)
+
+### Backup validation and restoration
+
+- Backup file selected through the native picker — **required**
+- Authentication method: password or recovery key, when the active vault key cannot prepare the archive
+- Backup password or recovery key — **required** when authenticating explicitly
+- Recovery restore: new password and matching confirmation — **required**, at least 12 characters
+- Prepared preview and explicit replacement confirmation for restore
+
+Validation and cancellation do not replace the workspace. Restore preparation,
+authentication and confirmation are shared by setup, Backups and Settings.
+
+**Code evidence:** [RestoreFromBackup.tsx](../src/features/backups/components/RestoreFromBackup.tsx)
+
+Notifications, reminder lead time and autostart have been removed. Local usage
+counter consent is backend-only and has no current settings form.
 
 ## Other interactive controls
 

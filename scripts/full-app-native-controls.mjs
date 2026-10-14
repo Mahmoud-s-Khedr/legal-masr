@@ -5,15 +5,24 @@ import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const output =
-  process.env.NATIVE_CONTROLS_OUTPUT ??
-  'docs/reviews/evidence/2026-10-09/full-test/native-controls';
+const output = process.env.NATIVE_CONTROLS_OUTPUT ?? 'test-results/full-app/native-controls';
 await mkdir(output, { recursive: true });
 const results = [];
 const catalog = JSON.parse(await readFile('src/i18n/en/common.json', 'utf8'));
 const t = (key) => key.split('.').reduce((o, k) => o[k], catalog);
 const h = await openGuideDesktop('en');
 const dialog = ':is([role="dialog"],[role="alertdialog"])';
+async function fillLabel(key, value) {
+  const id = await h.browser.execute(
+    (label) =>
+      [...document.querySelector('[role="dialog"]').querySelectorAll('label')].find(
+        (x) => x.textContent.trim() === label,
+      )?.htmlFor,
+    t(key),
+  );
+  assert(id, 'A visible field must have an associated label');
+  await h.fill(`[id=${JSON.stringify(id)}]`, value);
+}
 const originalTab = h.tab;
 h.tab = async (index) => {
   await originalTab(index);
@@ -121,6 +130,12 @@ try {
   await check('case-archive-and-restore-buttons', async () => {
     await go(`/cases/${c.id}`);
     await button('records.archive', '.record-header');
+    await button('common.cancel', dialog);
+    await closed();
+    assert(!(await h.invoke('case_get', { id: c.id })).archivedAt);
+    await button('records.archive', '.record-header');
+    await button('cases.detail.archiveTitle', dialog);
+    await closed();
     await h.browser.waitUntil(async () => !!(await h.invoke('case_get', { id: c.id })).archivedAt, {
       timeout: 15000,
     });
@@ -149,6 +164,14 @@ try {
     await h.tab(1);
     await button('cases.parties.add');
     await h.fill(`${dialog} input[required]`, 'Fictional opponent');
+    for (const [key, value] of Object.entries({
+      'cases.parties.role': 'Fictional defendant',
+      'cases.parties.lawyer': 'Fictional opponent lawyer',
+      'cases.parties.phone': '0200000000',
+      'cases.parties.address': 'Fictional address, Cairo',
+      'common.notes': 'Fictional opponent notes',
+    }))
+      await fillLabel(key, value);
     await button('cases.parties.save', dialog);
     await closed();
     assert((await h.invoke('case_get', { id: c.id })).opponents.length === 1);
@@ -156,10 +179,16 @@ try {
     await h.fill(`${dialog} input[required]`, 'Edited fictional opponent');
     await button('cases.parties.save', dialog);
     await closed();
-    assert(
-      (await h.invoke('case_get', { id: c.id })).opponents[0].fullName ===
-        'Edited fictional opponent',
-    );
+    const opponent = (await h.invoke('case_get', { id: c.id })).opponents[0];
+    for (const [key, value] of Object.entries({
+      fullName: 'Edited fictional opponent',
+      legalCapacity: 'Fictional defendant',
+      lawyerName: 'Fictional opponent lawyer',
+      phone: '0200000000',
+      address: 'Fictional address, Cairo',
+      notes: 'Fictional opponent notes',
+    }))
+      assert.equal(opponent[key], value);
     await button('documents.remove', '.row-actions');
     await button('common.cancel', dialog);
     await closed();
@@ -262,6 +291,10 @@ try {
     await h.wait(`${dialog} [role="alert"]`);
     assert((await h.invoke('case_get', { id: c.id })).clients.length === 2);
     await button('common.cancel', dialog);
+    await button('forms.keepEditing', '[role="alertdialog"]');
+    await h.browser.$('[role="alertdialog"]').waitForExist({ reverse: true, timeout: 15000 });
+    await button('common.cancel', dialog);
+    await button('forms.discard', '[role="alertdialog"]');
     await closed();
   });
   await check('attachment-ui-edit-missing-open-cancel-confirm-remove', async () => {
@@ -304,6 +337,124 @@ try {
     await button('documents.removeTitle', dialog);
     await closed();
     assert((await h.invoke('attachment_list', { input: { clientId: a.id } })).length === 0);
+  });
+  await check('finance-inspect-edit-delete-cancel-confirm-and-exact-totals', async () => {
+    const caseBefore = await h.invoke('finance_case_summary', { id: c.id });
+    const clientBefore = await h.invoke('finance_client_summary', { id: b.id });
+    for (const type of ['payment', 'expense']) {
+      const command = type === 'payment' ? 'payment_save' : 'expense_save';
+      const notes = `QA-FINANCE-${type}`;
+      const input =
+        type === 'payment'
+          ? {
+              caseId: c.id,
+              payerClientId: b.id,
+              amountMinor: 200025,
+              paymentDate: today,
+              paymentMethod: 'CHEQUE',
+              notes,
+            }
+          : {
+              clientId: b.id,
+              amountMinor: 25010,
+              expenseDate: today,
+              expenseType: 'TRANSPORT',
+              notes,
+            };
+      const item = await h.invoke(command, { input });
+      await go('/finances');
+      if (type === 'expense') await h.tab(1);
+      const row = await h.browser.$(`tr*=${notes}`);
+      await row.waitForDisplayed({ timeout: 15000 });
+      await row.$('td button').click();
+      await h.wait(dialog);
+      await button('cases.detail.editEntryButton', dialog);
+      await h.fill(`${dialog} input[inputmode="decimal"]`, '333.37');
+      await h.fill(`${dialog} textarea`, `${notes}-EDITED`);
+      await button(type === 'payment' ? 'finances.savePayment' : 'finances.saveExpense', dialog);
+      await closed();
+      const list = () =>
+        h.invoke(type === 'payment' ? 'payment_list' : 'expense_list', { input: {} });
+      await h.browser.waitUntil(
+        async () => (await list()).find((x) => x.id === item.id)?.amountMinor === 33337,
+        { timeout: 15000 },
+      );
+      const changed = (await list()).find((x) => x.id === item.id);
+      assert.equal(changed.notes, `${notes}-EDITED`);
+      assert.equal(changed[type === 'payment' ? 'paymentDate' : 'expenseDate'], today);
+      const editedRow = await h.browser.$(`tr*=${notes}-EDITED`);
+      await editedRow.waitForDisplayed({ timeout: 15000 });
+      await editedRow.$('td button').click();
+      await h.wait(dialog);
+      await button('finances.delete', dialog);
+      await button('common.cancel', '[role="alertdialog"]');
+      await h.browser.$('[role="alertdialog"]').waitForExist({ reverse: true, timeout: 15000 });
+      assert((await list()).some((x) => x.id === item.id));
+      await button('finances.delete', dialog);
+      await button(`finances.deleteTitle.${type}`, '[role="alertdialog"]');
+      await closed();
+      await h.browser.waitUntil(async () => !(await list()).some((x) => x.id === item.id), {
+        timeout: 15000,
+      });
+    }
+    const account = await h.invoke('finance_case_summary', { id: c.id });
+    assert.deepEqual(account, caseBefore);
+    assert.deepEqual(await h.invoke('finance_client_summary', { id: b.id }), clientBefore);
+  });
+  await check('hearing-and-task-every-text-field-persists', async () => {
+    await go('/calendar?create=hearing');
+    await h.wait(dialog);
+    await h.click(`${dialog} [role="combobox"]`);
+    await h.click('[role="option"]');
+    const hearingFields = {
+      'agenda.fields.date': today,
+      'agenda.fields.time': '9:30',
+      'agenda.fields.type': 'QA-HEARING-TYPE',
+      'agenda.fields.location': 'QA-FICTIONAL-COURT',
+      'agenda.fields.circuit': 'QA-FICTIONAL-CIRCUIT',
+      'agenda.fields.requiredDocuments': 'Fictional contract\nFictional pleading',
+      'common.notes': 'QA-HEARING-NOTES',
+    };
+    for (const [key, value] of Object.entries(hearingFields)) {
+      await fillLabel(key, value);
+      if (['agenda.fields.type', 'agenda.fields.location', 'agenda.fields.circuit'].includes(key))
+        await h.browser.keys('Tab');
+    }
+    await button('agenda.save', dialog);
+    await closed();
+    const hearing = (await h.invoke('hearing_list', { input: { caseId: c.id } })).find(
+      (x) => x.notes === 'QA-HEARING-NOTES',
+    );
+    assert(hearing);
+    for (const [key, value] of Object.entries({
+      hearingDate: today,
+      hearingTime: '09:30',
+      hearingType: 'QA-HEARING-TYPE',
+      location: 'QA-FICTIONAL-COURT',
+      circuitName: 'QA-FICTIONAL-CIRCUIT',
+      requiredDocuments: hearingFields['agenda.fields.requiredDocuments'],
+      notes: hearingFields['common.notes'],
+    }))
+      assert.equal(hearing[key], value);
+    await h.invoke('hearing_delete', { id: hearing.id });
+    await go('/tasks?create=task');
+    await h.wait(dialog);
+    await fillLabel('tasks.task', 'QA-FULL-TASK');
+    await fillLabel('tasks.dueDate', today);
+    await fillLabel('tasks.fieldDetails', 'Fictional detail one\nFictional detail two');
+    await fillLabel('common.notes', 'QA-TASK-NOTES');
+    await button('tasks.save', dialog);
+    await closed();
+    const task = (
+      await h.invoke('task_list', { input: { view: 'ALL', referenceDate: today } })
+    ).find((x) => x.title === 'QA-FULL-TASK');
+    assert(task);
+    assert.equal(task.dueDate, today);
+    assert.equal(task.details, 'Fictional detail one\nFictional detail two');
+    assert.equal(task.notes, 'QA-TASK-NOTES');
+    assert.equal(task.caseId, null);
+    assert.equal(task.clientId, null);
+    await h.invoke('task_delete', { id: task.id });
   });
   await check('settings-persisted-select-values-visible', async () => {
     await go('/settings?tab=general');
@@ -348,6 +499,55 @@ try {
     await h.browser.waitUntil(async () => (await h.invoke('settings_get')).theme === 'light', {
       timeout: 15000,
     });
+  });
+  await check('settings-profile-every-field-and-date-week-lock-preferences', async () => {
+    await go('/settings?tab=profile');
+    const profile = {
+      fullName: 'Fictional fully populated lawyer',
+      barNumber: 'QA-BAR-1234',
+      phone: '01000000001',
+      officeAddress: 'عنوان مكتب خيالي\nالقاهرة',
+    };
+    for (const [name, value] of Object.entries(profile)) await h.fill(`[name="${name}"]`, value);
+    await button('settings.profile.save');
+    await h.browser.waitUntil(
+      async () => (await h.invoke('profile_get')).fullName === profile.fullName,
+      { timeout: 15000 },
+    );
+    const saved = await h.invoke('profile_get');
+    for (const [name, value] of Object.entries(profile)) assert.equal(saved[name], value);
+    await go('/settings?tab=general');
+    for (const [index, key] of [
+      [2, 'settings.display.yearFirst'],
+      [3, 'settings.display.monday'],
+    ]) {
+      await (await h.browser.$$('form [data-slot="select-trigger"]'))[index].click();
+      await h.click(`//*[@role="option"][normalize-space(.)=${JSON.stringify(t(key))}]`);
+    }
+    await h.click('form button[type="submit"]');
+    await h.browser.waitUntil(
+      async () => (await h.invoke('settings_get')).dateFormat === 'yyyy-MM-dd',
+      { timeout: 15000 },
+    );
+    assert.equal((await h.invoke('settings_get')).weekStartsOn, 1);
+    await go('/settings?tab=security');
+    await (await h.browser.$$('[data-slot="select-trigger"]'))[0].click();
+    await h.click(
+      `//*[@role="option"][normalize-space(.)=${JSON.stringify(`30 ${t('settings.minutes')}`)}]`,
+    );
+    await button('settings.security.lockSave');
+    await h.browser.waitUntil(
+      async () => (await h.invoke('settings_get')).lockTimeoutMinutes === 30,
+      { timeout: 15000 },
+    );
+    await h.restart();
+    await h.wait('[name="password"]');
+    await h.fill('[name="password"]', 'Fictional control password 2026');
+    const ar = JSON.parse(await readFile('src/i18n/ar/common.json', 'utf8'));
+    await h.button(ar.gate.submit.unlock);
+    await h.wait('nav');
+    assert.equal((await h.invoke('settings_get')).lockTimeoutMinutes, 30);
+    assert.equal((await h.invoke('profile_get')).officeAddress, profile.officeAddress);
   });
   await check('calendar-month-week-list-period-buttons', async () => {
     await go('/calendar');

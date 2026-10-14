@@ -1,6 +1,7 @@
 import { chromium } from '@playwright/test';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { routes, fixtureTime } from './visual-matrix.mjs';
+import { hasControlFailures } from './control-sweep-outcomes.mjs';
 const out = process.env.QA_OUTPUT ?? 'test-results/full-app-controls';
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ headless: true });
@@ -18,17 +19,27 @@ const persist = () =>
   );
 const base = process.env.QA_BASE_URL ?? 'http://127.0.0.1:4174';
 for (const language of ['ar', 'en']) {
-  const context = await browser.newContext({
+  let context = await browser.newContext({
     viewport: { width: 1366, height: 768 },
     timezoneId: 'Africa/Cairo',
   });
   let page = await context.newPage();
+  let visits = 0;
   page.setDefaultTimeout(15000);
   page.setDefaultNavigationTimeout(60000);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const visit = async (path, tab) => {
     await page.close();
+    // Hundreds of fresh Vite navigations can exhaust Chromium's context
+    // resources. The fixture bridge is stateless, so rotate between batches.
+    if (++visits % 20 === 0) {
+      await context.close();
+      context = await browser.newContext({
+        viewport: { width: 1366, height: 768 },
+        timezoneId: 'Africa/Cairo',
+      });
+    }
     page = await context.newPage();
     page.setDefaultTimeout(15000);
     page.setDefaultNavigationTimeout(60000);
@@ -223,3 +234,5 @@ console.log(
     failedButtons: results.filter((r) => r.kind === 'button' && r.result === 'failed').length,
   }),
 );
+// A completed sweep must not report success if any control failed to execute.
+if (hasControlFailures(results)) process.exitCode = 1;
