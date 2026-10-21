@@ -203,6 +203,13 @@ This is fee and cash tracking, not a complete accounting system.
 
 Fresh-installation restore is implemented and tested locally. **Physical Windows↔macOS portability still requires device testing.**
 
+The [2026-10-21 ZIP advisory review](reviews/2026-10-21-zip-advisories.md) records
+the zip 9.0.5 upgrade, fixed zip-2.4.2 format-v2 restore fixture, new-writer
+roundtrip and hostile-archive checks. Symlink entries and absolute/parent paths
+are refused before staging; regular-file permissions from the archive are
+ignored. These are automated backend checks; physical Windows↔Linux restore
+acceptance remains pending for the public-launch scope (macOS is outside it).
+
 ## Settings and OS integration
 
 | Feature                      | What it does                                                                  | How to test it                                                                                                                              |
