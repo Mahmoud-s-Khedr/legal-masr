@@ -116,6 +116,12 @@ Global search does not search inside document contents.
 | Archive and restore case             | Hides/restores the case independently of Closed status.                                                        | Archive, show archived, restore, and confirm all dependent records remain.                                                                                           |
 | Archived-case read-only protection   | Prevents mutations to an archived case and its related records.                                                | Archive a populated case. Try editing or adding related items through both its tabs and global pages. Restore and verify editing becomes available again.            |
 
+The case summary keeps agreed fee, received, outstanding and open tasks in one
+two-column grid after successful reads. Check Arabic and English; if either the
+account or task read fails, its localized error and Retry remain available while
+the other metrics stay usable. PR #10 regression evidence is recorded in
+[the data-flow review](reviews/2026-10-21-review-of-data-flow-fixes.md#visual-regression-on-pr-10).
+
 ## Hearings and agenda
 
 | Feature                       | What it does                                                                              | How to test it                                                                                                                  |

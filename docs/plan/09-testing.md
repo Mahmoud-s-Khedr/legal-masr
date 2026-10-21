@@ -185,3 +185,11 @@ See [the hardening evidence](../testing-hardening-report-2026-10-05.md) for actu
 counts, coverage, defects, artifacts and pending acceptance gates.
 Use [the continuation handoff](../test-hardening-handoff-2026-10-05.md) to resume
 the remaining approval, platform, coverage and engineering work.
+
+## Case-detail visual regression — 2026-10-21
+
+PR #10's successful summary metrics again share one two-column grid. Renderer
+regressions cover Arabic/English success and independent account/task failure and
+retry; the existing section guards remain in place. The cause, canonical comparison
+result and scoped validation are recorded in
+[the data-flow review](../reviews/2026-10-21-review-of-data-flow-fixes.md#visual-regression-on-pr-10).

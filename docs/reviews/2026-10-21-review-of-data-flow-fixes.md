@@ -40,3 +40,39 @@ Rust tests ran with `D=$(mktemp -d)` and `XDG_DATA_HOME="$D"`, preserving the ca
 - An archived client filter remains useful for historical browsing; a new task from that filter starts unlinked. An already-saved archived client link remains visible and retained. A seed is accepted only when its client lookup confirms it is active.
 - Native desktop suites, container visual commands and fresh screenshots were not run, as requested. Source review and renderer/Rust tests do not certify physical Windows/Linux dialogs, assistive technology or target-platform acceptance. Capture adapters were reviewed and syntax-checked only; evidence image folders were not re-audited.
 - Whole-family invalidation intentionally favors correctness over fewer reads. Existing persisted cases violating the tightened validation are not rewritten and must be corrected before editing. The earlier audit's other product decisions/release blockers remain outside this review.
+
+## Visual regression on PR #10
+
+Inspected `gh run view 39639695625 --log`, downloaded its artifacts into disposable
+temporary directories, and compared the case-detail expected/actual images with
+`CaseDetailPage`, `QuerySection`, the capture spec, route matrix and fictional
+`captureBridge` responses. The four failures were a defect (decision **a**): the
+summary's three account metrics and open-task metric had been split into separate
+`facts-compact` grids. This introduced a third row and a divider, growing the card
+and pushing the footer down (48 extra page pixels at 1366×768; 46 at 1440×900).
+`QuerySection` returns its children without a wrapper on success; no missing mock,
+loading row or lookup failure caused these images.
+
+Restored one two-column definition list with the existing independent account and
+task guards inside it. Loading/error/Retry still protect failed reads, and the
+other metrics remain usable. No shared component, fixture, baseline, translation,
+Rust or schema changes were needed. Added Arabic/English success regressions
+(which failed against the split grids) and independent account/task failure/retry
+checks. All 24 case-detail tests pass.
+
+| Check                           | Result                                                           |
+| ------------------------------- | ---------------------------------------------------------------- |
+| `pnpm test`                     | Passed: 613 renderer tests in 58 files and 80 Node script tests  |
+| `pnpm capture:visual:canonical` | Passed: 71 checks including all 68 captures; baselines unchanged |
+| `pnpm lint`                     | Passed                                                           |
+| `pnpm typecheck`                | Passed                                                           |
+| `pnpm format:check`             | Passed                                                           |
+| `git diff --check`              | Passed                                                           |
+| Rust tests, format and clippy   | Not run: no Rust changes, as permitted by this task              |
+
+The canonical comparison uses the task's explicit container exception. Restored
+user ownership with the prescribed Alpine `chown` command; no root-owned entries
+remain under `node_modules/.vite`, `test-results` or `tests/visual`. Logs are under
+ignored `test-results/pr10-*.log`. No baseline update or native desktop suite was
+run. Physical Windows/Linux acceptance remains outside this visual fix; no known
+scoped defect remains. All changes remain in the working tree.
