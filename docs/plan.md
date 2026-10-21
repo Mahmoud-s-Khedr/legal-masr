@@ -90,3 +90,12 @@ and backup-history UI are out of scope. Immutable migrations `0001`–`0004`
 define the current schema. Restore preparation and preview are implemented;
 physical Windows/Linux acceptance and the remaining export/deletion/support
 work remain open. Local aggregate-counter consent remains backend-only.
+
+## Permanent deletion implementation — 2026-10-21
+
+Public-beta blocker #3 part 1 (guided permanent deletion) is implemented for
+archived clients, archived cases and all vault data. Migration `0005` adds a
+transactional file-cleanup outbox. The [deletion report](reviews/2026-10-21-permanent-deletion.md)
+records decisions, automated validation and unverified device risks. Exports,
+support bundles and other release blockers remain open. The current public
+launch targets Windows and Linux; macOS is outside this launch scope.

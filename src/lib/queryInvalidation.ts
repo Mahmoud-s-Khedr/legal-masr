@@ -13,6 +13,25 @@ const refreshAccounts = (client: QueryClient) =>
 
 /** Invalidation rules from the finalized frontend-domain contract. */
 export const queryInvalidation = {
+  permanentDeletion(queryClient: QueryClient) {
+    return Promise.all(
+      [
+        queryKeys.clients.all,
+        queryKeys.cases.all,
+        queryKeys.powersOfAttorney.all,
+        queryKeys.hearings.all,
+        queryKeys.tasks.all,
+        queryKeys.payments.all,
+        queryKeys.expenses.all,
+        queryKeys.attachments.all,
+        queryKeys.search.all,
+        queryKeys.today.all,
+        queryKeys.agenda,
+        queryKeys.backups.latestSuccessful,
+        ['form-suggestions'] as const,
+      ].map((key) => invalidate(queryClient, key)),
+    );
+  },
   /** Identity and POA membership changes affect cached labels and former owners too. */
   clientOrPowerOfAttorney(queryClient: QueryClient) {
     return Promise.all([

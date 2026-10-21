@@ -369,6 +369,21 @@ it('does not present cached balances as current after a refetch fails and retain
   expect(input).toHaveValue('9000');
 });
 
+it.each([false, true])(
+  'offers permanent deletion only when the case is archived: %s',
+  async (archived) => {
+    vi.mocked(bridge.caseGet).mockResolvedValue({
+      ...fixtures.caseItem,
+      archivedAt: archived ? '2026-10-21T10:00:00Z' : null,
+    });
+    renderWorkflow(<CaseDetailPage />, `/cases/${fixtures.caseItem.id}`, '/cases/:id');
+    await screen.findByRole('button', { name: archived ? 'استعادة' : 'أرشفة' });
+    expect(Boolean(screen.queryByRole('button', { name: i18n.t('deletion.title.case') }))).toBe(
+      archived,
+    );
+  },
+);
+
 it.each(['ar', 'en'])(
   'keeps all four successful summary metrics in one grid (%s)',
   async (language) => {

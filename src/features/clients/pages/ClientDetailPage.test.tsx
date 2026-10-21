@@ -152,3 +152,18 @@ it('does not show a zero client balance while loading or after failure, and reco
   fireEvent.click(within(alert).getByRole('button', { name: i18n.t('app.retry') }));
   expect(await screen.findByText(/15,000.00/)).toBeVisible();
 });
+
+it.each([false, true])(
+  'offers permanent deletion only when the client is archived: %s',
+  async (archived) => {
+    vi.mocked(bridge.clientGet).mockResolvedValue({
+      ...fixtures.client,
+      archivedAt: archived ? '2026-10-21T10:00:00Z' : null,
+    });
+    renderWorkflow(<ClientDetailPage />, `/clients/${fixtures.client.id}`, '/clients/:id');
+    await screen.findByText(fixtures.client.fullName);
+    expect(Boolean(screen.queryByRole('button', { name: i18n.t('deletion.title.client') }))).toBe(
+      archived,
+    );
+  },
+);

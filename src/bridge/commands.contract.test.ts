@@ -162,6 +162,36 @@ const expense: ExpenseInput = {
 };
 
 const contracts = [
+  [
+    'deletionPreview',
+    'deletion_preview',
+    [{ target: { kind: 'client', id: 'client-1' }, language: 'ar' }],
+    () => bridge.deletionPreview({ kind: 'client', id: 'client-1' }, 'ar'),
+  ],
+  [
+    'deletionCommit',
+    'deletion_commit',
+    [
+      {
+        input: {
+          target: { kind: 'all' },
+          token: 'preview',
+          confirmation: 'DELETE',
+          password: 'current password',
+          backupFirst: true,
+        },
+      },
+    ],
+    () =>
+      bridge.deletionCommit({
+        target: { kind: 'all' },
+        token: 'preview',
+        confirmation: 'DELETE',
+        password: 'current password',
+        backupFirst: true,
+      }),
+  ],
+  ['deletionRetryCleanup', 'deletion_retry_cleanup', [], () => bridge.deletionRetryCleanup()],
   ['status', 'app_get_status', [], () => bridge.status()],
   [
     'initialize',

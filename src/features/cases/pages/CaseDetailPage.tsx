@@ -1,3 +1,4 @@
+import { PermanentDeleteAction } from '@/features/deletion/components/PermanentDeleteAction';
 import { QuerySection } from '@/components/layout/QuerySection';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { actionableErrorMessage } from '@/bridge/errors';
@@ -196,6 +197,7 @@ export function CaseDetailPage() {
                 {t('records.edit')}
               </Button>
             )}
+            {caseDto.archivedAt && <PermanentDeleteAction target={{ kind: 'case', id }} />}
             {caseDto.archivedAt ? (
               <Button
                 variant="secondary"

@@ -1,6 +1,6 @@
 # Legal Masr — Feature list and testing guide
 
-Review date: 2026-10-14. Version: pre-beta 0.1.0.
+Review date: 2026-10-21 (deletion update). Version: pre-beta 0.1.0.
 
 Legal Masr is an offline desktop app for individual Egyptian lawyers. It manages clients, cases, powers of attorney, hearings, tasks, documents, and finances inside a password-protected local workspace.
 
@@ -216,6 +216,22 @@ are refused before staging; regular-file permissions from the archive are
 ignored. These are automated backend checks; physical Windows↔Linux restore
 acceptance remains pending for the public-launch scope (macOS is outside it).
 
+## Guided permanent deletion — 2026-10-21
+
+| Feature                | Behavior                                                                                                                                                                                  | Disposable-data checks                                                                                                                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Client deletion        | Archived-client detail action; removes direct records and exclusive archived cases/POAs with their dependent records/files. Shared cases/POAs are refused.                                | Review counts, cancel, enter wrong text, then the exact localized word. Verify the list, accounts and search refresh. Confirm shared and unarchived dependents block deletion.                             |
+| Case deletion          | Archived-case detail action; removes hearings, tasks, payments, fee agreement, expenses and all scoped attachments. Clients/POAs remain. Multi-client cases are refused.                  | Confirm counts and cancellation, then delete. Verify clients remain and tasks, agenda, accounts, documents and search refresh.                                                                             |
+| Whole-vault reset      | Settings → Privacy → Danger zone; requires current password, preview and text confirmation. Removes records, managed files, local backups and restore snapshots, then returns to welcome. | Try wrong text/password. With backup enabled choose a folder outside the vault; cancel the picker and inject backup failure. Verify successful reset and restore the saved copy in a disposable workspace. |
+| Backup first           | Enabled initially; uses existing encrypted backup service before deletion. Partial-delete backups stay local; reset's backup is copied outside the vault.                                 | Cancel or fail backup/copy and verify records remain. Existing external copies and partial-deletion backups retain their old records.                                                                      |
+| File-removal failures  | Row transaction remains committed; failure counts are shown and pending files are tracked by migration `0005`.                                                                            | Use injected automated unlink failures. Retry in the result dialog or Settings → Privacy; a pending whole-reset marker resumes at restart and blocks setup until cleanup succeeds.                         |
+| Integrity and sessions | Shared files, cross-case hearing references, changed data, stale tokens and lock/unlock invalidate/refuse deletion.                                                                       | Exercise automated service tests and verify retained records/files are unchanged.                                                                                                                          |
+
+No flow promises forensic/secure erasure from SSDs or backup media. Safe diagnostic
+logs and copies outside the vault are retained. The new manual checks above are
+instructions, not claimed device-test results. Current automated evidence and
+Windows/Linux limitations are in the [deletion report](reviews/2026-10-21-permanent-deletion.md).
+
 ## Settings and OS integration
 
 | Feature                      | What it does                                                                  | How to test it                                                                                                                              |
@@ -252,7 +268,6 @@ These were removed on 2026-10-13 and are not planned. Migration `0004` drops the
 These should not be counted as available:
 
 - Complete installation/case exports, case-folder export, and stable CSV/document-manifest exports.
-- Permanent client/case deletion and complete application-data deletion.
 - Emergency-snapshot browsing/export/deletion UI and a redacted support bundle.
 - Minimize-to-tray behavior.
 - Multi-user accounts, collaboration, cloud synchronization, and online access.
@@ -260,7 +275,7 @@ These should not be counted as available:
 
 ## Review validation
 
-The latest validation and PR follow-up are recorded in the
+The earlier 2026-10-14 validation and PR follow-up are recorded in the
 [PR #9 readiness review](reviews/2026-10-14-pr-9-readiness.md). The review covers
 the feature removals, relationship rules, development fixtures and regression
 checks. Physical-device acceptance remains separate.

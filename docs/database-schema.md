@@ -5,7 +5,8 @@ This document describes the SQLite/SQLCipher schema created by
 and extended by
 [`0002_case_judicial_year.sql`](../src-tauri/migrations/0002_case_judicial_year.sql),
 [`0003_case_or_client_links.sql`](../src-tauri/migrations/0003_case_or_client_links.sql) and
-[`0004_remove_reminders_and_autostart.sql`](../src-tauri/migrations/0004_remove_reminders_and_autostart.sql).
+[`0004_remove_reminders_and_autostart.sql`](../src-tauri/migrations/0004_remove_reminders_and_autostart.sql) and
+[`0005_pending_file_deletions.sql`](../src-tauri/migrations/0005_pending_file_deletions.sql).
 It is a reference for the application model; the migration remains the
 authoritative executable definition.
 
@@ -131,16 +132,37 @@ write.
 
 ## Deletion behavior summary
 
-- Deleting a case cascades to its case-client links, opponents, hearings,
-  fee agreement, and case-owned attachments. Tasks and expenses retain their
-  records with the case link set to `NULL`. A case with any payment cannot be
-  deleted: the payment restricts removal of its case-client link. (The
-  application offers archiving, not permanent deletion.)
-- Clients are restricted from deletion while POA or case relationships remain.
-  Optional task/expense links become `NULL`; client-owned attachments cascade.
-- Deleting a POA cascades to its client links, lawyer rows, and POA-owned
-  attachments. Cases do not reference POAs, so nothing blocks removal.
-- Payments restrict deletion of their referenced case/client relationship.
+The schema's original FK defaults remain: clients with case/POA relationships
+are RESTRICTed; case deletion cascades to relationships, opponents, hearings,
+fee agreements and attachments, while optional task/expense links SET NULL.
+Payments RESTRICT removal of their case/client link. POA deletion cascades to
+client links, lawyer rows and attachments.
+
+The guided permanent-deletion service applies a stricter explicit policy before
+those FK actions run:
+
+- A client must be archived. Shared cases/POAs block deletion. Exclusive cases
+  and POAs must also be archived. Their dependent records and the client's direct
+  tasks, expenses and documents are deleted; office-only records are preserved.
+- A case must be archived and have at most one client. Its payments, tasks,
+  expenses (including their attachments), hearings, opponents, fee agreement,
+  relationships and documents are removed. Clients and POAs are preserved.
+- A retained hearing chained to a removed hearing or retained attachment sharing
+  a removed managed-file path blocks partial deletion.
+- Rows are deleted in dependency order in one transaction, together with a search
+  refresh. Whole-vault reset removes domain/local rows, then deletes vault files
+  through a restartable native marker after closing SQLCipher.
+
+### File-removal outbox added by `0005`
+
+`pending_file_deletions(relative_path TEXT PRIMARY KEY NOT NULL)` is a STRICT,
+native-only table. The nonempty basename is copied from removed attachment
+metadata within the row-deletion transaction. It has no foreign key because its
+record owner is deliberately gone. Native path validation rejects traversal and
+directory symlinks. A retained attachment with the same path prevents unlink.
+Missing files are already complete; failures remain queued and are reported by
+count, without exposing paths. Settings → Privacy and the result dialog can retry.
+No existing migration or FK action was changed.
 
 ### Link rules added by `0003`
 

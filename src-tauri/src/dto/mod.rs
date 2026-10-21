@@ -714,3 +714,6 @@ pub struct HearingDecisionResult {
     pub hearing: HearingDto,
     pub next_hearing: Option<HearingDto>,
 }
+
+mod deletion;
+pub use deletion::*;

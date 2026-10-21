@@ -1,5 +1,9 @@
 import { invoke } from './invoke';
 import type {
+  DeletionInput,
+  DeletionPreview,
+  DeletionResult,
+  DeletionTarget,
   AppStatus,
   CaseCreateInput,
   CaseDto,
@@ -58,6 +62,10 @@ import type {
 export type DeveloperContact = 'email' | 'phone' | 'whatsapp' | 'telegram' | 'linkedin';
 
 export const bridge = {
+  deletionPreview: (target: DeletionTarget, language: 'ar' | 'en') =>
+    invoke<DeletionPreview>('deletion_preview', { target, language }),
+  deletionCommit: (input: DeletionInput) => invoke<DeletionResult>('deletion_commit', { input }),
+  deletionRetryCleanup: () => invoke<DeletionResult>('deletion_retry_cleanup'),
   status: () => invoke<AppStatus>('app_get_status'),
   initialize: (input: InitializeInput) =>
     invoke<{ recoveryKey: string }>('app_initialize', { input }),

@@ -11,6 +11,7 @@ use zeroize::Zeroizing;
 
 #[derive(Default)]
 pub struct AppState {
+    pub deletion: Mutex<Option<crate::services::deletion_service::PreparedDeletion>>,
     pub master_key: Mutex<Option<Zeroizing<[u8; 32]>>>,
     selected_document_sources: Mutex<HashMap<String, PathBuf>>,
     restore: Mutex<RestoreState>,

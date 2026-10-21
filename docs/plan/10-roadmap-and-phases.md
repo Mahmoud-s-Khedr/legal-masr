@@ -46,3 +46,15 @@ format documentation, and download integrity information.
 Do not introduce users/roles/teams, cloud services, accounting systems,
 generic event/party/transaction abstractions, task priorities, or telemetry
 into LegalMaster Solo to satisfy this roadmap.
+
+## Blocker #3, part 1 status — 2026-10-21
+
+Guided permanent client/case/whole-vault deletion is implemented with preview,
+localized confirmation, optional pre-deletion backup, password re-authentication
+for reset, transactional rows/search, tracked file cleanup and cache refresh.
+Shared records are refused conservatively; see [Privacy](06-privacy.md).
+The [implementation report](../reviews/2026-10-21-permanent-deletion.md) records
+validation and remaining risks. This closes the implementation scope for deletion;
+exports and redacted support bundles remain blocker #3 work. Public launch is
+scoped to Windows and Linux; macOS is excluded from this launch. Physical target
+platform acceptance and the other public-release blockers remain open.
