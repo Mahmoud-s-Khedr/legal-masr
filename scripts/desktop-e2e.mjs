@@ -10,6 +10,8 @@ import { WINDOWS_WEBVIEW_DEBUG_PORT } from './desktop-e2e-build.mjs';
 import { CdpBrowser } from './desktop-e2e-cdp.mjs';
 import {
   failedDesktopOutcome,
+  readRecoveryKey,
+  waitForRestoreClosed,
   stopDriver,
   waitForDriver,
   waitForWebView,
@@ -197,14 +199,7 @@ async function scenario(name, exercise) {
     await input('confirmPassword', password);
     checkpoint = 'initialize-submit';
     await click('بدء الاستخدام');
-    await browser.$('.recovery-key').waitForDisplayed({ timeout: 15000 });
-    await browser.waitUntil(
-      async () => {
-        recoveryKey = await browser.$('.recovery-key').getText();
-        return recoveryKey.trim().length > 0;
-      },
-      { timeout: 15000 },
-    );
+    recoveryKey = await readRecoveryKey(browser);
     checkpoint = 'initialize-confirm';
     await browser.$('.gate-confirm [role="checkbox"]').click();
     checkpoint = 'initialize-continue';
@@ -217,10 +212,12 @@ async function scenario(name, exercise) {
     await browser.$('nav').waitForDisplayed({ timeout: 15000 });
   };
   const client = async (number) => {
+    checkpoint = 'client-create';
     await nav('/clients');
     await click('إضافة موكل');
     await input('internalNumber', number);
     await input('fullName', `موكل خيالي ${number}`);
+    checkpoint = 'client-save';
     await click('حفظ الموكل');
     // Saving opens the new client file.
     await browser.$(`h2*=${`موكل خيالي ${number}`}`).waitForDisplayed({ timeout: 15000 });
@@ -255,7 +252,12 @@ async function scenario(name, exercise) {
     results.push({ scenario: name, result: 'passed' });
   } catch (error) {
     const diagnosticMessage =
-      stage === 'scenario' && browser
+      stage === 'scenario' &&
+      browser &&
+      (await browser
+        .$('[role="alert"]')
+        .isExisting()
+        .catch(() => false))
         ? await browser
             .$('[role="alert"]')
             .getText()
@@ -313,11 +315,15 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.input('internalNumber', 'E2E-CASE');
   const picker = await h.browser.$('[data-slot="combobox-chip-input"]');
   await picker.waitForDisplayed();
+  h.checkpoint('picker-open');
   await picker.click();
+  h.checkpoint('picker-input');
   await picker.setValue('E2E-ORIGINAL');
   await h.browser.$('[role="option"]').waitForDisplayed();
+  h.checkpoint('picker-select');
   await h.browser.$('[role="option"]').click();
   await h.browser.$('[data-slot="combobox-chip"]').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('case-save');
   await h.click('حفظ القضية');
   // Saving opens the new case file.
   await h.browser.$('h2*=E2E-CASE').waitForDisplayed({ timeout: 15000 });
@@ -338,6 +344,7 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.selection('backup');
   await h.nav('/backups');
   await h.click('استعادة من نسخة احتياطية');
+  h.checkpoint('restore-choose');
   await h.click(strings.restoreFrom.chooseFile);
   await h.click('تأكيد الاستعادة');
   await h.browser.$('.gate').waitForDisplayed({ timeout: 15000 });
@@ -394,8 +401,10 @@ for (const choice of ['cancel', 'corrupt'])
     await h.selection(choice);
     await h.nav('/backups');
     await h.click(strings.backups.restore);
+    h.checkpoint('restore-choose');
     await h.click(strings.restoreFrom.chooseFile);
     if (choice === 'corrupt') {
+      h.checkpoint('restore-damaged-alert');
       const alert = await h.browser.$('[role="alert"]');
       await alert.waitForDisplayed({ timeout: 15000 });
       assert.equal(await alert.getText(), strings.errors.BACKUP_CORRUPTED);
@@ -409,13 +418,16 @@ for (const choice of ['cancel', 'corrupt'])
       );
       assert.equal(await h.browser.$('[role="alert"]').isExisting(), false);
     }
+    h.checkpoint('restore-cancel');
     await h.click(strings.common.cancel);
-    await h.browser.waitUntil(
-      async () =>
-        !(await h.browser.$('.restore-from-backup').isExisting()) &&
-        !(await h.browser.$('[role="dialog"]').isExisting()),
-      { timeout: 15000 },
-    );
+    h.checkpoint('restore-closed');
+    await waitForRestoreClosed(h.browser);
+    if (choice === 'corrupt') {
+      h.checkpoint('restore-alert-dismissed');
+      await h.browser.waitUntil(async () => !(await h.browser.$('[role="alert"]').isExisting()), {
+        timeout: 15000,
+      });
+    }
     await h.nav('/clients');
     await h.browser.$('a*=E2E-PRESERVED').waitForDisplayed();
   });
@@ -425,6 +437,7 @@ if (process.platform === 'linux')
     await h.selection('native');
     await h.nav('/backups');
     await h.click(strings.backups.restore);
+    h.checkpoint('restore-choose');
     await h.click(strings.restoreFrom.chooseFile);
     h.checkpoint('picker-heartbeat');
     const beat = await h.browser.execute(async () => {
@@ -454,11 +467,15 @@ async function seedAndBackUp(h, label) {
   await h.input('internalNumber', `E2E-${label}-CASE`);
   const picker = await h.browser.$('[data-slot="combobox-chip-input"]');
   await picker.waitForDisplayed();
+  h.checkpoint('picker-open');
   await picker.click();
+  h.checkpoint('picker-input');
   await picker.setValue(`E2E-${label}`);
   await h.browser.$('[role="option"]').waitForDisplayed();
+  h.checkpoint('picker-select');
   await h.browser.$('[role="option"]').click();
   await h.browser.$('[data-slot="combobox-chip"]').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('case-save');
   await h.click('حفظ القضية');
   await h.browser.$(`h2*=E2E-${label}-CASE`).waitForDisplayed({ timeout: 15000 });
   h.checkpoint('seed-attachment');
@@ -538,7 +555,8 @@ async function expectRestoredWorkspace(h, label, value = password) {
 async function restoreWithPassword(h) {
   h.checkpoint('open-restore');
   await h.click('استعادة من نسخة احتياطية');
-  await h.click('اختيار ملف النسخة');
+  h.checkpoint('restore-choose');
+  await h.click(strings.restoreFrom.chooseFile);
   const secret = await h.browser.$('input[type="password"]');
   await secret.waitForDisplayed({ timeout: 15000 });
   h.checkpoint('wrong-password');
@@ -572,6 +590,7 @@ await scenario('recovery-key-restore-stages-a-new-password', async (h) => {
   await rm(join(h.root, 'vault'), { recursive: true, force: true });
   await h.launch();
   await h.click(strings.gate.restoreFromBackup);
+  h.checkpoint('restore-choose');
   await h.click(strings.restoreFrom.chooseFile);
   h.checkpoint('recovery-inputs');
   await h.browser.$('input[name="restore-method"]').waitForDisplayed({ timeout: 15000 });
@@ -582,6 +601,7 @@ await scenario('recovery-key-restore-stages-a-new-password', async (h) => {
   await fields[0].setValue(key);
   await fields[1].setValue(restorePassword);
   await fields[2].setValue(restorePassword);
+  h.checkpoint('recovery-prepare');
   await h.click(strings.restoreFrom.prepare);
   h.checkpoint('recovery-preview');
   await h.click(strings.backups.restoreConfirm);
@@ -608,11 +628,15 @@ await scenario('opponent-form-announces-missing-name', async (h) => {
   await h.input('internalNumber', 'E2E-OPPONENT-CASE');
   const picker = await h.browser.$('[data-slot="combobox-chip-input"]');
   await picker.waitForDisplayed();
+  h.checkpoint('picker-open');
   await picker.click();
+  h.checkpoint('picker-input');
   await picker.setValue('E2E-OPPONENT-CLIENT');
   await h.browser.$('[role="option"]').waitForDisplayed();
+  h.checkpoint('picker-select');
   await h.browser.$('[role="option"]').click();
   await h.browser.$('[data-slot="combobox-chip"]').waitForDisplayed({ timeout: 15000 });
+  h.checkpoint('case-save');
   await h.click('حفظ القضية');
   await h.browser.$('h2*=E2E-OPPONENT-CASE').waitForDisplayed({ timeout: 15000 });
   h.checkpoint('open-opponent-form');

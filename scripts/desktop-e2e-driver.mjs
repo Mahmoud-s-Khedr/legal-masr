@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 export const DESKTOP_ERROR_CODES = Object.freeze([
   'DESKTOP_DRIVER_EXITED_BEFORE_READY',
@@ -23,6 +24,18 @@ export const SAFE_DESKTOP_CHECKPOINTS = Object.freeze([
   'initialize-submit',
   'initialize-confirm',
   'initialize-continue',
+  'client-create',
+  'client-save',
+  'picker-open',
+  'picker-input',
+  'picker-select',
+  'case-save',
+  'restore-choose',
+  'restore-cancel',
+  'restore-closed',
+  'restore-damaged-alert',
+  'restore-alert-dismissed',
+  'recovery-prepare',
   'create-client',
   'create-case',
   'add-attachment',
@@ -170,12 +183,66 @@ export async function waitForWebView(application, port, options = {}) {
   }
 }
 
+// Exact translations only: never classify or retain arbitrary alert contents.
+const applicationMessages = new Map();
+for (const locale of ['ar', 'en']) {
+  const strings = JSON.parse(
+    readFileSync(new URL(`../src/i18n/${locale}/common.json`, import.meta.url), 'utf8'),
+  );
+  for (const code of [
+    'BACKUP_CORRUPTED',
+    'OPERATION_FAILED',
+    'RECOVERY_KEY_INVALID',
+    'INVALID_PASSWORD',
+  ]) {
+    if (strings.errors[code]) applicationMessages.set(strings.errors[code], code);
+  }
+  applicationMessages.set(strings.app.defaultError, 'OPERATION_FAILED');
+  applicationMessages.set(strings.restoreFrom.secretRequired, 'RESTORE_SECRET_REQUIRED');
+  applicationMessages.set(strings.restoreFrom.passwordMismatch, 'RESTORE_PASSWORD_MISMATCH');
+  applicationMessages.set(strings.forms.required, 'REQUIRED_FIELD');
+}
+
 export function applicationDiagnostic(message) {
-  return (
-    {
-      'ملف النسخة الاحتياطية غير صالح.': 'BACKUP_CORRUPTED',
-      'تعذر إتمام العملية بأمان.': 'OPERATION_FAILED',
-    }[message] || 'NO_ALLOWLISTED_DIAGNOSTIC'
+  return applicationMessages.get(message) ?? 'NO_ALLOWLISTED_DIAGNOSTIC';
+}
+
+export const SAFE_HARNESS_FAILURES = Object.freeze([
+  'CDP_APPLICATION_TARGET_MISSING',
+  'CDP_COMMAND_FAILED',
+  'CDP_CONNECTION_CLOSED',
+  'CDP_EVALUATION_FAILED',
+  'CDP_ELEMENT_TIMEOUT',
+  'CDP_CONDITION_TIMEOUT',
+  'CDP_ELEMENT_OBSCURED',
+  'CDP_ELEMENT_MISSING',
+]);
+
+export function harnessFailure(error) {
+  if (SAFE_HARNESS_FAILURES.includes(error?.message)) return error.message;
+  if (error?.code === 'ERR_ASSERTION') return 'ASSERTION_FAILED';
+  return 'NO_ALLOWLISTED_HARNESS_FAILURE';
+}
+
+export async function readRecoveryKey(browser, { timeout = 15_000 } = {}) {
+  await browser.$('.recovery-key').waitForDisplayed({ timeout });
+  let key;
+  await browser.waitUntil(
+    async () => {
+      key = await browser.$('.recovery-key').getText();
+      return key.trim().length > 0;
+    },
+    { timeout },
+  );
+  return key;
+}
+
+export async function waitForRestoreClosed(browser, { timeout = 15_000 } = {}) {
+  await browser.waitUntil(
+    async () =>
+      !(await browser.$('.restore-from-backup').isExisting()) &&
+      !(await browser.$('[role="dialog"]').isExisting()),
+    { timeout },
   );
 }
 
@@ -218,6 +285,7 @@ export function failedDesktopOutcome({
     result: 'failed',
     errorCode,
     stage: safeStage,
+    harnessFailure: harnessFailure(error),
     ...(SAFE_DESKTOP_CHECKPOINTS.includes(checkpoint) ? { checkpoint } : {}),
     diagnostic:
       safeStage === 'webdriver-session'

@@ -181,3 +181,67 @@ and successful CI repair remain unverified. Slice validation results follow.
 
 Rust, visual and native desktop suites were skipped as instructed. No new
 business rules or step 4 regression tests were added in this slice.
+
+## Implementation run 2
+
+Implemented proposed steps 2–4 in `scripts/desktop-e2e-cdp.mjs`,
+`scripts/desktop-e2e.mjs`, `scripts/desktop-e2e-driver.mjs` and their CDP/driver
+unit tests. Updated testing status in `docs/plan/09-testing.md` and
+`docs/feature-list-and-testing.md`. No Rust, schema, production UI or workflow
+changes were needed.
+
+Read-only `gh run view 39640270102 --log-failed` confirmed the supplied run's
+remaining failures: corrupt restore failed twice at the broad
+`initialize-continue` checkpoint; main case creation, each portable restore seed,
+and opponent setup each failed once. Cancel restore passed all three attempts.
+The retained page states still do not identify the individual failed call.
+
+Clickable readiness now uses one bounded 15-second deadline for visibility,
+enabled state including disabled/ARIA-disabled/inert ancestors, stable bounds
+across consecutive polls and an unobscured center hit point. Each poll resolves
+the target again; a final resolution/geometry/hit check immediately precedes
+pointer dispatch. Only readiness is retried. A protocol failure after dispatch
+never replays the action. Persistent overlays still fail with a fixed category.
+`getText()` now polls for existence and reads the text in the same evaluation;
+an existing empty element remains valid. Recovery issuance separately waits for
+displayed, nonempty text, without reporting its contents.
+
+Added fixed checkpoints for client create/save, picker open/input/select, case
+save, restore choose/cancel/closed, damaged alert/dismissal and recovery prepare.
+The new `harnessFailure` field accepts only exact fixed CDP errors or the Node
+assertion code; unknown errors become `NO_ALLOWLISTED_HARNESS_FAILURE`.
+Application diagnostics match a fixed set of current Arabic/English translation
+keys (corruption, operation, recovery key, password, required secret, replacement
+password and required field). No raw exception, selector, value, DOM or path is
+retained. Alert collection first checks existence so absent alerts do not incur
+the new text-read wait.
+
+For corrupt restore, the journey waits for the localized damaged-file alert,
+asserts its exact text, cancels, waits for both restore content and dialog to be
+removed, then explicitly waits for alert removal before navigating. This follows
+the existing asynchronous native cancellation contract; no production restore
+or vault-coordinator behavior was changed. Shared recovery-read and restore-close
+waits were extracted into the driver module so regression tests exercise the
+same functions used by the journeys.
+
+Conservative decisions: keep pointer interaction and existing timeout/poll
+cadence; use the center hit point and refuse persistent occlusion; keep exact
+translation-key diagnostics rather than matching arbitrary message fragments;
+retain preservation and selected-chip assertions. Tests cover transient overlay
+and motion, permanent overlay, disabled ancestors, delayed/missing reads, final
+target replacement, no replay after dispatch failure, recovery rendering,
+asynchronous/stuck cancellation and unknown-error redaction.
+
+| Validation                       | Result                                            |
+| -------------------------------- | ------------------------------------------------- |
+| `node --test scripts/*.test.mjs` | Passed: 71 tests                                  |
+| `pnpm lint`                      | Passed                                            |
+| `pnpm format:check`              | Passed                                            |
+| `git diff --check`               | Passed                                            |
+| Rust / native / visual suites    | Not run, as instructed for this script-only slice |
+
+Windows WebView2 timing and successful CI repair remain unverified. No native
+journeys or CI dispatch were performed. Supervisor review/push must be followed
+by three passing attempts on Windows and Linux and a repeat on a fresh Windows
+runner. macOS is out of this launch scope. Public-launch acceptance remains open;
+these unit regressions do not certify a native platform pass.

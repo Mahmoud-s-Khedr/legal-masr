@@ -21,7 +21,7 @@ test('does not select an unrelated debugging target', () => {
 
 // Run Runtime.evaluate against a DOM so selectors and scoping are exercised,
 // while retaining the actual protocol messages emitted by the driver.
-function harness(markup) {
+function harness(markup, { failMousePress = false } = {}) {
   const dom = new JSDOM(markup, { runScripts: 'outside-only' });
   const commands = [];
   const listeners = new Map();
@@ -45,7 +45,13 @@ function harness(markup) {
           result = { exceptionDetails: {} };
         }
       }
-      queueMicrotask(() => listeners.get('message')({ data: JSON.stringify({ id, result }) }));
+      const error =
+        failMousePress && method === 'Input.dispatchMouseEvent' && params.type === 'mousePressed'
+          ? { message: 'unretained' }
+          : undefined;
+      queueMicrotask(() =>
+        listeners.get('message')({ data: JSON.stringify({ id, result, error }) }),
+      );
     },
     close: () => listeners.get('close')(),
   };
@@ -69,7 +75,7 @@ test('click dispatches a complete pointer sequence after scrolling and checking 
 
 test('click refuses an obscured target without sending pointer input', async () => {
   const h = harness('<button>Hidden behind overlay</button><div data-hit>Overlay</div>');
-  await assert.rejects(h.browser.$('button').click(), /CDP_ELEMENT_OBSCURED/);
+  await assert.rejects(h.browser.$('button').click({ timeout: 120 }), /CDP_ELEMENT_OBSCURED/);
   assert.equal(
     h.commands.some(({ method }) => method.startsWith('Input.')),
     false,
@@ -116,4 +122,83 @@ test('collection and nested element methods keep recovery fields and validation 
   assert.equal(await dialog.$('input[required]').getAttribute('missing'), null);
   assert.equal((await dialog.$$('input')).length, 1);
   assert.equal(await dialog.$('button').isExisting(), false);
+});
+
+test('click waits through a transient overlay and moving bounds without replaying input', async () => {
+  const h = harness('<button data-hit>Save</button><div>Overlay</div>');
+  let polls = 0;
+  const button = h.dom.window.document.querySelector('button');
+  button.getBoundingClientRect = () => ({
+    x: ++polls < 4 ? polls * 10 : 40,
+    y: 20,
+    width: 80,
+    height: 30,
+  });
+  h.dom.window.document.elementFromPoint = () =>
+    polls < 3 ? h.dom.window.document.querySelector('div') : button;
+  await h.browser.$('button').click({ timeout: 2000 });
+  const input = h.commands.filter(({ method }) => method === 'Input.dispatchMouseEvent');
+  assert.equal(input.length, 3);
+  assert.equal(input[1].params.x, 80);
+});
+
+for (const ancestor of ['<fieldset disabled>', '<div aria-disabled="true">', '<div inert>']) {
+  test(`disabled ancestor refuses readiness and dispatch: ${ancestor}`, async () => {
+    const h = harness(`${ancestor}<button data-hit>Save</button>`);
+    assert.equal(await h.browser.$('button').isEnabled(), false);
+    await assert.rejects(h.browser.$('button').click({ timeout: 10 }), /CDP_ELEMENT_TIMEOUT/);
+    assert.equal(
+      h.commands.some(({ method }) => method.startsWith('Input.')),
+      false,
+    );
+  });
+}
+
+test('getText waits for delayed rendering and refuses a permanently missing element', async () => {
+  const h = harness('<main></main>');
+  setTimeout(() => {
+    h.dom.window.document.querySelector('main').innerHTML = '<p>Ready</p>';
+  }, 20);
+  assert.equal(await h.browser.$('p').getText({ timeout: 1000 }), 'Ready');
+  await assert.rejects(h.browser.$('aside').getText({ timeout: 10 }), /CDP_CONDITION_TIMEOUT/);
+});
+
+test('click re-resolves a replaced target at the final readiness check', async () => {
+  const h = harness('<button data-hit>Old</button>');
+  let hits = 0;
+  h.dom.window.document.elementFromPoint = () => {
+    if (++hits === 2)
+      h.dom.window.document.querySelector('button').outerHTML =
+        '<button data-hit disabled>New</button>';
+    return h.dom.window.document.querySelector('button');
+  };
+  await assert.rejects(h.browser.$('button').click({ timeout: 250 }), /CDP_ELEMENT_TIMEOUT/);
+  assert.equal(
+    h.commands.some(({ method }) => method.startsWith('Input.')),
+    false,
+  );
+});
+
+test('a dispatch failure never replays a potentially destructive action', async () => {
+  const h = harness('<button data-hit>Restore</button>', { failMousePress: true });
+  await assert.rejects(h.browser.$('button').click(), /CDP_COMMAND_FAILED/);
+  assert.deepEqual(
+    h.commands
+      .filter(({ method }) => method === 'Input.dispatchMouseEvent')
+      .map(({ params }) => params.type),
+    ['mouseMoved', 'mousePressed'],
+  );
+});
+
+test('readiness waits for visibility and an enabled ancestor without sending input', async () => {
+  const h = harness('<div aria-disabled="true"><button hidden data-hit>Save</button></div>');
+  setTimeout(() => {
+    h.dom.window.document.querySelector('button').hidden = false;
+    h.dom.window.document.querySelector('div').removeAttribute('aria-disabled');
+  }, 20);
+  await h.browser.$('button').waitForClickable({ timeout: 1000 });
+  assert.equal(
+    h.commands.some(({ method }) => method.startsWith('Input.')),
+    false,
+  );
 });
