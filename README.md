@@ -32,7 +32,7 @@ A desktop app for the Egyptian solo lawyer that brings clients, cases, hearings,
 - **Real privacy:** the database is encrypted with your password, client data is never sent anywhere, and backups are encrypted and under your control.
 - **Arabic first:** a full right-to-left Arabic interface with Gregorian dates and Egyptian month names, plus an optional English interface.
 
-Legal Masr is designed for Windows and macOS and is currently pre-beta.
+Legal Masr targets Windows 10/11 x64 and Linux x64 (deb, rpm, AppImage) for its first public release; macOS is deferred. The application is currently pre-beta.
 
 ---
 
@@ -65,7 +65,7 @@ This is not ready for a public beta. The following work remains:
 
 - visual sign-off from fresh seeded application captures at 1440×900 and
   1366×768;
-- repeated portable restore and native Windows/macOS runner/device validation;
+- repeated portable restore and native Windows/Linux runner/device validation;
 - restore preview;
 - documented full-installation and case exports, permanent deletion, and a
   redacted support bundle.
