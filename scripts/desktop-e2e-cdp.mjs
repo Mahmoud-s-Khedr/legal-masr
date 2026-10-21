@@ -27,6 +27,10 @@ function visibleExpression(target) {
   return `(() => { const node = ${target}; if (!node) return false; const style = getComputedStyle(node); return style.display !== 'none' && style.visibility !== 'hidden' && node.getClientRects().length > 0; })()`;
 }
 
+function enabledExpression(target) {
+  return `(() => { const node = ${target}; return Boolean(node && !node.matches(':disabled') && !node.closest('[disabled], [aria-disabled="true"], [inert]')); })()`;
+}
+
 export class CdpBrowser {
   #socket;
   #nextId = 0;
@@ -126,8 +130,39 @@ export class CdpBrowser {
     return this.#element(selectorExpression(selector));
   }
 
+  async #clickable(target, timeout = 15_000) {
+    const deadline = Date.now() + timeout;
+    let previous;
+    let obscured = false;
+    const sample = `(() => {
+      const node = ${target};
+      if (!(${visibleExpression(target)}) || !(${enabledExpression(target)})) return null;
+      node.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' });
+      const { x, y, width, height } = node.getBoundingClientRect();
+      if (width <= 0 || height <= 0) return null;
+      const point = { x: x + width / 2, y: y + height / 2 };
+      const hit = document.elementFromPoint(point.x, point.y);
+      return { bounds: [x, y, width, height], point, clear: Boolean(hit && (hit === node || node.contains(hit))) };
+    })()`;
+    const sameBounds = (a, b) =>
+      a && b && a.bounds.every((value, index) => value === b.bounds[index]);
+    while (Date.now() < deadline) {
+      const current = await this.#evaluate(sample);
+      obscured = Boolean(current && !current.clear);
+      if (current?.clear && previous?.clear && sameBounds(current, previous)) {
+        // Re-resolve and hit-test immediately before returning to dispatch. No
+        // action is retried once pointer dispatch starts, even if CDP fails.
+        const final = await this.#evaluate(sample);
+        if (Date.now() < deadline && final?.clear && sameBounds(current, final)) return final.point;
+        previous = final;
+      } else previous = current;
+      await delay(Math.min(100, Math.max(0, deadline - Date.now())));
+    }
+    throw new Error(obscured ? 'CDP_ELEMENT_OBSCURED' : 'CDP_ELEMENT_TIMEOUT');
+  }
+
   #element(target) {
-    const enabled = `(() => { const node = ${target}; return Boolean(node && !node.disabled && node.getAttribute('aria-disabled') !== 'true'); })()`;
+    const enabled = enabledExpression(target);
     return {
       $: (selector) => this.#element(selectorExpression(selector, target)),
       $$: (selector) => this.#elements(selector, target),
@@ -135,15 +170,11 @@ export class CdpBrowser {
       getAttribute: async (name) =>
         this.#evaluate(`(${target})?.getAttribute(${JSON.stringify(name)}) ?? null`),
       waitForDisplayed: async ({ timeout } = {}) => this.#wait(visibleExpression(target), timeout),
-      waitForClickable: async ({ timeout } = {}) =>
-        this.#wait(`(${visibleExpression(target)}) && (${enabled})`, timeout),
-      click: async () => {
-        await this.#wait(visibleExpression(target));
-        await this.#wait(enabled);
-        const point = await this.#evaluate(
-          `(() => { const node = ${target}; if (!node) return null; node.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' }); const rect = node.getBoundingClientRect(); const x = rect.x + rect.width / 2; const y = rect.y + rect.height / 2; const hit = document.elementFromPoint(x, y); return hit && (hit === node || node.contains(hit)) ? { x, y } : null; })()`,
-        );
-        if (!point) throw new Error('CDP_ELEMENT_OBSCURED');
+      waitForClickable: async ({ timeout } = {}) => {
+        await this.#clickable(target, timeout);
+      },
+      click: async ({ timeout } = {}) => {
+        const point = await this.#clickable(target, timeout);
         await this.#command('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point });
         await this.#command('Input.dispatchMouseEvent', {
           type: 'mousePressed',
@@ -168,10 +199,21 @@ export class CdpBrowser {
         if (!written) throw new Error('CDP_ELEMENT_MISSING');
       },
       isExisting: async () => Boolean(await this.#evaluate(`Boolean(${target})`)),
-      getText: async () =>
-        (await this.#evaluate(
-          `(() => { const node = ${target}; return node ? node.textContent : ''; })()`,
-        )) ?? '',
+      getText: async ({ timeout = 15_000 } = {}) => {
+        let text;
+        await this.waitUntil(
+          async () => {
+            const result = await this.#evaluate(
+              `(() => { const node = ${target}; return node ? { text: node.textContent ?? '' } : null; })()`,
+            );
+            if (!result) return false;
+            text = result.text;
+            return true;
+          },
+          { timeout },
+        );
+        return text;
+      },
     };
   }
 }

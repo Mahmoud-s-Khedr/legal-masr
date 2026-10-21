@@ -193,6 +193,22 @@ counts, coverage, defects, artifacts and pending acceptance gates.
 Use [the continuation handoff](../test-hardening-handoff-2026-10-05.md) to resume
 the remaining approval, platform, coverage and engineering work.
 
+## Windows harness synchronization — 2026-10-21
+
+The CDP adapter now polls visibility, disabled ancestors, stable bounds across
+consecutive polls and an unobscured center point within one readiness deadline.
+It re-resolves before pointer dispatch and never retries dispatched actions.
+Text reads wait for an existing node. Fixed client, picker, save, restore and
+recovery checkpoints and a separate allowlisted harness failure category improve
+sanitized reports; application categories use exact current Arabic/English
+translations. Corrupt restore waits for its damaged-file alert and verifies
+removal after asynchronous cancellation before navigation. Unit regressions cover
+transient/persistent obstruction, motion, disabled ancestors, delayed reads,
+recovery rendering, cancellation and redaction. These checks do not establish
+Windows WebView2 timing acceptance. See [Implementation run 2](../reviews/2026-10-21-windows-desktop-ci.md#implementation-run-2)
+for validation and remaining CI requirements; Windows/Linux launch acceptance
+remains open and macOS is outside this launch scope.
+
 ## Case-detail visual regression — 2026-10-21
 
 PR #10's successful summary metrics again share one two-column grid. Renderer

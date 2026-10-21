@@ -289,3 +289,16 @@ application remains pre-beta.
 - [Functional modules](plan/04-functional-modules.md)
 - [Backup specification](plan/07-backup-format.md)
 - [Canonical offline integration review](reviews/2026-10-10-integration.md)
+
+## Desktop CI harness update — 2026-10-21
+
+Windows CDP click readiness now waits for stable visible, enabled and unobscured
+targets before dispatch, with no action replay. Text reads wait for element
+creation. Fixed fine-grained checkpoints and exact allowlisted harness/app error
+categories retain no raw exceptions, DOM, selectors or field values. Cancel and
+corrupt restore preservation journeys wait for dialog removal; corrupt restore
+also checks the localized damaged-file alert and its dismissal before navigation.
+Script regressions exercise delayed recovery rendering, asynchronous cancellation
+and adapter success/refusal paths. Windows and Linux native CI acceptance must
+still be rerun; unit checks do not certify launch readiness. Details and actual
+validation are in [Implementation run 2](reviews/2026-10-21-windows-desktop-ci.md#implementation-run-2).

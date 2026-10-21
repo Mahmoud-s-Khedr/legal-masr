@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import {
   DESKTOP_ERROR_CODES,
+  SAFE_HARNESS_FAILURES,
+  SAFE_DESKTOP_CHECKPOINTS,
+  readRecoveryKey,
+  waitForRestoreClosed,
   applicationDiagnostic,
   failedDesktopOutcome,
   sessionDiagnostic,
@@ -85,14 +90,39 @@ test('failed outcomes retain only allowlisted diagnostics and fixed error codes'
     errorCode: 'DESKTOP_WEBDRIVER_SESSION_FAILED',
     stage: 'webdriver-session',
     diagnostic: 'NO_ALLOWLISTED_DIAGNOSTIC',
+    harnessFailure: 'NO_ALLOWLISTED_HARNESS_FAILURE',
   });
   assert.ok(DESKTOP_ERROR_CODES.includes(outcome.errorCode));
   assert.doesNotMatch(serialized, /password|C:\\Users|<input secret>/);
 });
 
-test('application diagnostics preserve the existing fixed allowlist', () => {
-  assert.equal(applicationDiagnostic('ملف النسخة الاحتياطية غير صالح.'), 'BACKUP_CORRUPTED');
-  assert.equal(applicationDiagnostic('تعذر إتمام العملية بأمان.'), 'OPERATION_FAILED');
+test('application diagnostics match current Arabic and English translations only', () => {
+  for (const locale of ['ar', 'en']) {
+    const strings = JSON.parse(
+      readFileSync(new URL(`../src/i18n/${locale}/common.json`, import.meta.url), 'utf8'),
+    );
+    for (const code of [
+      'BACKUP_CORRUPTED',
+      'OPERATION_FAILED',
+      'RECOVERY_KEY_INVALID',
+      'INVALID_PASSWORD',
+    ]) {
+      assert.equal(applicationDiagnostic(strings.errors[code]), code);
+      assert.equal(
+        applicationDiagnostic(`${strings.errors[code]} /private/secret`),
+        'NO_ALLOWLISTED_DIAGNOSTIC',
+      );
+    }
+    assert.equal(
+      applicationDiagnostic(strings.restoreFrom.secretRequired),
+      'RESTORE_SECRET_REQUIRED',
+    );
+    assert.equal(
+      applicationDiagnostic(strings.restoreFrom.passwordMismatch),
+      'RESTORE_PASSWORD_MISMATCH',
+    );
+    assert.equal(applicationDiagnostic(strings.forms.required), 'REQUIRED_FIELD');
+  }
 });
 
 test('failed outcomes retain a fixed journey checkpoint without accepting arbitrary data', () => {
@@ -223,6 +253,90 @@ test('WebView startup distinguishes application exit from endpoint timeout', asy
     }),
     { errorCode: 'DESKTOP_APPLICATION_START_TIMEOUT' },
   );
+});
+
+test('harness categories and fine checkpoints are strictly allowlisted independently of app diagnostics', () => {
+  for (const message of [
+    ...SAFE_HARNESS_FAILURES,
+    'CDP_ELEMENT_TIMEOUT selector=secret',
+    'secret',
+  ]) {
+    const outcome = failedDesktopOutcome({
+      scenario: 'synthetic',
+      stage: 'scenario',
+      error: new Error(message),
+    });
+    assert.equal(
+      outcome.harnessFailure,
+      SAFE_HARNESS_FAILURES.includes(message) ? message : 'NO_ALLOWLISTED_HARNESS_FAILURE',
+    );
+    assert.doesNotMatch(JSON.stringify(outcome), /secret/);
+  }
+  const error = Object.assign(new Error('secret DOM path'), { code: 'ERR_ASSERTION' });
+  assert.equal(
+    failedDesktopOutcome({ scenario: 'synthetic', error }).harnessFailure,
+    'ASSERTION_FAILED',
+  );
+  for (const checkpoint of SAFE_DESKTOP_CHECKPOINTS) {
+    assert.equal(
+      failedDesktopOutcome({ scenario: 'synthetic', checkpoint }).checkpoint,
+      checkpoint,
+    );
+  }
+});
+
+function pollingBrowser(element) {
+  return {
+    $: element,
+    async waitUntil(condition, { timeout }) {
+      const deadline = Date.now() + timeout;
+      while (Date.now() < deadline) {
+        if (await condition()) return;
+        await new Promise((resolve) => setTimeout(resolve, 1));
+      }
+      throw new Error('CDP_CONDITION_TIMEOUT');
+    },
+  };
+}
+
+test('recovery read waits for displayed and nonempty issuance without exposing the key on timeout', async () => {
+  let displayed = false;
+  let reads = 0;
+  const browser = pollingBrowser(() => ({
+    async waitForDisplayed() {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      displayed = true;
+    },
+    async getText() {
+      assert.equal(displayed, true);
+      return ++reads < 3 ? '' : 'synthetic-key';
+    },
+  }));
+  assert.equal(await readRecoveryKey(browser, { timeout: 100 }), 'synthetic-key');
+  browser.$ = () => ({ waitForDisplayed: async () => {}, getText: async () => '' });
+  await assert.rejects(readRecoveryKey(browser, { timeout: 10 }), /CDP_CONDITION_TIMEOUT/);
+});
+
+test('restore closure waits for asynchronous content and dialog removal and refuses a stuck dialog', async () => {
+  let content = true;
+  let dialog = true;
+  const browser = pollingBrowser((selector) => ({
+    isExisting: async () => (selector === '.restore-from-backup' ? content : dialog),
+  }));
+  let closed = false;
+  const pending = waitForRestoreClosed(browser, { timeout: 100 }).then(() => {
+    closed = true;
+  });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(closed, false);
+  content = false;
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(closed, false);
+  dialog = false;
+  await pending;
+  assert.equal(closed, true);
+  dialog = true;
+  await assert.rejects(waitForRestoreClosed(browser, { timeout: 10 }), /CDP_CONDITION_TIMEOUT/);
 });
 
 test('missing native input tooling has a specific redacted outcome', () => {
