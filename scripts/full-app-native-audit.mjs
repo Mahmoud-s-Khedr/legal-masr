@@ -5,9 +5,14 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { openGuideDesktop } from './guide-desktop.mjs';
 import { screens } from './guide-content.mjs';
+import {
+  seedRealisticOffice,
+  officeSnapshot,
+  assertOfficeIntegrity,
+} from './realistic-office-fixture.mjs';
 
-const output =
-  process.env.NATIVE_AUDIT_OUTPUT ?? 'docs/reviews/evidence/2026-10-09/full-test/native';
+const output = process.env.NATIVE_AUDIT_OUTPUT ?? 'test-results/full-app/native';
+await mkdir(output, { recursive: true });
 const preflight = process.argv.includes('--functional-preflight');
 const testsOnly = preflight || process.argv.includes('--tests-only');
 const catalog = Object.fromEntries(
@@ -297,6 +302,7 @@ async function run(language) {
         result: 'failed',
         layer: 'native-desktop-real-ipc',
         errorCode: error.code || 'AUDIT_SCENARIO_FAILED',
+        lastStep: h.lastStep ?? name,
       });
       if (!/password|recovery/.test(name))
         await writeFile(
@@ -604,6 +610,11 @@ async function run(language) {
           description: language === 'ar' ? 'نسخة تجريبية' : 'Fictional copy',
         },
       });
+    await seedRealisticOffice(h, { language, today, shift, client, second, outsider, caseItem });
+    saveResult('seed-exactly-ten-clients-seven-complete-cases');
+    await check('whole-office-relations-ledgers-and-hearing-chain', () =>
+      assertOfficeIntegrity(h, today),
+    );
     // Remount pages through the dashboard so deep-link create intents and default tabs reset.
     const go = async (path) => {
       await h.go(path === '/' ? '/clients' : '/');
@@ -783,10 +794,17 @@ async function run(language) {
     await check('client-edit-save-persists-through-ui', async () => {
       await go(paths.client);
       await button('records.edit', '.record-header');
-      await h.fill(
-        ':is([role="dialog"],[role="alertdialog"]) input[name="address"]',
-        language === 'ar' ? 'عنوان تجريبي معدل' : 'Updated fictional address',
-      );
+      const values = {
+        internalNumber: client.internalNumber,
+        fullName: name,
+        nationalId: '29501010000001',
+        primaryPhone: '01000000001',
+        email: 'edited-client@example.invalid',
+        address: language === 'ar' ? 'عنوان تجريبي معدل' : 'Updated fictional address',
+        notes: 'ملاحظات خيالية متعددة الأسطر\nللاختبار فقط',
+      };
+      for (const [key, value] of Object.entries(values))
+        await h.fill(`:is([role="dialog"],[role="alertdialog"]) [name="${key}"]`, value);
       await button('records.saveEdits', ':is([role="dialog"],[role="alertdialog"])');
       await h.browser.waitUntil(
         async () => !(await h.browser.$(':is([role="dialog"],[role="alertdialog"])').isExisting()),
@@ -794,11 +812,8 @@ async function run(language) {
           timeout: 15000,
         },
       );
-      assert(
-        (await h.invoke('client_get', { id: client.id })).address.includes(
-          language === 'ar' ? 'معدل' : 'Updated',
-        ),
-      );
+      const persisted = await h.invoke('client_get', { id: client.id });
+      for (const [key, value] of Object.entries(values)) assert.equal(persisted[key], value);
     });
     await check('task-complete-reopen-through-ui', async () => {
       await go(`/tasks?task=${task.id}`);
@@ -883,8 +898,8 @@ async function run(language) {
       await go('/powers-of-attorney');
       await button('poa.add');
       await h.fill('[name="internalSequence"]', 'POA-UI-TEST');
-      await h.fill('[data-slot="combobox-chip-input"]', client.internalNumber);
-      await h.click('[role="option"]');
+      await h.fill('[data-slot="combobox-chip-input"]', 'CL-DEMO-010');
+      await h.click('[role="option"]:not([aria-disabled="true"])');
       await button('poa.save');
       await h.wait('.record-header');
       const item = (await h.invoke('power_of_attorney_list', { input: {} })).find(
@@ -892,7 +907,27 @@ async function run(language) {
       );
       assert(item);
       await button('records.edit', '.record-header');
-      await h.fill(':is([role="dialog"],[role="alertdialog"]) [name="officialNumber"]', '999');
+      const values = {
+        internalSequence: 'POA-UI-TEST',
+        officialNumber: '999',
+        issueDate: shift(-10),
+        notaryOffice: 'مكتب توثيق خيالي معدل',
+        notes: 'ملاحظات توكيل خيالية',
+      };
+      for (const [key, value] of Object.entries(values)) {
+        await h.fill(`:is([role="dialog"],[role="alertdialog"]) [name="${key}"]`, value);
+        if (key === 'notaryOffice') await h.browser.keys('Tab');
+      }
+      await button('poa.addLawyer', ':is([role="dialog"],[role="alertdialog"])');
+      await h.fill('[name="lawyers.0.fullName"]', 'محامٍ خيالي إضافي');
+      await h.fill('[name="lawyers.0.barNumber"]', 'QA-BAR-998');
+      await h.fill('[name="lawyers.0.notes"]', 'وصف محامٍ خيالي');
+      await button('poa.addLawyer', ':is([role="dialog"],[role="alertdialog"])');
+      const removeButtons = await h.browser.$$(':is([role="dialog"],[role="alertdialog"]) button');
+      const removes = [];
+      for (const control of removeButtons)
+        if ((await control.getText()).trim() === text('documents.remove')) removes.push(control);
+      await removes[1].click();
       await button('poa.save', ':is([role="dialog"],[role="alertdialog"])');
       await h.browser.waitUntil(
         async () => !(await h.browser.$(':is([role="dialog"],[role="alertdialog"])').isExisting()),
@@ -900,18 +935,41 @@ async function run(language) {
           timeout: 15000,
         },
       );
-      assert.equal(
-        (await h.invoke('power_of_attorney_get', { id: item.id })).officialNumber,
-        '999',
-      );
+      const persisted = await h.invoke('power_of_attorney_get', { id: item.id });
+      for (const [key, value] of Object.entries(values)) assert.equal(persisted[key], value);
+      assert.equal(persisted.lawyers.length, 1);
+      assert.equal(persisted.lawyers[0].barNumber, 'QA-BAR-998');
     });
     await check('case-edit-and-opponent-create-through-ui', async () => {
       await go(paths.case);
       await button('records.edit', '.record-header');
-      await h.fill(
-        ':is([role="dialog"],[role="alertdialog"]) [name="subject"]',
-        'Updated fictional claim',
+      const values = {
+        internalNumber: caseName,
+        officialNumber: '9988',
+        officialYear: Number(today.slice(0, 4)),
+        judicialYear: 15,
+        courtName: 'محكمة خيالية معدلة',
+        circuitName: 'الدائرة الخيالية الخامسة',
+        caseType: 'نوع قضية خيالي معدل',
+        filedOn: shift(-25),
+        closedOn: today,
+        subject: 'Updated fictional claim',
+        notes: 'ملاحظات قضية خيالية\nمتعددة الأسطر',
+      };
+      for (const [key, value] of Object.entries(values)) {
+        await h.fill(`:is([role="dialog"],[role="alertdialog"]) [name="${key}"]`, String(value));
+        if (['courtName', 'circuitName', 'caseType'].includes(key)) await h.browser.keys('Tab');
+      }
+      const selects = await h.browser.$$(
+        ':is([role="dialog"],[role="alertdialog"]) [data-slot="select-trigger"]',
       );
+      for (const [index, label] of [
+        [0, text('cases.status.SUSPENDED')],
+        [1, text('cases.degrees.APPEAL')],
+      ]) {
+        await selects[index].click();
+        await h.click(`//*[@role="option"][normalize-space(.)=${JSON.stringify(label)}]`);
+      }
       await button('records.saveEdits', ':is([role="dialog"],[role="alertdialog"])');
       await h.browser.waitUntil(
         async () => !(await h.browser.$(':is([role="dialog"],[role="alertdialog"])').isExisting()),
@@ -919,10 +977,10 @@ async function run(language) {
           timeout: 15000,
         },
       );
-      assert.equal(
-        (await h.invoke('case_get', { id: caseItem.id })).subject,
-        'Updated fictional claim',
-      );
+      const persisted = await h.invoke('case_get', { id: caseItem.id });
+      for (const [key, value] of Object.entries(values)) assert.equal(persisted[key], value);
+      assert.equal(persisted.status, 'SUSPENDED');
+      assert.equal(persisted.litigationDegree, 'APPEAL');
       await h.tab(1);
       await button('cases.parties.add');
       await h.fill(
@@ -1118,6 +1176,49 @@ async function run(language) {
         ['VALIDATION_FAILED'],
       );
     });
+    await check('invalid-mutations-preserve-entire-office', async () => {
+      for (const [command, input, codes] of [
+        [
+          'client_create',
+          { internalNumber: client.internalNumber, fullName: 'خيالي', confirmDuplicate: true },
+          ['CLIENT_NUMBER_TAKEN'],
+        ],
+        [
+          'case_create',
+          { ...caseInput, internalNumber: 'INVALID-CASE', clients: [] },
+          ['VALIDATION_FAILED'],
+        ],
+        ['task_create', { title: '   ', dueDate: today }, ['VALIDATION_FAILED']],
+        ['task_create', { title: 'خيالي', dueDate: '2026-02-30' }, ['VALIDATION_FAILED']],
+        [
+          'task_create',
+          { title: 'خيالي', dueDate: today, caseId: caseItem.id, clientId: client.id },
+          ['LINK_CASE_OR_CLIENT'],
+        ],
+        [
+          'expense_save',
+          {
+            amountMinor: 101,
+            expenseDate: today,
+            expenseType: 'OTHER',
+            caseId: caseItem.id,
+            clientId: client.id,
+          },
+          ['LINK_CASE_OR_CLIENT'],
+        ],
+        ['payment_save', { ...payment, amountMinor: 0 }, ['VALIDATION_FAILED']],
+        ['payment_save', { ...payment, payerClientId: outsider.id }, ['VALIDATION_FAILED']],
+        [
+          'case_set_clients',
+          { caseId: caseItem.id, clients: [{ clientId: second.id }] },
+          ['CASE_CLIENT_HAS_PAYMENTS'],
+        ],
+      ]) {
+        const snapshot = await officeSnapshot(h, today);
+        await rejected(command, { input }, codes);
+        assert.deepEqual(await officeSnapshot(h, today), snapshot);
+      }
+    });
     await check('attachment-single-owner-and-cancel-refused', async () => {
       await rejected(
         'attachment_add',
@@ -1133,8 +1234,8 @@ async function run(language) {
       );
       await h.selection('cancel');
       await rejected('attachment_select_source', {}, ['OPERATION_CANCELLED']);
-      await rejected('backup_restore', {}, ['OPERATION_CANCELLED']);
-      await h.selection('backup');
+      await rejected('backup_select_for_restore', {}, ['OPERATION_CANCELLED']);
+      await h.selection('attachment');
       assert.equal(
         (await h.invoke('attachment_list', { input: { caseId: caseItem.id } })).length,
         1,
@@ -1175,6 +1276,7 @@ async function run(language) {
       ]) {
         await go(path);
         for (let index = 0; index < count; index++) {
+          console.log(`${language}: detail tabs: ${path.split('/')[1]} ${index}`);
           await h.tab(index);
           await writeFile(
             join(output, `${language}-tabs-${path.split('/')[1]}-${index}.png`),
@@ -1250,22 +1352,48 @@ async function run(language) {
       await go('/backups');
       await button('backups.createNow');
       await h.wait('.success');
+      const snapshot = await officeSnapshot(h, today);
       await h.selection('backup');
       await button('backups.validate');
-      await h.wait('.success');
+      await button('restoreFrom.chooseFile', ':is([role="dialog"],[role="alertdialog"])');
+      await h.wait(':is([role="dialog"],[role="alertdialog"]) [role="status"]');
+      await button('common.cancel', ':is([role="dialog"],[role="alertdialog"])');
       await button('backups.restore');
-      await button('backups.restoreCancel', ':is([role="dialog"],[role="alertdialog"])');
-      assert((await h.invoke('client_get', { id: client.id })).id === client.id);
+      await button('restoreFrom.chooseFile', ':is([role="dialog"],[role="alertdialog"])');
+      await h.wait(':is([role="dialog"],[role="alertdialog"]) [role="status"]');
+      await button('common.cancel', ':is([role="dialog"],[role="alertdialog"])');
+      assert.deepEqual(await officeSnapshot(h, today), snapshot);
       await h.selection('corrupt');
       await button('backups.restore');
-      await button('backups.restoreConfirm', ':is([role="dialog"],[role="alertdialog"])');
-      await h.wait('[role="alert"]');
-      assert((await h.invoke('client_get', { id: client.id })).id === client.id);
-      await h.selection('backup');
+      await button('restoreFrom.chooseFile', ':is([role="dialog"],[role="alertdialog"])');
+      await h.wait(':is([role="dialog"],[role="alertdialog"]) [role="alert"]');
+      assert.deepEqual(await officeSnapshot(h, today), snapshot);
+      await button('common.cancel', ':is([role="dialog"],[role="alertdialog"])');
+      await h.selection('attachment');
     });
     await check('repeated-same-vault-restore-three-times', async () => {
       for (let i = 0; i < 3; i++) {
-        await h.invoke('backup_create');
+        // Make each snapshot distinct, so selecting an older archive cannot
+        // accidentally pass just because the office records were identical.
+        await h.invoke('task_create', {
+          input: { title: `Fictional snapshot marker ${i}`, dueDate: today },
+        });
+        const stamp = await h.browser.execute(() => {
+          const date = new Date();
+          const pad = (n) => String(n).padStart(2, '0');
+          return [
+            date.getFullYear(),
+            ...[
+              date.getMonth() + 1,
+              date.getDate(),
+              date.getHours(),
+              date.getMinutes(),
+              date.getSeconds(),
+            ].map(pad),
+          ].join('-');
+        });
+        await h.invoke('backup_create', { stamp });
+        const snapshot = await officeSnapshot(h, today);
         const extra = await h.invoke('client_create', {
           input: {
             internalNumber: `AFTER-${i}`,
@@ -1274,10 +1402,13 @@ async function run(language) {
           },
         });
         await h.selection('backup');
-        await h.invoke('backup_restore');
+        const selected = await h.invoke('backup_select_for_restore');
+        const prepared = await h.invoke('backup_prepare_restore', { token: selected.token });
+        await h.invoke('backup_commit_restore', { token: prepared.token });
         assert.equal((await h.invoke('app_get_status')).unlocked, false);
         await h.invoke('app_unlock', { password });
         await rejected('client_get', { id: extra.id }, ['CLIENT_NOT_FOUND']);
+        assert.deepEqual(await officeSnapshot(h, today), snapshot);
         const restored = (await h.invoke('attachment_list', { input: { caseId: caseItem.id } }))[0];
         assert.deepEqual(
           await readFile(join(h.root, 'vault/attachments', restored.storedFilename)),
@@ -1313,13 +1444,14 @@ async function run(language) {
       assert((await h.invoke('client_get', { id: client.id })).id === client.id);
     });
     await check('restart-locked-and-data-persisted', async () => {
+      const snapshot = await officeSnapshot(h, today);
       await h.restart();
       await h.wait('.gate');
       assert(!(await h.invoke('app_get_status')).unlocked);
       await h.fill('[name="password"]', password);
       await h.button(get('ar', 'gate.submit.unlock'));
       await h.wait('.workspace');
-      assert((await h.invoke('client_get', { id: client.id })).id === client.id);
+      assert.deepEqual(await officeSnapshot(h, today), snapshot);
     });
     await check('narrow-viewport-rtl-ltr-and-navigation', async () => {
       await h.browser.setWindowSize(1366, 768);
@@ -1337,7 +1469,7 @@ async function run(language) {
   } catch (error) {
     if (!['setup', 'unlock', 'wrong-password', 'recovery'].includes(stage))
       await writeFile(
-        `docs/reviews/evidence/2026-10-09/full-test/native/failure-${language}.png`,
+        join(output, `failure-${language}.png`),
         Buffer.from(await h.browser.takeScreenshot(), 'base64'),
       );
     console.log(

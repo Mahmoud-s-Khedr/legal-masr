@@ -9,6 +9,7 @@ export const DESKTOP_ERROR_CODES = Object.freeze([
   'DESKTOP_DRIVER_STOP_FAILED',
   'DESKTOP_APPLICATION_EXITED_BEFORE_READY',
   'DESKTOP_APPLICATION_START_TIMEOUT',
+  'DESKTOP_NATIVE_INPUT_UNAVAILABLE',
 ]);
 
 export const SAFE_DESKTOP_STAGES = Object.freeze([
@@ -18,6 +19,8 @@ export const SAFE_DESKTOP_STAGES = Object.freeze([
   'scenario',
 ]);
 export const SAFE_DESKTOP_CHECKPOINTS = Object.freeze([
+  'native-input-preflight',
+  'cancel-native-picker',
   'initialize',
   'initialize-name',
   'initialize-password',

@@ -42,6 +42,7 @@ export async function openGuideDesktop(language) {
       port: 4444,
       logLevel: 'silent',
       connectionRetryCount: 0,
+      connectionRetryTimeout: 30000,
       capabilities: { 'tauri:options': { application: binary } },
     });
     await browser.setTimeout({ implicit: 0, script: 30000 });
@@ -93,7 +94,17 @@ export async function openGuideDesktop(language) {
     fill: async (selector, value) => {
       await api.wait(selector);
       if (value === '') await browser.$(selector).clearValue();
-      else await browser.$(selector).setValue(value);
+      else if (String(value).includes('\n')) {
+        // WebKit's send-keys endpoint drops literal newline characters. Use
+        // actual Enter keys so multiline tests exercise what a user types.
+        const lines = String(value).split('\n');
+        const target = await browser.$(selector);
+        await target.setValue(lines[0]);
+        for (const line of lines.slice(1)) {
+          await browser.keys('Enter');
+          if (line) await target.addValue(line);
+        }
+      } else await browser.$(selector).setValue(value);
     },
     invoke: async (command, args = {}) => {
       const result = await browser.executeAsync(
@@ -135,14 +146,20 @@ export async function openGuideDesktop(language) {
       );
     },
     tab: async (index) => {
+      api.lastStep = `tab-${index}`;
       const tabs = await browser.$$('[role="tab"]');
       assert(tabs[index]);
+      if ((await tabs[index].getAttribute('aria-selected')) === 'true') return;
       await browser.execute(
         (el) => el.scrollIntoView({ behavior: 'instant', block: 'center' }),
         tabs[index],
       );
       await tabs[index].waitForClickable({ timeout: 15000 });
       await tabs[index].click();
+      await browser.waitUntil(
+        async () => (await tabs[index].getAttribute('aria-selected')) === 'true',
+        { timeout: 15000 },
+      );
     },
     button: async (text, scope = '') => {
       const buttons = await browser.$$(`${scope} button`);
@@ -152,6 +169,7 @@ export async function openGuideDesktop(language) {
             (el) => el.scrollIntoView({ behavior: 'instant', block: 'center' }),
             button,
           );
+          await button.waitForClickable({ timeout: 15000 });
           await button.click();
           return;
         }

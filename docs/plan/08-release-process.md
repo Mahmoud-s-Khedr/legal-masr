@@ -37,7 +37,7 @@ A normal static manifest request may reveal standard network metadata such as IP
 
 ---
 
-# 15. Windows, Linux, and macOS packaging
+# 15. Windows and Linux packaging (macOS deferred)
 
 ## Windows
 
@@ -47,7 +47,7 @@ Initial target:
 - x86-64
 - Per-user NSIS `.exe` installer
 - No administrator privileges where possible
-- Unsigned public beta installer; no self-signed certificate
+- Unsigned until the owner obtains an Authenticode certificate; no self-signed certificate
 
 Tauri builds Windows installers through its CLI on Windows, using the MSVC target and WebView2.
 
@@ -63,34 +63,23 @@ The portable Windows archive and Linux AppImage distribute an application
 binary, not a portable application-data directory. User data remains in the
 normal operating-system location.
 
-## macOS
+## macOS deferred
 
-Initial targets:
-
-- Apple Silicon
-- Intel
-- Separate DMG files initially
-
-Separate builds reduce the risk introduced by combining SQLCipher, vendored cryptography and universal binaries. A universal build may be added after both architectures are stable.
-
-Current browser-distributed beta builds use Tauri ad-hoc signing (`signingIdentity: "-"`) and are not notarized. Users may need to approve the app through Privacy & Security. Future public Developer ID distribution can add paid signing and notarization independently.
+macOS is outside the first public release. Existing source support remains; packaging and release jobs are deferred.
 
 ## CI/CD
 
 Use GitHub Actions with:
 
 - Windows runner
-- Intel macOS target build
-- Apple Silicon macOS target build
 - Validation workflow on pull requests
 - Debug validation artifacts for Windows installer/portable archive and Linux Debian/RPM/AppImage packages
 - Tag/manual draft-release workflow
 - Unsigned Windows x86-64 NSIS installer
 - Windows x86-64 portable archive
 - Linux x86-64 Debian, RPM, and AppImage packages
-- Ad-hoc signed, unnotarized Intel and Apple Silicon DMGs
 
-The official `tauri-action` builds native Tauri binaries for Windows and macOS and can attach them to GitHub Releases.
+The official `tauri-action` builds native Tauri binaries for Windows and Linux and can attach them to GitHub Releases.
 
 ## Release artifacts
 
@@ -100,7 +89,5 @@ LegalMaster-Solo_<version>_windows_x64-portable.zip
 LegalMaster-Solo_<version>_linux_x64.deb
 LegalMaster-Solo_<version>_linux_x64.rpm
 LegalMaster-Solo_<version>_linux_x64.AppImage
-LegalMaster-Solo_<version>_macos_x64.dmg
-LegalMaster-Solo_<version>_macos_arm64.dmg
 SHA256SUMS.txt
 ```

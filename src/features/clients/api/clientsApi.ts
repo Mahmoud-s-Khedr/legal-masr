@@ -2,6 +2,7 @@ import { useDebounced } from '@/lib/useDebounced';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bridge } from '../../../bridge/commands';
 import type { ClientCreateInput, ClientListInput, ClientUpdateInput } from '../../../bridge/types';
+import { queryInvalidation } from '../../../lib/queryInvalidation';
 import { queryKeys } from '../../../lib/queryKeys';
 
 export const useClientList = (input: ClientListInput) => {
@@ -20,7 +21,7 @@ export function useCreateClient() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ClientCreateInput) => bridge.clientCreate(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.clients.all }),
+    onSuccess: () => queryInvalidation.clientOrPowerOfAttorney(queryClient),
   });
 }
 
@@ -29,9 +30,8 @@ export function useUpdateClient() {
   return useMutation({
     mutationFn: (input: ClientUpdateInput) => bridge.clientUpdate(input),
     onSuccess: (client) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
       queryClient.setQueryData(queryKeys.clients.detail(client.id), client);
-      queryClient.invalidateQueries({ queryKey: queryKeys.clients.detail(client.id) });
+      return queryInvalidation.clientOrPowerOfAttorney(queryClient);
     },
   });
 }
@@ -40,7 +40,7 @@ export function useArchiveClient() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => bridge.clientArchive(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.clients.all }),
+    onSuccess: () => queryInvalidation.clientOrPowerOfAttorney(queryClient),
   });
 }
 
@@ -48,6 +48,6 @@ export function useRestoreClient() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => bridge.clientRestore(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.clients.all }),
+    onSuccess: () => queryInvalidation.clientOrPowerOfAttorney(queryClient),
   });
 }

@@ -28,8 +28,9 @@ fn clean(value: Option<String>) -> Option<String> {
     value.and_then(|value| (!value.trim().is_empty()).then(|| value.trim().to_owned()))
 }
 
-/// The two independent year numbers a case can carry.
-struct CaseYears {
+/// The official number and two independent year numbers a case can carry.
+struct CaseReference<'a> {
+    number: Option<&'a str>,
     /// Gregorian year in the court number, 1800-9999 («رقم 447 لسنة 2026»).
     official: Option<i64>,
     /// Court (judicial) year, 1-9999 («رقم 1234 لسنة 89 قضائية»).
@@ -38,7 +39,7 @@ struct CaseYears {
 
 fn validate_case(
     internal_number: &str,
-    years: CaseYears,
+    reference: CaseReference<'_>,
     litigation_degree: Option<&str>,
     status: &str,
     filed_on: Option<&str>,
@@ -55,14 +56,21 @@ fn validate_case(
             .iter()
             .any(|client| client.client_id.trim().is_empty())
         || unique_clients.len() != clients.len()
-        || years
+        || reference
             .official
             .is_some_and(|year| !(1800..=9999).contains(&year))
-        || years
+        || reference
             .judicial
             .is_some_and(|year| !(1..=9999).contains(&year))
         || litigation_degree.is_some_and(|degree| !VALID_LITIGATION_DEGREES.contains(&degree))
         || !VALID_STATUSES.contains(&status)
+        || ((reference.official.is_some() || reference.judicial.is_some())
+            && reference
+                .number
+                .is_none_or(|number| number.trim().is_empty()))
+        || filed_on
+            .zip(closed_on)
+            .is_some_and(|(filed, closed)| closed < filed)
         || !valid_date(filed_on)
         || !valid_date(closed_on)
     {
@@ -140,7 +148,8 @@ pub fn create<R: Runtime>(
     };
     validate_case(
         &input.internal_number,
-        CaseYears {
+        CaseReference {
+            number: input.official_number.as_deref(),
             official: input.official_year,
             judicial: input.judicial_year,
         },
@@ -180,7 +189,8 @@ pub fn update<R: Runtime>(
     };
     validate_case(
         &input.internal_number,
-        CaseYears {
+        CaseReference {
+            number: input.official_number.as_deref(),
             official: input.official_year,
             judicial: input.judicial_year,
         },
@@ -389,7 +399,8 @@ mod tests {
         }];
         assert!(validate_case(
             "CA-1",
-            CaseYears {
+            CaseReference {
+                number: Some("447"),
                 official: Some(2026),
                 judicial: None,
             },
@@ -410,7 +421,8 @@ mod tests {
         };
         assert!(validate_case(
             "CA-1",
-            CaseYears {
+            CaseReference {
+                number: Some("447"),
                 official: None,
                 judicial: None,
             },
@@ -423,7 +435,8 @@ mod tests {
         .is_err());
         assert!(validate_case(
             "CA-1",
-            CaseYears {
+            CaseReference {
+                number: Some("447"),
                 official: None,
                 judicial: None,
             },
@@ -447,7 +460,8 @@ mod tests {
         };
         validate_case(
             "CA-1",
-            CaseYears {
+            CaseReference {
+                number: Some("447"),
                 official: official_year,
                 judicial: judicial_year,
             },
@@ -475,5 +489,61 @@ mod tests {
         assert!(judicial_year_validation(None, Some(10_000)).is_err());
         // The Gregorian case year still cannot be a two-digit value.
         assert!(judicial_year_validation(Some(89), None).is_err());
+    }
+    #[test]
+    fn case_reference_and_chronology_match_the_renderer() {
+        let clients = [CaseClientInput {
+            client_id: "a".into(),
+            legal_capacity: None,
+            notes: None,
+        }];
+        let check = |number, official, judicial, filed, closed| {
+            validate_case(
+                "CA-1",
+                CaseReference {
+                    number,
+                    official,
+                    judicial,
+                },
+                None,
+                "ACTIVE",
+                filed,
+                closed,
+                &clients,
+            )
+        };
+        // Number and dates remain optional, with equal filing/closing dates permitted.
+        assert!(check(None, None, None, None, None).is_ok());
+        assert!(check(
+            Some("447"),
+            Some(2026),
+            Some(89),
+            Some("2026-10-14"),
+            Some("2026-10-14")
+        )
+        .is_ok());
+        assert!(check(
+            Some("447"),
+            None,
+            None,
+            Some("2026-10-14"),
+            Some("2026-10-15")
+        )
+        .is_ok());
+        assert!(check(None, None, None, None, Some("2026-10-14")).is_ok());
+        for number in [None, Some(""), Some("  ")] {
+            for (official, judicial) in
+                [(Some(2026), None), (None, Some(89)), (Some(2026), Some(89))]
+            {
+                assert!(matches!(
+                    check(number, official, judicial, None, None),
+                    Err(Error::Validation)
+                ));
+            }
+        }
+        assert!(matches!(
+            check(None, None, None, Some("2026-10-14"), Some("2026-10-13")),
+            Err(Error::Validation)
+        ));
     }
 }

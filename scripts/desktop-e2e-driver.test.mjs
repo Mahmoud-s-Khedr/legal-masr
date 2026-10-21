@@ -338,3 +338,15 @@ test('restore closure waits for asynchronous content and dialog removal and refu
   dialog = true;
   await assert.rejects(waitForRestoreClosed(browser, { timeout: 10 }), /CDP_CONDITION_TIMEOUT/);
 });
+
+test('missing native input tooling has a specific redacted outcome', () => {
+  const outcome = failedDesktopOutcome({
+    scenario: 'native-picker-responsive-cancellation-and-lock',
+    stage: 'scenario',
+    checkpoint: 'native-input-preflight',
+    error: { errorCode: 'DESKTOP_NATIVE_INPUT_UNAVAILABLE', message: 'fictional private path/key' },
+  });
+  assert.equal(outcome.errorCode, 'DESKTOP_NATIVE_INPUT_UNAVAILABLE');
+  assert.equal(outcome.checkpoint, 'native-input-preflight');
+  assert.equal(JSON.stringify(outcome).includes('private'), false);
+});

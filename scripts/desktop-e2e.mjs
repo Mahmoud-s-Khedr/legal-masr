@@ -433,6 +433,12 @@ for (const choice of ['cancel', 'corrupt'])
   });
 if (process.platform === 'linux')
   await scenario('native-picker-responsive-cancellation-and-lock', async (h) => {
+    h.checkpoint('native-input-preflight');
+    const nativeInput = spawnSync('xdotool', ['--version'], { stdio: 'ignore' });
+    if (nativeInput.error || nativeInput.status !== 0)
+      throw Object.assign(new Error('Native input dependency unavailable'), {
+        errorCode: 'DESKTOP_NATIVE_INPUT_UNAVAILABLE',
+      });
     await h.initialize();
     await h.selection('native');
     await h.nav('/backups');
@@ -450,6 +456,7 @@ if (process.platform === 'linux')
     await h.browser.execute(() =>
       globalThis.document.querySelector('button[aria-label="قفل التطبيق"]').click(),
     );
+    h.checkpoint('cancel-native-picker');
     assert.equal(spawnSync('xdotool', ['key', 'Escape']).status, 0);
     await h.browser.$('input[name="password"]').waitForDisplayed({ timeout: 15000 });
     await h.unlock();

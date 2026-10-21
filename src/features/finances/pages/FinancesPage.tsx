@@ -1,3 +1,4 @@
+import { QuerySection } from '@/components/layout/QuerySection';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -79,7 +80,7 @@ export function FinancesPage() {
   const [filterClientId, setFilterClientId] = useState(params.get('client') ?? '');
   const [entry, setEntry] = useState<Entry>(null);
   const cases = useCaseList({ includeArchived: true });
-  const clients = useClientList({});
+  const clients = useClientList({ includeArchived: true });
   const selectedCase = useCase(filterCaseId);
   const caseAccount = useCaseFinanceSummary(filterCaseId);
   const format = useFormat();
@@ -170,33 +171,37 @@ export function FinancesPage() {
           {t('tasks.clearFilters')}
         </Button>
       </div>
-      {filterCaseId && caseAccount.data && (
-        <div className="finance-summary" aria-label={t('finances.caseAccount')}>
-          <article>
-            <span>{t('cases.detail.agreed')}</span>
-            <strong>
-              <bdi>{format.money(caseAccount.data.agreedFeeMinor)}</bdi>
-            </strong>
-          </article>
-          <article>
-            <span>{t('cases.detail.received')}</span>
-            <strong>
-              <bdi>{format.money(caseAccount.data.receivedMinor)}</bdi>
-            </strong>
-          </article>
-          <article className="finance-net">
-            <span>{t('cases.detail.outstanding')}</span>
-            <strong>
-              <bdi>{format.money(caseAccount.data.outstandingMinor)}</bdi>
-            </strong>
-          </article>
-          <article>
-            <span>{t('cases.detail.expenses')}</span>
-            <strong>
-              <bdi>{format.money(caseAccount.data.expensesMinor)}</bdi>
-            </strong>
-          </article>
-        </div>
+      {filterCaseId && (
+        <QuerySection query={caseAccount} label={t('finances.caseAccount')}>
+          {caseAccount.data && (
+            <div className="finance-summary" aria-label={t('finances.caseAccount')}>
+              <article>
+                <span>{t('cases.detail.agreed')}</span>
+                <strong>
+                  <bdi>{format.money(caseAccount.data.agreedFeeMinor)}</bdi>
+                </strong>
+              </article>
+              <article>
+                <span>{t('cases.detail.received')}</span>
+                <strong>
+                  <bdi>{format.money(caseAccount.data.receivedMinor)}</bdi>
+                </strong>
+              </article>
+              <article className="finance-net">
+                <span>{t('cases.detail.outstanding')}</span>
+                <strong>
+                  <bdi>{format.money(caseAccount.data.outstandingMinor)}</bdi>
+                </strong>
+              </article>
+              <article>
+                <span>{t('cases.detail.expenses')}</span>
+                <strong>
+                  <bdi>{format.money(caseAccount.data.expensesMinor)}</bdi>
+                </strong>
+              </article>
+            </div>
+          )}
+        </QuerySection>
       )}
       <section className="work-register">
         <div className="card-title">
@@ -828,7 +833,9 @@ export function ExpenseForm({
               onValueChange={(value) => setClientId(value ?? '')}
               items={[
                 { value: '', label: t('tasks.noClient') },
-                ...(clients ?? []).map(clientOption),
+                ...(clients ?? [])
+                  .filter((client) => !client.archivedAt || client.id === initial?.clientId)
+                  .map((client) => ({ ...clientOption(client), disabled: !!client.archivedAt })),
               ]}
               placeholder={undefined}
             />

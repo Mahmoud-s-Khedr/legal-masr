@@ -781,7 +781,9 @@
     "saveEdits": "Save changes",
     "saveRetry": "Could not save the changes. Your entries are kept; please try again.",
     "close": "Close",
-    "saved": "Changes saved."
+    "saved": "Changes saved.",
+    "sectionLoading": "Loading {{section}}…",
+    "sectionLoadError": "Could not load {{section}}. The data is currently unavailable."
   },
   "errors": {
     "INVALID_PASSWORD": "The password is incorrect. Check it and try again.",
