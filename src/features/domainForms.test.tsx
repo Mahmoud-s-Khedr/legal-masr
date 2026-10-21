@@ -42,12 +42,25 @@ describe('canonical domain forms', () => {
     expect(number).toHaveAttribute('dir', 'ltr');
     fireEvent.change(number, { target: { value: 'CL-42' } });
     fireEvent.change(screen.getByLabelText('الاسم الكامل'), { target: { value: 'أحمد Smith' } });
+    const optionalFields = {
+      nationalId: '29501010000001',
+      primaryPhone: '01000000001',
+      email: 'fictional@example.invalid',
+      address: 'عنوان خيالي، القاهرة',
+      notes: 'ملاحظات خيالية متعددة الأسطر\nللاختبار فقط',
+    };
+    for (const [key, value] of Object.entries(optionalFields)) {
+      fireEvent.change(screen.getByLabelText(i18n.t(`clients.fields.${key}`)), {
+        target: { value },
+      });
+    }
     fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
 
     await waitFor(() => expect(submit).toHaveBeenCalled());
     expect(submit.mock.calls[0][0]).toMatchObject({
       internalNumber: 'CL-42',
       fullName: 'أحمد Smith',
+      ...optionalFields,
     });
   });
 

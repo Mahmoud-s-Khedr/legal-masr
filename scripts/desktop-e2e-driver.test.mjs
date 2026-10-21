@@ -224,3 +224,15 @@ test('WebView startup distinguishes application exit from endpoint timeout', asy
     { errorCode: 'DESKTOP_APPLICATION_START_TIMEOUT' },
   );
 });
+
+test('missing native input tooling has a specific redacted outcome', () => {
+  const outcome = failedDesktopOutcome({
+    scenario: 'native-picker-responsive-cancellation-and-lock',
+    stage: 'scenario',
+    checkpoint: 'native-input-preflight',
+    error: { errorCode: 'DESKTOP_NATIVE_INPUT_UNAVAILABLE', message: 'fictional private path/key' },
+  });
+  assert.equal(outcome.errorCode, 'DESKTOP_NATIVE_INPUT_UNAVAILABLE');
+  assert.equal(outcome.checkpoint, 'native-input-preflight');
+  assert.equal(JSON.stringify(outcome).includes('private'), false);
+});

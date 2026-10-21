@@ -1,0 +1,6583 @@
+{
+  "sourceRevision": "197f2956d90e725951c2b5816357231239c1140b",
+  "workingTreeChangesIncluded": true,
+  "generatedAt": "2026-10-14T20:13:59.104Z",
+  "platform": "linux",
+  "source": "native-tauri-webkit-real-ipc",
+  "filePicker": "desktop-e2e allowlisted substitute; physical dialogs unverified",
+  "theme": "light",
+  "timezone": "Africa/Cairo",
+  "screenshots": [
+    {
+      "id": "setup",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "setup.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 666,
+        "y": 117
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "اسم المحامي",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 362.6875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 470.21875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 577.75
+        },
+        {
+          "x": 116.828125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 656.65625
+        }
+      ]
+    },
+    {
+      "id": "setup-validation",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "setup-validation.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 664,
+        "y": 118
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "اسم المحامي",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 363.671875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 470.21875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 576.765625
+        },
+        {
+          "x": 116.828125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 655.671875
+        },
+        {
+          "x": 116.828125,
+          "height": 19.640625,
+          "label": "error",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 430.578125
+        },
+        {
+          "x": 116.828125,
+          "height": 19.640625,
+          "label": "error",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 537.125
+        }
+      ]
+    },
+    {
+      "id": "recovery-key",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "recovery-key.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 626,
+        "y": 137
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 73.96875,
+          "label": "recovery-key",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 445.4375
+        },
+        {
+          "x": 116.828125,
+          "height": 20.546875,
+          "label": "saved-key",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 663.90625
+        }
+      ]
+    },
+    {
+      "id": "unlock",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "unlock.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 422,
+        "y": 239
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 456.453125
+        },
+        {
+          "x": 116.828125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 535.359375
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "recovery.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 638,
+        "y": 131
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "مفتاح الاسترداد",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 348.921875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة المرور الجديدة",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 456.453125
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 563.984375
+        },
+        {
+          "x": 116.828125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 642.890625
+        }
+      ]
+    },
+    {
+      "id": "shell",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "shell.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1440,
+        "x": 0,
+        "height": 900,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 1200.1875,
+          "height": 556.125,
+          "label": "navigation",
+          "width": 228.625,
+          "shape": "rectangle",
+          "y": 68
+        },
+        {
+          "x": 596,
+          "height": 32,
+          "label": "search",
+          "width": 560,
+          "shape": "rectangle",
+          "y": 17.5
+        },
+        {
+          "x": 32,
+          "height": 40,
+          "label": "actions",
+          "width": 193.40625,
+          "shape": "rectangle",
+          "y": 13.5
+        }
+      ]
+    },
+    {
+      "id": "shell",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "shell-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1440,
+        "x": 0,
+        "height": 900,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 596,
+          "height": 32,
+          "label": "search",
+          "width": 560,
+          "shape": "rectangle",
+          "y": 17.5
+        },
+        {
+          "x": 32,
+          "height": 40,
+          "label": "actions",
+          "width": 193.40625,
+          "shape": "rectangle",
+          "y": 13.5
+        }
+      ]
+    },
+    {
+      "id": "shell",
+      "part": 3,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "shell-3.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1440,
+        "x": 0,
+        "height": 900,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 596,
+          "height": 32,
+          "label": "search",
+          "width": 560,
+          "shape": "rectangle",
+          "y": 17.5
+        },
+        {
+          "x": 32,
+          "height": 40,
+          "label": "actions",
+          "width": 193.40625,
+          "shape": "rectangle",
+          "y": 13.5
+        }
+      ]
+    },
+    {
+      "id": "quick-add",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "quick-add.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 97,
+          "height": 120.5625,
+          "label": "records",
+          "width": 128,
+          "shape": "rectangle",
+          "y": 50
+        }
+      ]
+    },
+    {
+      "id": "quick-add",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "quick-add-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 900,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 97,
+          "height": 120.5625,
+          "label": "records",
+          "width": 128,
+          "shape": "rectangle",
+          "y": 50
+        }
+      ]
+    },
+    {
+      "id": "quick-add",
+      "part": 3,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "quick-add-3.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 802,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 97,
+          "height": 120.5625,
+          "label": "records",
+          "width": 128,
+          "shape": "rectangle",
+          "y": 50
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "dashboard.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 529.734375,
+          "height": 132.46875,
+          "label": "schedule",
+          "width": 602.875,
+          "shape": "rectangle",
+          "y": 654.796875
+        },
+        {
+          "x": 36,
+          "height": 77.359375,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 217.6875
+        },
+        {
+          "x": 36,
+          "height": 279.953125,
+          "label": "schedule",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 312.640625
+        },
+        {
+          "x": 36,
+          "height": 134.796875,
+          "label": "schedule",
+          "width": 458.34375,
+          "shape": "rectangle",
+          "y": 610.1875
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "dashboard-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 900,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 579.921875,
+          "label": "schedule",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 71.859375
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "part": 3,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "dashboard-3.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 802,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 602.796875,
+          "height": 289.515625,
+          "label": "schedule",
+          "width": 549.203125,
+          "shape": "rectangle",
+          "y": 456.375
+        },
+        {
+          "x": 36,
+          "height": 289.515625,
+          "label": "schedule",
+          "width": 549.203125,
+          "shape": "rectangle",
+          "y": 456.375
+        }
+      ]
+    },
+    {
+      "id": "search",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "search.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": []
+    },
+    {
+      "id": "search",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "search-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 900,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": []
+    },
+    {
+      "id": "search",
+      "part": 3,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "search-3.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 802,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": []
+    },
+    {
+      "id": "clients-list",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "clients-list.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 770,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 97.1875,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 221.6875
+        },
+        {
+          "x": 37,
+          "height": 372.125,
+          "label": "records",
+          "width": 1114,
+          "shape": "rectangle",
+          "y": 396.0625
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "client-create",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-create.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الاسم الكامل",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 286.046875
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 359.34375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الرقم القومي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 359.34375
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "رقم الهاتف",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 522.234375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "البريد الإلكتروني",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 522.234375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 595.53125
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 668.828125
+        },
+        {
+          "x": 123,
+          "height": 50.59375,
+          "label": "save-cancel",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 783.734375
+        }
+      ]
+    },
+    {
+      "id": "client-create",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-create-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 803,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الاسم الكامل",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 169.046875
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 242.34375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الرقم القومي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 242.34375
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "رقم الهاتف",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 405.234375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "البريد الإلكتروني",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 405.234375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 478.53125
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 551.828125
+        },
+        {
+          "x": 123,
+          "height": 50.59375,
+          "label": "save-cancel",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 666.734375
+        }
+      ]
+    },
+    {
+      "id": "client-required",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-required.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الاسم الكامل",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 286.046875
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 386.984375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الرقم القومي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 386.984375
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "رقم الهاتف",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 549.875
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "البريد الإلكتروني",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 549.875
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 623.171875
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 696.46875
+        },
+        {
+          "x": 123,
+          "height": 50.59375,
+          "label": "save-cancel",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 811.375
+        },
+        {
+          "x": 123,
+          "height": 19.640625,
+          "label": "error",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 352.953125
+        }
+      ]
+    },
+    {
+      "id": "client-required",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-required-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 802,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الاسم الكامل",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 141.046875
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 241.984375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الرقم القومي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 241.984375
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "رقم الهاتف",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 404.875
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "البريد الإلكتروني",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 404.875
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 478.171875
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 551.46875
+        },
+        {
+          "x": 123,
+          "height": 50.59375,
+          "label": "save-cancel",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 666.375
+        },
+        {
+          "x": 123,
+          "height": 19.640625,
+          "label": "error",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 207.953125
+        }
+      ]
+    },
+    {
+      "id": "client-duplicate",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-duplicate.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الاسم الكامل",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 286.046875
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 359.34375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الرقم القومي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 359.34375
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "رقم الهاتف",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 522.234375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "البريد الإلكتروني",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 522.234375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 595.53125
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 668.828125
+        },
+        {
+          "x": 123,
+          "height": 50.59375,
+          "label": "save-cancel",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 783.734375
+        }
+      ]
+    },
+    {
+      "id": "client-duplicate",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-duplicate-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 802,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الاسم الكامل",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 19.046875
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 92.34375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الرقم القومي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 92.34375
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "رقم الهاتف",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 255.234375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "البريد الإلكتروني",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 255.234375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 328.53125
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 401.828125
+        },
+        {
+          "x": 123,
+          "height": 50.59375,
+          "label": "save-cancel",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 516.734375
+        },
+        {
+          "x": 123,
+          "height": 133.5625,
+          "label": "error",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 583.328125
+        }
+      ]
+    },
+    {
+      "id": "client-summary",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-summary.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 825.4375,
+          "height": 32,
+          "label": "views",
+          "width": 326.5625,
+          "shape": "rectangle",
+          "y": 232.921875
+        },
+        {
+          "x": 36,
+          "height": 128.921875,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 600.40625,
+          "height": 346.65625,
+          "label": "details",
+          "width": 551.59375,
+          "shape": "rectangle",
+          "y": 264.921875
+        },
+        {
+          "x": 36,
+          "height": 346.65625,
+          "label": "details",
+          "width": 551.609375,
+          "shape": "rectangle",
+          "y": 264.921875
+        }
+      ]
+    },
+    {
+      "id": "client-cases",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-cases.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 825.4375,
+          "height": 32,
+          "label": "views",
+          "width": 326.5625,
+          "shape": "rectangle",
+          "y": 232.921875
+        },
+        {
+          "x": 36,
+          "height": 128.921875,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 150.703125,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 264.921875
+        }
+      ]
+    },
+    {
+      "id": "client-poas",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-poas.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 825.4375,
+          "height": 32,
+          "label": "views",
+          "width": 326.5625,
+          "shape": "rectangle",
+          "y": 232.921875
+        },
+        {
+          "x": 36,
+          "height": 128.921875,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 150.703125,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 264.921875
+        }
+      ]
+    },
+    {
+      "id": "client-account",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-account.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 825.4375,
+          "height": 32,
+          "label": "views",
+          "width": 326.5625,
+          "shape": "rectangle",
+          "y": 232.921875
+        },
+        {
+          "x": 36,
+          "height": 128.921875,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 53,
+          "height": 86.203125,
+          "label": "totals",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 363.296875
+        }
+      ]
+    },
+    {
+      "id": "client-attachments",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-attachments.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 825.4375,
+          "height": 32,
+          "label": "views",
+          "width": 326.5625,
+          "shape": "rectangle",
+          "y": 232.921875
+        },
+        {
+          "x": 53,
+          "height": 70.921875,
+          "label": "records",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 352.5
+        },
+        {
+          "x": 36,
+          "height": 128.921875,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "client-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 686,
+        "y": 107
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الاسم الكامل",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 216.984375
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 290.28125
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الرقم القومي",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 290.28125
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "رقم الهاتف",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 455.046875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "البريد الإلكتروني",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 455.046875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 528.34375
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 601.640625
+        },
+        {
+          "x": 352,
+          "height": 64,
+          "label": "save-cancel",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 712.546875
+        }
+      ]
+    },
+    {
+      "id": "client-archive",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-archive.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 416,
+        "x": 512,
+        "height": 199,
+        "y": 351
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 528,
+          "height": 166.28125,
+          "label": "details",
+          "width": 384,
+          "shape": "rectangle",
+          "y": 367
+        }
+      ]
+    },
+    {
+      "id": "client-restored",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "client-restored.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 825.4375,
+          "height": 32,
+          "label": "views",
+          "width": 326.5625,
+          "shape": "rectangle",
+          "y": 232.984375
+        },
+        {
+          "x": 36,
+          "height": 128.984375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 600.40625,
+          "height": 346.65625,
+          "label": "details",
+          "width": 551.59375,
+          "shape": "rectangle",
+          "y": 264.984375
+        },
+        {
+          "x": 36,
+          "height": 346.65625,
+          "label": "details",
+          "width": 551.609375,
+          "shape": "rectangle",
+          "y": 264.984375
+        }
+      ]
+    },
+    {
+      "id": "poa-list",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-list.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 97.1875,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 221.6875
+        },
+        {
+          "x": 37,
+          "height": 260.1875,
+          "label": "records",
+          "width": 1114,
+          "shape": "rectangle",
+          "y": 396.0625
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "poa-create",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-create.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 286.046875
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "رقم التوكيل",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 286.046875
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "تاريخ الإصدار",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 359.34375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "مكتب التوثيق",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 359.34375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الموكلون",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 518
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 773.265625
+        },
+        {
+          "x": 123,
+          "height": 99.359375,
+          "label": "المحامون المذكورون في التوكيل",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 632.90625
+        }
+      ]
+    },
+    {
+      "id": "poa-create",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-create-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 802,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 64.046875
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "رقم التوكيل",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 64.046875
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "تاريخ الإصدار",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 137.34375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "مكتب التوثيق",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 137.34375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الموكلون",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 296
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 551.265625
+        },
+        {
+          "x": 123,
+          "height": 99.359375,
+          "label": "المحامون المذكورون في التوكيل",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 410.90625
+        },
+        {
+          "x": 123,
+          "height": 50.59375,
+          "label": "save-cancel",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 666.171875
+        }
+      ]
+    },
+    {
+      "id": "poa-summary",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-summary.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 802.765625,
+          "height": 32,
+          "label": "views",
+          "width": 349.234375,
+          "shape": "rectangle",
+          "y": 227.9375
+        },
+        {
+          "x": 36,
+          "height": 123.9375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 600.40625,
+          "height": 299.03125,
+          "label": "details",
+          "width": 551.59375,
+          "shape": "rectangle",
+          "y": 259.9375
+        },
+        {
+          "x": 36,
+          "height": 299.03125,
+          "label": "details",
+          "width": 551.609375,
+          "shape": "rectangle",
+          "y": 259.9375
+        }
+      ]
+    },
+    {
+      "id": "poa-clients",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-clients.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 802.765625,
+          "height": 32,
+          "label": "views",
+          "width": 349.234375,
+          "shape": "rectangle",
+          "y": 227.9375
+        },
+        {
+          "x": 36,
+          "height": 123.9375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 222.625,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 259.9375
+        }
+      ]
+    },
+    {
+      "id": "poa-lawyers",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-lawyers.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 802.765625,
+          "height": 32,
+          "label": "views",
+          "width": 349.234375,
+          "shape": "rectangle",
+          "y": 227.9375
+        },
+        {
+          "x": 36,
+          "height": 123.9375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 150.703125,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 259.9375
+        }
+      ]
+    },
+    {
+      "id": "poa-cases",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-cases.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 802.765625,
+          "height": 32,
+          "label": "views",
+          "width": 349.234375,
+          "shape": "rectangle",
+          "y": 227.9375
+        },
+        {
+          "x": 36,
+          "height": 123.9375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 150.703125,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 259.9375
+        }
+      ]
+    },
+    {
+      "id": "poa-attachments",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-attachments.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 802.765625,
+          "height": 32,
+          "label": "views",
+          "width": 349.234375,
+          "shape": "rectangle",
+          "y": 227.9375
+        },
+        {
+          "x": 53,
+          "height": 70.921875,
+          "label": "records",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 347.515625
+        },
+        {
+          "x": 36,
+          "height": 123.9375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "poa-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 842,
+        "y": 29
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 138.984375
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "رقم التوكيل",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 138.984375
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "تاريخ الإصدار",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 212.28125
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "مكتب التوثيق",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 212.28125
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الموكلون",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 374.453125
+        },
+        {
+          "x": 853.34375,
+          "height": 18.90625,
+          "label": "اسم المحامي",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 546.59375
+        },
+        {
+          "x": 602.671875,
+          "height": 18.90625,
+          "label": "رقم القيد",
+          "width": 234.671875,
+          "shape": "rectangle",
+          "y": 546.59375
+        },
+        {
+          "x": 352.015625,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 546.59375
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 751.28125
+        },
+        {
+          "x": 352,
+          "height": 64,
+          "label": "save-cancel",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 791
+        }
+      ]
+    },
+    {
+      "id": "poa-edit",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-edit-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 842,
+        "y": 29
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 67.984375
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "رقم التوكيل",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 67.984375
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "تاريخ الإصدار",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 141.28125
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "مكتب التوثيق",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 141.28125
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الموكلون",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 303.453125
+        },
+        {
+          "x": 853.34375,
+          "height": 18.90625,
+          "label": "اسم المحامي",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 475.59375
+        },
+        {
+          "x": 602.671875,
+          "height": 18.90625,
+          "label": "رقم القيد",
+          "width": 234.671875,
+          "shape": "rectangle",
+          "y": 475.59375
+        },
+        {
+          "x": 352.015625,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 475.59375
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 680.28125
+        },
+        {
+          "x": 352,
+          "height": 64,
+          "label": "save-cancel",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 791
+        }
+      ]
+    },
+    {
+      "id": "poa-archive",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-archive.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 416,
+        "x": 512,
+        "height": 199,
+        "y": 351
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 528,
+          "height": 166.28125,
+          "label": "details",
+          "width": 384,
+          "shape": "rectangle",
+          "y": 367
+        }
+      ]
+    },
+    {
+      "id": "poa-restored",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-restored.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 802.765625,
+          "height": 32,
+          "label": "views",
+          "width": 349.234375,
+          "shape": "rectangle",
+          "y": 228
+        },
+        {
+          "x": 36,
+          "height": 124,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 600.40625,
+          "height": 299.03125,
+          "label": "details",
+          "width": 551.59375,
+          "shape": "rectangle",
+          "y": 260
+        },
+        {
+          "x": 36,
+          "height": 299.03125,
+          "label": "details",
+          "width": 551.609375,
+          "shape": "rectangle",
+          "y": 260
+        }
+      ]
+    },
+    {
+      "id": "cases-list",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "cases-list.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 103.59375,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 221.6875
+        },
+        {
+          "x": 37,
+          "height": 260.1875,
+          "label": "records",
+          "width": 1114,
+          "shape": "rectangle",
+          "y": 402.46875
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "case-create",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-create.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 761.671875,
+          "height": 18.90625,
+          "label": "رقم الملف الداخلي",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 453.796875
+        },
+        {
+          "x": 442.34375,
+          "height": 18.90625,
+          "label": "الحالة",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 453.796875
+        },
+        {
+          "x": 123.015625,
+          "height": 18.90625,
+          "label": "الدرجة القضائية",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 453.796875
+        },
+        {
+          "x": 761.671875,
+          "height": 18.90625,
+          "label": "رقم الدعوى بالمحكمة",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 555.71875
+        },
+        {
+          "x": 442.34375,
+          "height": 18.90625,
+          "label": "سنة الدعوى",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 555.71875
+        },
+        {
+          "x": 123.015625,
+          "height": 18.90625,
+          "label": "السنة القضائية",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 555.71875
+        },
+        {
+          "x": 761.671875,
+          "height": 18.90625,
+          "label": "نوع الدعوى",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 657.640625
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "المحكمة",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 820.53125
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الدائرة",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 820.53125
+        },
+        {
+          "x": 123,
+          "height": 127.75,
+          "label": "الموكلون",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 250.6875
+        }
+      ]
+    },
+    {
+      "id": "case-create",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-create-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 803,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 761.671875,
+          "height": 18.90625,
+          "label": "رقم الدعوى بالمحكمة",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 79.71875
+        },
+        {
+          "x": 442.34375,
+          "height": 18.90625,
+          "label": "سنة الدعوى",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 79.71875
+        },
+        {
+          "x": 123.015625,
+          "height": 18.90625,
+          "label": "السنة القضائية",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 79.71875
+        },
+        {
+          "x": 761.671875,
+          "height": 18.90625,
+          "label": "نوع الدعوى",
+          "width": 303.328125,
+          "shape": "rectangle",
+          "y": 181.640625
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "المحكمة",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 344.53125
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "الدائرة",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 344.53125
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "تاريخ القيد",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 417.828125
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "تاريخ الانتهاء",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 417.828125
+        },
+        {
+          "x": 602,
+          "height": 18.90625,
+          "label": "موضوع الدعوى",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 552.09375
+        },
+        {
+          "x": 123,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 463,
+          "shape": "rectangle",
+          "y": 552.09375
+        },
+        {
+          "x": 123,
+          "height": 50.59375,
+          "label": "save-cancel",
+          "width": 942,
+          "shape": "rectangle",
+          "y": 667
+        }
+      ]
+    },
+    {
+      "id": "case-summary",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-summary.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 761.359375,
+          "height": 32,
+          "label": "views",
+          "width": 390.640625,
+          "shape": "rectangle",
+          "y": 228
+        },
+        {
+          "x": 36,
+          "height": 124,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 483.375,
+          "height": 420.484375,
+          "label": "details",
+          "width": 668.625,
+          "shape": "rectangle",
+          "y": 260
+        },
+        {
+          "x": 36,
+          "height": 238.609375,
+          "label": "details",
+          "width": 431.375,
+          "shape": "rectangle",
+          "y": 260
+        },
+        {
+          "x": 36,
+          "height": 204.21875,
+          "label": "details",
+          "width": 431.375,
+          "shape": "rectangle",
+          "y": 511.40625
+        }
+      ]
+    },
+    {
+      "id": "case-relationships",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-relationships.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 761.359375,
+          "height": 32,
+          "label": "views",
+          "width": 390.640625,
+          "shape": "rectangle",
+          "y": 228
+        },
+        {
+          "x": 36,
+          "height": 124,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 233.03125,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 260
+        },
+        {
+          "x": 36,
+          "height": 161.109375,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 509.03125
+        }
+      ]
+    },
+    {
+      "id": "case-hearings",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-hearings.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 761.359375,
+          "height": 32,
+          "label": "views",
+          "width": 390.640625,
+          "shape": "rectangle",
+          "y": 228
+        },
+        {
+          "x": 36,
+          "height": 124,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 304.625,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 260
+        }
+      ]
+    },
+    {
+      "id": "case-tasks",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-tasks.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 761.359375,
+          "height": 32,
+          "label": "views",
+          "width": 390.640625,
+          "shape": "rectangle",
+          "y": 228
+        },
+        {
+          "x": 36,
+          "height": 124,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 163.375,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 260
+        }
+      ]
+    },
+    {
+      "id": "case-attachments",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-attachments.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 761.359375,
+          "height": 32,
+          "label": "views",
+          "width": 390.640625,
+          "shape": "rectangle",
+          "y": 228
+        },
+        {
+          "x": 53,
+          "height": 70.921875,
+          "label": "records",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 347.578125
+        },
+        {
+          "x": 36,
+          "height": 124,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "case-account",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-account.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 835,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 660.078125,
+          "height": 18.90625,
+          "label": "قيمة الأتعاب (ج.م)",
+          "width": 474.921875,
+          "shape": "rectangle",
+          "y": 449.375
+        },
+        {
+          "x": 555,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 93.078125,
+          "shape": "rectangle",
+          "y": 477.375
+        },
+        {
+          "x": 36,
+          "height": 86.203125,
+          "label": "totals",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 260
+        },
+        {
+          "x": 36,
+          "height": 138.15625,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 542.375
+        },
+        {
+          "x": 36,
+          "height": 138.15625,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 696.53125
+        }
+      ]
+    },
+    {
+      "id": "case-account",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-account-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 803,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 660.078125,
+          "height": 18.90625,
+          "label": "قيمة الأتعاب (ج.م)",
+          "width": 474.921875,
+          "shape": "rectangle",
+          "y": 361.375
+        },
+        {
+          "x": 555,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 93.078125,
+          "shape": "rectangle",
+          "y": 389.375
+        },
+        {
+          "x": 36,
+          "height": 86.203125,
+          "label": "totals",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 172
+        },
+        {
+          "x": 36,
+          "height": 138.15625,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 454.375
+        },
+        {
+          "x": 36,
+          "height": 138.15625,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 608.53125
+        }
+      ]
+    },
+    {
+      "id": "case-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 842,
+        "y": 29
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 853.34375,
+          "height": 18.90625,
+          "label": "رقم الملف الداخلي",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 138.984375
+        },
+        {
+          "x": 602.671875,
+          "height": 18.90625,
+          "label": "الحالة",
+          "width": 234.671875,
+          "shape": "rectangle",
+          "y": 138.984375
+        },
+        {
+          "x": 352.015625,
+          "height": 18.90625,
+          "label": "الدرجة القضائية",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 138.984375
+        },
+        {
+          "x": 853.34375,
+          "height": 18.90625,
+          "label": "رقم الدعوى بالمحكمة",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 240.90625
+        },
+        {
+          "x": 602.671875,
+          "height": 18.90625,
+          "label": "سنة الدعوى",
+          "width": 234.671875,
+          "shape": "rectangle",
+          "y": 240.90625
+        },
+        {
+          "x": 352.015625,
+          "height": 18.90625,
+          "label": "السنة القضائية",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 240.90625
+        },
+        {
+          "x": 853.34375,
+          "height": 18.90625,
+          "label": "نوع الدعوى",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 363.453125
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "المحكمة",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 528.21875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الدائرة",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 528.21875
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "تاريخ القيد",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 601.515625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "تاريخ الانتهاء",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 601.515625
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "موضوع الدعوى",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 737.65625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 737.65625
+        },
+        {
+          "x": 352,
+          "height": 64,
+          "label": "save-cancel",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 791
+        }
+      ]
+    },
+    {
+      "id": "case-edit",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-edit-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 842,
+        "y": 29
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 853.34375,
+          "height": 18.90625,
+          "label": "رقم الملف الداخلي",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 80.984375
+        },
+        {
+          "x": 602.671875,
+          "height": 18.90625,
+          "label": "الحالة",
+          "width": 234.671875,
+          "shape": "rectangle",
+          "y": 80.984375
+        },
+        {
+          "x": 352.015625,
+          "height": 18.90625,
+          "label": "الدرجة القضائية",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 80.984375
+        },
+        {
+          "x": 853.34375,
+          "height": 18.90625,
+          "label": "رقم الدعوى بالمحكمة",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 182.90625
+        },
+        {
+          "x": 602.671875,
+          "height": 18.90625,
+          "label": "سنة الدعوى",
+          "width": 234.671875,
+          "shape": "rectangle",
+          "y": 182.90625
+        },
+        {
+          "x": 352.015625,
+          "height": 18.90625,
+          "label": "السنة القضائية",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 182.90625
+        },
+        {
+          "x": 853.34375,
+          "height": 18.90625,
+          "label": "نوع الدعوى",
+          "width": 234.65625,
+          "shape": "rectangle",
+          "y": 305.453125
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "المحكمة",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 470.21875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الدائرة",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 470.21875
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "تاريخ القيد",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 543.515625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "تاريخ الانتهاء",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 543.515625
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "موضوع الدعوى",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 679.65625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 679.65625
+        },
+        {
+          "x": 352,
+          "height": 64,
+          "label": "save-cancel",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 790.5625
+        }
+      ]
+    },
+    {
+      "id": "opponent-create",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "opponent-create.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 696,
+        "y": 102
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "اسم الخصم",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 191.25
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الصفة",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 270.15625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "محامي الخصم",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 349.0625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الهاتف",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 427.96875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 506.875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 585.78125
+        },
+        {
+          "x": 938.359375,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 89.5,
+          "shape": "rectangle",
+          "y": 729.6875
+        }
+      ]
+    },
+    {
+      "id": "opponent-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "opponent-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 696,
+        "y": 102
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "اسم الخصم",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 191.25
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الصفة",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 270.15625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "محامي الخصم",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 349.0625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الهاتف",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 427.96875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 506.875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 585.78125
+        },
+        {
+          "x": 938.359375,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 89.5,
+          "shape": "rectangle",
+          "y": 729.6875
+        }
+      ]
+    },
+    {
+      "id": "opponent-remove",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "opponent-remove.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 416,
+        "x": 512,
+        "height": 180,
+        "y": 360
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 528,
+          "height": 146.640625,
+          "label": "details",
+          "width": 384,
+          "shape": "rectangle",
+          "y": 376.5
+        }
+      ]
+    },
+    {
+      "id": "case-archived",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-archived.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 761.359375,
+          "height": 32,
+          "label": "views",
+          "width": 390.640625,
+          "shape": "rectangle",
+          "y": 265.640625
+        },
+        {
+          "x": 36,
+          "height": 124,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 141.640625
+        },
+        {
+          "x": 483.375,
+          "height": 410.078125,
+          "label": "details",
+          "width": 668.625,
+          "shape": "rectangle",
+          "y": 297.640625
+        },
+        {
+          "x": 36,
+          "height": 196.21875,
+          "label": "details",
+          "width": 431.375,
+          "shape": "rectangle",
+          "y": 297.640625
+        },
+        {
+          "x": 36,
+          "height": 204.21875,
+          "label": "details",
+          "width": 431.375,
+          "shape": "rectangle",
+          "y": 506.65625
+        },
+        {
+          "x": 36,
+          "height": 37.640625,
+          "label": "error",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "agenda-month",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "agenda-month.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 59.1875,
+          "label": "views",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "agenda-month",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "agenda-month-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 802,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 59.1875,
+          "label": "views",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 15.484375
+        },
+        {
+          "x": 409,
+          "height": 618.71875,
+          "label": "schedule",
+          "width": 726,
+          "shape": "rectangle",
+          "y": 110.0625
+        }
+      ]
+    },
+    {
+      "id": "agenda-week",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "agenda-week.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 59.1875,
+          "label": "views",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "agenda-week",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "agenda-week-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 803,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": []
+    },
+    {
+      "id": "agenda-list",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "agenda-list.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 59.1875,
+          "label": "views",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "agenda-list",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "agenda-list-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 803,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": []
+    },
+    {
+      "id": "hearing-create",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "hearing-create.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 728,
+        "y": 86
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "القضية",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 175.25
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "التاريخ",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 254.15625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الوقت (اختياري)",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 254.15625
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "نوع الجلسة",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 333.0625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "المحكمة أو المكان",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 333.0625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الدائرة",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 411.96875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "المطلوب تحضيره للجلسة",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 490.875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 601.78125
+        },
+        {
+          "x": 934.953125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 92.90625,
+          "shape": "rectangle",
+          "y": 745.6875
+        }
+      ]
+    },
+    {
+      "id": "hearing-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "hearing-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 728,
+        "y": 86
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "القضية",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 175.25
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "التاريخ",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 254.15625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الوقت (اختياري)",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 254.15625
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "نوع الجلسة",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 333.0625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "المحكمة أو المكان",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 333.0625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الدائرة",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 411.96875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "المطلوب تحضيره للجلسة",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 490.875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 601.78125
+        },
+        {
+          "x": 934.953125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 92.90625,
+          "shape": "rectangle",
+          "y": 745.6875
+        }
+      ]
+    },
+    {
+      "id": "hearing-decision",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "hearing-decision.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 420,
+        "y": 240
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "قرار الجلسة",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 329.25
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "تاريخ الجلسة القادمة (إن أُجلت)",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 440.15625
+        },
+        {
+          "x": 936.453125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 91.40625,
+          "shape": "rectangle",
+          "y": 591.703125
+        }
+      ]
+    },
+    {
+      "id": "hearing-delete",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "hearing-delete.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 416,
+        "x": 512,
+        "height": 199,
+        "y": 351
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 528,
+          "height": 166.28125,
+          "label": "details",
+          "width": 384,
+          "shape": "rectangle",
+          "y": 367
+        }
+      ]
+    },
+    {
+      "id": "tasks-today",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "tasks-today.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 85.125,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 268.875
+        },
+        {
+          "x": 903.5625,
+          "height": 32,
+          "label": "views",
+          "width": 248.4375,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 53,
+          "height": 73.1875,
+          "label": "records",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 459.5625
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "tasks-overdue",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "tasks-overdue.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 85.125,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 268.875
+        },
+        {
+          "x": 903.5625,
+          "height": 32,
+          "label": "views",
+          "width": 248.4375,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 53,
+          "height": 221.5625,
+          "label": "records",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 459.5625
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "tasks-upcoming",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "tasks-upcoming.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 773,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 85.125,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 268.875
+        },
+        {
+          "x": 903.5625,
+          "height": 32,
+          "label": "views",
+          "width": 248.4375,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 53,
+          "height": 295.75,
+          "label": "records",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 459.5625
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "tasks-completed",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "tasks-completed.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 85.125,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 268.875
+        },
+        {
+          "x": 903.5625,
+          "height": 32,
+          "label": "views",
+          "width": 248.4375,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 53,
+          "height": 221.5625,
+          "label": "records",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 459.5625
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "tasks-all",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "tasks-all.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 85.125,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 268.875
+        },
+        {
+          "x": 903.5625,
+          "height": 32,
+          "label": "views",
+          "width": 248.4375,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "tasks-all",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "tasks-all-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 803,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": []
+    },
+    {
+      "id": "task-create",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "task-create.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 649,
+        "y": 126
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "المهمة",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 214.75
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "تاريخ الاستحقاق",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 293.65625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "القضية",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 293.65625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الموكل",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 372.5625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "التفاصيل",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 451.46875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 562.375
+        },
+        {
+          "x": 931.8125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 96.046875,
+          "shape": "rectangle",
+          "y": 706.28125
+        }
+      ]
+    },
+    {
+      "id": "task-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "task-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 730,
+        "y": 85
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "المهمة",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 174.25
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "تاريخ الاستحقاق",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 253.15625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "القضية",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 253.15625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الموكل",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 332.0625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "التفاصيل",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 439.59375
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 550.5
+        },
+        {
+          "x": 931.8125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 96.046875,
+          "shape": "rectangle",
+          "y": 746.40625
+        }
+      ]
+    },
+    {
+      "id": "task-delete",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "task-delete.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 416,
+        "x": 512,
+        "height": 180,
+        "y": 360
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 528,
+          "height": 146.640625,
+          "label": "details",
+          "width": 384,
+          "shape": "rectangle",
+          "y": 376.5
+        }
+      ]
+    },
+    {
+      "id": "documents-global",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "documents-global.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "documents-global",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "documents-global-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 803,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": []
+    },
+    {
+      "id": "document-create",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "document-create.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 514,
+        "y": 193
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "التصنيف",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 369.1875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الوصف",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 448.09375
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "تاريخ المستند",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 527
+        },
+        {
+          "x": 990.640625,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 97.359375,
+          "shape": "rectangle",
+          "y": 638.90625
+        },
+        {
+          "x": 352,
+          "height": 67.4375,
+          "label": "source-file",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 281.75
+        }
+      ]
+    },
+    {
+      "id": "document-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "document-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 427,
+        "y": 237
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "التصنيف",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 325.75
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الوصف",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 404.65625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "تاريخ المستند",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 483.5625
+        },
+        {
+          "x": 983.140625,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 104.859375,
+          "shape": "rectangle",
+          "y": 595.46875
+        }
+      ]
+    },
+    {
+      "id": "document-remove",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "document-remove.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 416,
+        "x": 512,
+        "height": 199,
+        "y": 351
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 528,
+          "height": 166.28125,
+          "label": "details",
+          "width": 384,
+          "shape": "rectangle",
+          "y": 367
+        }
+      ]
+    },
+    {
+      "id": "document-missing",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "document-missing.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 761.359375,
+          "height": 32,
+          "label": "views",
+          "width": 390.640625,
+          "shape": "rectangle",
+          "y": 228
+        },
+        {
+          "x": 53,
+          "height": 70.921875,
+          "label": "records",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 347.578125
+        },
+        {
+          "x": 36,
+          "height": 124,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 53,
+          "height": 37.640625,
+          "label": "error",
+          "width": 1082,
+          "shape": "rectangle",
+          "y": 430.5
+        }
+      ]
+    },
+    {
+      "id": "finance-payments",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "finance-payments.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 85.125,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 268.875
+        },
+        {
+          "x": 1007.109375,
+          "height": 32,
+          "label": "views",
+          "width": 144.890625,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 54,
+          "height": 56.515625,
+          "label": "records",
+          "width": 1080,
+          "shape": "rectangle",
+          "y": 629.75
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 86.203125,
+          "label": "totals",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 372.390625
+        }
+      ]
+    },
+    {
+      "id": "finance-expenses",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "finance-expenses.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 85.125,
+          "label": "filters",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 268.875
+        },
+        {
+          "x": 1007.109375,
+          "height": 32,
+          "label": "views",
+          "width": 144.890625,
+          "shape": "rectangle",
+          "y": 218.484375
+        },
+        {
+          "x": 54,
+          "height": 56.515625,
+          "label": "records",
+          "width": 1080,
+          "shape": "rectangle",
+          "y": 629.75
+        },
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 86.203125,
+          "label": "totals",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 372.390625
+        }
+      ]
+    },
+    {
+      "id": "payment-create",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "payment-create.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 617,
+        "y": 142
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "القضية",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 230.75
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الموكل الدافع",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 309.65625
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "المبلغ (ج.م)",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 388.5625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "تاريخ الدفعة",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 388.5625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "طريقة الدفع",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 467.46875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 546.375
+        },
+        {
+          "x": 935.015625,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 92.84375,
+          "shape": "rectangle",
+          "y": 690.28125
+        }
+      ]
+    },
+    {
+      "id": "expense-create",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "expense-create.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 627,
+        "y": 137
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "القضية",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 265.390625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الموكل",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 265.390625
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "المبلغ (ج.م)",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 393.546875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "تاريخ المصروف",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 393.546875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "نوع المصروف",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 472.453125
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 551.359375
+        },
+        {
+          "x": 920.953125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 106.90625,
+          "shape": "rectangle",
+          "y": 695.265625
+        }
+      ]
+    },
+    {
+      "id": "backups-page",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "backups-page.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 415.421875,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 218.484375
+        }
+      ]
+    },
+    {
+      "id": "backup-created",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "backup-created.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 791,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 36,
+          "height": 96.09375,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 571.75,
+          "label": "details",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 218.484375
+        }
+      ]
+    },
+    {
+      "id": "backup-restore-confirm",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "backup-restore-confirm.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 202,
+        "y": 349
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 336,
+          "height": 169.71875,
+          "label": "details",
+          "width": 768,
+          "shape": "rectangle",
+          "y": 365
+        }
+      ]
+    },
+    {
+      "id": "settings-profile",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "settings-profile.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "اسم المحامي",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 319.59375
+        },
+        {
+          "x": 482.40625,
+          "height": 18.90625,
+          "label": "رقم القيد بالنقابة",
+          "width": 412.59375,
+          "shape": "rectangle",
+          "y": 398.5
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "رقم الهاتف",
+          "width": 412.609375,
+          "shape": "rectangle",
+          "y": 398.5
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "عنوان المكتب",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 477.40625
+        },
+        {
+          "x": 57,
+          "height": 37.59375,
+          "label": "save-cancel",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 588.3125
+        }
+      ]
+    },
+    {
+      "id": "settings-general",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "settings-general.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 482.40625,
+          "height": 18.90625,
+          "label": "لغة الواجهة",
+          "width": 412.59375,
+          "shape": "rectangle",
+          "y": 319.59375
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "المظهر",
+          "width": 412.609375,
+          "shape": "rectangle",
+          "y": 319.59375
+        },
+        {
+          "x": 482.40625,
+          "height": 18.90625,
+          "label": "طريقة كتابة التاريخ",
+          "width": 412.59375,
+          "shape": "rectangle",
+          "y": 391.296875
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "أول أيام الأسبوع",
+          "width": 412.609375,
+          "shape": "rectangle",
+          "y": 391.296875
+        },
+        {
+          "x": 57,
+          "height": 37.59375,
+          "label": "save-cancel",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 470.203125
+        }
+      ]
+    },
+    {
+      "id": "settings-security",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "settings-security.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "مدة عدم الاستخدام قبل القفل (بالدقائق)",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 319.59375
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "كلمة المرور الحالية",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 554.984375
+        },
+        {
+          "x": 482.40625,
+          "height": 18.90625,
+          "label": "كلمة المرور الجديدة",
+          "width": 412.59375,
+          "shape": "rectangle",
+          "y": 633.890625
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 412.609375,
+          "shape": "rectangle",
+          "y": 633.890625
+        },
+        {
+          "x": 57,
+          "height": 37.59375,
+          "label": "save-cancel",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 398.5
+        }
+      ]
+    },
+    {
+      "id": "settings-security",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "settings-security-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 802,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "مدة عدم الاستخدام قبل القفل (بالدقائق)",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 32.59375
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "كلمة المرور الحالية",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 267.984375
+        },
+        {
+          "x": 482.40625,
+          "height": 18.90625,
+          "label": "كلمة المرور الجديدة",
+          "width": 412.59375,
+          "shape": "rectangle",
+          "y": 346.890625
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 412.609375,
+          "shape": "rectangle",
+          "y": 346.890625
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "كلمة المرور الحالية للتأكيد",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 610.90625
+        },
+        {
+          "x": 57,
+          "height": 37.59375,
+          "label": "save-cancel",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 111.5
+        }
+      ]
+    },
+    {
+      "id": "settings-backups",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "settings-backups.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 998.921875,
+          "height": 181.84375,
+          "label": "views",
+          "width": 153.078125,
+          "shape": "rectangle",
+          "y": 232.09375
+        },
+        {
+          "x": 36,
+          "height": 106.5,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 643.421875,
+          "label": "details",
+          "width": 880,
+          "shape": "rectangle",
+          "y": 232.09375
+        }
+      ]
+    },
+    {
+      "id": "settings-backups",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "settings-backups-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 803,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 998.921875,
+          "height": 181.84375,
+          "label": "views",
+          "width": 153.078125,
+          "shape": "rectangle",
+          "y": 103.09375
+        },
+        {
+          "x": 36,
+          "height": 643.421875,
+          "label": "details",
+          "width": 880,
+          "shape": "rectangle",
+          "y": 103.09375
+        }
+      ]
+    },
+    {
+      "id": "settings-privacy",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "settings-privacy.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 998.921875,
+          "height": 181.84375,
+          "label": "views",
+          "width": 153.078125,
+          "shape": "rectangle",
+          "y": 232.09375
+        },
+        {
+          "x": 36,
+          "height": 106.5,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 416.875,
+          "label": "details",
+          "width": 880,
+          "shape": "rectangle",
+          "y": 232.09375
+        }
+      ]
+    },
+    {
+      "id": "settings-about",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "settings-about.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 747,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 998.921875,
+          "height": 181.84375,
+          "label": "views",
+          "width": 153.078125,
+          "shape": "rectangle",
+          "y": 232.09375
+        },
+        {
+          "x": 36,
+          "height": 106.5,
+          "label": "header",
+          "width": 1116,
+          "shape": "rectangle",
+          "y": 104
+        },
+        {
+          "x": 36,
+          "height": 390.328125,
+          "label": "details",
+          "width": 880,
+          "shape": "rectangle",
+          "y": 232.09375
+        }
+      ]
+    },
+    {
+      "id": "password-mismatch",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "password-mismatch.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 844,
+        "y": 56
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "مدة عدم الاستخدام قبل القفل (بالدقائق)",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 319.59375
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "كلمة المرور الحالية",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 554.984375
+        },
+        {
+          "x": 482.40625,
+          "height": 18.90625,
+          "label": "كلمة المرور الجديدة",
+          "width": 412.59375,
+          "shape": "rectangle",
+          "y": 633.890625
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 412.609375,
+          "shape": "rectangle",
+          "y": 633.890625
+        },
+        {
+          "x": 57,
+          "height": 37.59375,
+          "label": "save-cancel",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 398.5
+        },
+        {
+          "x": 57,
+          "height": 19.640625,
+          "label": "error",
+          "width": 412.609375,
+          "shape": "rectangle",
+          "y": 700.796875
+        }
+      ]
+    },
+    {
+      "id": "password-mismatch",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "password-mismatch-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 1204,
+        "x": 0,
+        "height": 802,
+        "y": 0
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "مدة عدم الاستخدام قبل القفل (بالدقائق)",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 32.59375
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "كلمة المرور الحالية",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 267.984375
+        },
+        {
+          "x": 482.40625,
+          "height": 18.90625,
+          "label": "كلمة المرور الجديدة",
+          "width": 412.59375,
+          "shape": "rectangle",
+          "y": 346.890625
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 412.609375,
+          "shape": "rectangle",
+          "y": 346.890625
+        },
+        {
+          "x": 57,
+          "height": 18.90625,
+          "label": "كلمة المرور الحالية للتأكيد",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 610.90625
+        },
+        {
+          "x": 57,
+          "height": 37.59375,
+          "label": "save-cancel",
+          "width": 838,
+          "shape": "rectangle",
+          "y": 111.5
+        },
+        {
+          "x": 57,
+          "height": 19.640625,
+          "label": "error",
+          "width": 412.609375,
+          "shape": "rectangle",
+          "y": 413.796875
+        }
+      ]
+    },
+    {
+      "id": "case-clients-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "case-clients-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 668,
+        "y": 116
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الموكلون",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 189.25
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الصفة القانونية",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 303.796875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 378.703125
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الصفة القانونية",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 521.25
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 596.15625
+        },
+        {
+          "x": 352,
+          "height": 64,
+          "label": "save-cancel",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 703.0625
+        }
+      ]
+    },
+    {
+      "id": "poa-inline-client",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "poa-inline-client.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 686,
+        "y": 107
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الاسم الكامل",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 216.984375
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "الرقم الداخلي",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 290.28125
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الرقم القومي",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 290.28125
+        },
+        {
+          "x": 728,
+          "height": 18.90625,
+          "label": "رقم الهاتف",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 455.046875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "البريد الإلكتروني",
+          "width": 360,
+          "shape": "rectangle",
+          "y": 455.046875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "العنوان",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 528.34375
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 601.640625
+        },
+        {
+          "x": 352,
+          "height": 64,
+          "label": "save-cancel",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 712.546875
+        }
+      ]
+    },
+    {
+      "id": "document-owner",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "document-owner.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 340,
+        "y": 280
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "قضية",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 441.671875
+        },
+        {
+          "x": 1028.125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 59.875,
+          "shape": "rectangle",
+          "y": 551.96875
+        }
+      ]
+    },
+    {
+      "id": "backup-validate",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "backup-validate.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 177,
+        "y": 362
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 336,
+          "height": 144.03125,
+          "label": "details",
+          "width": 768,
+          "shape": "rectangle",
+          "y": 378
+        }
+      ]
+    },
+    {
+      "id": "backup-preview",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "backup-preview.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 294,
+        "y": 303
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 336,
+          "height": 260.640625,
+          "label": "details",
+          "width": 768,
+          "shape": "rectangle",
+          "y": 319.5
+        }
+      ]
+    },
+    {
+      "id": "backup-corrupt",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "backup-corrupt.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 272,
+        "y": 314
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 336,
+          "height": 239.359375,
+          "label": "details",
+          "width": 768,
+          "shape": "rectangle",
+          "y": 330.5
+        }
+      ]
+    },
+    {
+      "id": "restore-password",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "restore-password.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 574,
+        "y": 163
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 20.546875,
+          "label": "كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 453.578125
+        },
+        {
+          "x": 116.828125,
+          "height": 20.546875,
+          "label": "مفتاح الاسترداد",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 474.125
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة مرور النسخة",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 510.671875
+        },
+        {
+          "x": 116.828125,
+          "height": 37.59375,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 634.828125
+        }
+      ]
+    },
+    {
+      "id": "restore-recovery",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "restore-recovery.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 704,
+        "y": 98
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 20.546875,
+          "label": "كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 388.984375
+        },
+        {
+          "x": 116.828125,
+          "height": 20.546875,
+          "label": "مفتاح الاسترداد",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 409.53125
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "مفتاح استرداد النسخة",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 446.078125
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة المرور الجديدة",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 549.609375
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور الجديدة",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 624.515625
+        },
+        {
+          "x": 116.828125,
+          "height": 37.59375,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 699.421875
+        }
+      ]
+    }
+  ],
+  "results": [
+    {
+      "locale": "ar",
+      "scenario": "initialize-through-ui-and-save-recovery-key",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "client-create-through-ui",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "case-create-through-ui",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "seed-exactly-ten-clients-seven-complete-cases",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "whole-office-relations-ledgers-and-hearing-chain",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-shell",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-quick-add",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-dashboard",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-search",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-search-palette",
+      "result": "failed",
+      "errorCode": "SCREEN_CAPTURE_FAILED"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-clients-list",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-create",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-required",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-duplicate",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-summary",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-cases",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-poas",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-account",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-attachments",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-archive",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-client-restored",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "client-archive-via-ipc-restore-through-ui",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-list",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-create",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-summary",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-clients",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-lawyers",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-cases",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-attachments",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-archive",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-restored",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "poa-archive-via-ipc-restore-through-ui",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-cases-list",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-create",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-summary",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-relationships",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-hearings",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-tasks",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-attachments",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-account",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-opponent-create",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-opponent-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-opponent-remove",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-archived",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "case-archive-via-ipc-restore-through-ui",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-agenda-month",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-agenda-week",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-agenda-list",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-hearing-create",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-hearing-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-hearing-decision",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-hearing-delete",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-tasks-today",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-tasks-overdue",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-tasks-upcoming",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-tasks-completed",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-tasks-all",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-task-create",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-task-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-task-delete",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-documents-global",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-document-create",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-document-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-document-remove",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "missing-managed-document-open-refused",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-document-missing",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-finance-payments",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-finance-expenses",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-payment-create",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-payment-edit",
+      "result": "failed",
+      "errorCode": "SCREEN_CAPTURE_FAILED"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-expense-create",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-expense-edit",
+      "result": "failed",
+      "errorCode": "SCREEN_CAPTURE_FAILED"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-backups-page",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-backup-created",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-backup-restore-confirm",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-settings-profile",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-settings-general",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-settings-security",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-settings-backups",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-settings-privacy",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-settings-about",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "password-confirmation-mismatch-refused",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-password-mismatch",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-payment-inspect",
+      "result": "failed",
+      "errorCode": "SCREEN_CAPTURE_FAILED"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-expense-inspect",
+      "result": "failed",
+      "errorCode": "SCREEN_CAPTURE_FAILED"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-case-clients-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-poa-inline-client",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-document-owner",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-backup-validate",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-backup-preview",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-backup-corrupt",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-restore-password",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-restore-recovery",
+      "result": "passed",
+      "layer": "native-screen-render"
+    }
+  ],
+  "binarySha256": "ab4bb75a83e7a56f3fa6c33a70a105e1c75684ce650268c1fbbfb7b5122385ed",
+  "fixtureDate": "2026-10-14"
+}

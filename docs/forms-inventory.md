@@ -2,18 +2,26 @@
 
 This inventory describes the user-facing data-entry, access, and settings forms currently rendered by the application. Create and edit variants that share a component are listed once. Required fields are marked **required**; all others are optional unless stated otherwise.
 
+For view outputs, derived relationships, financial formulas, field-level test
+contracts, and fresh native screenshots, see the [system input/output and
+data-flow report](reviews/2026-10-14-system-input-output-data-flow.md).
+
 ## Access and vault
 
 ### Initial vault setup
 
 - Lawyer full name — **required**
 - Password — **required**, at least 12 characters
+- Password confirmation — **required**, must match the password
+
+The language switcher is available before setup. The recovery-key step requires
+acknowledgment that the key has been saved before entering the workspace.
 
 **Code evidence:** [OnboardingPage.tsx](../src/features/onboarding/pages/OnboardingPage.tsx) (`SetupForm`)
 
 ### Unlock vault
 
-- Password — **required**, at least 12 characters
+- Password — **required**, nonempty; authentication is performed by Rust
 
 **Code evidence:** [OnboardingPage.tsx](../src/features/onboarding/pages/OnboardingPage.tsx) (`UnlockForm`)
 
@@ -21,6 +29,7 @@ This inventory describes the user-facing data-entry, access, and settings forms 
 
 - Recovery key — **required**
 - New password — **required**, at least 12 characters
+- Password confirmation — **required**, must match the new password
 
 **Code evidence:** [OnboardingPage.tsx](../src/features/onboarding/pages/OnboardingPage.tsx) (`RecoveryForm`)
 
@@ -42,6 +51,7 @@ This inventory describes the user-facing data-entry, access, and settings forms 
 
 - Internal number — **required**
 - Official case number
+- Official year (Gregorian year, distinct from the judicial year)
 - Judicial year
 - Status
 - Court name
@@ -53,6 +63,9 @@ This inventory describes the user-facing data-entry, access, and settings forms 
 - Subject / summary
 - Notes
 - Linked clients — at least one is **required**; searchable multi-selection stores IDs
+
+Client selection is create-only. Core case edit preserves relationships; the
+Parties editor separately edits membership, each client's legal capacity, and notes.
 
 **Code evidence:** [CaseCreateForm.tsx](../src/features/cases/forms/CaseCreateForm.tsx), [CaseEditForm.tsx](../src/features/cases/forms/CaseEditForm.tsx), and [CaseCoreFields.tsx](../src/features/cases/forms/CaseCoreFields.tsx)
 
@@ -80,13 +93,15 @@ This inventory describes the user-facing data-entry, access, and settings forms 
 - Issue date
 - Notary office
 - Notes
-- Linked clients — select existing clients or add a new client inline; a newly created client is selected automatically
+- Linked clients — at least one distinct client is **required**; select existing clients or add a new client inline; a newly created client is selected automatically
 - Named lawyers — zero or more entries, each with:
-  - Full name
+  - Full name — **required** for every added lawyer row
   - Bar number
   - Notes
 
 **Code evidence:** [PowerOfAttorneyForm.tsx](../src/features/powersOfAttorney/components/PowerOfAttorneyForm.tsx) and [ClientForm.tsx](../src/features/clients/forms/ClientForm.tsx)
+
+Issue year is derived from the issue date; it is not a separate input.
 
 ## Schedule and tasks
 
@@ -122,6 +137,7 @@ Choosing a next-hearing date creates a follow-up hearing using the current heari
 - Notes
 
 Existing tasks also expose a complete/reopen status action.
+The case and client links are mutually exclusive.
 
 **Code evidence:** [TasksPage.tsx](../src/features/tasks/pages/TasksPage.tsx) (`TaskForm`)
 
@@ -148,6 +164,7 @@ Existing tasks also expose a complete/reopen status action.
 - Notes
 
 An expense can have neither a linked case nor a linked client.
+It cannot have both links.
 
 **Code evidence:** [FinancesPage.tsx](../src/features/finances/pages/FinancesPage.tsx) (`ExpenseForm`)
 
@@ -181,7 +198,6 @@ Editing an attachment changes only its category, description, and document date.
 - Theme
 - Date format
 - Week-start day
-- Default reminder lead time
 
 **Code evidence:** [SettingsPage.tsx](../src/features/settings/pages/SettingsPage.tsx) (general section)
 
@@ -195,13 +211,28 @@ Editing an attachment changes only its category, description, and document date.
 
 **Code evidence:** [SettingsPage.tsx](../src/features/settings/pages/SettingsPage.tsx) (security section)
 
-### Toggle settings
+### Recovery key replacement
 
-- Autostart enabled/disabled
-- Notification permission
-- Local aggregate-usage-counter consent
+- Current password — **required** to replace the recovery key
+- Completion action after viewing/saving the replacement key
 
-**Code evidence:** [SettingsPage.tsx](../src/features/settings/pages/SettingsPage.tsx) (security section)
+**Code evidence:** [RecoveryKeySection.tsx](../src/features/settings/components/RecoveryKeySection.tsx)
+
+### Backup validation and restoration
+
+- Backup file selected through the native picker — **required**
+- Authentication method: password or recovery key, when the active vault key cannot prepare the archive
+- Backup password or recovery key — **required** when authenticating explicitly
+- Recovery restore: new password and matching confirmation — **required**, at least 12 characters
+- Prepared preview and explicit replacement confirmation for restore
+
+Validation and cancellation do not replace the workspace. Restore preparation,
+authentication and confirmation are shared by setup, Backups and Settings.
+
+**Code evidence:** [RestoreFromBackup.tsx](../src/features/backups/components/RestoreFromBackup.tsx)
+
+Notifications, reminder lead time and autostart have been removed. Local usage
+counter consent is backend-only and has no current settings form.
 
 ## Other interactive controls
 
@@ -230,5 +261,5 @@ Clear, accessible full date labels, Western-digit output, and Arabic-digit input
 TimeField suggests 15-minute intervals and accepts exact `HH:mm`. AmountInput
 shows EGP and parses decimal text to integer minor units at submission.
 Court, circuit, case/hearing type, notary, and legal capacity use free-text
-comboboxes with suggestions from existing records. Reminder and lock presets
-retain saved custom values.
+comboboxes with suggestions from existing records. Lock presets retain saved
+custom values; reminder controls have been removed.

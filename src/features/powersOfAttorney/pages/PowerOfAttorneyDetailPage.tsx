@@ -1,3 +1,4 @@
+import { QuerySection } from '@/components/layout/QuerySection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { actionableErrorMessage } from '@/bridge/errors';
 import { Badge } from '@/components/ui/badge';
@@ -232,34 +233,36 @@ export function PowerOfAttorneyDetailPage() {
           <div className="card-title">
             <h3>{t('poa.linkedCasesTitle')}</h3>
           </div>
-          {!item.caseIds.length ? (
-            <p className="empty-compact">{t('poa.noCases')}</p>
-          ) : (
-            <ul className="compact-records">
-              {item.caseIds.map((caseId) => {
-                const linked = cases.data?.find((caseItem) => caseItem.id === caseId);
-                return (
-                  <li key={caseId}>
-                    <div className="record-copy">
-                      <Link to={`/cases/${caseId}`}>
-                        <bdi>{linked?.internalNumber ?? t('poa.openCase')}</bdi>
-                      </Link>
+          <QuerySection query={cases} label={t('poa.linkedCasesTitle')}>
+            {!item.caseIds.length ? (
+              <p className="empty-compact">{t('poa.noCases')}</p>
+            ) : (
+              <ul className="compact-records">
+                {item.caseIds.map((caseId) => {
+                  const linked = cases.data?.find((caseItem) => caseItem.id === caseId);
+                  return (
+                    <li key={caseId}>
+                      <div className="record-copy">
+                        <Link to={`/cases/${caseId}`}>
+                          <bdi>{linked?.internalNumber ?? t('poa.openCase')}</bdi>
+                        </Link>
+                        {linked && (
+                          <span dir="auto">
+                            {[linked.courtName, format.list(linked.clientNames)]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </span>
+                        )}
+                      </div>
                       {linked && (
-                        <span dir="auto">
-                          {[linked.courtName, format.list(linked.clientNames)]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </span>
+                        <CaseStatusBadge status={linked.status} archived={!!linked.archivedAt} />
                       )}
-                    </div>
-                    {linked && (
-                      <CaseStatusBadge status={linked.status} archived={!!linked.archivedAt} />
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </QuerySection>
         </section>
       )}
       {tab === 'attachments' && (

@@ -13,6 +13,15 @@ const refreshAccounts = (client: QueryClient) =>
 
 /** Invalidation rules from the finalized frontend-domain contract. */
 export const queryInvalidation = {
+  /** Identity and POA membership changes affect cached labels and former owners too. */
+  clientOrPowerOfAttorney(queryClient: QueryClient) {
+    return Promise.all([
+      invalidate(queryClient, queryKeys.clients.all),
+      invalidate(queryClient, queryKeys.cases.all),
+      invalidate(queryClient, queryKeys.powersOfAttorney.all),
+      invalidate(queryClient, queryKeys.search.all),
+    ]);
+  },
   payment(queryClient: QueryClient, input: { caseId: string; payerClientId: string }) {
     invalidate(queryClient, queryKeys.payments.all);
     refreshAccounts(queryClient);
@@ -43,8 +52,8 @@ export const queryInvalidation = {
     if (input.powerOfAttorneyId) {
       invalidate(queryClient, queryKeys.powersOfAttorney.detail(input.powerOfAttorneyId));
     }
-    if (input.caseId) invalidate(queryClient, queryKeys.cases.relationships(input.caseId));
-    if (input.clientId) invalidate(queryClient, queryKeys.clients.relationships(input.clientId));
+    if (input.caseId) invalidate(queryClient, queryKeys.cases.detail(input.caseId));
+    if (input.clientId) invalidate(queryClient, queryKeys.clients.detail(input.clientId));
     invalidate(queryClient, queryKeys.search.all);
   },
   attachment(

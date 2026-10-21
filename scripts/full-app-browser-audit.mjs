@@ -11,27 +11,40 @@ const browser = await chromium.launch();
 const results = [];
 const inventory = [];
 async function check(name, action, page) {
+  if (process.env.BROWSER_AUDIT_FILTER && !new RegExp(process.env.BROWSER_AUDIT_FILTER).test(name))
+    return;
   try {
     await action();
     results.push({ name, result: 'passed', layer: 'renderer-fixture' });
   } catch (error) {
     const evidence = `${name.replace(/[^a-z0-9-]/gi, '-')}-failure.png`;
-    await page.screenshot({ path: `${output}/${evidence}`, fullPage: true });
+    const activePage = typeof page === 'function' ? page() : page;
+    await activePage.screenshot({ path: `${output}/${evidence}`, fullPage: true });
     results.push({ name, result: 'failed', evidence, error: error.message.slice(0, 1600) });
   }
 }
 for (const language of ['ar', 'en']) {
-  const page = await browser.newPage({ timezoneId: 'Africa/Cairo' });
+  let page = await browser.newPage({ timezoneId: 'Africa/Cairo' });
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.clock.setFixedTime(new Date(fixtureTime));
+  const navigate = async (url) => {
+    const viewport = page.viewportSize();
+    await page.close();
+    // browser.newPage owns a fresh context; closing it releases resources from
+    // the previous Vite navigation while preserving viewport and fixture time.
+    page = await browser.newPage({ timezoneId: 'Africa/Cairo', viewport });
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.clock.setFixedTime(new Date(fixtureTime));
+    await page.goto(url);
+  };
   for (const width of [1366, 1440, 760]) {
     await page.setViewportSize({ width, height: width === 1366 ? 768 : 900 });
     for (const [name, path, ready] of routes) {
       await check(
         `${language}-${width}-${name}`,
         async () => {
-          await page.goto(
+          await navigate(
             `http://127.0.0.1:4173${path}${path.includes('?') ? '&' : '?'}captureLocale=${language}`,
           );
           await expect(page.locator(ready).first()).toBeVisible();
@@ -76,16 +89,18 @@ for (const language of ['ar', 'en']) {
           );
           await expect(page.getByRole('alert')).toHaveCount(0);
         },
-        page,
+        () => page,
       );
     }
   }
   await page.setViewportSize({ width: 1440, height: 900 });
   const go = async (path) => {
-    await page.goto(
+    await navigate(
       `http://127.0.0.1:4173${path}${path.includes('?') ? '&' : '?'}captureLocale=${language}`,
     );
     await expect(page.locator('.workspace')).toBeVisible();
+    const ready = routes.find((route) => route[1] === path)?.[2];
+    if (ready) await expect(page.locator(ready).first()).toBeVisible();
   };
   for (const path of [
     '/clients/demo-client-adel',
@@ -97,6 +112,7 @@ for (const language of ['ar', 'en']) {
   ]) {
     await go(path);
     const tabs = page.getByRole('tab');
+    await expect(tabs.first()).toBeVisible();
     const count = await tabs.count();
     for (let index = 0; index < count; index++) {
       await check(
@@ -111,7 +127,7 @@ for (const language of ['ar', 'en']) {
             animations: 'disabled',
           });
         },
-        page,
+        () => page,
       );
     }
   }
@@ -129,14 +145,15 @@ for (const language of ['ar', 'en']) {
         const form = page.locator('form').last();
         await expect(form).toBeVisible();
         await form.locator('button[type="submit"],button:not([type])').last().click();
-        await expect(page.locator('[data-slot="field-error"]').first()).toBeVisible();
+        await expect(form.locator('[role="alert"]').first()).toBeVisible();
+        await expect(form.locator('[aria-invalid="true"]').first()).toBeVisible();
         await page.screenshot({
           path: `${output}/${language}-validation-${path.replaceAll(/[^a-z0-9]/gi, '-')}.png`,
           fullPage: true,
           animations: 'disabled',
         });
       },
-      page,
+      () => page,
     );
   }
   await check(
@@ -153,7 +170,7 @@ for (const language of ['ar', 'en']) {
       await page.locator('.global-search input[role="combobox"]').press('Enter');
       await expect(page).toHaveURL(/clients\/demo-client-adel/);
     },
-    page,
+    () => page,
   );
   await check(
     `${language}-mobile-navigation-escape`,
@@ -169,7 +186,7 @@ for (const language of ['ar', 'en']) {
       await page.keyboard.press('Escape');
       await expect(page.getByRole('dialog')).toHaveCount(0);
     },
-    page,
+    () => page,
   );
   results.push({
     name: `${language}-uncaught-renderer-errors`,

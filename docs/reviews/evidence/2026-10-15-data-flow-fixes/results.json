@@ -1,0 +1,12 @@
+[
+  {
+    "scenario": "case-reference-and-chronology-commands-preserve-data-on-refusal",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  },
+  {
+    "scenario": "case-account-failed-read-retry-restores-real-data",
+    "result": "passed",
+    "layer": "native-desktop-real-ipc"
+  }
+]
