@@ -1,5 +1,7 @@
 # Installing LegalMaster Solo on macOS
 
+> macOS is not part of the first public release.
+
 Choose the DMG matching the Mac processor:
 
 - `macos_x64.dmg` for Intel Macs.

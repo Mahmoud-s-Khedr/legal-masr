@@ -92,7 +92,7 @@ workflow run, then install the extracted package with
 `sudo dnf install ./<package>.rpm`.
 
 The validation artifacts are debug builds for test installation only. For
-versioned distributable Windows, Linux, and macOS packages, use the tag/manual
+versioned distributable Windows and Linux packages, use the tag/manual
 **Draft release** workflow described in [RELEASING.md](RELEASING.md). It
-also validates the tagged source first, then builds each platform in parallel,
+also validates the tagged source first, then builds Windows and Linux in parallel,
 and creates a draft prerelease only; it does not publish automatically.

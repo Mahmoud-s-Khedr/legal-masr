@@ -246,3 +246,12 @@ Failures disclose counts, never paths. This is logical deletion and filesystem
 unlink, not forensic erasure. External backups, SSD remnants and safe diagnostic
 logs remain outside the deletion guarantee. Windows/Linux physical sharing-lock,
 permission and power-loss checks remain unverified; macOS is out of launch scope.
+
+## ZIP advisory status — 2026-10-21
+
+The direct ZIP dependency is upgraded to 9.0.5 for RUSTSEC-2026-0367/0368/0369.
+The format-v2 reader refuses symlinks and copies bytes without applying archive
+permissions. The fixed old-writer fixture, malicious-entry regression coverage,
+local audit outcome and remaining transitive warnings are documented in
+[the advisory review](../reviews/2026-10-21-zip-advisories.md). No audit ignores
+or network behavior are added to the application.
