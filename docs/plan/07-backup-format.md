@@ -29,7 +29,8 @@ The encrypted ZIP contains exactly:
   encrypted-database flag and document count;
 - `checksums.json`: SHA-256 for every database and attachment entry, with no extras.
 
-Validation rejects duplicate/unexpected ZIP entries, traversal, unsupported file
+Validation rejects duplicate/unexpected ZIP entries, symlinks, directories,
+absolute paths, parent (`..`) components, unsupported file
 names, checksum/count mismatches, newer database schemas, invalid databases and
 attachment metadata mismatches. Flat names must also be valid on Windows;
 case-insensitive collisions are refused. Staged databases receive integrity and
@@ -106,3 +107,15 @@ attachment preservation and journal interruptions. Physical Windows/macOS file
 sharing, directory durability and cross-platform restoration remain validation
 gates until actually exercised. This implementation does not certify release
 readiness. See [09-testing.md](09-testing.md) and the integration review report.
+
+## ZIP dependency remediation — 2026-10-21
+
+The ZIP dependency upgrade and archive-entry regression checks are tracked in
+[the advisory review](../reviews/2026-10-21-zip-advisories.md), including the
+fixed zip-2.4.2 format-v2 compatibility fixture and validation results. Format v2
+and the journaled prepare/commit workflow remain the compatibility contract.
+The dependency is now zip 9.0.5 with defaults disabled and only `deflate` requested.
+Restore copies entry bytes into newly created private staging files and never
+applies archive Unix permissions, SUID/SGID/sticky bits, or ZIP extraction APIs.
+Regular files carrying such attributes remain readable; their attributes are
+ignored. Directories and symlinks are refused before staging.

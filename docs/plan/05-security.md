@@ -228,3 +228,12 @@ selection invalidation and renderer late-result rejection. Native pickers and he
 backup work are asynchronous; cancellation and lock clear transient restoration
 state. See [07-backup-format.md](07-backup-format.md) and the
 [integration review](../reviews/2026-10-10-integration.md).
+
+## ZIP advisory status — 2026-10-21
+
+The direct ZIP dependency is upgraded to 9.0.5 for RUSTSEC-2026-0367/0368/0369.
+The format-v2 reader refuses symlinks and copies bytes without applying archive
+permissions. The fixed old-writer fixture, malicious-entry regression coverage,
+local audit outcome and remaining transitive warnings are documented in
+[the advisory review](../reviews/2026-10-21-zip-advisories.md). No audit ignores
+or network behavior are added to the application.

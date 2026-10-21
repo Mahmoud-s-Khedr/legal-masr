@@ -17,6 +17,8 @@ src-tauri/target/
 *.db
 *.db-*
 *.lmsbackup
+# Fictional, fixed old-writer backup used by the compatibility regression test.
+!src-tauri/src/backup/fixtures/format-v2-zip-2.4.2.lmsbackup
 security.json
 
 # Logs and test output
