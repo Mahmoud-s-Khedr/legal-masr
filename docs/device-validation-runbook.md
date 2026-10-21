@@ -2,7 +2,7 @@
 
 Status: **pending execution**. Automated test success does not pass these gates.
 Use only fictional legal records and disposable source documents. Test Windows
-10, Windows 11, macOS Intel and macOS Apple Silicon independently. Record the
+10/11 x64 and Linux x64 on Ubuntu and Fedora with GNOME and KDE. Record the
 exact commit and package SHA-256, not just the application version.
 
 For each device, copy [the evidence template](device-validation-template.md),
@@ -38,15 +38,8 @@ For each same-vault restore iteration:
 4. Record the iteration, result and defects. A pass requires all checks; do not
    infer the result from a previous iteration.
 
-Cross-device Windows→macOS and macOS→Windows restore is a **separate pending
-criterion**. Format v2 archives carry authenticated password and recovery
-envelopes. Create a backup on each source platform, restore into a fresh
-installation on the other with the original password, and verify records and
-managed-file checksums. Repeat using the recovery key and a new password.
-Wrong credentials must leave the destination unchanged. Local automated
-restoration does not pass this physical-device gate.
+Cross-target Windows↔Linux restore remains pending. Format v2 archives carry authenticated password and recovery envelopes. Create a backup on each target, restore into a fresh installation on the other with the original password, and verify records and managed-file checksums. Repeat using the recovery key and a new password. Wrong credentials must leave the destination unchanged. Local automated restoration does not pass this physical-device gate.
 
 Native automated Linux/Windows setup follows the [official Tauri manual
 WebDriver setup](https://v2.tauri.app/develop/tests/webdriver/manual-setup/).
-macOS remains in this physical-device matrix. CI results and mock tests cannot
-replace native permission, installer, sleep/resume or physical display checks.
+Validate Linux packages on Ubuntu and Fedora GNOME and KDE. CI results and mock tests cannot replace native permission, installer, sleep/resume or physical display checks.

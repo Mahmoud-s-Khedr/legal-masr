@@ -86,7 +86,7 @@ Print-media tests verify that synthetic recovery-key sheets exclude workspace
 chrome and unrelated content. Agenda tests verify that the retired hearing-roll
 printing control is absent. Offline validation uses a network namespace for Rust/native journeys and
 Docker `--network none` for browser PDF checks. These checks do not certify physical
-printers or Windows/macOS. See the [integration review](../reviews/2026-10-10-integration.md).
+printers or Windows/Linux. See the [integration review](../reviews/2026-10-10-integration.md).
 
 The driver must return a successful local `/status` response before a journey
 launches; startup polls every 250 ms for up to 30 seconds and records only a
@@ -128,7 +128,7 @@ first so stale results cannot be retained as new evidence.
 
 PRs run Linux smoke plus all visual comparisons. Nightly and release validation
 run Linux/Windows desktop suites three times; Windows matches its driver to the
-installed WebView2 version. macOS remains in the physical-device matrix.
+installed WebView2 version. Linux and Windows remain in the physical-device matrix.
 Failure evidence and coverage reports are retained for seven days, including
 when a coverage floor fails.
 
@@ -148,7 +148,7 @@ application.
 
 The automated suite establishes contract and regression confidence. Candidate
 screenshot repeatability does not establish design approval, and disposable
-desktop journeys do not pass physical Windows/macOS or portable disaster-restore
+desktop journeys do not pass physical Windows/Linux or portable disaster-restore
 gates.
 
 ## Required validation commands
@@ -163,30 +163,30 @@ release risk; they must not be skipped.
 
 ## Manual release matrix
 
-| Area                                      | Linux dev |  Windows | macOS Intel | macOS Apple Silicon |
-| ----------------------------------------- | --------: | -------: | ----------: | ------------------: |
-| Vault initialize/unlock/recovery          |  Required | Required |    Required |            Required |
-| Managed attachment picker/open/reveal     |  Required | Required |    Required |            Required |
-| Manual backup and corrupt-archive refusal |  Required | Required |    Required |            Required |
-| Repeated restore/disaster exercise        |  Required | Required |    Required |            Required |
-| Installer/update/uninstall                |       N/A | Required |    Required |            Required |
-| 1440×900 and 1366×768 visual comparison   |  Required | Required |    Required |            Required |
+| Area                                      | Linux Ubuntu/Fedora GNOME/KDE | Windows 10/11 x64 |
+| ----------------------------------------- | ----------------------------: | ----------------: |
+| Vault initialize/unlock/recovery          |                      Required |          Required |
+| Managed attachment picker/open/reveal     |                      Required |          Required |
+| Manual backup and corrupt-archive refusal |                      Required |          Required |
+| Repeated restore/disaster exercise        |                      Required |          Required |
+| Installer/update/uninstall                |                      Required |          Required |
+| 1440×900 and 1366×768 visual comparison   |                      Required |          Required |
 
 No visual, installer, or device claim is satisfied by
 unit tests alone. The current correction-plan closeout still needs approval of
-the seeded viewport baseline and physical Windows/macOS validation.
+the seeded viewport baseline and physical Windows/Linux validation.
 
 ## Physical-device handoff
 
 Use [the device runbook](../device-validation-runbook.md) and
-[the evidence template](../device-validation-template.md) on Windows 10,
-Windows 11, macOS Intel and Apple Silicon. All physical execution remains
-pending. Run three same-vault restore iterations per device. Windows↔macOS
-portable restore remains a separate physical gate. Format v2 backups carry the
-password and recovery envelopes and restore into an empty installation on Linux
-(automated), but a Linux automated restore must not be counted as a Windows or
-macOS portability pass: make a backup on one platform, restore it into a fresh
-installation on the other with the original password, and record the result.
+[the evidence template](../device-validation-template.md) on Windows 10/11 x64
+and Linux x64 on Ubuntu and Fedora with GNOME and KDE. All physical execution
+remains pending. Run three same-vault restore iterations on each target
+environment. Windows↔Linux portable restore remains a separate physical gate.
+Format v2 backups restore into an empty installation on Linux (automated), but
+this does not count as a physical Windows/Linux portability pass: make a backup
+on one target and restore it into a fresh installation on the other with the
+original password, then record the result.
 
 See [the hardening evidence](../testing-hardening-report-2026-10-05.md) for actual
 counts, coverage, defects, artifacts and pending acceptance gates.

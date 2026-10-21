@@ -117,16 +117,6 @@ jobs:
             target: x86_64-unknown-linux-gnu
             bundle: deb,rpm,appimage
             artifact: raw-linux-x64
-          - id: macos-intel
-            runner: macos-15-intel
-            target: x86_64-apple-darwin
-            bundle: dmg
-            artifact: raw-macos-x64
-          - id: macos-apple-silicon
-            runner: macos-latest
-            target: aarch64-apple-darwin
-            bundle: dmg
-            artifact: raw-macos-arm64
     runs-on: ${{ matrix.runner }}
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
@@ -135,14 +125,6 @@ jobs:
         with:
           ref: ${{ env.RELEASE_TAG }}
           fetch-depth: 0
-      - name: Confirm native macOS runner architecture
-        if: startsWith(matrix.id, 'macos-')
-        shell: bash
-        run: |
-          actual_architecture="$(uname -m)"
-          expected_architecture="${{ matrix.target == 'aarch64-apple-darwin' && 'arm64' || 'x86_64' }}"
-          echo "Runner architecture: $actual_architecture; expected: $expected_architecture"
-          test "$actual_architecture" = "$expected_architecture"
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4.1.0
         with:
           version: 10.33.0
@@ -216,23 +198,6 @@ jobs:
           test "${#debs[@]}" -eq 1
           test "${#rpms[@]}" -eq 1
           test "${#appimages[@]}" -eq 1
-      - name: Verify macOS app signature and DMG
-        if: startsWith(matrix.id, 'macos-')
-        shell: bash
-        run: |
-          shopt -s nullglob
-          apps=(src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app)
-          dmgs=(src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg)
-          test "${#apps[@]}" -eq 1
-          test "${#dmgs[@]}" -eq 1
-          codesign --verify --deep --strict --verbose=2 "${apps[0]}"
-          codesign -dv --verbose=4 "${apps[0]}" 2>&1 | tee codesign-details.txt
-          grep -F "Signature=adhoc" codesign-details.txt
-          if ! spctl --assess --type execute --verbose=4 "${apps[0]}"; then
-            echo "Gatekeeper rejection is expected for this ad-hoc signed, unnotarized application."
-          fi
-          echo "The application is ad-hoc signed but not notarized."
-          echo "Users may need to approve it in macOS Privacy & Security."
       - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: ${{ matrix.artifact }}
@@ -242,7 +207,6 @@ jobs:
             ${{ matrix.id == 'linux-x64' && 'src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb' || '' }}
             ${{ matrix.id == 'linux-x64' && 'src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/rpm/*.rpm' || '' }}
             ${{ matrix.id == 'linux-x64' && 'src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage' || '' }}
-            ${{ startsWith(matrix.id, 'macos-') && format('src-tauri/target/{0}/release/bundle/dmg/*.dmg', matrix.target) || '' }}
           if-no-files-found: error
           retention-days: 7
 
@@ -286,15 +250,11 @@ jobs:
           - Linux x86-64 Debian: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.deb`
           - Linux x86-64 RPM: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.rpm`
           - Linux x86-64 AppImage: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.AppImage`
-          - macOS Intel: `Legal-Masr_${RELEASE_TAG#v}_macos_x64.dmg`
-          - macOS Apple Silicon: `Legal-Masr_${RELEASE_TAG#v}_macos_arm64.dmg`
 
           The Windows installer is currently unsigned. Windows may show a publisher or SmartScreen warning.
           The portable archive contains the unsigned Windows executable; it does not make the application's local data directory portable.
 
           Linux packages are currently unsigned. Install the Debian and RPM packages with your normal package manager, or mark the AppImage executable before launching it.
-
-          The macOS builds are ad-hoc signed and are not notarized. Gatekeeper may require manual approval in **System Settings → Privacy & Security** before first launch.
 
           SHA-256 checksums are in `SHA256SUMS.txt`; checksums are integrity aids, not code signatures.
 
