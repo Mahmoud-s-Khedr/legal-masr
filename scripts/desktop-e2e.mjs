@@ -197,7 +197,14 @@ async function scenario(name, exercise) {
     await input('confirmPassword', password);
     checkpoint = 'initialize-submit';
     await click('بدء الاستخدام');
-    recoveryKey = await browser.$('.recovery-key').getText();
+    await browser.$('.recovery-key').waitForDisplayed({ timeout: 15000 });
+    await browser.waitUntil(
+      async () => {
+        recoveryKey = await browser.$('.recovery-key').getText();
+        return recoveryKey.trim().length > 0;
+      },
+      { timeout: 15000 },
+    );
     checkpoint = 'initialize-confirm';
     await browser.$('.gate-confirm [role="checkbox"]').click();
     checkpoint = 'initialize-continue';
@@ -310,6 +317,7 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await picker.setValue('E2E-ORIGINAL');
   await h.browser.$('[role="option"]').waitForDisplayed();
   await h.browser.$('[role="option"]').click();
+  await h.browser.$('[data-slot="combobox-chip"]').waitForDisplayed({ timeout: 15000 });
   await h.click('حفظ القضية');
   // Saving opens the new case file.
   await h.browser.$('h2*=E2E-CASE').waitForDisplayed({ timeout: 15000 });
@@ -402,6 +410,12 @@ for (const choice of ['cancel', 'corrupt'])
       assert.equal(await h.browser.$('[role="alert"]').isExisting(), false);
     }
     await h.click(strings.common.cancel);
+    await h.browser.waitUntil(
+      async () =>
+        !(await h.browser.$('.restore-from-backup').isExisting()) &&
+        !(await h.browser.$('[role="dialog"]').isExisting()),
+      { timeout: 15000 },
+    );
     await h.nav('/clients');
     await h.browser.$('a*=E2E-PRESERVED').waitForDisplayed();
   });
@@ -444,6 +458,7 @@ async function seedAndBackUp(h, label) {
   await picker.setValue(`E2E-${label}`);
   await h.browser.$('[role="option"]').waitForDisplayed();
   await h.browser.$('[role="option"]').click();
+  await h.browser.$('[data-slot="combobox-chip"]').waitForDisplayed({ timeout: 15000 });
   await h.click('حفظ القضية');
   await h.browser.$(`h2*=E2E-${label}-CASE`).waitForDisplayed({ timeout: 15000 });
   h.checkpoint('seed-attachment');
@@ -597,6 +612,7 @@ await scenario('opponent-form-announces-missing-name', async (h) => {
   await picker.setValue('E2E-OPPONENT-CLIENT');
   await h.browser.$('[role="option"]').waitForDisplayed();
   await h.browser.$('[role="option"]').click();
+  await h.browser.$('[data-slot="combobox-chip"]').waitForDisplayed({ timeout: 15000 });
   await h.click('حفظ القضية');
   await h.browser.$('h2*=E2E-OPPONENT-CASE').waitForDisplayed({ timeout: 15000 });
   h.checkpoint('open-opponent-form');
