@@ -22,6 +22,13 @@ Rust unit and integration coverage includes:
   files, newer envelope/manifest/database versions, bounded key-derivation cost,
   rejection of every other format, preview/cancellation leaving live data unchanged, and
   every journal interruption for the new replacement fields.
+- ZIP advisory regressions: a fixed, authenticated zip-2.4.2 writer fixture and
+  newly generated backups both validate and restore records, attachment bytes
+  and the password; malicious archives cover symlink entry types (including
+  metadata/database), targets inside/outside staging, Unix privileged/read-only
+  modes, absolute paths and parent components with Unix/Windows separators.
+  See [the 2026-10-21 review](../reviews/2026-10-21-zip-advisories.md) for results
+  and the Windows/Linux physical-device limitation.
 - link consistency (`tests/case_client_poa_links.rs`): a task/expense links a case or
   a client but never both (service and database), a client's view derives its cases'
   tasks/expenses, one active POA per client (link, archive-then-relink, restore

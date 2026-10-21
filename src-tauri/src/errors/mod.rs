@@ -352,6 +352,22 @@ mod tests {
     use super::safe_sqlite_diagnostic;
 
     #[test]
+    fn zip_errors_keep_stable_codes_and_redact_dynamic_archive_details() {
+        for error in [
+            zip::result::ZipError::FileNotFound,
+            zip::result::ZipError::InvalidArchive(
+                String::from("fictional private document path in archive").into(),
+            ),
+        ] {
+            let error = super::Error::from(error);
+            assert_eq!(error.code(), "OPERATION_FAILED");
+            let diagnostic = error.diagnostic();
+            assert_eq!(diagnostic.kind, "ZIP");
+            assert_eq!(diagnostic.detail, "Backup archive operation failed.");
+        }
+    }
+
+    #[test]
     fn exposes_a_safe_missing_column_diagnostic() {
         assert_eq!(
             safe_sqlite_diagnostic(Some("no such column: autostart_enabled")),
