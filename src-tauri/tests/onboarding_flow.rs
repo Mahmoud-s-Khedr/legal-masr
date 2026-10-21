@@ -949,3 +949,237 @@ fn restore_tokens_are_one_use_and_cancel_or_lock_removes_preparation() {
             .to_string_lossy()
             .starts_with(".prepared-")));
 }
+
+#[test]
+fn guided_deletion_services_reauthenticate_backup_and_return_reset_to_first_run() {
+    use legalmaster_lib::{
+        dto::{DeletionInput, DeletionTarget},
+        services::deletion_service,
+    };
+    let _guard = lock_app_dir();
+    for kind in ["client", "case", "all"] {
+        let app = fresh_mock_app();
+        app.manage(AppState::default());
+        let handle = app.handle();
+        let state: State<AppState> = handle.state();
+        app_service::initialize(
+            handle,
+            &state,
+            InitializeInput {
+                password: ORIGINAL_PASSWORD.into(),
+                full_name: "محام تجريبي".into(),
+                language: "ar".into(),
+                lock_timeout_minutes: 15,
+            },
+        )
+        .unwrap();
+        let client = "00000000-0000-0000-0000-000000000001";
+        let case = "00000000-0000-0000-0000-000000000002";
+        let master = state.unlocked().unwrap();
+        let (_, path) = db::paths(handle).unwrap();
+        {
+            let conn = db::open_db(&path, &master).unwrap();
+            conn.execute("INSERT INTO clients(id,internal_number,full_name,archived_at,created_at,updated_at) VALUES (?1,'1','اختبار','now','now','now')",[client]).unwrap();
+            conn.execute("INSERT INTO cases(id,internal_number,archived_at,created_at,updated_at) VALUES (?1,'1','now','now','now')",[case]).unwrap();
+            conn.execute("INSERT INTO case_clients(case_id,client_id,created_at,updated_at) VALUES (?1,?2,'now','now')",[case,client]).unwrap();
+        }
+        let target = match kind {
+            "client" => DeletionTarget::Client { id: client.into() },
+            "case" => DeletionTarget::Case { id: case.into() },
+            _ => DeletionTarget::All,
+        };
+        let preview = deletion_service::preview(handle, &state, target.clone(), "ar").unwrap();
+        assert_eq!(preview.counts["cases"], 1);
+        let mut input = DeletionInput {
+            target: target.clone(),
+            token: preview.token,
+            confirmation: "wrong".into(),
+            password: ORIGINAL_PASSWORD.into(),
+            backup_first: true,
+        };
+        assert!(matches!(
+            deletion_service::commit(handle, &state, &input, None),
+            Err(Error::DeletionConfirmation)
+        ));
+        input.confirmation = "حذف".into();
+        let external = tempfile::tempdir().unwrap();
+        let destination = external.path().join("before-delete.lmsbackup");
+        if kind == "all" {
+            input.password = "wrong password".into();
+            assert!(matches!(
+                deletion_service::commit(handle, &state, &input, Some(&destination)),
+                Err(Error::InvalidPassword)
+            ));
+            input.password = ORIGINAL_PASSWORD.into();
+            let inside = db::app_dir(handle).unwrap().join("bad.lmsbackup");
+            assert!(matches!(
+                deletion_service::commit(handle, &state, &input, Some(&inside)),
+                Err(Error::Validation)
+            ));
+            assert!(deletion_service::commit(
+                handle,
+                &state,
+                &input,
+                Some(&external.path().join("missing/backup.lmsbackup"))
+            )
+            .is_err());
+        } else {
+            let root = db::app_dir(handle).unwrap();
+            std::fs::remove_dir(root.join("Backups")).unwrap();
+            std::fs::write(root.join("Backups"), b"injected blocker").unwrap();
+            assert!(deletion_service::commit(handle, &state, &input, None).is_err());
+            let conn = db::open_db(&path, &master).unwrap();
+            assert_eq!(
+                conn.query_row("SELECT count(*) FROM cases", [], |r| r.get::<_, u64>(0))
+                    .unwrap(),
+                1
+            );
+            drop(conn);
+            std::fs::remove_file(root.join("Backups")).unwrap();
+        }
+        let result = deletion_service::commit(
+            handle,
+            &state,
+            &input,
+            if kind == "all" {
+                Some(&destination)
+            } else {
+                None
+            },
+        )
+        .unwrap();
+        assert!(result.backup_created);
+        assert_eq!(result.failed_managed_files, 0);
+        assert_eq!(result.failed_vault_entries, 0);
+        if kind == "all" {
+            assert!(result.reset_complete);
+            assert!(destination.is_file());
+            assert!(!path.exists());
+            assert!(state.unlocked().is_err());
+            assert_eq!(
+                app_service::get_status(handle, &state).unwrap().vault_state,
+                VaultState::Empty
+            );
+            // The backup remains portable after the original vault is gone.
+            let selected = state.store_restore_selection(destination.clone()).unwrap();
+            let restore = backup_service::prepare(
+                handle,
+                &state,
+                &selected,
+                Some(&credential(
+                    RestoreCredentialKind::Password,
+                    ORIGINAL_PASSWORD,
+                )),
+            )
+            .unwrap();
+            backup_service::commit(handle, &state, &restore.token).unwrap();
+            app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
+            assert_eq!(
+                db::open_db(&path, &state.unlocked().unwrap())
+                    .unwrap()
+                    .query_row("SELECT count(*) FROM cases", [], |r| r.get::<_, u64>(0))
+                    .unwrap(),
+                1
+            );
+        } else {
+            let conn = db::open_db(&path, &master).unwrap();
+            assert_eq!(
+                conn.query_row("SELECT count(*) FROM cases", [], |r| r.get::<_, u64>(0))
+                    .unwrap(),
+                0
+            );
+            assert_eq!(
+                conn.query_row("SELECT count(*) FROM clients", [], |r| r.get::<_, u64>(0))
+                    .unwrap(),
+                u64::from(kind == "case")
+            );
+            assert!(backup_service::latest_file(handle).unwrap().is_file());
+        }
+    }
+}
+
+#[test]
+fn deletion_preview_cannot_survive_lock_unlock_or_a_different_target() {
+    use legalmaster_lib::{
+        dto::{DeletionInput, DeletionTarget},
+        services::deletion_service,
+    };
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    app_service::initialize(
+        handle,
+        &state,
+        InitializeInput {
+            password: ORIGINAL_PASSWORD.into(),
+            full_name: "اختبار".into(),
+            language: "ar".into(),
+            lock_timeout_minutes: 15,
+        },
+    )
+    .unwrap();
+    let preview = deletion_service::preview(handle, &state, DeletionTarget::All, "en").unwrap();
+    assert_eq!(preview.confirmation_word, "DELETE");
+    let input = DeletionInput {
+        target: DeletionTarget::All,
+        token: preview.token,
+        confirmation: "DELETE".into(),
+        password: ORIGINAL_PASSWORD.into(),
+        backup_first: false,
+    };
+    app_service::lock(&state).unwrap();
+    app_service::unlock(handle, &state, ORIGINAL_PASSWORD).unwrap();
+    assert!(matches!(
+        deletion_service::commit(handle, &state, &input, None),
+        Err(Error::DeletionPreviewExpired)
+    ));
+    assert_eq!(
+        app_service::get_status(handle, &state).unwrap().vault_state,
+        VaultState::Unlocked
+    );
+}
+
+#[test]
+fn whole_vault_deletion_without_backup_starts_over_with_no_archiving_requirement() {
+    use legalmaster_lib::{
+        dto::{DeletionInput, DeletionTarget},
+        services::deletion_service,
+    };
+    let _guard = lock_app_dir();
+    let app = fresh_mock_app();
+    app.manage(AppState::default());
+    let handle = app.handle();
+    let state: State<AppState> = handle.state();
+    app_service::initialize(
+        handle,
+        &state,
+        InitializeInput {
+            password: ORIGINAL_PASSWORD.into(),
+            full_name: "اختبار".into(),
+            language: "ar".into(),
+            lock_timeout_minutes: 15,
+        },
+    )
+    .unwrap();
+    let preview = deletion_service::preview(handle, &state, DeletionTarget::All, "en").unwrap();
+    let result = deletion_service::commit(
+        handle,
+        &state,
+        &DeletionInput {
+            target: DeletionTarget::All,
+            token: preview.token,
+            confirmation: "DELETE".into(),
+            password: ORIGINAL_PASSWORD.into(),
+            backup_first: false,
+        },
+        None,
+    )
+    .unwrap();
+    assert!(result.reset_complete);
+    assert!(!result.backup_created);
+    let status = app_service::get_status(handle, &state).unwrap();
+    assert!(!status.initialized);
+    assert_eq!(status.vault_state, VaultState::Empty);
+}

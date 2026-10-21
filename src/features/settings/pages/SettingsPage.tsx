@@ -1,3 +1,7 @@
+import {
+  DeletionCleanupAction,
+  PermanentDeleteAction,
+} from '@/features/deletion/components/PermanentDeleteAction';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -579,6 +583,16 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
 
           {selectedTab === 'privacy' && (
             <div className="settings-stack">
+              <section className="settings-section">
+                <div className="card-title">
+                  <div>
+                    <h3>{t('deletion.dangerZone')}</h3>
+                    <p>{t('deletion.policy.all')}</p>
+                  </div>
+                </div>
+                <PermanentDeleteAction target={{ kind: 'all' }} />
+                <DeletionCleanupAction />
+              </section>
               <section className="settings-section">
                 <div className="card-title">
                   <div>

@@ -228,3 +228,21 @@ selection invalidation and renderer late-result rejection. Native pickers and he
 backup work are asynchronous; cancellation and lock clear transient restoration
 state. See [07-backup-format.md](07-backup-format.md) and the
 [integration review](../reviews/2026-10-10-integration.md).
+
+## Permanent deletion status — 2026-10-21
+
+Deletion commands use the existing operation gate and session generations,
+serializing with backup/restore and refusing stale previews. Preview tokens are
+native-owned, single-use for successful deletion, scoped to a target and a hash
+of the domain rows. Backend checks the localized confirmation text. Whole-vault
+reset authenticates the current password against the security envelope and
+unlocked master key. Credentials use zeroizing Rust command input and direct IPC,
+not React Query mutation storage. Lock clears pending preview state.
+
+Whole-vault reset uses a fixed native deletion marker alongside setup/restore
+recovery. Its files are removed after the row transaction and SQLCipher close;
+restart resumes authorized cleanup and withholds setup while cleanup fails.
+Failures disclose counts, never paths. This is logical deletion and filesystem
+unlink, not forensic erasure. External backups, SSD remnants and safe diagnostic
+logs remain outside the deletion guarantee. Windows/Linux physical sharing-lock,
+permission and power-loss checks remain unverified; macOS is out of launch scope.

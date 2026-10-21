@@ -28,6 +28,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
         4,
         include_str!("../../migrations/0004_remove_reminders_and_autostart.sql"),
     ),
+    (
+        5,
+        include_str!("../../migrations/0005_pending_file_deletions.sql"),
+    ),
 ];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
@@ -135,6 +139,7 @@ pub fn has_vault_artifacts(root: &Path) -> Result<bool, Error> {
             || name.starts_with("attachments")
             || name == "Backups"
             || name == "vault-operation.json"
+            || name == "vault-delete.json"
             || name == "EmergencySnapshots"
         {
             return Ok(true);

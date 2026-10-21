@@ -21,7 +21,7 @@ installation identity only.
 | Schedule              | `hearings`, `tasks`                                                            | Hearings belong to a case and optionally chain to a prior hearing. Tasks have due date/details/notes/a case-or-client link and constrained `completed` state only.                |
 | Finance               | `case_fee_agreements`, `payments`, `expenses`                                  | One agreement per case. Payment payer must be a client linked to the same case. Expense links a case or a client, never both; neither link is also valid.                         |
 | Attachments           | `attachments`                                                                  | Managed-copy metadata only, with exactly one owner: client, case, POA, or expense.                                                                                                |
-| Derived/local history | `search_index`, `backup_history`, `usage_counters`                             | Search indexes Clients/Cases/POAs; backup history excludes destination paths; counters are aggregate-only.                                                                        |
+| Derived/local history | `search_index`, `backup_history`, `usage_counters`, `pending_file_deletions`   | Search indexes Clients/Cases/POAs; backup history excludes destination paths; counters are aggregate-only.                                                                        |
 
 Removed concepts include generic `case_events`, task priority/status enums,
 external file references, generic financial transactions, client contacts and
@@ -101,3 +101,21 @@ the current query surface and expected local data size did not justify it.
   rebuilds derived search data where required, and checks integrity.
 - Migration tests cover a clean canonical database plus refusal to replace a
   superseded schema. No automatic downgrade exists.
+
+## Deletion service and migration status — 2026-10-21
+
+Migration `0005_pending_file_deletions.sql` adds a STRICT table keyed by managed
+file basename. It is a transactional deletion outbox: deleted attachment metadata
+and a pending unlink are committed together. Successful or already-missing files
+clear their queue entry; failed files remain tracked for explicit retry. Existing
+migrations and foreign-key actions are unchanged.
+
+The guided deletion service explicitly deletes scoped payments, tasks and
+expenses before deleting case/client owners, rather than relying on their
+RESTRICT/SET NULL defaults. Exclusive POAs and their dependent rows are also
+removed during client deletion. Shared case/POA and retained hearing/file
+boundaries are refused. Whole-vault reset removes all domain/local rows in one
+transaction, then removes the closed database, envelopes, managed files,
+vault-local backups and snapshots through native journal recovery. Derived
+search rows refresh in the same partial-deletion transaction; there is no FTS5
+index in this schema.

@@ -42,11 +42,36 @@ The following privacy/data-management requirements remain unimplemented and
 are release blockers:
 
 - complete-installation, case, and documented CSV/manifest exports;
-- guided permanent deletion for client, case, and all application data;
-- deletion impact preview, text confirmation, optional emergency backup, and
-  clear managed-file failure reporting;
 - a manually generated redacted support bundle containing only approved system,
   version, safe settings, schema version, and error-code information.
 
 No deletion workflow may promise forensic erasure from SSDs or third-party
 backup media.
+
+## Data-management status — 2026-10-21
+
+Guided permanent deletion is implemented for archived clients, archived cases,
+and the whole vault. The dialog shows per-table record counts and managed-file
+counts; a native, session-bound preview token and the localized word (`حذف` or
+`DELETE`) are required by Rust. Any domain change requires another preview.
+
+Client deletion refuses shared cases/POAs and requires its exclusive cases and
+POAs to be archived too. Case deletion refuses cases with multiple clients.
+Retained cross-case hearing references and shared managed-file paths also block
+partial deletion. The removed scope includes hearings, tasks, payments, fee
+agreements, expenses and their attachments; direct office records are preserved.
+Client deletion additionally removes exclusive POAs, lawyers and attachments.
+
+Optional backup runs through the existing backup service before deletion.
+Client/case backups stay in the vault and retain their previous records. Whole
+vault deletion requires password re-authentication, and its optional backup must
+be saved outside the vault. Existing vault-local backups and emergency snapshots
+are removed; outside copies and safe diagnostic logs are retained.
+
+Rows and search updates commit in one transaction. Migration `0005` adds an
+encrypted native-only file-removal outbox; post-commit failures are counted and
+retryable in the dialog or Settings → Privacy. A durable native reset marker
+makes whole-vault cleanup restartable and blocks first-run setup until cleanup
+finishes. No promise of forensic/secure erasure is made. Automated evidence and
+remaining Windows/Linux device checks are in the
+[deletion report](../reviews/2026-10-21-permanent-deletion.md).

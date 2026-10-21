@@ -9,6 +9,8 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
+const DELETE_JOURNAL: &str = "vault-delete.json";
+
 const JOURNAL: &str = "vault-operation.json";
 
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
@@ -32,7 +34,7 @@ struct Intent {
 }
 
 pub fn pending(root: &Path) -> bool {
-    root.join(JOURNAL).exists()
+    root.join(JOURNAL).exists() || deletion_pending(root)
 }
 
 /// Unix directory fsync makes rename/unlink durable. Windows directory flush
@@ -188,6 +190,12 @@ fn move_if_staged(staged: &Path, active: &Path) -> Result<(), Error> {
 }
 
 pub fn recover(root: &Path) -> Result<(), Error> {
+    if deletion_pending(root) {
+        let (_, failed) = finish_delete(root)?;
+        if failed > 0 {
+            return Err(Error::VaultInterrupted);
+        }
+    }
     recover_with_checkpoint(root, |_| Ok(()))
 }
 
@@ -597,5 +605,208 @@ mod tests {
             b"live"
         );
         assert!(pending(temp.path()));
+    }
+}
+
+// Whole-vault reset uses the same native recovery boundary as setup/restore.
+// The fixed marker contains no credentials, legal records or document paths.
+pub fn deletion_pending(root: &Path) -> bool {
+    root.join(DELETE_JOURNAL).exists()
+}
+
+pub fn begin_delete(root: &Path) -> Result<(), Error> {
+    if pending(root) {
+        return Err(Error::VaultInterrupted);
+    }
+    let mut marker = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(root.join(DELETE_JOURNAL))?;
+    marker.write_all(b"{\"version\":1,\"kind\":\"DeleteAll\"}")?;
+    marker.sync_all()?;
+    sync_directory(root)
+}
+pub fn cancel_delete(root: &Path) -> Result<(), Error> {
+    fs::remove_file(root.join(DELETE_JOURNAL))?;
+    sync_directory(root)
+}
+fn is_vault_artifact(name: &str) -> bool {
+    name.starts_with("legalmaster.")
+        || name.starts_with("security.")
+        || name.starts_with("attachments")
+        || matches!(
+            name,
+            "Backups" | "EmergencySnapshots" | "vault-operation.json"
+        )
+}
+pub(crate) fn count_files(path: &Path) -> Result<u64, Error> {
+    let meta = fs::symlink_metadata(path)?;
+    if !meta.is_dir() || meta.file_type().is_symlink() {
+        return Ok(1);
+    }
+    let mut count = 0;
+    for entry in fs::read_dir(path)? {
+        count += count_files(&entry?.path())?;
+    }
+    Ok(count)
+}
+pub fn deletion_file_count(root: &Path) -> Result<u64, Error> {
+    let mut count = 0;
+    for entry in fs::read_dir(root)? {
+        let entry = entry?;
+        if is_vault_artifact(&entry.file_name().to_string_lossy()) {
+            count += count_files(&entry.path())?;
+        }
+    }
+    Ok(count)
+}
+fn remove_tree(
+    path: &Path,
+    managed: bool,
+    remove: &impl Fn(&Path) -> std::io::Result<()>,
+) -> (u64, u64) {
+    let meta = match fs::symlink_metadata(path) {
+        Ok(meta) => meta,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return (0, 0),
+        Err(_) => return (0, 1),
+    };
+    if !meta.is_dir() || meta.file_type().is_symlink() {
+        return if remove(path).is_ok() {
+            (0, 0)
+        } else {
+            (u64::from(managed), 1)
+        };
+    }
+    let entries = match fs::read_dir(path) {
+        Ok(entries) => entries,
+        Err(_) => return (0, 1),
+    };
+    let mut failed = (0, 0);
+    for entry in entries {
+        match entry {
+            Ok(entry) => {
+                let result = remove_tree(&entry.path(), managed, remove);
+                failed.0 += result.0;
+                failed.1 += result.1;
+            }
+            Err(_) => failed.1 += 1,
+        }
+    }
+    if failed.1 == 0 && fs::remove_dir(path).is_err() {
+        failed.1 += 1;
+    }
+    failed
+}
+/// Idempotent after a crash or file-sharing failure. Never follows directory
+/// symlinks; unknown files and the running diagnostic logger are outside the vault.
+pub fn finish_delete(root: &Path) -> Result<(u64, u64), Error> {
+    finish_delete_with(root, &|path| fs::remove_file(path))
+}
+fn finish_delete_with(
+    root: &Path,
+    remove: &impl Fn(&Path) -> std::io::Result<()>,
+) -> Result<(u64, u64), Error> {
+    if !deletion_pending(root) {
+        return Err(Error::Validation);
+    }
+    let marker = match fs::read(root.join(DELETE_JOURNAL)) {
+        Ok(bytes) => bytes,
+        Err(_) => return Ok((0, 1)),
+    };
+    if marker != b"{\"version\":1,\"kind\":\"DeleteAll\"}" {
+        return Err(Error::VaultIncomplete);
+    }
+    let mut failed = (0, 0);
+    let entries = match fs::read_dir(root) {
+        Ok(entries) => entries,
+        Err(_) => return Ok((0, 1)),
+    };
+    for entry in entries {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(_) => {
+                failed.1 += 1;
+                continue;
+            }
+        };
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if is_vault_artifact(&name) {
+            let result = remove_tree(&entry.path(), name.starts_with("attachments"), remove);
+            failed.0 += result.0;
+            failed.1 += result.1;
+        }
+    }
+    if failed.1 == 0 && (sync_directory(root).is_err() || cancel_delete(root).is_err()) {
+        failed.1 += 1;
+    }
+    Ok(failed)
+}
+
+#[cfg(test)]
+mod deletion_tests {
+    use super::*;
+    #[test]
+    fn whole_vault_file_failures_are_counted_and_recovery_retries_without_following_symlinks() {
+        let root = tempfile::tempdir().unwrap();
+        fs::create_dir(root.path().join("attachments")).unwrap();
+        fs::write(root.path().join("attachments/file.pdf"), b"test").unwrap();
+        fs::write(root.path().join("legalmaster.sqlite"), b"db").unwrap();
+        begin_delete(root.path()).unwrap();
+        let result = finish_delete_with(root.path(), &|path| {
+            if path.extension().is_some_and(|ext| ext == "pdf") {
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "injected",
+                ))
+            } else {
+                fs::remove_file(path)
+            }
+        })
+        .unwrap();
+        assert_eq!(result, (1, 1));
+        assert!(deletion_pending(root.path()));
+        assert!(!root.path().join("legalmaster.sqlite").exists());
+        recover(root.path()).unwrap();
+        assert!(!deletion_pending(root.path()));
+        assert!(!crate::db::has_vault_artifacts(root.path()).unwrap());
+    }
+    #[test]
+    fn restart_finishes_an_authorized_reset_at_each_partial_unlink() {
+        for removed in 0..3 {
+            let root = tempfile::tempdir().unwrap();
+            for name in [
+                "legalmaster.sqlite",
+                "security.json",
+                "legalmaster.sqlite-wal",
+            ] {
+                fs::write(root.path().join(name), b"test").unwrap();
+            }
+            begin_delete(root.path()).unwrap();
+            for name in [
+                "legalmaster.sqlite",
+                "security.json",
+                "legalmaster.sqlite-wal",
+            ]
+            .iter()
+            .take(removed)
+            {
+                fs::remove_file(root.path().join(name)).unwrap();
+            }
+            recover(root.path()).unwrap();
+            recover(root.path()).unwrap();
+            assert!(!crate::db::has_vault_artifacts(root.path()).unwrap());
+        }
+    }
+    #[cfg(unix)]
+    #[test]
+    fn whole_reset_unlinks_symlinks_and_leaves_their_targets_untouched() {
+        let root = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        fs::write(outside.path().join("keep.pdf"), b"keep").unwrap();
+        std::os::unix::fs::symlink(outside.path(), root.path().join("attachments")).unwrap();
+        begin_delete(root.path()).unwrap();
+        assert_eq!(finish_delete(root.path()).unwrap(), (0, 0));
+        assert_eq!(fs::read(outside.path().join("keep.pdf")).unwrap(), b"keep");
     }
 }

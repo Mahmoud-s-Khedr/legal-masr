@@ -1,3 +1,4 @@
+import { PermanentDeleteAction } from '@/features/deletion/components/PermanentDeleteAction';
 import { QuerySection } from '@/components/layout/QuerySection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { actionableErrorMessage } from '@/bridge/errors';
@@ -94,6 +95,7 @@ export function ClientDetailPage() {
             <Button type="button" onClick={() => setEditOpen(true)}>
               {t('records.edit')}
             </Button>
+            {item.archivedAt && <PermanentDeleteAction target={{ kind: 'client', id }} />}
             {item.archivedAt ? (
               <Button
                 type="button"

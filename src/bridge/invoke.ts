@@ -11,6 +11,7 @@ const boundaries = new Set([
   'app_change_password',
   'app_replace_recovery_key',
   'backup_commit_restore',
+  'deletion_commit',
 ]);
 
 export async function invoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {

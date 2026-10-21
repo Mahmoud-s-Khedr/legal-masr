@@ -107,7 +107,21 @@ still do not expose attachment upload.
   see [07-backup-format.md](07-backup-format.md).
 - There is no per-client export. Documented full-installation, case, and stable
   CSV/manifest exports are not implemented.
-- Permanent client/case/application-data deletion and redacted support-bundle
-  workflows are not implemented.
+- The redacted support-bundle workflow is not implemented.
 - Case-folder export, minimize-to-tray behavior, and physical target-platform
   validation remain incomplete.
+
+## Permanent deletion status — 2026-10-21
+
+Archived client and case detail pages expose guided permanent deletion beside
+restore. Settings → Privacy has a danger zone for deleting the whole vault and
+starting over. All three flows preview counts, require localized text confirmation,
+offer a backup first, report file-removal failures and refresh dependent caches.
+Whole-vault reset additionally requires the current password and clears the
+renderer session before first-run welcome.
+
+The conservative shared-record and archive rules, exact removed/retained scope,
+backup behavior and restart/retry semantics are documented in
+[Privacy](06-privacy.md#data-management-status--2026-10-21). These workflows are
+implemented; physical Windows/Linux acceptance is still required. macOS is not
+in the current public-launch scope. Export and support work remain open.

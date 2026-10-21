@@ -3,6 +3,7 @@ pub mod backup;
 pub mod cases;
 pub mod clients;
 pub mod dashboard;
+pub mod deletion;
 pub mod documents;
 pub mod finances;
 pub mod hearings;
