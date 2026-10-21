@@ -93,7 +93,7 @@ export function TasksPage() {
     clientId: clientId || undefined,
   });
   const cases = useCaseList({ includeArchived: true });
-  const clients = useClientList({});
+  const clients = useClientList({ includeArchived: true });
   const save = useSaveTask();
   const complete = useCompleteTask();
   const reopen = useReopenTask();
@@ -405,7 +405,11 @@ export function TaskForm({
       caseId: initial?.caseId ?? initialCaseId ?? '',
       // A case already knows its clients: a task of a case never carries a client of its own.
       clientId:
-        (initial?.caseId ?? initialCaseId) ? '' : (initial?.clientId ?? initialClientId ?? ''),
+        (initial?.caseId ?? initialCaseId)
+          ? ''
+          : (initial?.clientId ??
+            clients?.find((client) => client.id === initialClientId && !client.archivedAt)?.id ??
+            ''),
       details: initial?.details ?? '',
       notes: initial?.notes ?? '',
     },
@@ -527,7 +531,9 @@ export function TaskForm({
             onValueChange={(value) => setClientId(value ?? '')}
             items={[
               { value: '', label: t('tasks.noClient') },
-              ...(clients ?? []).map(clientOption),
+              ...(clients ?? [])
+                .filter((client) => !client.archivedAt || client.id === initial?.clientId)
+                .map((client) => ({ ...clientOption(client), disabled: !!client.archivedAt })),
             ]}
             placeholder={undefined}
           />

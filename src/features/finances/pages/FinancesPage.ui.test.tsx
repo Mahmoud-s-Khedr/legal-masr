@@ -396,6 +396,9 @@ describe('FinancesPage', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'حفظ المصروف' }));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('تعذر حفظ السجل');
     expect(within(dialog).getByLabelText('المبلغ (ج.م)')).toHaveValue('12.50');
+    expect(bridge.expenseSave).toHaveBeenCalledWith(
+      expect.objectContaining({ expenseType: 'COURT_FEE', amountMinor: 1250 }),
+    );
   });
 
   it('creates one expense when the save is triggered twice before the first completes', async () => {
@@ -429,8 +432,62 @@ describe('FinancesPage', () => {
     fireEvent.click(save);
     fireEvent.click(save);
     await waitFor(() => expect(bridge.expenseSave).toHaveBeenCalledTimes(1));
+    expect(bridge.expenseSave).toHaveBeenCalledWith(
+      expect.objectContaining({ expenseType: 'COURT_FEE', amountMinor: 1250 }),
+    );
     finish();
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'إضافة مصروف' })).toBeNull());
     expect(bridge.expenseSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps an archived payer visible in historical payment rows and inspection', async () => {
+    const archived = {
+      id: 'archived-client',
+      internalNumber: 'CL-ARCHIVED',
+      fullName: 'DEMO archived payer',
+      primaryPhone: null,
+      archivedAt: '2026-10-14T10:00:00Z',
+    };
+    const active = {
+      ...archived,
+      id: 'active-client',
+      fullName: 'DEMO active client',
+      archivedAt: null,
+    };
+    vi.mocked(bridge.caseList).mockResolvedValue([]);
+    vi.mocked(bridge.clientList).mockImplementation(async (input) =>
+      input.includeArchived ? [archived, active] : [active],
+    );
+    vi.mocked(bridge.expenseList).mockResolvedValue([]);
+    vi.mocked(bridge.paymentList).mockResolvedValue([
+      {
+        id: 'historical-payment',
+        caseId: 'case-1',
+        payerClientId: archived.id,
+        amountMinor: 200000,
+        paymentDate: '2026-10-14',
+        paymentMethod: 'CASH',
+        notes: null,
+        createdAt: 'now',
+        updatedAt: 'now',
+      },
+    ]);
+    renderPage();
+    const table = await screen.findByRole('table');
+    expect(await within(table).findByText(archived.fullName, { exact: false })).toBeVisible();
+    fireEvent.click(within(table).getByRole('button', { name: /14 أكتوبر 2026/ }));
+    expect(
+      await within(await screen.findByRole('dialog')).findByText(archived.fullName),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'إغلاق' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'المصروفات' }));
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة مصروف' }));
+    const dialog = await screen.findByRole('dialog');
+    const client = within(dialog).getByRole('combobox', { name: 'الموكل' });
+    client.focus();
+    fireEvent.click(client);
+    fireEvent.keyDown(client, { key: 'ArrowDown' });
+    expect(await screen.findByRole('option', { name: active.fullName })).toBeVisible();
+    expect(screen.queryByRole('option', { name: archived.fullName })).not.toBeInTheDocument();
   });
 });

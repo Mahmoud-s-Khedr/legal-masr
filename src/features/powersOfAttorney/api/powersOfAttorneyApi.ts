@@ -30,23 +30,8 @@ function invalidatePowerOfAttorney(
   },
 ) {
   queryClient.setQueryData(queryKeys.powersOfAttorney.detail(powerOfAttorney.id), powerOfAttorney);
-  if (powerOfAttorney.clients.length === 0 && powerOfAttorney.caseIds.length === 0) {
-    queryInvalidation.powerOfAttorneyOrCaseClient(queryClient, {
-      powerOfAttorneyId: powerOfAttorney.id,
-    });
-  }
-  for (const client of powerOfAttorney.clients) {
-    queryInvalidation.powerOfAttorneyOrCaseClient(queryClient, {
-      powerOfAttorneyId: powerOfAttorney.id,
-      clientId: client.id,
-    });
-  }
-  for (const caseId of powerOfAttorney.caseIds) {
-    queryInvalidation.powerOfAttorneyOrCaseClient(queryClient, {
-      powerOfAttorneyId: powerOfAttorney.id,
-      caseId,
-    });
-  }
+  // Refresh all case/client reads: the saved DTO no longer contains removed members.
+  return queryInvalidation.clientOrPowerOfAttorney(queryClient);
 }
 
 export function useSavePowerOfAttorney() {

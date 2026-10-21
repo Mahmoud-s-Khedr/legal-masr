@@ -1,0 +1,656 @@
+{
+  "sourceRevision": "197f2956d90e725951c2b5816357231239c1140b",
+  "workingTreeChangesIncluded": true,
+  "generatedAt": "2026-10-14T20:18:25.924Z",
+  "platform": "linux",
+  "source": "native-tauri-webkit-real-ipc",
+  "filePicker": "desktop-e2e allowlisted substitute; physical dialogs unverified",
+  "theme": "light",
+  "timezone": "Africa/Cairo",
+  "screenshots": [
+    {
+      "id": "setup",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "setup.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 666,
+        "y": 117
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "اسم المحامي",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 362.6875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 470.21875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 577.75
+        },
+        {
+          "x": 116.828125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 656.65625
+        }
+      ]
+    },
+    {
+      "id": "setup-validation",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "setup-validation.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 664,
+        "y": 118
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "اسم المحامي",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 363.671875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 470.21875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 576.765625
+        },
+        {
+          "x": 116.828125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 655.671875
+        },
+        {
+          "x": 116.828125,
+          "height": 19.640625,
+          "label": "error",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 430.578125
+        },
+        {
+          "x": 116.828125,
+          "height": 19.640625,
+          "label": "error",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 537.125
+        }
+      ]
+    },
+    {
+      "id": "recovery-key",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "recovery-key.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 626,
+        "y": 137
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 73.96875,
+          "label": "recovery-key",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 445.4375
+        },
+        {
+          "x": 116.828125,
+          "height": 20.546875,
+          "label": "saved-key",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 663.90625
+        }
+      ]
+    },
+    {
+      "id": "unlock",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "unlock.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 422,
+        "y": 239
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 456.453125
+        },
+        {
+          "x": 116.828125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 535.359375
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "recovery.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 533,
+        "x": 64,
+        "height": 638,
+        "y": 131
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "مفتاح الاسترداد",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 348.921875
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "كلمة المرور الجديدة",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 456.453125
+        },
+        {
+          "x": 116.828125,
+          "height": 18.90625,
+          "label": "تأكيد كلمة المرور",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 563.984375
+        },
+        {
+          "x": 116.828125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 428,
+          "shape": "rectangle",
+          "y": 642.890625
+        }
+      ]
+    },
+    {
+      "id": "search-palette",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "search-palette.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 416,
+        "x": 512,
+        "height": 142,
+        "y": 379
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 528,
+          "height": 110,
+          "label": "records",
+          "width": 384,
+          "shape": "rectangle",
+          "y": 395
+        }
+      ]
+    },
+    {
+      "id": "search-palette",
+      "part": 2,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "search-palette-2.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 416,
+        "x": 512,
+        "height": 142,
+        "y": 379
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 528,
+          "height": 110,
+          "label": "records",
+          "width": 384,
+          "shape": "rectangle",
+          "y": 395
+        }
+      ]
+    },
+    {
+      "id": "search-palette",
+      "part": 3,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "search-palette-3.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 416,
+        "x": 512,
+        "height": 142,
+        "y": 379
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 528,
+          "height": 110,
+          "label": "records",
+          "width": 384,
+          "shape": "rectangle",
+          "y": 395
+        }
+      ]
+    },
+    {
+      "id": "payment-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "payment-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 617,
+        "y": 142
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "القضية",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 230.75
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الموكل الدافع",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 309.65625
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "المبلغ (ج.م)",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 388.5625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "تاريخ الدفعة",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 388.5625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "طريقة الدفع",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 467.46875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 546.375
+        },
+        {
+          "x": 935.015625,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 92.84375,
+          "shape": "rectangle",
+          "y": 690.28125
+        }
+      ]
+    },
+    {
+      "id": "expense-edit",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "expense-edit.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 627,
+        "y": 137
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "القضية",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 265.390625
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "الموكل",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 265.390625
+        },
+        {
+          "x": 726.40625,
+          "height": 18.90625,
+          "label": "المبلغ (ج.م)",
+          "width": 361.59375,
+          "shape": "rectangle",
+          "y": 393.546875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "تاريخ المصروف",
+          "width": 361.609375,
+          "shape": "rectangle",
+          "y": 393.546875
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "نوع المصروف",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 472.453125
+        },
+        {
+          "x": 352,
+          "height": 18.90625,
+          "label": "ملاحظات",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 551.359375
+        },
+        {
+          "x": 920.953125,
+          "height": 32,
+          "label": "save-cancel",
+          "width": 106.90625,
+          "shape": "rectangle",
+          "y": 695.265625
+        }
+      ]
+    },
+    {
+      "id": "payment-inspect",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "payment-inspect.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 320,
+        "y": 290
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 62.09375,
+          "label": "details",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 379.25
+        },
+        {
+          "x": 352,
+          "height": 39.28125,
+          "label": "details",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 455.34375
+        },
+        {
+          "x": 336,
+          "height": 49,
+          "label": "details",
+          "width": 768,
+          "shape": "rectangle",
+          "y": 528.625
+        }
+      ]
+    },
+    {
+      "id": "expense-inspect",
+      "part": 1,
+      "locale": "ar",
+      "screenLocale": "ar",
+      "filename": "expense-inspect.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "crop": {
+        "width": 800,
+        "x": 320,
+        "height": 300,
+        "y": 300
+      },
+      "direction": "rtl",
+      "source": "native-tauri-webkit-real-ipc",
+      "callouts": [
+        {
+          "x": 352,
+          "height": 41.546875,
+          "label": "details",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 389.25
+        },
+        {
+          "x": 352,
+          "height": 39.28125,
+          "label": "details",
+          "width": 736,
+          "shape": "rectangle",
+          "y": 444.796875
+        },
+        {
+          "x": 336,
+          "height": 49,
+          "label": "details",
+          "width": 768,
+          "shape": "rectangle",
+          "y": 518.078125
+        }
+      ]
+    }
+  ],
+  "results": [
+    {
+      "locale": "ar",
+      "scenario": "initialize-through-ui-and-save-recovery-key",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "client-create-through-ui",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "case-create-through-ui",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "seed-exactly-ten-clients-seven-complete-cases",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "whole-office-relations-ledgers-and-hearing-chain",
+      "result": "passed",
+      "layer": "native-desktop-real-ipc"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-search-palette",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-payment-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-expense-edit",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-payment-inspect",
+      "result": "passed",
+      "layer": "native-screen-render"
+    },
+    {
+      "locale": "ar",
+      "scenario": "screen-expense-inspect",
+      "result": "passed",
+      "layer": "native-screen-render"
+    }
+  ],
+  "binarySha256": "ab4bb75a83e7a56f3fa6c33a70a105e1c75684ce650268c1fbbfb7b5122385ed",
+  "fixtureDate": "2026-10-14"
+}

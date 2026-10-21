@@ -72,3 +72,23 @@ it("lists the cases of the power of attorney's clients with their court, and a l
   expect(link.closest('li')).toHaveTextContent(fixtures.caseSummary.courtName!);
   expect(link.closest('li')).toHaveTextContent(fixtures.client.fullName);
 });
+
+it('shows and retries a failed linked-case lookup instead of displaying incomplete case labels', async () => {
+  vi.mocked(bridge.caseList)
+    .mockRejectedValueOnce({ code: 'OPERATION_FAILED' })
+    .mockResolvedValue([fixtures.caseSummary]);
+  vi.mocked(bridge.powerOfAttorneyGet).mockResolvedValue({
+    ...fixtures.poa,
+    caseIds: [fixtures.caseSummary.id],
+  });
+  renderDetail();
+  fireEvent.click(await screen.findByRole('tab', { name: /القضايا/ }));
+  const alert = await screen.findByRole('alert');
+  expect(
+    screen.queryByRole('link', { name: fixtures.caseSummary.internalNumber }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(within(alert).getByRole('button', { name: i18n.t('app.retry') }));
+  expect(
+    await screen.findByRole('link', { name: fixtures.caseSummary.internalNumber }),
+  ).toBeVisible();
+});

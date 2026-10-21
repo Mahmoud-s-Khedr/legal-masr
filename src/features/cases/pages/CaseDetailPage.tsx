@@ -1,3 +1,4 @@
+import { QuerySection } from '@/components/layout/QuerySection';
 import { DraftForm } from '@/components/forms/DraftForm';
 import { actionableErrorMessage } from '@/bridge/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -132,6 +133,7 @@ export function CaseDetailPage() {
   const sortedTasks = [...(tasks.data ?? [])].sort(
     (a, b) => Number(a.completed) - Number(b.completed) || a.dueDate.localeCompare(b.dueDate),
   );
+  const accountReady = account.isSuccess && account.data !== undefined;
   const agreed = account.data?.agreedFeeMinor ?? 0;
   // An archived case is read-only until it is restored.
   const readOnly = Boolean(caseDto.archivedAt);
@@ -305,82 +307,85 @@ export function CaseDetailPage() {
                     : t('cases.detail.nextHearing')}
                 </h3>
               </div>
-              {nextHearing ? (
-                <>
-                  <time dateTime={nextHearing.hearingDate}>
-                    {format.dateLong(nextHearing.hearingDate)}
-                  </time>
-                  <strong>
-                    {nextHearing.hearingTime
-                      ? format.time(nextHearing.hearingTime)
-                      : t('dashboard.allDay')}
-                  </strong>
-                  <span dir="auto">
-                    {[nextHearing.hearingType, nextHearing.location, nextHearing.circuitName]
-                      .filter(Boolean)
-                      .join(' · ') || t('agenda.hearing')}
-                  </span>
-                  {nextHearing.requiredDocuments && (
-                    <small className="preparation-context" dir="auto">
-                      {t('dashboard.preparation')}: {nextHearing.requiredDocuments}
-                    </small>
-                  )}
-                  {!readOnly && (
-                    <div className="card-actions">
-                      {nextHearing.hearingDate <= today && (
+              <QuerySection query={hearings} label={t('cases.detail.tabs.hearings')}>
+                {nextHearing ? (
+                  <>
+                    <time dateTime={nextHearing.hearingDate}>
+                      {format.dateLong(nextHearing.hearingDate)}
+                    </time>
+                    <strong>
+                      {nextHearing.hearingTime
+                        ? format.time(nextHearing.hearingTime)
+                        : t('dashboard.allDay')}
+                    </strong>
+                    <span dir="auto">
+                      {[nextHearing.hearingType, nextHearing.location, nextHearing.circuitName]
+                        .filter(Boolean)
+                        .join(' · ') || t('agenda.hearing')}
+                    </span>
+                    {nextHearing.requiredDocuments && (
+                      <small className="preparation-context" dir="auto">
+                        {t('dashboard.preparation')}: {nextHearing.requiredDocuments}
+                      </small>
+                    )}
+                    {!readOnly && (
+                      <div className="card-actions">
+                        {nextHearing.hearingDate <= today && (
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              recordDecision.reset();
+                              setHearingDecision(nextHearing);
+                            }}
+                          >
+                            {t('agenda.recordDecision')}
+                          </Button>
+                        )}
                         <Button
                           type="button"
+                          variant="secondary"
                           onClick={() => {
-                            recordDecision.reset();
-                            setHearingDecision(nextHearing);
+                            saveHearing.reset();
+                            setHearingEditor(nextHearing);
                           }}
                         >
-                          {t('agenda.recordDecision')}
+                          {t('agenda.editHearing')}
                         </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => {
-                          saveHearing.reset();
-                          setHearingEditor(nextHearing);
-                        }}
-                      >
-                        {t('agenda.editHearing')}
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <p className="muted">{t('cases.detail.noNextHearing')}</p>
-                  {!readOnly && (
-                    <div className="card-actions">
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          saveHearing.reset();
-                          setHearingEditor('new');
-                        }}
-                      >
-                        {t('agenda.add')}
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-              {lastDecision && (
-                <div className="case-summary-text">
-                  <span>
-                    {t('cases.detail.lastDecision', {
-                      date: format.date(lastDecision.hearingDate),
-                    })}
-                  </span>
-                  <p className="prewrap" dir="auto">
-                    {lastDecision.decisionText}
-                  </p>
-                </div>
-              )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="muted">{t('cases.detail.noNextHearing')}</p>
+                    {!readOnly && (
+                      <div className="card-actions">
+                        <Button
+                          type="button"
+                          disabled={!hearings.isSuccess}
+                          onClick={() => {
+                            saveHearing.reset();
+                            setHearingEditor('new');
+                          }}
+                        >
+                          {t('agenda.add')}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+                {lastDecision && (
+                  <div className="case-summary-text">
+                    <span>
+                      {t('cases.detail.lastDecision', {
+                        date: format.date(lastDecision.hearingDate),
+                      })}
+                    </span>
+                    <p className="prewrap" dir="auto">
+                      {lastDecision.decisionText}
+                    </p>
+                  </div>
+                )}
+              </QuerySection>
             </section>
             <section className="detail-card">
               <div className="card-title">
@@ -394,17 +399,26 @@ export function CaseDetailPage() {
                   {t('dashboard.viewAll')}
                 </Button>
               </div>
+              <QuerySection query={account} label={t('cases.detail.accountTitle')}>
+                {' '}
+                <dl className="facts facts-compact">
+                  <Fact label={t('cases.detail.agreed')}>
+                    <bdi>{format.money(agreed)}</bdi>
+                  </Fact>
+                  <Fact label={t('cases.detail.received')}>
+                    <bdi>{format.money(account.data?.receivedMinor ?? 0)}</bdi>
+                  </Fact>
+                  <Fact label={t('cases.detail.outstanding')}>
+                    <bdi>{format.money(account.data?.outstandingMinor ?? 0)}</bdi>
+                  </Fact>
+                </dl>
+              </QuerySection>
               <dl className="facts facts-compact">
-                <Fact label={t('cases.detail.agreed')}>
-                  <bdi>{format.money(agreed)}</bdi>
+                <Fact label={t('cases.detail.openTasks')}>
+                  <QuerySection query={tasks} label={t('cases.detail.tabs.tasks')}>
+                    {format.number(openTasks.length)}
+                  </QuerySection>
                 </Fact>
-                <Fact label={t('cases.detail.received')}>
-                  <bdi>{format.money(account.data?.receivedMinor ?? 0)}</bdi>
-                </Fact>
-                <Fact label={t('cases.detail.outstanding')}>
-                  <bdi>{format.money(account.data?.outstandingMinor ?? 0)}</bdi>
-                </Fact>
-                <Fact label={t('cases.detail.openTasks')}>{format.number(openTasks.length)}</Fact>
               </dl>
             </section>
           </div>
@@ -423,6 +437,7 @@ export function CaseDetailPage() {
             {!readOnly && (
               <Button
                 type="button"
+                disabled={!hearings.isSuccess}
                 onClick={() => {
                   saveHearing.reset();
                   setHearingEditor('new');
@@ -432,67 +447,69 @@ export function CaseDetailPage() {
               </Button>
             )}
           </div>
-          {!sortedHearings.length ? (
-            <p className="empty-compact">{t('cases.detail.noHearings')}</p>
-          ) : (
-            <ul className="timeline-list">
-              {sortedHearings.map((hearing) => (
-                <li key={hearing.id}>
-                  <time dateTime={hearing.hearingDate}>
-                    {format.date(hearing.hearingDate)}
-                    <small>
-                      {hearing.hearingTime
-                        ? format.time(hearing.hearingTime)
-                        : format.weekday(dateOnlyToLocalDate(hearing.hearingDate), 'long')}
-                    </small>
-                  </time>
-                  <div>
-                    <div className="timeline-title">
-                      <strong dir="auto">{hearing.hearingType ?? t('agenda.hearing')}</strong>
-                      <Badge variant="secondary">{t(`agenda.status.${hearing.status}`)}</Badge>
-                    </div>
-                    {(hearing.location || hearing.circuitName) && (
-                      <span dir="auto">
-                        {[hearing.location, hearing.circuitName].filter(Boolean).join(' · ')}
-                      </span>
-                    )}
-                    {hearing.decisionText && (
-                      <p className="prewrap" dir="auto">
-                        <strong>{t('agenda.fields.decisionText')}: </strong>
-                        {hearing.decisionText}
-                      </p>
-                    )}
-                    <div className="row-actions">
-                      {hearing.status === 'SCHEDULED' && !readOnly && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              saveHearing.reset();
-                              setHearingEditor(hearing);
-                            }}
-                          >
-                            {t('agenda.editHearing')}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              recordDecision.reset();
-                              setHearingDecision(hearing);
-                            }}
-                          >
-                            {t('agenda.recordDecision')}
-                          </Button>
-                        </>
+          <QuerySection query={hearings} label={t('cases.detail.tabs.hearings')}>
+            {!sortedHearings.length ? (
+              <p className="empty-compact">{t('cases.detail.noHearings')}</p>
+            ) : (
+              <ul className="timeline-list">
+                {sortedHearings.map((hearing) => (
+                  <li key={hearing.id}>
+                    <time dateTime={hearing.hearingDate}>
+                      {format.date(hearing.hearingDate)}
+                      <small>
+                        {hearing.hearingTime
+                          ? format.time(hearing.hearingTime)
+                          : format.weekday(dateOnlyToLocalDate(hearing.hearingDate), 'long')}
+                      </small>
+                    </time>
+                    <div>
+                      <div className="timeline-title">
+                        <strong dir="auto">{hearing.hearingType ?? t('agenda.hearing')}</strong>
+                        <Badge variant="secondary">{t(`agenda.status.${hearing.status}`)}</Badge>
+                      </div>
+                      {(hearing.location || hearing.circuitName) && (
+                        <span dir="auto">
+                          {[hearing.location, hearing.circuitName].filter(Boolean).join(' · ')}
+                        </span>
                       )}
+                      {hearing.decisionText && (
+                        <p className="prewrap" dir="auto">
+                          <strong>{t('agenda.fields.decisionText')}: </strong>
+                          {hearing.decisionText}
+                        </p>
+                      )}
+                      <div className="row-actions">
+                        {hearing.status === 'SCHEDULED' && !readOnly && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => {
+                                saveHearing.reset();
+                                setHearingEditor(hearing);
+                              }}
+                            >
+                              {t('agenda.editHearing')}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => {
+                                recordDecision.reset();
+                                setHearingDecision(hearing);
+                              }}
+                            >
+                              {t('agenda.recordDecision')}
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </QuerySection>
         </section>
       )}
       {tab === 'tasks' && (
@@ -502,6 +519,7 @@ export function CaseDetailPage() {
             {!readOnly && (
               <Button
                 type="button"
+                disabled={!tasks.isSuccess}
                 onClick={() => {
                   saveTask.reset();
                   setTaskEditor('new');
@@ -511,47 +529,49 @@ export function CaseDetailPage() {
               </Button>
             )}
           </div>
-          {!sortedTasks.length ? (
-            <p className="empty-compact">{t('cases.detail.noTasks')}</p>
-          ) : (
-            <ul className="work-rows">
-              {sortedTasks.map((task) => {
-                const overdue = !task.completed && task.dueDate < today;
-                return (
-                  <li
-                    key={task.id}
-                    className={task.completed ? 'is-done' : overdue ? 'is-overdue' : undefined}
-                  >
-                    <Checkbox
-                      checked={task.completed}
-                      disabled={readOnly || completeTask.isPending || reopenTask.isPending}
-                      onCheckedChange={() =>
-                        (task.completed ? reopenTask : completeTask).mutate(task.id)
-                      }
-                      aria-label={t(task.completed ? 'tasks.reopenAria' : 'tasks.completeAria', {
-                        title: task.title,
-                      })}
-                    />
-                    <div>
-                      <button
-                        type="button"
-                        className="link-button"
-                        onClick={() => {
-                          saveTask.reset();
-                          setTaskEditor(task);
-                        }}
-                      >
-                        <bdi>{task.title}</bdi>
-                      </button>
-                      <span>{format.date(task.dueDate)}</span>
-                    </div>
-                    {overdue && <span className="row-meta">{t('tasks.overdue')}</span>}
-                    {task.completed && <span className="row-meta">{t('tasks.completed')}</span>}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+          <QuerySection query={tasks} label={t('cases.detail.tabs.tasks')}>
+            {!sortedTasks.length ? (
+              <p className="empty-compact">{t('cases.detail.noTasks')}</p>
+            ) : (
+              <ul className="work-rows">
+                {sortedTasks.map((task) => {
+                  const overdue = !task.completed && task.dueDate < today;
+                  return (
+                    <li
+                      key={task.id}
+                      className={task.completed ? 'is-done' : overdue ? 'is-overdue' : undefined}
+                    >
+                      <Checkbox
+                        checked={task.completed}
+                        disabled={readOnly || completeTask.isPending || reopenTask.isPending}
+                        onCheckedChange={() =>
+                          (task.completed ? reopenTask : completeTask).mutate(task.id)
+                        }
+                        aria-label={t(task.completed ? 'tasks.reopenAria' : 'tasks.completeAria', {
+                          title: task.title,
+                        })}
+                      />
+                      <div>
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => {
+                            saveTask.reset();
+                            setTaskEditor(task);
+                          }}
+                        >
+                          <bdi>{task.title}</bdi>
+                        </button>
+                        <span>{format.date(task.dueDate)}</span>
+                      </div>
+                      {overdue && <span className="row-meta">{t('tasks.overdue')}</span>}
+                      {task.completed && <span className="row-meta">{t('tasks.completed')}</span>}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </QuerySection>
           {(completeTask.isError || reopenTask.isError) && !taskEditor && (
             <Alert variant="destructive">
               <AlertDescription>{t('tasks.statusError')}</AlertDescription>
@@ -569,32 +589,40 @@ export function CaseDetailPage() {
       )}
       {tab === 'account' && (
         <div className="detail-stack">
-          <div className="finance-summary">
-            <article>
-              <span>{t('cases.detail.agreed')}</span>
-              <strong>
-                <bdi>{format.money(agreed)}</bdi>
-              </strong>
-            </article>
-            <article>
-              <span>{t('cases.detail.received')}</span>
-              <strong>
-                <bdi>{format.money(account.data?.receivedMinor ?? 0)}</bdi>
-              </strong>
-            </article>
-            <article className="finance-net">
-              <span>{t('cases.detail.outstanding')}</span>
-              <strong>
-                <bdi>{format.money(account.data?.outstandingMinor ?? 0)}</bdi>
-              </strong>
-            </article>
-            <article>
-              <span>{t('cases.detail.expenses')}</span>
-              <strong>
-                <bdi>{format.money(account.data?.expensesMinor ?? 0)}</bdi>
-              </strong>
-            </article>
-          </div>
+          <QuerySection query={cases} label={t('cases.title')}>
+            {null}
+          </QuerySection>
+          <QuerySection query={clients} label={t('clients.title')}>
+            {null}
+          </QuerySection>
+          <QuerySection query={account} label={t('cases.detail.accountTitle')}>
+            <div className="finance-summary">
+              <article>
+                <span>{t('cases.detail.agreed')}</span>
+                <strong>
+                  <bdi>{format.money(agreed)}</bdi>
+                </strong>
+              </article>
+              <article>
+                <span>{t('cases.detail.received')}</span>
+                <strong>
+                  <bdi>{format.money(account.data?.receivedMinor ?? 0)}</bdi>
+                </strong>
+              </article>
+              <article className="finance-net">
+                <span>{t('cases.detail.outstanding')}</span>
+                <strong>
+                  <bdi>{format.money(account.data?.outstandingMinor ?? 0)}</bdi>
+                </strong>
+              </article>
+              <article>
+                <span>{t('cases.detail.expenses')}</span>
+                <strong>
+                  <bdi>{format.money(account.data?.expensesMinor ?? 0)}</bdi>
+                </strong>
+              </article>
+            </div>
+          </QuerySection>
           <section className="detail-card">
             <div className="card-title">
               <div>
@@ -606,6 +634,7 @@ export function CaseDetailPage() {
               className="inline-form"
               noValidate
               onSubmit={feeForm.handleSubmit(async () => {
+                if (!accountReady) return;
                 const amount = parseMoneyToMinor(feeValue);
                 if (!amount) return setFeeError(t('cases.detail.feeInvalid'));
                 setFeeError('');
@@ -626,6 +655,7 @@ export function CaseDetailPage() {
                 >
                   <AmountInput
                     {...feeForm.register('amount')}
+                    disabled={readOnly || !accountReady}
                     value={feeValue}
                     aria-invalid={!!feeForm.formState.errors.amount}
                     onChange={(event) => {
@@ -637,7 +667,7 @@ export function CaseDetailPage() {
                 <Button
                   type="submit"
                   className="mt-7 shrink-0 max-[760px]:mt-0"
-                  disabled={readOnly || saveFee.isPending}
+                  disabled={readOnly || !accountReady || saveFee.isPending}
                 >
                   {t('cases.detail.feeSave')}
                 </Button>
@@ -665,6 +695,7 @@ export function CaseDetailPage() {
               {!readOnly && (
                 <Button
                   type="button"
+                  disabled={!payments.isSuccess || !cases.isSuccess || !clients.isSuccess}
                   onClick={() => {
                     savePayment.reset();
                     saveFee.reset();
@@ -675,32 +706,35 @@ export function CaseDetailPage() {
                 </Button>
               )}
             </div>
-            {!payments.data?.length ? (
-              <p className="muted">{t('cases.detail.noPayments')}</p>
-            ) : (
-              <ul className="ledger-rows">
-                {payments.data.map((payment) => (
-                  <li key={payment.id}>
-                    <button
-                      type="button"
-                      className="ledger-row"
-                      onClick={() =>
-                        setTransactionEditor({ type: 'payment', value: payment, inspect: true })
-                      }
-                    >
-                      <span>{format.date(payment.paymentDate)}</span>
-                      <span dir="auto">
-                        {caseDto.clients.find((client) => client.clientId === payment.payerClientId)
-                          ?.fullName ?? '—'}
-                      </span>
-                      <strong className="money-positive">
-                        <bdi>{format.money(payment.amountMinor)}</bdi>
-                      </strong>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <QuerySection query={payments} label={t('cases.detail.paymentsTitle')}>
+              {!payments.data?.length ? (
+                <p className="muted">{t('cases.detail.noPayments')}</p>
+              ) : (
+                <ul className="ledger-rows">
+                  {payments.data.map((payment) => (
+                    <li key={payment.id}>
+                      <button
+                        type="button"
+                        className="ledger-row"
+                        onClick={() =>
+                          setTransactionEditor({ type: 'payment', value: payment, inspect: true })
+                        }
+                      >
+                        <span>{format.date(payment.paymentDate)}</span>
+                        <span dir="auto">
+                          {caseDto.clients.find(
+                            (client) => client.clientId === payment.payerClientId,
+                          )?.fullName ?? '—'}
+                        </span>
+                        <strong className="money-positive">
+                          <bdi>{format.money(payment.amountMinor)}</bdi>
+                        </strong>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </QuerySection>
           </section>
           <section className="detail-card">
             <div className="card-title">
@@ -709,6 +743,7 @@ export function CaseDetailPage() {
                 <Button
                   type="button"
                   variant="secondary"
+                  disabled={!expenses.isSuccess || !cases.isSuccess || !clients.isSuccess}
                   onClick={() => {
                     saveExpense.reset();
                     saveFee.reset();
@@ -719,32 +754,34 @@ export function CaseDetailPage() {
                 </Button>
               )}
             </div>
-            {!expenses.data?.length ? (
-              <p className="muted">{t('cases.detail.noExpenses')}</p>
-            ) : (
-              <ul className="ledger-rows">
-                {expenses.data.map((expense) => (
-                  <li key={expense.id}>
-                    <button
-                      type="button"
-                      className="ledger-row"
-                      onClick={() =>
-                        setTransactionEditor({ type: 'expense', value: expense, inspect: true })
-                      }
-                    >
-                      <span>{format.date(expense.expenseDate)}</span>
-                      <span dir="auto">
-                        {t(`finances.expenseTypes.${expense.expenseType}`)}
-                        {expense.notes && ` · ${expense.notes}`}
-                      </span>
-                      <strong className="money-negative">
-                        <bdi>{format.money(expense.amountMinor)}</bdi>
-                      </strong>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <QuerySection query={expenses} label={t('cases.detail.expensesTitle')}>
+              {!expenses.data?.length ? (
+                <p className="muted">{t('cases.detail.noExpenses')}</p>
+              ) : (
+                <ul className="ledger-rows">
+                  {expenses.data.map((expense) => (
+                    <li key={expense.id}>
+                      <button
+                        type="button"
+                        className="ledger-row"
+                        onClick={() =>
+                          setTransactionEditor({ type: 'expense', value: expense, inspect: true })
+                        }
+                      >
+                        <span>{format.date(expense.expenseDate)}</span>
+                        <span dir="auto">
+                          {t(`finances.expenseTypes.${expense.expenseType}`)}
+                          {expense.notes && ` · ${expense.notes}`}
+                        </span>
+                        <strong className="money-negative">
+                          <bdi>{format.money(expense.amountMinor)}</bdi>
+                        </strong>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </QuerySection>
           </section>
         </div>
       )}

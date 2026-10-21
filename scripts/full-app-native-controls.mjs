@@ -1,4 +1,4 @@
-/* global document */
+/* global document, window */
 import { openGuideDesktop } from './guide-desktop.mjs';
 import { mkdir, writeFile, rename } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -555,6 +555,102 @@ try {
     await h.click(`button[aria-label="${t('agenda.nextPeriod')}"]`);
     await h.click(`button[aria-label="${t('agenda.previousPeriod')}"]`);
     await button('agenda.goToday');
+  });
+  await check('case-reference-and-chronology-commands-preserve-data-on-refusal', async () => {
+    const input = {
+      internalNumber: 'CONTROL-VALIDATION',
+      officialNumber: '447',
+      officialYear: 2026,
+      judicialYear: 89,
+      status: 'ACTIVE',
+      filedOn: '2026-10-14',
+      closedOn: '2026-10-15',
+      clients: [{ clientId: a.id }],
+    };
+    const valid = await h.invoke('case_create', { input });
+    const updated = await h.invoke('case_update', {
+      input: { ...input, id: valid.id, closedOn: input.filedOn },
+    });
+    assert.equal(updated.closedOn, input.filedOn);
+    const snapshot = async () =>
+      Promise.all([
+        h.invoke('case_get', { id: valid.id }),
+        h.invoke('case_list', { input: { includeArchived: true } }),
+        h.invoke('search_global', { query: 'CONTROL' }),
+      ]);
+    const before = await snapshot();
+    for (const change of [
+      { closedOn: '2026-10-13' },
+      { officialNumber: undefined, judicialYear: undefined },
+      { officialNumber: '  ', officialYear: undefined },
+      { officialNumber: '', officialYear: 2026, judicialYear: 89 },
+    ]) {
+      for (const command of ['case_create', 'case_update']) {
+        await assert.rejects(
+          h.invoke(command, {
+            input: {
+              ...input,
+              ...change,
+              ...(command === 'case_update'
+                ? { id: valid.id }
+                : { internalNumber: 'CONTROL-REFUSED' }),
+            },
+          }),
+          (error) => error.code === 'VALIDATION_FAILED',
+        );
+        assert.deepEqual(await snapshot(), before);
+      }
+    }
+    await go(`/cases/${valid.id}`);
+    await h.wait('.entity-detail');
+  });
+  await check('case-account-failed-read-retry-restores-real-data', async () => {
+    await h.invoke('fee_agreement_save', { input: { caseId: c.id, amountMinor: 123400 } });
+    // Renderer-only fault injection in a disposable fictional native workspace.
+    // Retry restores the original bridge and reads the actual SQLCipher database.
+    await h.browser.execute(() => {
+      window.__controlOriginalFetch = window.fetch;
+      window.fetch = (url, options) =>
+        String(url).endsWith('/finance_case_summary')
+          ? Promise.resolve(
+              new Response(JSON.stringify({ code: 'IO_FAILED' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json', 'Tauri-Response': 'error' },
+              }),
+            )
+          : window.__controlOriginalFetch(url, options);
+    });
+    try {
+      await go(`/cases/${c.id}`);
+      await h.tab(5);
+      await h.wait('[role="alert"]');
+      assert.equal(await h.browser.$('.finance-summary').isExisting(), false);
+      assert.equal(await h.browser.$('[name="amount"]').isEnabled(), false);
+      await writeFile(
+        join(output, 'case-account-failed-read.png'),
+        Buffer.from(await h.browser.takeScreenshot(), 'base64'),
+      );
+      await h.click('.language-switcher');
+      await h.browser.waitUntil(async () =>
+        (await h.browser.$('[role="alert"]').getText()).includes('تعذر'),
+      );
+      await writeFile(
+        join(output, 'case-account-failed-read-ar.png'),
+        Buffer.from(await h.browser.takeScreenshot(), 'base64'),
+      );
+      await h.click('.language-switcher');
+    } finally {
+      await h.browser.execute(() => {
+        window.fetch = window.__controlOriginalFetch;
+        delete window.__controlOriginalFetch;
+      });
+    }
+    await button('app.retry');
+    await h.wait('.finance-summary');
+    await h.browser.waitUntil(
+      async () => (await h.browser.$('[name="amount"]').getValue()) === '1234',
+    );
+    assert.equal(await h.browser.$('[role="alert"]').isExisting(), false);
   });
 } finally {
   await h.close();

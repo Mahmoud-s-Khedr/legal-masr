@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 vi.mock('@/bridge/commands', async (original) => {
   const module = await original<typeof import('@/bridge/commands')>();
@@ -202,4 +202,169 @@ it.each([
   );
 
   expect(await screen.findByText(expected)).toBeInTheDocument();
+});
+
+it.each([
+  ['hearings', 'hearingList', 'noHearings'],
+  ['tasks', 'taskList', 'noTasks'],
+  ['account', 'paymentList', 'noPayments'],
+  ['account', 'expenseList', 'noExpenses'],
+] as const)(
+  'does not treat a failed %s/%s read as an empty list, and retries only that section',
+  async (tab, command, emptyKey) => {
+    vi.mocked(bridge[command]).mockRejectedValueOnce(fictionalFailure).mockResolvedValue([]);
+    renderWorkflow(<CaseDetailPage />, `/cases/${fixtures.caseItem.id}`, '/cases/:id');
+    fireEvent.click(await screen.findByRole('tab', { name: i18n.t(`cases.detail.tabs.${tab}`) }));
+    const alert = await screen.findByRole('alert');
+    expect(screen.queryByText(i18n.t(`cases.detail.${emptyKey}`))).not.toBeInTheDocument();
+    if (tab === 'hearings')
+      expect(screen.getByRole('button', { name: i18n.t('agenda.add') })).toBeDisabled();
+    if (tab === 'tasks')
+      expect(screen.getByRole('button', { name: i18n.t('tasks.add') })).toBeDisabled();
+    if (command === 'paymentList')
+      expect(
+        screen.getByRole('button', { name: i18n.t('cases.detail.addPayment') }),
+      ).toBeDisabled();
+    if (command === 'expenseList')
+      expect(
+        screen.getByRole('button', { name: i18n.t('cases.detail.addExpense') }),
+      ).toBeDisabled();
+    const reads = [
+      bridge.hearingList,
+      bridge.taskList,
+      bridge.paymentList,
+      bridge.expenseList,
+      bridge.financeCaseSummary,
+    ];
+    const before = reads.map((read) => vi.mocked(read).mock.calls.length);
+    fireEvent.click(within(alert).getByRole('button', { name: i18n.t('app.retry') }));
+    expect(await screen.findByText(i18n.t(`cases.detail.${emptyKey}`))).toBeVisible();
+    reads.forEach((read, index) => {
+      expect(vi.mocked(read).mock.calls.length).toBe(
+        before[index] + Number(read === bridge[command]),
+      );
+    });
+  },
+);
+
+it.each([
+  ['caseList', 'cases.title'],
+  ['clientList', 'clients.title'],
+] as const)(
+  'recovers failed transaction choices from %s without refetching the ledgers',
+  async (command, labelKey) => {
+    vi.mocked(bridge[command]).mockRejectedValueOnce(fictionalFailure);
+    renderWorkflow(<CaseDetailPage />, `/cases/${fixtures.caseItem.id}`, '/cases/:id');
+    fireEvent.click(await screen.findByRole('tab', { name: i18n.t('cases.detail.tabs.account') }));
+    const payment = screen.getByRole('button', { name: i18n.t('cases.detail.addPayment') });
+    const expense = screen.getByRole('button', { name: i18n.t('cases.detail.addExpense') });
+    expect(payment).toBeDisabled();
+    expect(expense).toBeDisabled();
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(
+      i18n.t('records.sectionLoadError', { section: i18n.t(labelKey) }),
+    );
+    const reads = [bridge.paymentList, bridge.expenseList, bridge.financeCaseSummary];
+    const before = reads.map((read) => vi.mocked(read).mock.calls.length);
+    fireEvent.click(within(alert).getByRole('button', { name: i18n.t('app.retry') }));
+    await waitFor(() => {
+      expect(payment).not.toBeDisabled();
+      expect(expense).not.toBeDisabled();
+    });
+    reads.forEach((read, index) => expect(vi.mocked(read).mock.calls.length).toBe(before[index]));
+    fireEvent.click(payment);
+    expect(await screen.findByRole('dialog')).toBeVisible();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  },
+);
+
+it.each(['hearingList', 'taskList', 'paymentList', 'expenseList'] as const)(
+  'shows loading instead of empty while the case %s read is pending',
+  async (command) => {
+    vi.mocked(bridge[command]).mockImplementation(() => new Promise<never[]>(() => {}));
+    renderWorkflow(<CaseDetailPage />, `/cases/${fixtures.caseItem.id}`, '/cases/:id');
+    const tab =
+      command === 'hearingList' ? 'hearings' : command === 'taskList' ? 'tasks' : 'account';
+    fireEvent.click(await screen.findByRole('tab', { name: i18n.t(`cases.detail.tabs.${tab}`) }));
+    expect(await screen.findByRole('status')).toBeVisible();
+    const emptyKey =
+      command === 'hearingList'
+        ? 'noHearings'
+        : command === 'taskList'
+          ? 'noTasks'
+          : command === 'paymentList'
+            ? 'noPayments'
+            : 'noExpenses';
+    expect(screen.queryByText(i18n.t(`cases.detail.${emptyKey}`))).not.toBeInTheDocument();
+  },
+);
+
+it('hides failed case totals, disables fee changes and retries the account', async () => {
+  let reject!: (reason: unknown) => void;
+  vi.mocked(bridge.financeCaseSummary)
+    .mockImplementationOnce(
+      () =>
+        new Promise((_, fail) => {
+          reject = fail;
+        }),
+    )
+    .mockResolvedValue({
+      caseId: fixtures.caseItem.id,
+      agreedFeeMinor: 300000,
+      receivedMinor: 150000,
+      outstandingMinor: 150000,
+      expensesMinor: 25000,
+      netCashMinor: 125000,
+    });
+  const { container } = renderWorkflow(
+    <CaseDetailPage />,
+    `/cases/${fixtures.caseItem.id}`,
+    '/cases/:id',
+  );
+  fireEvent.click(await screen.findByRole('tab', { name: i18n.t('cases.detail.tabs.account') }));
+  const input = screen.getByLabelText(i18n.t('cases.detail.feeLabel'));
+  expect(input).toBeDisabled();
+  expect(container.querySelector('.finance-summary')).toBeNull();
+  await act(async () => reject(fictionalFailure));
+  const alert = await screen.findByRole('alert');
+  expect(screen.getByRole('button', { name: i18n.t('cases.detail.feeSave') })).toBeDisabled();
+  expect(bridge.feeAgreementSave).not.toHaveBeenCalled();
+  fireEvent.click(within(alert).getByRole('button', { name: i18n.t('app.retry') }));
+  expect(await screen.findByText(/3,000.00/)).toBeVisible();
+  expect(input).toHaveValue('3000');
+  expect(input).not.toBeDisabled();
+});
+
+it('does not present cached balances as current after a refetch fails and retains a dirty fee draft', async () => {
+  const account = {
+    caseId: fixtures.caseItem.id,
+    agreedFeeMinor: 300000,
+    receivedMinor: 100000,
+    outstandingMinor: 200000,
+    expensesMinor: 0,
+    netCashMinor: 100000,
+  };
+  vi.mocked(bridge.financeCaseSummary).mockResolvedValue(account);
+  const { container, queryClient } = renderWorkflow(
+    <CaseDetailPage />,
+    `/cases/${fixtures.caseItem.id}`,
+    '/cases/:id',
+  );
+  fireEvent.click(await screen.findByRole('tab', { name: i18n.t('cases.detail.tabs.account') }));
+  const input = await screen.findByLabelText(i18n.t('cases.detail.feeLabel'));
+  await waitFor(() => expect(input).toHaveValue('3000'));
+  fireEvent.change(input, { target: { value: '9000' } });
+  vi.mocked(bridge.financeCaseSummary)
+    .mockRejectedValueOnce(fictionalFailure)
+    .mockResolvedValue(account);
+  await act(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['cases', fixtures.caseItem.id, 'account'] });
+  });
+  const alert = await screen.findByRole('alert');
+  expect(container.querySelector('.finance-summary')).toBeNull();
+  expect(input).toHaveValue('9000');
+  expect(input).toBeDisabled();
+  fireEvent.click(within(alert).getByRole('button', { name: i18n.t('app.retry') }));
+  await waitFor(() => expect(input).not.toBeDisabled());
+  expect(input).toHaveValue('9000');
 });

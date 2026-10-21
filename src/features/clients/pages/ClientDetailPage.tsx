@@ -1,3 +1,4 @@
+import { QuerySection } from '@/components/layout/QuerySection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { actionableErrorMessage } from '@/bridge/errors';
 import { Badge } from '@/components/ui/badge';
@@ -175,37 +176,43 @@ export function ClientDetailPage() {
                 {t('dashboard.viewAll')}
               </Button>
             </div>
-            {linkedCases.length ? (
-              <ul className="compact-records">
-                {linkedCases.slice(0, 4).map((caseItem) => (
-                  <li key={caseItem.id}>
-                    <div className="record-copy">
-                      <Link to={`/cases/${caseItem.id}`}>
-                        <bdi>{caseItem.internalNumber}</bdi>
-                      </Link>
-                      {caseItem.officialNumber && (
-                        <span>
-                          <OfficialReference
-                            number={caseItem.officialNumber}
-                            year={caseItem.officialYear}
-                            judicialYear={caseItem.judicialYear}
-                          />
-                        </span>
-                      )}
-                    </div>
-                    <CaseStatusBadge status={caseItem.status} archived={!!caseItem.archivedAt} />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="muted">{t('clients.detail.noCases')}</p>
-            )}
+            <QuerySection query={cases} label={t('clients.detail.casesTitle')}>
+              {linkedCases.length ? (
+                <ul className="compact-records">
+                  {linkedCases.slice(0, 4).map((caseItem) => (
+                    <li key={caseItem.id}>
+                      <div className="record-copy">
+                        <Link to={`/cases/${caseItem.id}`}>
+                          <bdi>{caseItem.internalNumber}</bdi>
+                        </Link>
+                        {caseItem.officialNumber && (
+                          <span>
+                            <OfficialReference
+                              number={caseItem.officialNumber}
+                              year={caseItem.officialYear}
+                              judicialYear={caseItem.judicialYear}
+                            />
+                          </span>
+                        )}
+                      </div>
+                      <CaseStatusBadge status={caseItem.status} archived={!!caseItem.archivedAt} />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted">{t('clients.detail.noCases')}</p>
+              )}
+            </QuerySection>
             <dl className="facts facts-compact">
               <Fact label={t('clients.detail.received')}>
-                <bdi>{format.money(finance.data?.receivedMinor ?? 0)}</bdi>
+                <QuerySection query={finance} label={t('clients.detail.tabs.account')}>
+                  <bdi>{format.money(finance.data?.receivedMinor ?? 0)}</bdi>
+                </QuerySection>
               </Fact>
               <Fact label={t('clients.detail.poasCount')}>
-                {format.number(linkedPowers.length)}
+                <QuerySection query={powersOfAttorney} label={t('clients.detail.poasTitle')}>
+                  {format.number(linkedPowers.length)}
+                </QuerySection>
               </Fact>
             </dl>
           </section>
@@ -221,33 +228,35 @@ export function ClientDetailPage() {
               </Link>
             )}
           </div>
-          {!linkedCases.length ? (
-            <p className="empty-compact">{t('clients.detail.noCases')}</p>
-          ) : (
-            <ul className="compact-records">
-              {linkedCases.map((caseItem) => (
-                <li key={caseItem.id}>
-                  <div className="record-copy">
-                    <Link to={`/cases/${caseItem.id}`}>
-                      <bdi>{caseItem.internalNumber}</bdi>
-                    </Link>
-                    <span>
-                      {caseItem.officialNumber ? (
-                        <OfficialReference
-                          number={caseItem.officialNumber}
-                          year={caseItem.officialYear}
-                          judicialYear={caseItem.judicialYear}
-                        />
-                      ) : (
-                        t('clients.detail.noOfficialNumber')
-                      )}
-                    </span>
-                  </div>
-                  <CaseStatusBadge status={caseItem.status} archived={!!caseItem.archivedAt} />
-                </li>
-              ))}
-            </ul>
-          )}
+          <QuerySection query={cases} label={t('clients.detail.casesTitle')}>
+            {!linkedCases.length ? (
+              <p className="empty-compact">{t('clients.detail.noCases')}</p>
+            ) : (
+              <ul className="compact-records">
+                {linkedCases.map((caseItem) => (
+                  <li key={caseItem.id}>
+                    <div className="record-copy">
+                      <Link to={`/cases/${caseItem.id}`}>
+                        <bdi>{caseItem.internalNumber}</bdi>
+                      </Link>
+                      <span>
+                        {caseItem.officialNumber ? (
+                          <OfficialReference
+                            number={caseItem.officialNumber}
+                            year={caseItem.officialYear}
+                            judicialYear={caseItem.judicialYear}
+                          />
+                        ) : (
+                          t('clients.detail.noOfficialNumber')
+                        )}
+                      </span>
+                    </div>
+                    <CaseStatusBadge status={caseItem.status} archived={!!caseItem.archivedAt} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </QuerySection>
         </section>
       )}
       {tab === 'poas' && (
@@ -258,33 +267,31 @@ export function ClientDetailPage() {
               {t('clients.detail.managePoas')}
             </Link>
           </div>
-          {powersOfAttorney.isError ? (
-            <Alert variant="destructive">
-              <AlertDescription>{t('app.loadError')}</AlertDescription>
-            </Alert>
-          ) : !linkedPowers.length ? (
-            <p className="empty-compact">{t('clients.detail.noPoas')}</p>
-          ) : (
-            <ul className="compact-records">
-              {linkedPowers.map((poa) => (
-                <li key={poa.id}>
-                  <div className="record-copy">
-                    <Link to={`/powers-of-attorney/${poa.id}`}>
-                      <bdi>{poaTitle(poa)}</bdi>
-                    </Link>
-                    <span>
-                      {poa.officialNumber ? (
-                        <bdi className="mono">{poa.officialNumber}</bdi>
-                      ) : (
-                        t('clients.detail.noOfficialNumber')
-                      )}
-                    </span>
-                  </div>
-                  {poa.archivedAt && <Badge variant="secondary">{t('records.archived')}</Badge>}
-                </li>
-              ))}
-            </ul>
-          )}
+          <QuerySection query={powersOfAttorney} label={t('clients.detail.poasTitle')}>
+            {!linkedPowers.length ? (
+              <p className="empty-compact">{t('clients.detail.noPoas')}</p>
+            ) : (
+              <ul className="compact-records">
+                {linkedPowers.map((poa) => (
+                  <li key={poa.id}>
+                    <div className="record-copy">
+                      <Link to={`/powers-of-attorney/${poa.id}`}>
+                        <bdi>{poaTitle(poa)}</bdi>
+                      </Link>
+                      <span>
+                        {poa.officialNumber ? (
+                          <bdi className="mono">{poa.officialNumber}</bdi>
+                        ) : (
+                          t('clients.detail.noOfficialNumber')
+                        )}
+                      </span>
+                    </div>
+                    {poa.archivedAt && <Badge variant="secondary">{t('records.archived')}</Badge>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </QuerySection>
         </section>
       )}
       {tab === 'account' && (
@@ -296,26 +303,28 @@ export function ClientDetailPage() {
             </Link>
           </div>
           <p className="muted card-note">{t('clients.detail.accountNote')}</p>
-          <div className="finance-summary finance-summary-3">
-            <article>
-              <span>{t('clients.detail.received')}</span>
-              <strong>
-                <bdi>{format.money(finance.data?.receivedMinor ?? 0)}</bdi>
-              </strong>
-            </article>
-            <article>
-              <span>{t('clients.detail.expenses')}</span>
-              <strong>
-                <bdi>{format.money(finance.data?.expensesMinor ?? 0)}</bdi>
-              </strong>
-            </article>
-            <article className="finance-net">
-              <span>{t('clients.detail.net')}</span>
-              <strong>
-                <bdi>{format.money(finance.data?.netCashMinor ?? 0)}</bdi>
-              </strong>
-            </article>
-          </div>
+          <QuerySection query={finance} label={t('clients.detail.tabs.account')}>
+            <div className="finance-summary finance-summary-3">
+              <article>
+                <span>{t('clients.detail.received')}</span>
+                <strong>
+                  <bdi>{format.money(finance.data?.receivedMinor ?? 0)}</bdi>
+                </strong>
+              </article>
+              <article>
+                <span>{t('clients.detail.expenses')}</span>
+                <strong>
+                  <bdi>{format.money(finance.data?.expensesMinor ?? 0)}</bdi>
+                </strong>
+              </article>
+              <article className="finance-net">
+                <span>{t('clients.detail.net')}</span>
+                <strong>
+                  <bdi>{format.money(finance.data?.netCashMinor ?? 0)}</bdi>
+                </strong>
+              </article>
+            </div>
+          </QuerySection>
         </section>
       )}
       {tab === 'attachments' && (

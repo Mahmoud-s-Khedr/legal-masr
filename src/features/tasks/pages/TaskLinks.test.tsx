@@ -17,12 +17,12 @@ import { bridge } from '../../../bridge/commands';
 import { captureFixtures as fixtures } from '../../../dev/captureBridge';
 import { TasksPage } from './TasksPage';
 
-function renderPage() {
+function renderPage(path = '/tasks') {
   return render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
-      <MemoryRouter initialEntries={['/tasks']}>
+      <MemoryRouter initialEntries={[path]}>
         <TasksPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -99,4 +99,82 @@ describe('a task links a case or a client, never both', () => {
     expect(sent.caseId).toBe(fixtures.caseSummary.id);
     expect(sent.clientId).toBeUndefined();
   });
+
+  it('keeps the archived client name on a direct task but excludes archived clients from new links', async () => {
+    const archived = {
+      ...fixtures.clientSummary,
+      fullName: 'DEMO archived task client',
+      archivedAt: '2026-10-14T10:00:00Z',
+    };
+    const active = {
+      ...fixtures.clientSummary,
+      id: 'active-client',
+      fullName: 'DEMO active client',
+    };
+    vi.mocked(bridge.caseList).mockResolvedValue([]);
+    vi.mocked(bridge.clientList).mockImplementation(async (input) =>
+      input.includeArchived ? [archived, active] : [active],
+    );
+    vi.mocked(bridge.taskList).mockResolvedValue([
+      {
+        ...fixtures.task,
+        id: 'historical-task',
+        title: 'DEMO historical task',
+        clientId: archived.id,
+        caseId: null,
+      },
+    ]);
+    renderPage();
+    expect(await screen.findByText(archived.fullName)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة مهمة' }));
+    const dialog = await screen.findByRole('dialog');
+    const client = within(dialog).getByRole('combobox', { name: 'الموكل' });
+    client.focus();
+    fireEvent.click(client);
+    fireEvent.keyDown(client, { key: 'ArrowDown' });
+    expect(await screen.findByRole('option', { name: active.fullName })).toBeVisible();
+    expect(screen.queryByRole('option', { name: archived.fullName })).not.toBeInTheDocument();
+    fireEvent.keyDown(client, { key: 'Escape' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'إلغاء' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'DEMO historical task' }));
+    const historical = await screen.findByRole('dialog');
+    const retainedClient = within(historical).getByRole('combobox', { name: 'الموكل' });
+    expect(retainedClient).toHaveValue(archived.fullName);
+    retainedClient.focus();
+    fireEvent.click(retainedClient);
+    fireEvent.keyDown(retainedClient, { key: 'ArrowDown' });
+    expect(await screen.findByRole('option', { name: archived.fullName })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+  });
+
+  it.each([false, true])(
+    'seeds a new task from a client filter only when active (archived: %s)',
+    async (archived) => {
+      const client = {
+        ...fixtures.clientSummary,
+        archivedAt: archived ? '2026-10-14T10:00:00Z' : null,
+      };
+      vi.mocked(bridge.clientList).mockResolvedValue([client]);
+      renderPage(`/tasks?client=${client.id}`);
+      await waitFor(() =>
+        expect(screen.getByRole('combobox', { name: 'الموكل' })).toHaveValue(client.fullName),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'إضافة مهمة' }));
+      const dialog = await screen.findByRole('dialog', { name: 'إضافة مهمة' });
+      expect(within(dialog).getByRole('combobox', { name: 'الموكل' })).toHaveValue(
+        archived ? '' : client.fullName,
+      );
+      fireEvent.change(within(dialog).getByRole('textbox', { name: /المهمة/ }), {
+        target: { value: 'مهمة تجريبية' },
+      });
+      fireEvent.click(within(dialog).getByRole('button', { name: 'حفظ المهمة' }));
+      await waitFor(() => expect(bridge.taskCreate).toHaveBeenCalledTimes(1));
+      expect(vi.mocked(bridge.taskCreate).mock.calls[0][0].clientId).toBe(
+        archived ? undefined : client.id,
+      );
+    },
+  );
 });

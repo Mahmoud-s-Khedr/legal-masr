@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-15",
+  "platform": "Linux native Tauri/WebKitGTK",
+  "viewport": "1440x900",
+  "data": "Disposable fictional workspace",
+  "faultInjection": "Only finance_case_summary IPC response was simulated as an error; Retry uses the original bridge and real SQLCipher data.",
+  "files": [
+    {
+      "file": "case-account-failed-read-ar.png",
+      "sha256": "b1440b0b1dc8896b6ceca84224fadb362f8c7fc022690c644197f7493adb7b03"
+    },
+    {
+      "file": "case-account-failed-read-retry-restores-real-data.png",
+      "sha256": "6087a468ad26a3a2bbd93a3e071dca398860674ba5c967f5c316accdb55b4543"
+    },
+    {
+      "file": "case-account-failed-read.png",
+      "sha256": "60968a69440ba61db745a6ee9178f473f046728fb05bd84a85905452a07485dc"
+    },
+    {
+      "file": "case-reference-and-chronology-commands-preserve-data-on-refusal.png",
+      "sha256": "76ce0b16abf62aa92b25b3e9ea3a4f4475f9f4faa89af66ae1d7fab20bfe2fd0"
+    },
+    {
+      "file": "results.json",
+      "sha256": "a71314f234ce6b13f97423d8cea3612265e2bbc5a3bd17061b481fefc3101d47"
+    }
+  ]
+}
