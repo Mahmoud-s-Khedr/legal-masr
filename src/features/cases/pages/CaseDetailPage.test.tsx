@@ -383,3 +383,50 @@ it.each([false, true])(
     );
   },
 );
+
+it.each(['ar', 'en'])(
+  'keeps all four successful summary metrics in one grid (%s)',
+  async (language) => {
+    await i18n.changeLanguage(language);
+    const { container } = renderWorkflow(
+      <CaseDetailPage />,
+      `/cases/${fixtures.caseItem.id}`,
+      '/cases/:id',
+    );
+    await screen.findByText(i18n.t('cases.detail.openTasks'));
+    const summary = container.querySelector('.case-side-summary > section:last-child')!;
+    await waitFor(() => expect(within(summary as HTMLElement).queryByRole('status')).toBeNull());
+    const grids = summary.querySelectorAll('dl.facts-compact');
+    expect(grids).toHaveLength(1);
+    expect(grids[0].querySelectorAll(':scope > .fact')).toHaveLength(4);
+    expect(within(summary as HTMLElement).queryByRole('alert')).toBeNull();
+  },
+);
+
+it.each([
+  ['financeCaseSummary', 'cases.detail.accountTitle', 1],
+  ['taskList', 'cases.detail.tabs.tasks', 3],
+] as const)(
+  'keeps the other summary metrics usable when %s fails and recovers',
+  async (command, labelKey, remaining) => {
+    vi.mocked(bridge[command]).mockRejectedValueOnce(fictionalFailure);
+    const { container } = renderWorkflow(
+      <CaseDetailPage />,
+      `/cases/${fixtures.caseItem.id}`,
+      '/cases/:id',
+    );
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(
+      i18n.t('records.sectionLoadError', { section: i18n.t(labelKey) }),
+    );
+    const summary = container.querySelector('.case-side-summary > section:last-child')!;
+    expect(
+      Array.from(summary.querySelectorAll('.fact dd')).filter(
+        (value) => !value.querySelector('[role="alert"]'),
+      ),
+    ).toHaveLength(remaining);
+    fireEvent.click(within(alert).getByRole('button', { name: i18n.t('app.retry') }));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(summary.querySelectorAll('.fact')).toHaveLength(4);
+  },
+);

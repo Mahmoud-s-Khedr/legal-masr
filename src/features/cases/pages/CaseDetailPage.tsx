@@ -401,9 +401,8 @@ export function CaseDetailPage() {
                   {t('dashboard.viewAll')}
                 </Button>
               </div>
-              <QuerySection query={account} label={t('cases.detail.accountTitle')}>
-                {' '}
-                <dl className="facts facts-compact">
+              <dl className="facts facts-compact">
+                <QuerySection query={account} label={t('cases.detail.accountTitle')}>
                   <Fact label={t('cases.detail.agreed')}>
                     <bdi>{format.money(agreed)}</bdi>
                   </Fact>
@@ -413,9 +412,7 @@ export function CaseDetailPage() {
                   <Fact label={t('cases.detail.outstanding')}>
                     <bdi>{format.money(account.data?.outstandingMinor ?? 0)}</bdi>
                   </Fact>
-                </dl>
-              </QuerySection>
-              <dl className="facts facts-compact">
+                </QuerySection>
                 <Fact label={t('cases.detail.openTasks')}>
                   <QuerySection query={tasks} label={t('cases.detail.tabs.tasks')}>
                     {format.number(openTasks.length)}
