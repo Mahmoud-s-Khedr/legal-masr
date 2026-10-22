@@ -64,8 +64,9 @@ Tracked candidates and their checksummed manifest are in `tests/visual/baseline`
 actuals, diffs, traces and HTML reports are ignored. `pnpm verify:visual` checks
 all combinations, safe filenames, PNG structure/dimensions and hashes. Use
 `pnpm update:visual:canonical` to propose a baseline and
-`pnpm capture:visual:canonical` to compare. CI only compares. Initial visual
-approval is pending; release validation requires an approved manifest. The current local implementation, captured before integration in Arabic/English at
+`pnpm capture:visual:canonical` to compare. CI only compares. The owner approved
+the 68 baselines on 2026-10-22 (manifest status `approved`); release validation
+requires an approved manifest, and any baseline update resets it to `candidate`. The current local implementation, captured before integration in Arabic/English at
 both desktop sizes plus targeted narrow/dark views, is the visual reference. Review the [candidate gallery](../../tests/visual/review.html).
 
 Native WebdriverIO journeys use `tauri-driver` on Linux/Windows, real IPC,

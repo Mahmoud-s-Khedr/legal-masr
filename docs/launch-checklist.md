@@ -18,7 +18,7 @@ Scope: Windows 10/11 x64 and Linux x64 packages (deb, rpm, AppImage). macOS is d
 
 ## Owner-only gates, in required order
 
-1. **Approve visual baselines** by reviewing the captures and running `node scripts/verify-visual-manifest.mjs tests/visual/baseline --approved`. Baselines remain candidates until explicitly approved.
+1. ~~**Approve visual baselines**~~ — **done 2026-10-22**: the owner reviewed the 68 captures in `tests/visual/review.html` and approved them; `node scripts/verify-visual-manifest.mjs tests/visual/baseline --approved` passes. Any later baseline update resets the manifest to `candidate` and needs a new approval.
 2. **Physical Windows 10/11 checks:** installation, update/removal, unlock, documents, backup, restore and recovery. The parallel Linux e2e report also confirms these physical Windows checks remain open.
 3. **Physical Linux desktop checks:** Debian/RPM/AppImage installation, update and removal; verify tray behavior and core journeys on GNOME with and without AppIndicator, and KDE. Automated checks pass, but these physical checks remain open per the [Linux launch e2e report](reviews/2026-10-21-linux-launch-e2e.md).
 4. **Make the Authenticode signing decision** and obtain/configure a real certificate if signing is chosen. Current Windows artifacts are unsigned and may trigger SmartScreen or publisher warnings; see [signing policy](SIGNING_POLICY.md).
@@ -33,6 +33,6 @@ Verdict: **Linux launch-ready: NO**. The parallel run reports that every automat
 
 - Install, backup, recovery and export user guides; define a support process.
 - Confirm independent checksum review on the actual draft artifacts.
-- Physical platform validation and the visual approval above remain release blockers.
+- Physical platform validation remains a release blocker (visual baselines approved 2026-10-22).
 
 No release tag, GitHub release, or publication has been created by this preparation.
