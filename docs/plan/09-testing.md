@@ -216,3 +216,21 @@ regressions cover Arabic/English success and independent account/task failure an
 retry; the existing section guards remain in place. The cause, canonical comparison
 result and scoped validation are recorded in
 [the data-flow review](../reviews/2026-10-21-review-of-data-flow-fixes.md#visual-regression-on-pr-10).
+
+## Linux launch-gate verification — 2026-10-22
+
+The full integrated launch build is being exercised with all three existing
+native suites plus `pnpm test:launch:linux`. The additional scenarios cover
+exports, guided permanent deletion with real unlink failure/retry, redacted
+support ZIPs and optional-tray close behavior. Picker fixtures remain fixed
+choices in the compile-time harness; production gains no command or filesystem
+capability. Both native runners isolate vault and XDG WebView/settings storage
+in their marked temporary roots. Cargo tests must always use a disposable
+`XDG_DATA_HOME`; a bare Cargo test invocation can delete the developer vault.
+
+The [Linux launch report](../reviews/2026-10-21-linux-launch-e2e.md) records
+actual per-scenario results, package outputs, standard validation, the complete
+inventory gap audit and the verdict. The host-present tray test uses a private
+session-bus fixture; physical GNOME/KDE menus and Windows acceptance remain
+separate checks. No canonical/container visual comparison is authorized by this
+task. Do not infer release acceptance from the presence of a new test alone.

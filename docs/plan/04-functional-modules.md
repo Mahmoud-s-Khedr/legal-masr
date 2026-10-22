@@ -110,7 +110,8 @@ still do not expose attachment upload.
 - Settings → About implements manual redacted support ZIPs with a localized
   content preview and native save picker; no automatic sending. See
   [Privacy](06-privacy.md#support-bundle-status--2026-10-21).
-- Minimize-to-tray behavior and physical target-platform validation remain incomplete.
+- Optional default-OFF tray behavior is implemented for Windows/Linux; physical
+  target-platform acceptance remains incomplete.
 
 ## Permanent deletion status — 2026-10-21
 
@@ -136,3 +137,12 @@ Success shows the new folder name and Show in folder. Failures remain retryable;
 picker cancellation is harmless. CSVs, documents, scope and manifest are defined
 in [export-format.md](../export-format.md). See the
 [export report](../reviews/2026-10-21-exports.md) for validation and device risks.
+
+## Integrated Linux verification — 2026-10-22
+
+The native launch-gate scenarios and inventory coverage gaps are recorded in
+[the Linux report](../reviews/2026-10-21-linux-launch-e2e.md). Export, support and
+deletion flows use the existing UI/service/command boundaries; fixed picker
+choices are available only in the marked disposable test binary. No schema or
+production workflow is changed by this verification. Physical desktop handlers,
+installers and cross-platform restore require their own evidence.

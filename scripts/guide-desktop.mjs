@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
-import { waitForDriver } from './desktop-e2e-driver.mjs';
+import { stopDriver, waitForDriver } from './desktop-e2e-driver.mjs';
 
 export async function openGuideDesktop(language) {
   const root = await mkdtemp(join(tmpdir(), 'legalmaster-desktop-e2e-'));
@@ -28,6 +28,9 @@ export async function openGuideDesktop(language) {
       ...process.env,
       LEGALMASTER_E2E_ROOT: root,
       LEGALMASTER_E2E_NONCE: nonce,
+      XDG_DATA_HOME: join(root, 'xdg-data'),
+      XDG_CONFIG_HOME: join(root, 'xdg-config'),
+      XDG_CACHE_HOME: join(root, 'xdg-cache'),
       GDK_BACKEND: 'x11',
       WEBKIT_DISABLE_DMABUF_RENDERER: '1',
     },
@@ -51,7 +54,7 @@ export async function openGuideDesktop(language) {
   const close = async () => {
     if (browser) await browser.deleteSession().catch(() => {});
     browser = undefined;
-    driver.kill();
+    await stopDriver(driver);
     await rm(root, { recursive: true, force: true });
   };
   try {
@@ -63,6 +66,7 @@ export async function openGuideDesktop(language) {
   }
   const api = {
     root,
+    driverPid: driver.pid,
     language,
     pdf,
     binarySha256: createHash('sha256')
@@ -162,18 +166,28 @@ export async function openGuideDesktop(language) {
       );
     },
     button: async (text, scope = '') => {
-      const buttons = await browser.$$(`${scope} button`);
-      for (const button of buttons)
-        if ((await button.getText()).trim() === text) {
-          await browser.execute(
-            (el) => el.scrollIntoView({ behavior: 'instant', block: 'center' }),
-            button,
-          );
-          await button.waitForClickable({ timeout: 15000 });
-          await button.click();
-          return;
-        }
-      throw new Error('GUIDE_BUTTON_MISSING');
+      let target;
+      // Cached query data can briefly render the previous archive state while
+      // the real IPC refresh is pending. Wait for the requested visible control
+      // before one native action, exactly as the core desktop runner does.
+      await browser.waitUntil(
+        async () => {
+          for (const button of await browser.$$(`${scope} button`)) {
+            if ((await button.getText()).trim() === text && (await button.isDisplayed())) {
+              target = button;
+              return true;
+            }
+          }
+          return false;
+        },
+        { timeout: 15000, timeoutMsg: 'GUIDE_BUTTON_MISSING' },
+      );
+      await browser.execute(
+        (el) => el.scrollIntoView({ behavior: 'instant', block: 'center' }),
+        target,
+      );
+      await target.waitForClickable({ timeout: 15000 });
+      await target.click();
     },
   };
   return api;

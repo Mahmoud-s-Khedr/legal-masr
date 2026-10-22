@@ -372,3 +372,21 @@ Script regressions exercise delayed recovery rendering, asynchronous cancellatio
 and adapter success/refusal paths. Windows and Linux native CI acceptance must
 still be rerun; unit checks do not certify launch readiness. Details and actual
 validation are in [Implementation run 2](reviews/2026-10-21-windows-desktop-ci.md#implementation-run-2).
+
+## Integrated Linux launch verification — 2026-10-22
+
+The [Linux launch report](reviews/2026-10-21-linux-launch-e2e.md) audits every
+inventory area against native automation, identifies workflows without complete
+end-to-end coverage, and records actual outcomes. The three existing native
+commands are retained. `pnpm test:launch:linux` adds bilingual export warning,
+cancel, scope/hash/count checks; support-bundle ZIP redaction and existing-file
+refusal; case/client/whole-vault deletion including wrong confirmation/password,
+backup cancellation and actual managed-file unlink failure/retry; and Linux
+tray close behavior on no-host and private host-fixture sessions.
+
+All use fictional marked temporary workspaces; native runners additionally
+isolate XDG data/config/cache. The additional picker choices are compile-time
+harness-only. Real GNOME/KDE tray menus, physical save/folder dialogs, desktop
+handlers, installers and Windows↔Linux portable restore are separate acceptance
+checks. See the report for the verified subset and verdict; these instructions
+do not themselves certify execution.

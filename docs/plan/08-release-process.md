@@ -91,3 +91,20 @@ LegalMaster-Solo_<version>_linux_x64.rpm
 LegalMaster-Solo_<version>_linux_x64.AppImage
 SHA256SUMS.txt
 ```
+
+## Linux package verification — 2026-10-22
+
+The integrated-build verification targets Debian, RPM and AppImage via
+`pnpm build:linux`, followed by `scripts/verify-appimage-runtime.mjs`. Actual
+outputs, checksums and success/failure are recorded in
+[the Linux launch report](../reviews/2026-10-21-linux-launch-e2e.md). Packages
+are not installed system-wide by this task. Generation and runtime-policy
+inspection do not prove installer/update/uninstall or physical Windows checks.
+
+The Linux build commands set `NO_STRIP=1` for linuxdeploy: its bundled strip
+cannot parse the `.relr.dyn` sections in this Fedora host's libraries. This
+preserves optimized application compilation and retains all bundle,
+normalization and runtime verification steps; copied ELF symbols may make the
+AppImage larger. See the upstream
+[linuxdeploy report](https://github.com/linuxdeploy/linuxdeploy/issues/272) and
+[NO_STRIP implementation](https://github.com/linuxdeploy/linuxdeploy/blob/master/src/core/appdir.cpp).
