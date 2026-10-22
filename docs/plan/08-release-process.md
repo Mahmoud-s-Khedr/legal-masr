@@ -91,3 +91,13 @@ LegalMaster-Solo_<version>_linux_x64.rpm
 LegalMaster-Solo_<version>_linux_x64.AppImage
 SHA256SUMS.txt
 ```
+
+## Public beta candidate — 0.2.0
+
+The first Windows/Linux public-beta candidate is `0.2.0`. The version must
+match in the frontend package, Tauri configuration and Rust package, and its
+tag must be exactly `v0.2.0`. The draft body is maintained bilingually in
+[the versioned release notes](../release-notes/v0.2.0.md); the workflow copies
+that file into the draft. The workflow creates or updates a GitHub draft
+prerelease only and does not publish it. Owner gates are tracked in the
+[launch checklist](../launch-checklist.md).
