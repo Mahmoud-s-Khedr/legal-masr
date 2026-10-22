@@ -17,8 +17,8 @@
     "dev": "vite",
     "dev:seed": "node scripts/tauri-dev-seeded.mjs",
     "build": "tsc -b && vite build",
-    "build:linux": "pnpm tauri build --bundles deb,rpm,appimage && node scripts/normalize-appimage-runtime.mjs src-tauri/target/release/bundle/appimage && node scripts/verify-appimage-runtime.mjs src-tauri/target/release/bundle/appimage",
-    "build:linux:debug": "pnpm tauri build --debug --bundles deb,rpm,appimage && node scripts/normalize-appimage-runtime.mjs src-tauri/target/debug/bundle/appimage && node scripts/verify-appimage-runtime.mjs src-tauri/target/debug/bundle/appimage",
+    "build:linux": "NO_STRIP=1 pnpm tauri build --bundles deb,rpm,appimage && node scripts/normalize-appimage-runtime.mjs src-tauri/target/release/bundle/appimage && node scripts/verify-appimage-runtime.mjs src-tauri/target/release/bundle/appimage",
+    "build:linux:debug": "NO_STRIP=1 pnpm tauri build --debug --bundles deb,rpm,appimage && node scripts/normalize-appimage-runtime.mjs src-tauri/target/debug/bundle/appimage && node scripts/verify-appimage-runtime.mjs src-tauri/target/debug/bundle/appimage",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
@@ -38,7 +38,8 @@
     "probe:visual:canonical": "node scripts/visual-container.mjs probe",
     "test:office": "node scripts/full-app-native-audit.mjs --functional-preflight",
     "test:desktop:controls": "node scripts/full-app-native-controls.mjs",
-    "test:e2e": "pnpm test:desktop && pnpm test:office && pnpm test:desktop:controls"
+    "test:e2e": "pnpm test:desktop && pnpm test:office && pnpm test:desktop:controls",
+    "test:launch:linux": "node scripts/launch-native-e2e.mjs && node scripts/launch-tray-session.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

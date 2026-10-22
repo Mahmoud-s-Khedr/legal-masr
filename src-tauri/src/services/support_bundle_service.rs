@@ -27,6 +27,10 @@ pub fn pick_destination<R: Runtime>(
     app: &AppHandle<R>,
     filter_label: &str,
 ) -> Result<PathBuf, Error> {
+    #[cfg(feature = "desktop-e2e")]
+    if let Some(path) = crate::desktop_e2e::selection("support-bundle")? {
+        return Ok(path);
+    }
     use tauri_plugin_dialog::DialogExt;
     app.dialog()
         .file()

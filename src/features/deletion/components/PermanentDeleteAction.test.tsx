@@ -59,10 +59,26 @@ it.each(targets)('previews $kind deletion and Cancel calls no destructive IPC', 
   } else {
     expect(within(dialog).queryByRole('checkbox')).not.toBeInTheDocument();
   }
-  fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('forms.cancel') }));
+  fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('common.cancel') }));
   await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
   expect(bridge.deletionCommit).not.toHaveBeenCalled();
 });
+it.each(['ar', 'en'] as const)(
+  'renders a translated Cancel action in %s without committing',
+  async (language) => {
+    await i18n.changeLanguage(language);
+    renderWorkflow(<PermanentDeleteAction target={targets[1]} />);
+    const dialog = await review(targets[1]);
+    const cancel = within(dialog).getByRole('button', {
+      name: language === 'ar' ? 'إلغاء' : 'Cancel',
+    });
+    expect(cancel).toBeVisible();
+    expect(dialog).not.toHaveTextContent('forms.cancel');
+    fireEvent.click(cancel);
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(bridge.deletionCommit).not.toHaveBeenCalled();
+  },
+);
 it.each(targets)(
   'one click on Delete commits $kind exactly once, navigates and refreshes affected caches',
   async (target) => {
@@ -212,7 +228,7 @@ it('submits an explicitly selected workspace backup and resets the choice on reo
   let dialog = await review(targets[2]);
   fireEvent.click(within(dialog).getByRole('checkbox'));
   expect(within(dialog).getByRole('checkbox')).toBeChecked();
-  fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('forms.cancel') }));
+  fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('common.cancel') }));
   await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
   dialog = await review(targets[2]);
   expect(within(dialog).getByRole('checkbox')).not.toBeChecked();
