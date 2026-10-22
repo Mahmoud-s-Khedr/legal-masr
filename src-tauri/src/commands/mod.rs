@@ -11,5 +11,6 @@ pub mod hearings;
 pub mod powers_of_attorney;
 pub mod search;
 pub mod settings;
+pub mod support_bundle;
 pub mod tasks;
 pub mod threads;

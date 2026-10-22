@@ -286,15 +286,19 @@ Windows/Linux limitations are in the [deletion report](reviews/2026-10-21-perman
 
 ## Settings and OS integration
 
-| Feature                      | What it does                                                                  | How to test it                                                                                                                              |
-| ---------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Lawyer profile               | Stores name, bar number, phone, and office address.                           | Edit and save the profile, restart, and verify persistence.                                                                                 |
-| Date-format preference       | Supports day/month/year and ISO display.                                      | Change the preference and inspect lists, details, and transaction inspection dialogs. Stored dates should remain unchanged.                 |
-| Week-start preference        | Changes the calendar’s first weekday.                                         | Save another week start and inspect Agenda.                                                                                                 |
-| Privacy information          | Explains local storage, documents, backups, and network behavior.             | Open Settings → Privacy and verify the information matches the implemented storage model.                                                   |
-| About and developer contacts | Shows app details and email, phone, WhatsApp, Telegram, and LinkedIn actions. | Inspect About and footer contacts. Activate each intentionally and verify the correct system handler opens without replacing the workspace. |
+| Feature                      | What it does                                                                                                                                                                                                                            | How to test it                                                                                                                                                                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lawyer profile               | Stores name, bar number, phone, and office address.                                                                                                                                                                                     | Edit and save the profile, restart, and verify persistence.                                                                                                                                                                                  |
+| Date-format preference       | Supports day/month/year and ISO display.                                                                                                                                                                                                | Change the preference and inspect lists, details, and transaction inspection dialogs. Stored dates should remain unchanged.                                                                                                                  |
+| Week-start preference        | Changes the calendar’s first weekday.                                                                                                                                                                                                   | Save another week start and inspect Agenda.                                                                                                                                                                                                  |
+| Privacy information          | Explains local storage, documents, backups, and network behavior.                                                                                                                                                                       | Open Settings → Privacy and verify the information matches the implemented storage model.                                                                                                                                                    |
+| About and developer contacts | Shows app details and email, phone, WhatsApp, Telegram, and LinkedIn actions.                                                                                                                                                           | Inspect About and footer contacts. Activate each intentionally and verify the correct system handler opens without replacing the workspace.                                                                                                  |
+| Redacted support bundle      | Settings → About lists contents/exclusions, then manually saves one ZIP using the native picker. Includes only system/schema metadata, language/theme, allow-listed logs and timestamped codes, plus bilingual README. Nothing is sent. | Check the list in Arabic/English; cancel before saving and in the picker; save to a new filename outside the vault; inspect ZIP entries; try an existing filename or unwritable folder and verify a localized error with no success message. |
 
-File-opening and recovery-key printing behavior need physical-device checks.
+File-opening and recovery-key printing behavior need physical-device checks. Support-bundle native picker,
+Windows OS-version retrieval, permission and disk-full journeys also need physical
+Windows/Linux validation. Automated support-bundle evidence is recorded in the
+[implementation report](reviews/2026-10-21-support-bundle.md).
 
 ## Implemented backend capabilities without a complete visible UI
 
@@ -319,7 +323,7 @@ These were removed on 2026-10-13 and are not planned. Migration `0004` drops the
 
 These should not be counted as available:
 
-- Emergency-snapshot browsing/export/deletion UI and a redacted support bundle.
+- Emergency-snapshot browsing/export/deletion UI.
 - Multi-user accounts, collaboration, cloud synchronization, and online access.
 - Physical Windows/Linux acceptance for installers, native dialogs, printing, and cross-platform restore.
 

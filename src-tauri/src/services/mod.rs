@@ -11,4 +11,5 @@ pub mod hearing_service;
 pub mod power_of_attorney_service;
 pub mod search_service;
 pub mod settings_service;
+pub mod support_bundle_service;
 pub mod task_service;
