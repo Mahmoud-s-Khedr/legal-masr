@@ -102,7 +102,6 @@ try {
       '/powers-of-attorney',
       '/attachments',
       '/finances',
-      '/backups',
       '/settings',
     ]) {
       await h.click(`nav a[href="${path}"]`);

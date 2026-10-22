@@ -355,7 +355,13 @@ describe('SettingsPage workflows', () => {
       expect(await screen.findByText(t('settings.privacy.networkValue'))).toBeVisible();
       expect(
         screen.getByRole('link', { name: t('settings.privacy.manageBackups') }),
-      ).toHaveAttribute('href', '/backups');
+      ).toHaveAttribute('href', '/settings?tab=backups');
+      fireEvent.click(screen.getByRole('link', { name: t('settings.privacy.manageBackups') }));
+      expect(await screen.findByRole('tab', { name: t('settings.tabs.backups') })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(await screen.findByText(t('settings.backups.restoreTitle'))).toBeVisible();
     });
 
     it('shows the backup panel and the restore warning', async () => {

@@ -665,7 +665,7 @@ async function run(language) {
         await button('agenda.deleteHearing');
       } else if (a.restored) {
         await h.selection('backup');
-        await go('/backups');
+        await go('/settings?tab=backups');
         await button('backups.restore');
         await button('backups.restoreConfirm', ':is([role="dialog"],[role="alertdialog"])');
         await h.wait('.gate');
@@ -1349,7 +1349,7 @@ async function run(language) {
       );
     });
     await check('backup-create-validate-cancel-corrupt-through-ui', async () => {
-      await go('/backups');
+      await go('/settings?tab=backups');
       await button('backups.createNow');
       await h.wait('.success');
       const snapshot = await officeSnapshot(h, today);

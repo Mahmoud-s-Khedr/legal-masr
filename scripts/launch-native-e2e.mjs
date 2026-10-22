@@ -145,7 +145,7 @@ for (const language of ['ar', 'en']) {
       await h.go(`/cases/${caseItem.id}`);
     });
     await check('full-and-case-export-cancel-scope-hashes-and-collision', async () => {
-      await h.go('/backups');
+      await h.go('/settings?tab=backups');
       await button('exports.allAction');
       await button('common.cancel', dialog);
       await closed();

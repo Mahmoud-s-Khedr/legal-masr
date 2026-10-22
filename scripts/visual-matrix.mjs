@@ -14,7 +14,7 @@ export const routes = [
   ['tasks', '/tasks', '.task-records'],
   ['attachments', '/attachments?case=demo-case-14', '.attachment-rows'],
   ['finances', '/finances?case=demo-case-14', 'tbody'],
-  ['backups', '/backups', '.backup-settings .muted'],
+  ['backups', '/settings?tab=backups', '.backup-settings .muted'],
   ['settings', '/settings', 'form'],
 ];
 export const languages = ['ar', 'en'];

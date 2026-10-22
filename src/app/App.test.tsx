@@ -232,10 +232,7 @@ describe('application gate', () => {
     expect(screen.getByText('ليجال مصر')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'اليوم' })).toHaveClass('active');
     expect(screen.getByRole('link', { name: 'المستندات' })).toHaveAttribute('href', '/attachments');
-    expect(screen.getByRole('link', { name: 'النسخ الاحتياطي' })).toHaveAttribute(
-      'href',
-      '/backups',
-    );
+    expect(screen.queryByRole('link', { name: 'النسخ الاحتياطي' })).not.toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute('data-theme', 'system');
     // Preserve the local footer and its developer contacts.
     const footer = screen.getByRole('contentinfo');

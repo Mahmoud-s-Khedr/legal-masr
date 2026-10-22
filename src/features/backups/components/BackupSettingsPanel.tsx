@@ -8,7 +8,6 @@ import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { Icon } from '../../../components/layout/Icon';
-import { PageHeader } from '../../../components/layout/PageHeader';
 import { useFormat } from '../../../i18n/LocalePresentation';
 import { useSingleFlight } from '../../../lib/useSingleFlight';
 import {
@@ -17,7 +16,7 @@ import {
   useSaveBackupCopy,
   useRevealBackup,
 } from '../api/backupsApi';
-import { RestoreFromBackup } from '../components/RestoreFromBackup';
+import { RestoreFromBackup } from './RestoreFromBackup';
 
 export function BackupSettingsPanel() {
   const { t } = useTranslation();
@@ -198,19 +197,5 @@ export function BackupSettingsPanel() {
         )}
       </FormDialog>
     </div>
-  );
-}
-
-export function BackupsPage() {
-  const { t } = useTranslation();
-  return (
-    <section className="work-page backup-page">
-      <PageHeader
-        kicker={t('backups.kicker')}
-        title={t('backups.title')}
-        description={t('backups.description')}
-      />
-      <BackupSettingsPanel />
-    </section>
   );
 }

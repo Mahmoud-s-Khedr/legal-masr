@@ -109,18 +109,18 @@ runner += String.raw`
       await h.wait('[role="dialog"]');
     }, 'form');
     await extra('backup-validate', async () => {
-      await go('/backups'); await h.selection('backup');
+      await go('/settings?tab=backups'); await h.selection('backup');
       await button('backups.validate');
       await button('restoreFrom.chooseFile', '[role="dialog"]');
       await h.wait('[role="dialog"] [role="status"]');
     });
     await extra('backup-preview', async () => {
-      await go('/backups'); await button('backups.restore');
+      await go('/settings?tab=backups'); await button('backups.restore');
       await button('restoreFrom.chooseFile', '[role="dialog"]');
       await h.wait('[role="dialog"] [role="status"]');
     });
     await extra('backup-corrupt', async () => {
-      await go('/backups'); await h.selection('corrupt');
+      await go('/settings?tab=backups'); await h.selection('corrupt');
       await button('backups.restore');
       await button('restoreFrom.chooseFile', '[role="dialog"]');
       await h.wait('[role="dialog"] [role="alert"]');

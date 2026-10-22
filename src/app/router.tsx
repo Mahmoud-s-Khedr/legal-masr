@@ -12,7 +12,6 @@ import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { NewCasePage } from '../features/cases/pages/NewCasePage';
 import { FinancesPage } from '../features/finances/pages/FinancesPage';
-import { BackupsPage } from '../features/backups/pages/BackupsPage';
 import { PowersOfAttorneyPage } from '../features/powersOfAttorney/pages/PowersOfAttorneyPage';
 import { PowerOfAttorneyDetailPage } from '../features/powersOfAttorney/pages/PowerOfAttorneyDetailPage';
 import type { IconName } from '../components/layout/Icon';
@@ -40,7 +39,6 @@ export const NAV_GROUPS = [
     key: 'nav.groups.office',
     items: [
       { to: '/finances', key: 'nav.finances', icon: 'finances' },
-      { to: '/backups', key: 'nav.backups', icon: 'backup' },
       { to: '/settings', key: 'nav.settings', icon: 'settings' },
     ],
   },
@@ -69,7 +67,6 @@ export function AppRoutes() {
       <Route path="/tasks" element={<TasksPage />} />
       <Route path="/attachments" element={<AttachmentsPage />} />
       <Route path="/finances" element={<FinancesPage />} />
-      <Route path="/backups" element={<BackupsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

@@ -141,7 +141,7 @@ await scenario('extended-attachment-cancel-metadata-remove-and-backup-validation
  await h.browser.$('.attachment-rows button[aria-label*="'+t('records.edit')+'"]').click(); await field(h,t('documents.description'),'QA EDITED DESCRIPTION'); await h.click(t('records.saveEdits')); await absentDialog(h); await h.waitText('QA EDITED DESCRIPTION');
  await h.nav('/attachments'); await h.waitText('fictional.pdf'); await h.browser.$('.attachment-rows button[aria-label*="إزالة"]').click(); await h.click(t('common.cancel')); await absentDialog(h); await h.waitText('fictional.pdf');
  await h.browser.$('.attachment-rows button[aria-label*="إزالة"]').click(); await h.click(t('documents.removeTitle')); await absentDialog(h); await h.browser.$('.attachment-rows').waitForExist({reverse:true,timeout:15000});
- await h.nav('/backups'); await h.click(t('backups.createNow')); await h.waitText(t('backups.createSuccess')); await h.selection('backup'); await h.click(t('backups.validate')); await h.waitText(t('backups.validateSuccess'));
+ await h.nav('/settings'); await h.click(t('settings.tabs.backups')); await h.click(t('backups.createNow')); await h.waitText(t('backups.createSuccess')); await h.selection('backup'); await h.click(t('backups.validate')); await h.waitText(t('backups.validateSuccess'));
  await h.selection('corrupt'); await h.click(t('backups.validate')); await h.browser.$('[role="alert"]').waitForDisplayed(); assert.equal(await h.browser.$('[role="alert"]').getText(),'ملف النسخة الاحتياطية تالف أو غير صالح. لم تتغير بياناتك الحالية.');
  await h.nav('/clients'); await h.browser.$('a*=QA-DOCUMENT').waitForDisplayed();
 });

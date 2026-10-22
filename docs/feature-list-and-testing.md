@@ -242,7 +242,7 @@ This is fee and cash tracking, not a complete accounting system.
 | Invalid-backup refusal                  | Rejects damaged, unsupported, incomplete, or incorrectly authenticated backups.       | Try a wrong password and a damaged copy of an archive. Verify failure leaves current records and documents unchanged.                                         |
 | Restore cancellation/session protection | Invalidates canceled, superseded, or locked-session preparations.                     | Prepare and cancel, choose another archive, or lock before completion. Old prepared operations must not install later.                                        |
 | Interrupted-restore recovery            | Uses journaled replacement and retains the previous workspace in emergency snapshots. | Exercise automated interruption tests with disposable fixtures. Verify replay completes safely or leaves the vault locked with an interruption error.         |
-| Shared backup tools                     | Makes the same backup/restore controls available in Backups and Settings.             | Create/validate/restore from both entry points and verify consistent behavior.                                                                                |
+| Shared backup tools                     | Provides backup/restore controls in Settings → Backups.             | Open Settings → Backups and create, validate, and restore a backup.                                                                                |
 
 Fresh-installation restore is implemented and tested locally. **Physical Windows↔Linux portability still requires device testing.**
 

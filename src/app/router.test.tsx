@@ -59,6 +59,7 @@ const unknownPaths = [
   '/calendar/unknown',
   '/attachments/unknown',
   '/finances/unknown',
+  '/backups',
   '/backups/unknown',
   '/unknown?filter=fictional#section',
 ];
@@ -106,7 +107,6 @@ for (const language of ['ar', 'en'] as const) {
       ['/tasks', 'tasks.title'],
       ['/attachments', 'documents.pageAll'],
       ['/finances', 'finances.title'],
-      ['/backups', 'backups.title'],
     ])('still resolves %s', async (path, title) => {
       renderWorkflow(<AppRoutes />, path);
       expect(await screen.findByRole('heading', { name: i18n.t(title) })).toBeVisible();

@@ -20,7 +20,7 @@ vi.mock('../../../bridge/commands', () => ({
 
 import { bridge } from '../../../bridge/commands';
 import i18n from '../../../i18n';
-import { BackupSettingsPanel } from './BackupsPage';
+import { BackupSettingsPanel } from './BackupSettingsPanel';
 
 const cancelled = { code: 'OPERATION_CANCELLED', message: 'cancelled', details: null };
 const summary = {

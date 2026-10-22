@@ -653,11 +653,11 @@ add(
 add(
   'backups-page',
   'backups',
-  'شاشة النسخ الاحتياطي',
-  'Backup page',
+  'الإعدادات ← النسخ الاحتياطي',
+  'Settings → Backups',
   'أنشئ نسخة الآن؛ تُحفظ في مجلد Backups داخل بيانات التطبيق. آخر نسخة يعرض التاريخ والحجم وتنبيهًا إذا كانت قديمة. انسخ الأرشيف إلى وسيط آمن كإجراء يدوي. النسخ تلقائيًا أو تغيير وجهة الحفظ غير متاحين.',
   'Create a backup now; it is saved in Backups inside application data. Latest backup shows date, size, and advice when stale. Manually copy the archive to safe storage. Automatic backups and changing the destination are unavailable.',
-  { path: '/backups' },
+  { path: '/settings?tab=backups' },
 );
 add(
   'backup-created',
@@ -666,7 +666,7 @@ add(
   'Backup created successfully',
   'رسالة النجاح تعني أن التطبيق أنشأ الأرشيف المشفر وفحصه. تشمل النسخة قاعدة البيانات والمستندات المدارة. تحقق من أحدث تاريخ بعد العملية.',
   'Success means the app created and checked the encrypted archive. It includes the database and managed documents. Check the latest timestamp afterward.',
-  { path: '/backups', button: 'backups.createNow', waitSuccess: true },
+  { path: '/settings?tab=backups', button: 'backups.createNow', waitSuccess: true },
 );
 add(
   'backup-validate',
@@ -675,7 +675,7 @@ add(
   'Validating a backup',
   'اضغط فحص ثم اختر الأرشيف من نافذة النظام. النجاح يثبت سلامة بنية النسخة والتحقق من محتواها في هذه المساحة؛ لا يثبت إمكانية نقلها إلى جهاز جديد.',
   'Choose Validate and select the archive in the system dialog. Success establishes archive structure and content integrity in this vault; it does not establish portability to a new computer.',
-  { path: '/backups', validate: true },
+  { path: '/settings?tab=backups', validate: true },
 );
 add(
   'backup-restore-confirm',
@@ -684,7 +684,7 @@ add(
   'Restore confirmation',
   'الاستعادة تستبدل الحالة الحالية بحالة النسخة. احتفظ بنسخة حديثة قبلها. راجع التحذير ثم أكد أو ألغِ. لا توجد معاينة لما سيُستعاد.',
   'Restore replaces current state with the snapshot. Make a current backup first. Review the warning and confirm or cancel. There is no restore preview.',
-  { path: '/backups', button: 'backups.restore' },
+  { path: '/settings?tab=backups', button: 'backups.restore' },
 );
 add(
   'backup-corrupt',
@@ -693,7 +693,7 @@ add(
   'Corrupt backup refused',
   'النسخة غير الصالحة تُرفض وتظل البيانات الحالية كما هي. اختر نسخة صحيحة وأعد الفحص؛ لا تغيّر محتوى الأرشيف يدويًا.',
   'An invalid archive is refused and current data remains intact. Choose a valid backup and validate again; do not manually alter the archive contents.',
-  { path: '/backups', corrupt: true },
+  { path: '/settings?tab=backups', corrupt: true },
 );
 add(
   'backup-restored',

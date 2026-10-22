@@ -342,14 +342,16 @@ await scenario('initialize-client-case-attachment-backup-restore', async (h) => 
   await h.click('حفظ المستند');
   await h.browser.$('.attachment-rows').waitForDisplayed({ timeout: 15000 });
   h.checkpoint('create-backup');
-  await h.nav('/backups');
+  await h.nav('/settings');
+  await h.click(strings.settings.tabs.backups);
   await h.click('إنشاء نسخة احتياطية الآن');
   await h.waitText('تم إنشاء النسخة الاحتياطية بنجاح.');
   h.checkpoint('edit-after-backup');
   await h.client('E2E-AFTER');
   h.checkpoint('restore-backup');
   await h.selection('backup');
-  await h.nav('/backups');
+  await h.nav('/settings');
+  await h.click(strings.settings.tabs.backups);
   await h.click('استعادة من نسخة احتياطية');
   h.checkpoint('restore-choose');
   await h.click(strings.restoreFrom.chooseFile);
@@ -406,7 +408,8 @@ for (const choice of ['cancel', 'corrupt'])
     await h.initialize();
     await h.client('E2E-PRESERVED');
     await h.selection(choice);
-    await h.nav('/backups');
+    await h.nav('/settings');
+    await h.click(strings.settings.tabs.backups);
     await h.click(strings.backups.restore);
     h.checkpoint('restore-choose');
     await h.click(strings.restoreFrom.chooseFile);
@@ -448,7 +451,8 @@ if (process.platform === 'linux')
       });
     await h.initialize();
     await h.selection('native');
-    await h.nav('/backups');
+    await h.nav('/settings');
+    await h.click(strings.settings.tabs.backups);
     await h.click(strings.backups.restore);
     h.checkpoint('restore-choose');
     await h.click(strings.restoreFrom.chooseFile);
@@ -500,7 +504,8 @@ async function seedAndBackUp(h, label) {
   await h.click('حفظ المستند');
   await h.browser.$('.attachment-rows').waitForDisplayed({ timeout: 15000 });
   h.checkpoint('seed-backup');
-  await h.nav('/backups');
+  await h.nav('/settings');
+  await h.click(strings.settings.tabs.backups);
   await h.click('إنشاء نسخة احتياطية الآن');
   await h.waitText('تم إنشاء النسخة الاحتياطية بنجاح.');
   // Carry a verified copy out through the same save dialog used by the lawyer.

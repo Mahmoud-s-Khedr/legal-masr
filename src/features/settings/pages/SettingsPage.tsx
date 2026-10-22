@@ -29,7 +29,7 @@ import {
   SelectItem,
 } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
-import { BackupSettingsPanel } from '../../backups/pages/BackupsPage';
+import { BackupSettingsPanel } from '../../backups/components/BackupSettingsPanel';
 import type { Settings } from '../../../bridge/types';
 import { SupportBundleSection } from '../components/SupportBundleSection';
 import { RecoveryKeySection } from '../components/RecoveryKeySection';
@@ -640,7 +640,7 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
                     variant="secondary"
                     nativeButton={false}
                     role="link"
-                    render={<Link to="/backups" />}
+                    render={<Link to="/settings?tab=backups" />}
                   >
                     {t('settings.privacy.manageBackups')}
                   </Button>

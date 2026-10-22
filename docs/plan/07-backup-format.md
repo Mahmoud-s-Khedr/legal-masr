@@ -50,6 +50,9 @@ copies use unique temporary files, flush and compare bytes before publication,
 and remove temporary files on failure. The latest successful summary contains
 only time and size. History retains stable failure codes, never secret data.
 
+Manual backup controls are available in **Settings → Backups**
+(`/settings?tab=backups`). There is no standalone `/backups` page or sidebar entry.
+
 ## One reusable workflow
 
 Setup, incomplete-installation recovery and Settings share
@@ -110,7 +113,7 @@ readiness. See [09-testing.md](09-testing.md) and the integration review report.
 
 ## Separate data exports — 2026-10-21
 
-Backups/Settings also offer a visually separate **unencrypted data export** card.
+Settings → Backups also offers a visually separate **unencrypted data export** card.
 Case detail has a case export action. These create CSV/document folders with an
 explicit confidentiality warning, not `.lmsbackup` archives. They contain no
 security envelope or database and cannot enter the restore workflow. See
