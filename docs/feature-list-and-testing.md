@@ -382,9 +382,11 @@ inventory area against native automation, identifies workflows without complete
 end-to-end coverage, and records actual outcomes. The three existing native
 commands are retained. `pnpm test:launch:linux` adds bilingual export warning,
 cancel, scope/hash/count checks; support-bundle ZIP redaction and existing-file
-refusal; case/client/whole-vault deletion including wrong confirmation/password,
-backup cancellation and actual managed-file unlink failure/retry; and Linux
-tray close behavior on no-host and private host-fixture sessions.
+refusal; case/client/whole-vault deletion using one Delete/Cancel confirmation,
+default-off reset backup, backup cancellation and actual managed-file unlink failure/retry; and Linux
+tray close behavior on no-host and private host-fixture sessions. The final
+Fedora rerun passed 121 native scenario executions across these four commands;
+per-scenario results and limitations are in the report.
 
 All use fictional marked temporary workspaces; native runners additionally
 isolate XDG data/config/cache. The additional picker choices are compile-time

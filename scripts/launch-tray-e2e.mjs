@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { failedDesktopOutcome } from './desktop-e2e-driver.mjs';
 import { openGuideDesktop } from './guide-desktop.mjs';
 
 const host = process.env.LAUNCH_TRAY_HOST === 'present';
@@ -11,6 +12,7 @@ await mkdir(output, { recursive: true });
 const h = await openGuideDesktop('en');
 const results = [];
 const catalog = JSON.parse(await readFile('src/i18n/en/common.json', 'utf8'));
+const arabic = JSON.parse(await readFile('src/i18n/ar/common.json', 'utf8'));
 const t = (key) => key.split('.').reduce((v, k) => v[k], catalog);
 let checkpoint = 'setup';
 const xdo = (...args) =>
@@ -67,46 +69,85 @@ try {
   xdo('windowquit', app.id);
   await h.browser.waitUntil(() => !alive(app.pid), { timeout: 15000 });
   results.push({ scenario: checkpoint, result: 'passed' });
-  await h.restart();
+  checkpoint = 'restart-after-native-quit';
+  await h.restart({ applicationExited: true });
+  checkpoint = 'unlock-after-native-quit';
   await h.wait('[name="password"]');
+  // Locked startup uses Arabic until the encrypted settings can be read.
+  assert.equal(await h.browser.$('html').getAttribute('lang'), 'ar');
+  checkpoint = 'restart-unlock-submit';
   await h.fill('[name="password"]', 'Fictional tray password 2026');
-  await h.button(t('gate.submit.unlock'));
+  await h.button(arabic.gate.submit.unlock);
+  checkpoint = 'restart-workspace-visible';
   await h.wait('nav');
+  checkpoint = 'restart-client-preserved';
   assert.equal((await h.invoke('client_get', { id: client.id })).fullName, 'Fictional tray client');
+  checkpoint = 'restart-settings-route';
   await h.go('/settings?tab=general');
+  checkpoint = 'restart-toggle-visible';
   const toggle = await h.browser.$('[role="switch"]');
   await toggle.waitForDisplayed();
-  checkpoint = host ? 'toggle-on-locks-before-hiding' : 'persisted-toggle-on-without-host-quits';
+  const behaviorScenario = host
+    ? 'toggle-on-locks-before-hiding'
+    : 'persisted-toggle-on-without-host-quits';
+  checkpoint = behaviorScenario;
   if (host) {
-    await toggle.click();
+    checkpoint = 'tray-enable-preference';
+    await h.browser.waitUntil(async () => (await toggle.getAttribute('aria-disabled')) !== 'true', {
+      timeout: 15000,
+    });
+    await h.click('[role="switch"]');
+    checkpoint = 'tray-save-preference';
     await h.button(t('settings.save'));
     await h.browser.waitUntil(async () => (await h.invoke('settings_get')).keepRunningInTray, {
       timeout: 15000,
     });
   } else {
-    assert.equal(await toggle.isEnabled(), false);
+    assert.equal(await toggle.getAttribute('aria-disabled'), 'true');
+    await h.click('[role="switch"]');
+    assert.equal(await toggle.getAttribute('aria-checked'), 'false');
     const current = await h.invoke('settings_get');
     await h.invoke('settings_update', { input: { ...current, keepRunningInTray: true } });
   }
+  checkpoint = 'tray-native-close';
   app = windowForApp();
   xdo('windowquit', app.id);
   if (host) {
+    checkpoint = 'tray-window-hidden';
     await h.browser.waitUntil(
       async () => !(await h.invoke('plugin:window|is_visible', { label: 'main' })),
       { timeout: 15000 },
     );
+    checkpoint = 'tray-hidden-session-locked';
     assert(alive(app.pid));
     await assert.rejects(h.invoke('client_list', { input: {} }), { code: 'APP_LOCKED' });
-    xdo('windowmap', app.id);
+    checkpoint = 'tray-reveal-locked-gate';
+    execFileSync(
+      'gdbus',
+      [
+        'call',
+        '--session',
+        '--dest',
+        'org.legalmaster.LaunchTrayFixture',
+        '--object-path',
+        '/LaunchTrayFixture',
+        '--method',
+        'org.legalmaster.LaunchTrayFixture.Show',
+      ],
+      { stdio: 'ignore' },
+    );
+    checkpoint = 'tray-revealed-password-gate';
     await h.wait('[name="password"]');
     assert.equal(await h.browser.$('nav').isExisting(), false);
     await h.fill('[name="password"]', 'Fictional tray password 2026');
+    checkpoint = 'tray-revealed-unlock-submit';
     await h.button(t('gate.submit.unlock'));
+    checkpoint = 'tray-revealed-workspace';
     await h.wait('nav');
   } else await h.browser.waitUntil(() => !alive(app.pid), { timeout: 15000 });
-  results.push({ scenario: checkpoint, result: 'passed' });
-} catch {
-  results.push({ scenario: checkpoint, result: 'failed' });
+  results.push({ scenario: behaviorScenario, result: 'passed' });
+} catch (error) {
+  results.push(failedDesktopOutcome({ scenario: checkpoint, stage: 'scenario', error }));
   process.exitCode = 1;
 } finally {
   await writeFile(

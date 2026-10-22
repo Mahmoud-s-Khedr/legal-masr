@@ -219,8 +219,9 @@ result and scoped validation are recorded in
 
 ## Linux launch-gate verification — 2026-10-22
 
-The full integrated launch build is being exercised with all three existing
-native suites plus `pnpm test:launch:linux`. The additional scenarios cover
+The full integrated launch build passed all three existing native suites plus
+`pnpm test:launch:linux` on Fedora with Xwayland: 11 core, 72 bilingual office,
+18 control, 16 bilingual launch and four tray scenario executions (121 total). The additional scenarios cover
 exports, guided permanent deletion with real unlink failure/retry, redacted
 support ZIPs and optional-tray close behavior. Picker fixtures remain fixed
 choices in the compile-time harness; production gains no command or filesystem
@@ -229,8 +230,11 @@ in their marked temporary roots. Cargo tests must always use a disposable
 `XDG_DATA_HOME`; a bare Cargo test invocation can delete the developer vault.
 
 The [Linux launch report](../reviews/2026-10-21-linux-launch-e2e.md) records
-actual per-scenario results, package outputs, standard validation, the complete
+actual per-scenario results, all three package outputs, passing standard validation
+(668 renderer, 97 script and 234 Rust tests), the complete
 inventory gap audit and the verdict. The host-present tray test uses a private
-session-bus fixture; physical GNOME/KDE menus and Windows acceptance remain
+session-bus fixture and activates the exported native Show menu; physical
+GNOME/KDE menu presentation/pointer actions and Windows acceptance remain
 separate checks. No canonical/container visual comparison is authorized by this
-task. Do not infer release acceptance from the presence of a new test alone.
+task. The public Linux verdict remains NO pending the documented real GNOME/KDE
+tray acceptance; passing the automated Fedora gate does not close that device gate.

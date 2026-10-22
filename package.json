@@ -39,7 +39,7 @@
     "test:office": "node scripts/full-app-native-audit.mjs --functional-preflight",
     "test:desktop:controls": "node scripts/full-app-native-controls.mjs",
     "test:e2e": "pnpm test:desktop && pnpm test:office && pnpm test:desktop:controls",
-    "test:launch:linux": "node scripts/launch-native-e2e.mjs && node scripts/launch-tray-e2e.mjs && dbus-run-session -- python3 scripts/launch-tray-host.py"
+    "test:launch:linux": "node scripts/launch-native-e2e.mjs && node scripts/launch-tray-session.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

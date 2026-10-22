@@ -23,21 +23,25 @@ export async function openGuideDesktop(language) {
   const binary = resolve(
     process.env.LEGALMASTER_E2E_BINARY || 'src-tauri/target/desktop-e2e/debug/legalmaster-solo',
   );
-  const driver = spawn('tauri-driver', [], {
-    env: {
-      ...process.env,
-      LEGALMASTER_E2E_ROOT: root,
-      LEGALMASTER_E2E_NONCE: nonce,
-      XDG_DATA_HOME: join(root, 'xdg-data'),
-      XDG_CONFIG_HOME: join(root, 'xdg-config'),
-      XDG_CACHE_HOME: join(root, 'xdg-cache'),
-      GDK_BACKEND: 'x11',
-      WEBKIT_DISABLE_DMABUF_RENDERER: '1',
-    },
-    stdio: 'ignore',
-  });
-  // Errors are intentionally handled without serializing WebDriver input/DOM.
-  driver.on('error', () => {});
+  const startDriver = () => {
+    const child = spawn('tauri-driver', [], {
+      env: {
+        ...process.env,
+        LEGALMASTER_E2E_ROOT: root,
+        LEGALMASTER_E2E_NONCE: nonce,
+        XDG_DATA_HOME: join(root, 'xdg-data'),
+        XDG_CONFIG_HOME: join(root, 'xdg-config'),
+        XDG_CACHE_HOME: join(root, 'xdg-cache'),
+        GDK_BACKEND: 'x11',
+        WEBKIT_DISABLE_DMABUF_RENDERER: '1',
+      },
+      stdio: 'ignore',
+    });
+    // Errors are intentionally handled without serializing WebDriver input/DOM.
+    child.on('error', () => {});
+    return child;
+  };
+  let driver = startDriver();
   let browser;
   const launch = async () => {
     browser = await remote({
@@ -55,7 +59,7 @@ export async function openGuideDesktop(language) {
     if (browser) await browser.deleteSession().catch(() => {});
     browser = undefined;
     await stopDriver(driver);
-    await rm(root, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   };
   try {
     await waitForDriver(driver);
@@ -66,7 +70,9 @@ export async function openGuideDesktop(language) {
   }
   const api = {
     root,
-    driverPid: driver.pid,
+    get driverPid() {
+      return driver.pid;
+    },
     language,
     pdf,
     binarySha256: createHash('sha256')
@@ -76,9 +82,18 @@ export async function openGuideDesktop(language) {
       return browser;
     },
     close,
-    restart: async () => {
-      await browser.deleteSession();
-      browser = undefined;
+    restart: async ({ applicationExited = false } = {}) => {
+      if (applicationExited) {
+        // Native Quit destroys WebKit's session. A new driver owns the next
+        // launch; the marked vault stays unchanged. The caller proves exit.
+        browser = undefined;
+        await stopDriver(driver);
+        driver = startDriver();
+        await waitForDriver(driver);
+      } else {
+        await browser.deleteSession();
+        browser = undefined;
+      }
       await launch();
     },
     selection: (choice) => writeFile(join(root, 'dialog-selection'), choice),

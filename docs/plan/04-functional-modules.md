@@ -113,14 +113,16 @@ still do not expose attachment upload.
 - Optional default-OFF tray behavior is implemented for Windows/Linux; physical
   target-platform acceptance remains incomplete.
 
-## Permanent deletion status — 2026-10-21
+## Permanent deletion status — 2026-10-22
 
 Archived client and case detail pages expose guided permanent deletion beside
 restore. Settings → Privacy has a danger zone for deleting the whole vault and
-starting over. All three flows preview counts, require localized text confirmation,
-offer a backup first, report file-removal failures and refresh dependent caches.
-Whole-vault reset additionally requires the current password and clears the
-renderer session before first-run welcome.
+starting over. All three flows use one Delete/Cancel confirmation with native
+scope counts, report file-removal failures and refresh dependent caches. No
+confirmation word or password is entered. Only whole-vault reset offers a backup
+checkbox, initially off; selecting it must save outside the vault before deletion.
+Reset clears the renderer session before first-run welcome. Preview tokens,
+session checks and unchanged-data fingerprints remain required in Rust.
 
 The conservative shared-record and archive rules, exact removed/retained scope,
 backup behavior and restart/retry semantics are documented in
