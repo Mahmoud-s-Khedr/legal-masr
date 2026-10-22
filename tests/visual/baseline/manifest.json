@@ -1,5 +1,5 @@
 {
-  "status": "candidate",
+  "status": "approved",
   "fixture": "fictional-capture-bridge-v2",
   "fixtureTime": "2026-10-03T09:00:00Z",
   "environment": "Ubuntu 24.04 / Playwright 1.63.0 Chromium / Africa/Cairo / light",
