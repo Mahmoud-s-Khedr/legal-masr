@@ -178,8 +178,8 @@ const contracts = [
   [
     'deletionPreview',
     'deletion_preview',
-    [{ target: { kind: 'client', id: 'client-1' }, language: 'ar' }],
-    () => bridge.deletionPreview({ kind: 'client', id: 'client-1' }, 'ar'),
+    [{ target: { kind: 'client', id: 'client-1' } }],
+    () => bridge.deletionPreview({ kind: 'client', id: 'client-1' }),
   ],
   [
     'deletionCommit',
@@ -189,8 +189,6 @@ const contracts = [
         input: {
           target: { kind: 'all' },
           token: 'preview',
-          confirmation: 'DELETE',
-          password: 'current password',
           backupFirst: true,
         },
       },
@@ -199,8 +197,6 @@ const contracts = [
       bridge.deletionCommit({
         target: { kind: 'all' },
         token: 'preview',
-        confirmation: 'DELETE',
-        password: 'current password',
         backupFirst: true,
       }),
   ],

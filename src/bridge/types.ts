@@ -13,7 +13,6 @@ export type AppError = {
 export type AppErrorCode =
   | 'DELETION_NOT_ARCHIVED'
   | 'DELETION_SHARED_INTEGRITY'
-  | 'DELETION_CONFIRMATION'
   | 'DELETION_PREVIEW_EXPIRED'
   | 'OPERATION_BUSY'
   | 'EXPENSE_HAS_ATTACHMENTS'
@@ -566,13 +565,10 @@ export type DeletionPreview = {
   counts: Record<string, number>;
   managedFiles: number;
   vaultFiles: number;
-  confirmationWord: string;
 };
 export type DeletionInput = {
   target: DeletionTarget;
   token: string;
-  confirmation: string;
-  password: string;
   backupFirst: boolean;
 };
 export type DeletionResult = {

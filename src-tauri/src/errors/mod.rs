@@ -22,8 +22,6 @@ pub enum Error {
     DeletionNotArchived,
     #[error("deletion would affect shared records")]
     DeletionSharedIntegrity,
-    #[error("deletion confirmation does not match")]
-    DeletionConfirmation,
     #[error("deletion preview expired; review again")]
     DeletionPreviewExpired,
     #[error("Operation in progress")]
@@ -161,7 +159,6 @@ impl Error {
         match self {
             Self::DeletionNotArchived => "DELETION_NOT_ARCHIVED",
             Self::DeletionSharedIntegrity => "DELETION_SHARED_INTEGRITY",
-            Self::DeletionConfirmation => "DELETION_CONFIRMATION",
             Self::DeletionPreviewExpired => "DELETION_PREVIEW_EXPIRED",
             Self::OperationBusy => "OPERATION_BUSY",
             Self::InvalidPassword => "INVALID_PASSWORD",
@@ -214,7 +211,6 @@ impl Error {
             Self::DeletionSharedIntegrity => {
                 "تعذر الحذف لوجود سجلات مشتركة؛ لن تُحذف بيانات موكل آخر."
             }
-            Self::DeletionConfirmation => "نص تأكيد الحذف غير مطابق.",
             Self::DeletionPreviewExpired => "تغيرت البيانات؛ راجع معاينة الحذف مرة أخرى.",
             Self::OperationBusy => "توجد عملية قيد التنفيذ؛ حاول مرة أخرى بعد اكتمالها.",
             Self::ExpenseHasAttachments => "احذف مرفقات المصروف أولًا قبل حذف المصروف.",

@@ -5,7 +5,7 @@ vi.mock('@/bridge/commands', async (original) => {
   return { bridge: Object.fromEntries(Object.keys(module.bridge).map((key) => [key, vi.fn()])) };
 });
 import { bridge } from '@/bridge/commands';
-import type { DeletionInput, DeletionTarget } from '@/bridge/types';
+import type { DeletionTarget } from '@/bridge/types';
 import i18n from '@/i18n';
 import { prepareWorkflowMocks, renderWorkflow } from '@/test/workflow';
 import { PermanentDeleteAction, DeletionCleanupAction } from './PermanentDeleteAction';
@@ -14,22 +14,22 @@ const targets: DeletionTarget[] = [
   { kind: 'case', id: 'k1' },
   { kind: 'all' },
 ];
+const preview = {
+  token: 'native-capability',
+  counts: { clients: 1, cases: 2, attachments: 3 },
+  managedFiles: 3,
+  vaultFiles: 5,
+};
 const success = {
   failedManagedFiles: 0,
   failedVaultEntries: 0,
   resetComplete: false,
-  backupCreated: true,
+  backupCreated: false,
 };
 beforeEach(async () => {
   prepareWorkflowMocks();
   await i18n.changeLanguage('ar');
-  vi.mocked(bridge.deletionPreview).mockResolvedValue({
-    token: 'native-capability',
-    counts: { clients: 1, cases: 2, attachments: 3 },
-    managedFiles: 3,
-    vaultFiles: 5,
-    confirmationWord: 'حذف',
-  });
+  vi.mocked(bridge.deletionPreview).mockResolvedValue(preview);
   vi.mocked(bridge.deletionCommit).mockResolvedValue(success);
   vi.mocked(bridge.deletionRetryCleanup).mockResolvedValue(success);
   vi.mocked(bridge.status).mockResolvedValue({
@@ -41,27 +41,31 @@ beforeEach(async () => {
 async function review(target: DeletionTarget) {
   fireEvent.click(screen.getByRole('button', { name: i18n.t(`deletion.title.${target.kind}`) }));
   const dialog = await screen.findByRole('alertdialog');
-  await within(dialog).findByLabelText(i18n.t('deletion.confirmation'));
+  await waitFor(() => expect(deleteButton(dialog)).toBeEnabled());
   return dialog;
 }
-it.each(targets)('previews $kind deletion and cancels without destructive IPC', async (target) => {
+function deleteButton(dialog: HTMLElement) {
+  return within(dialog).getByRole('button', { name: i18n.t('deletion.confirmDelete') });
+}
+it.each(targets)('previews $kind deletion and Cancel calls no destructive IPC', async (target) => {
   renderWorkflow(<PermanentDeleteAction target={target} />, '/record', '/record');
   const dialog = await review(target);
-  expect(bridge.deletionPreview).toHaveBeenCalledWith(target, 'ar');
-  expect(within(dialog).getByText(i18n.t('deletion.managedFiles'))).toBeVisible();
-  expect(within(dialog).getByText(i18n.t('deletion.warning'))).toBeVisible();
+  expect(bridge.deletionPreview).toHaveBeenCalledWith(target);
+  expect(within(dialog).getAllByRole('button')).toHaveLength(2);
+  expect(dialog.querySelector('input[type="password"]')).toBeNull();
+  expect(within(dialog).queryByRole('textbox')).not.toBeInTheDocument();
+  if (target.kind === 'all') {
+    expect(within(dialog).getByRole('checkbox')).not.toBeChecked();
+  } else {
+    expect(within(dialog).queryByRole('checkbox')).not.toBeInTheDocument();
+  }
   fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('forms.cancel') }));
   await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
   expect(bridge.deletionCommit).not.toHaveBeenCalled();
 });
 it.each(targets)(
-  'requires matching text for $kind, then navigates and refreshes all affected caches',
+  'one click on Delete commits $kind exactly once, navigates and refreshes affected caches',
   async (target) => {
-    let submitted: DeletionInput | undefined;
-    vi.mocked(bridge.deletionCommit).mockImplementation(async (input) => {
-      submitted = { ...input };
-      return success;
-    });
     const { queryClient, invalidate } = renderWorkflow(
       <PermanentDeleteAction target={target} />,
       '/record',
@@ -70,29 +74,13 @@ it.each(targets)(
     queryClient.setQueryData(['clients', 'list'], [{ id: 'old' }]);
     queryClient.setQueryData(['search', 'old'], [{ id: 'old' }]);
     const dialog = await review(target);
-    const button = within(dialog).getByRole('button', { name: i18n.t('deletion.confirmDelete') });
-    const confirmation = within(dialog).getByLabelText(i18n.t('deletion.confirmation'));
-    expect(button).toBeDisabled();
-    fireEvent.change(confirmation, { target: { value: 'wrong' } });
-    expect(button).toBeDisabled();
-    fireEvent.click(button);
-    expect(bridge.deletionCommit).not.toHaveBeenCalled();
-    fireEvent.change(confirmation, { target: { value: 'حذف' } });
-    if (target.kind === 'all') {
-      expect(button).toBeDisabled();
-      fireEvent.change(within(dialog).getByLabelText(i18n.t('deletion.password')), {
-        target: { value: 'a current password' },
-      });
-    }
-    expect(button).toBeEnabled();
-    fireEvent.click(button);
+    fireEvent.click(deleteButton(dialog));
     expect(await screen.findByText('تم الانتقال')).toBeVisible();
-    expect(submitted).toEqual({
+    expect(bridge.deletionCommit).toHaveBeenCalledTimes(1);
+    expect(bridge.deletionCommit).toHaveBeenCalledWith({
       target,
       token: 'native-capability',
-      confirmation: 'حذف',
-      password: target.kind === 'all' ? 'a current password' : '',
-      backupFirst: true,
+      backupFirst: false,
     });
     if (target.kind === 'all') {
       await waitFor(() => expect(queryClient.getQueryData(['clients', 'list'])).toBeUndefined());
@@ -123,44 +111,93 @@ it.each(targets)(
     }
   },
 );
-it('does not offer confirmation when preview is refused and allows a new review', async () => {
-  vi.mocked(bridge.deletionPreview).mockRejectedValueOnce({
-    code: 'DELETION_SHARED_INTEGRITY',
-    message: 'safe',
-  });
+it.each(['ar', 'en'] as const)(
+  'shows a compact count summary for each target in %s',
+  async (language) => {
+    await i18n.changeLanguage(language);
+    for (const target of targets) {
+      const view = renderWorkflow(<PermanentDeleteAction target={target} />);
+      const dialog = await review(target);
+      const description = dialog.querySelector('[data-slot="alert-dialog-description"]');
+      const numbers = new Intl.NumberFormat(
+        language === 'ar' ? 'ar-EG-u-nu-latn' : 'en-EG-u-nu-latn',
+      );
+      expect(description).toHaveTextContent(numbers.format(3));
+      if (target.kind !== 'case') expect(description).toHaveTextContent(numbers.format(2));
+      expect(description).toHaveTextContent(
+        language === 'en' ? 'This cannot be undone.' : 'لا يمكن التراجع عن الحذف.',
+      );
+      if (target.kind === 'all') {
+        expect(description).toHaveTextContent(numbers.format(1));
+        expect(description).toHaveTextContent(
+          language === 'en' ? 'entire workspace' : 'مساحة العمل بالكامل',
+        );
+        expect(description).toHaveTextContent(
+          language === 'en'
+            ? 'local backups and restore snapshots'
+            : 'النسخ الاحتياطية المحلية ولقطات الاستعادة',
+        );
+      }
+      view.unmount();
+    }
+  },
+);
+it('opens one dialog immediately and prevents commit while silently loading the native preview', async () => {
+  let resolve!: (value: typeof preview) => void;
+  vi.mocked(bridge.deletionPreview).mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    }),
+  );
   renderWorkflow(<PermanentDeleteAction target={targets[0]} />);
   fireEvent.click(screen.getByRole('button', { name: i18n.t('deletion.title.client') }));
-  expect(await screen.findByText(i18n.t('errors.DELETION_SHARED_INTEGRITY'))).toBeVisible();
-  expect(screen.queryByLabelText(i18n.t('deletion.confirmation'))).not.toBeInTheDocument();
+  const dialog = screen.getByRole('alertdialog');
+  expect(deleteButton(dialog)).toBeDisabled();
+  expect(within(dialog).queryByRole('status')).not.toBeInTheDocument();
+  fireEvent.click(deleteButton(dialog));
   expect(bridge.deletionCommit).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: i18n.t('deletion.reviewAgain') }));
-  expect(await screen.findByLabelText(i18n.t('deletion.confirmation'))).toBeVisible();
+  resolve(preview);
+  await waitFor(() => expect(deleteButton(dialog)).toBeEnabled());
+  expect(screen.getAllByRole('alertdialog')).toHaveLength(1);
 });
-it('clears the current password after authentication failure without retaining it in mutations', async () => {
-  vi.mocked(bridge.deletionCommit).mockRejectedValueOnce({
-    code: 'INVALID_PASSWORD',
-    message: 'safe',
-  });
-  const { queryClient } = renderWorkflow(<PermanentDeleteAction target={{ kind: 'all' }} />);
-  const dialog = await review({ kind: 'all' });
-  fireEvent.change(within(dialog).getByLabelText(i18n.t('deletion.confirmation')), {
-    target: { value: 'حذف' },
-  });
-  const password = within(dialog).getByLabelText(i18n.t('deletion.password'));
-  fireEvent.change(password, { target: { value: 'wrong password' } });
-  fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('deletion.confirmDelete') }));
-  expect(await screen.findByText(i18n.t('errors.INVALID_PASSWORD'))).toBeVisible();
-  expect(password).toHaveValue('');
-  expect(queryClient.getMutationCache().getAll()).toHaveLength(0);
+it.each(['DELETION_SHARED_INTEGRITY', 'DELETION_NOT_ARCHIVED', 'OPERATION_BUSY'])(
+  'shows the existing localized %s preview refusal without offering deletion',
+  async (code) => {
+    vi.mocked(bridge.deletionPreview).mockRejectedValueOnce({ code, message: 'safe' });
+    renderWorkflow(<PermanentDeleteAction target={targets[0]} />);
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('deletion.title.client') }));
+    expect(await screen.findByText(i18n.t(`errors.${code}`))).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('deletion.confirmDelete') }),
+    ).not.toBeInTheDocument();
+    expect(bridge.deletionCommit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('deletion.reviewAgain') }));
+    await waitFor(() => expect(deleteButton(screen.getByRole('alertdialog'))).toBeEnabled());
+  },
+);
+it('refuses duplicate clicks while commit is pending and displays a busy-operation error', async () => {
+  let reject!: (error: unknown) => void;
+  vi.mocked(bridge.deletionCommit).mockReturnValueOnce(
+    new Promise((_, fail) => {
+      reject = fail;
+    }),
+  );
+  renderWorkflow(<PermanentDeleteAction target={targets[0]} />);
+  const dialog = await review(targets[0]);
+  const button = deleteButton(dialog);
+  fireEvent.click(button);
+  fireEvent.click(button);
+  expect(button).toBeDisabled();
+  expect(bridge.deletionCommit).toHaveBeenCalledTimes(1);
+  reject({ code: 'OPERATION_BUSY', message: 'safe' });
+  expect(await screen.findByText(i18n.t('errors.OPERATION_BUSY'))).toBeVisible();
+  expect(button).toBeEnabled();
 });
 it('reports committed deletion with failed file counts, then retries cleanup without deleting records twice', async () => {
   vi.mocked(bridge.deletionCommit).mockResolvedValueOnce({ ...success, failedManagedFiles: 2 });
   renderWorkflow(<PermanentDeleteAction target={targets[1]} />, '/record', '/record');
   const dialog = await review(targets[1]);
-  fireEvent.change(within(dialog).getByLabelText(i18n.t('deletion.confirmation')), {
-    target: { value: 'حذف' },
-  });
-  fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('deletion.confirmDelete') }));
+  fireEvent.click(deleteButton(dialog));
   expect(
     await within(dialog).findByText(i18n.t('deletion.fileFailure', { count: 2, entries: 0 })),
   ).toBeVisible();
@@ -170,29 +207,23 @@ it('reports committed deletion with failed file counts, then retries cleanup wit
   expect(bridge.deletionCommit).toHaveBeenCalledTimes(1);
   expect(bridge.deletionRetryCleanup).toHaveBeenCalledTimes(1);
 });
-it('uses the English confirmation word and submits the optional backup choice', async () => {
-  await i18n.changeLanguage('en');
-  vi.mocked(bridge.deletionPreview).mockResolvedValueOnce({
-    token: 'english',
-    counts: { cases: 1 },
-    managedFiles: 0,
-    vaultFiles: 0,
-    confirmationWord: 'DELETE',
-  });
-  renderWorkflow(<PermanentDeleteAction target={targets[1]} />, '/record', '/record');
-  const dialog = await review(targets[1]);
-  expect(bridge.deletionPreview).toHaveBeenCalledWith(targets[1], 'en');
-  fireEvent.change(within(dialog).getByLabelText('Deletion confirmation'), {
-    target: { value: 'DELETE' },
-  });
-  fireEvent.click(
-    within(dialog).getByRole('checkbox', { name: 'Create an encrypted backup first' }),
-  );
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Delete permanently' }));
+it('submits an explicitly selected workspace backup and resets the choice on reopening', async () => {
+  renderWorkflow(<PermanentDeleteAction target={targets[2]} />, '/record', '/record');
+  let dialog = await review(targets[2]);
+  fireEvent.click(within(dialog).getByRole('checkbox'));
+  expect(within(dialog).getByRole('checkbox')).toBeChecked();
+  fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('forms.cancel') }));
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+  dialog = await review(targets[2]);
+  expect(within(dialog).getByRole('checkbox')).not.toBeChecked();
+  fireEvent.click(within(dialog).getByRole('checkbox'));
+  fireEvent.click(deleteButton(dialog));
   await screen.findByText('تم الانتقال');
-  expect(bridge.deletionCommit).toHaveBeenCalledWith(
-    expect.objectContaining({ confirmation: 'DELETE', backupFirst: false }),
-  );
+  expect(bridge.deletionCommit).toHaveBeenCalledWith({
+    target: targets[2],
+    token: preview.token,
+    backupFirst: true,
+  });
 });
 it('keeps persistent pending-file cleanup available after reopening Settings', async () => {
   renderWorkflow(<DeletionCleanupAction />);
@@ -200,41 +231,38 @@ it('keeps persistent pending-file cleanup available after reopening Settings', a
   expect(await screen.findByText(i18n.t('deletion.cleanupComplete'))).toBeVisible();
   expect(bridge.deletionCommit).not.toHaveBeenCalled();
 });
-
-it('invalidates an expired preview and requires a new review before retrying', async () => {
+it('invalidates an expired preview and requires a new preview before retrying', async () => {
   vi.mocked(bridge.deletionCommit).mockRejectedValueOnce({
     code: 'DELETION_PREVIEW_EXPIRED',
     message: 'safe',
   });
   renderWorkflow(<PermanentDeleteAction target={targets[0]} />);
   const dialog = await review(targets[0]);
-  fireEvent.change(within(dialog).getByLabelText(i18n.t('deletion.confirmation')), {
-    target: { value: 'حذف' },
-  });
-  fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('deletion.confirmDelete') }));
+  fireEvent.click(deleteButton(dialog));
   expect(await screen.findByText(i18n.t('errors.DELETION_PREVIEW_EXPIRED'))).toBeVisible();
   expect(
     screen.queryByRole('button', { name: i18n.t('deletion.confirmDelete') }),
   ).not.toBeInTheDocument();
   fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('deletion.reviewAgain') }));
-  await within(dialog).findByLabelText(i18n.t('deletion.confirmation'));
+  await waitFor(() => expect(deleteButton(dialog)).toBeEnabled());
   expect(bridge.deletionPreview).toHaveBeenCalledTimes(2);
+  expect(bridge.deletionCommit).toHaveBeenCalledTimes(1);
 });
-it('keeps the reset preview after the backup picker is canceled and clears the password', async () => {
-  vi.mocked(bridge.deletionCommit).mockRejectedValueOnce({
-    code: 'OPERATION_CANCELLED',
-    message: 'safe',
-  });
-  renderWorkflow(<PermanentDeleteAction target={{ kind: 'all' }} />, '/record', '/record');
-  const dialog = await review({ kind: 'all' });
-  fireEvent.change(within(dialog).getByLabelText(i18n.t('deletion.confirmation')), {
-    target: { value: 'حذف' },
-  });
-  const password = within(dialog).getByLabelText(i18n.t('deletion.password'));
-  fireEvent.change(password, { target: { value: 'correct password' } });
-  fireEvent.click(within(dialog).getByRole('button', { name: i18n.t('deletion.confirmDelete') }));
-  await waitFor(() => expect(dialog).toHaveAttribute('aria-busy', 'false'));
-  expect(password).toHaveValue('');
-  expect(screen.queryByText('تم الانتقال')).not.toBeInTheDocument();
-  expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
-});
+it.each(['OPERATION_CANCELLED', 'OPERATION_FAILED'])(
+  'keeps the workspace preview and records on backup cancellation/failure (%s)',
+  async (code) => {
+    vi.mocked(bridge.deletionCommit).mockRejectedValueOnce({ code, message: 'safe' });
+    renderWorkflow(<PermanentDeleteAction target={targets[2]} />, '/record', '/record');
+    const dialog = await review(targets[2]);
+    fireEvent.click(within(dialog).getByRole('checkbox'));
+    fireEvent.click(deleteButton(dialog));
+    await waitFor(() => expect(dialog).toHaveAttribute('aria-busy', 'false'));
+    expect(deleteButton(dialog)).toBeEnabled();
+    expect(screen.queryByText('تم الانتقال')).not.toBeInTheDocument();
+    if (code === 'OPERATION_CANCELLED') {
+      expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
+    } else {
+      expect(within(dialog).getByText(i18n.t('errors.OPERATION_FAILED'))).toBeVisible();
+    }
+  },
+);

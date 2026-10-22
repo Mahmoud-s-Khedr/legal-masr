@@ -9,14 +9,11 @@ pub enum DeletionTarget {
     All,
 }
 
-#[derive(Deserialize, zeroize::Zeroize, zeroize::ZeroizeOnDrop)]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeletionInput {
-    #[zeroize(skip)]
     pub target: DeletionTarget,
     pub token: String,
-    pub confirmation: String,
-    pub password: String,
     pub backup_first: bool,
 }
 
@@ -27,7 +24,6 @@ pub struct DeletionPreview {
     pub counts: BTreeMap<String, u64>,
     pub managed_files: u64,
     pub vault_files: u64,
-    pub confirmation_word: String,
 }
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]

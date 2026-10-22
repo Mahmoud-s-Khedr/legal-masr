@@ -4,7 +4,6 @@ import type { AppError, AppErrorCode } from './types';
 const appErrorCodes = new Set<AppErrorCode>([
   'DELETION_NOT_ARCHIVED',
   'DELETION_SHARED_INTEGRITY',
-  'DELETION_CONFIRMATION',
   'DELETION_PREVIEW_EXPIRED',
   'OPERATION_BUSY',
   'EXPENSE_HAS_ATTACHMENTS',
