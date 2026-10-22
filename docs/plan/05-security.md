@@ -269,6 +269,27 @@ local audit outcome and remaining transitive warnings are documented in
 [the advisory review](../reviews/2026-10-21-zip-advisories.md). No audit ignores
 or network behavior are added to the application.
 
+## Support bundle implementation — 2026-10-21
+
+The manually generated Settings → About ZIP implements section 12.4. The Rust
+service reads only the settings singleton, migration number and recognized local
+log files; React supplies no paths. The native save picker and archive work run
+on workers. The operation gate and generation checks refuse locked/stale
+sessions, interrupted vaults and concurrent operations; the picker holds no gate.
+The existing vault coordinator identifies interrupted work. Saving refuses the
+vault tree and existing destinations, flushes the ZIP and removes a partial file
+on a write failure. There is no schema change or new dependency.
+
+Log export reconstructs only exact startup and command-error structures produced
+by logging.rs, with validated UTC timestamps and enumerated stable codes. Unknown
+fields/lines, historical debug-detail lines, names, home paths, contact/ID-like
+numbers, arbitrary tokens and original log filenames never pass through. A
+second guard rejects path/contact/long-number shapes before field acceptance.
+Release builds now record stable error codes too; developer diagnostic details
+are never logged. Reads are capped at 14 files / 1 MiB each and recent errors at 200. Unflushed final events may be absent. See [Privacy](06-privacy.md) and the
+[implementation report](../reviews/2026-10-21-support-bundle.md). Physical
+Windows/Linux picker, permission and disk-full checks remain unverified.
+
 ## Tray security status — 2026-10-22
 
 Closing to the tray locks immediately, regardless of the configured inactivity

@@ -347,14 +347,7 @@ impl Serialize for Error {
             _ => None,
         };
         let diagnostic = detailed_diagnostics_enabled().then(|| self.diagnostic());
-        if let Some(diagnostic) = &diagnostic {
-            tracing::error!(
-                error_code = self.code(),
-                diagnostic_kind = diagnostic.kind,
-                diagnostic_detail = %diagnostic.detail,
-                "command failed"
-            );
-        }
+        crate::logging::command_failed(self.code());
         ApiError {
             code: self.code(),
             message: self.message(),

@@ -72,3 +72,6 @@ export const useTrayAvailable = () =>
     queryFn: bridge.trayAvailable,
     refetchInterval: 5_000,
   });
+
+export const useSaveSupportBundle = () =>
+  useMutation({ mutationFn: (filterLabel: string) => bridge.saveSupportBundle(filterLabel) });

@@ -109,6 +109,15 @@ backups. See the [versioned export format](export-format.md) and
 [implementation/validation report](reviews/2026-10-21-exports.md). No schema change
 was needed. Physical Windows/Linux acceptance and other launch blockers remain open.
 
+## Support bundle implementation — 2026-10-21
+
+Public-beta blocker #3 part 3 is implemented: Settings → About can manually save
+a redacted diagnostics ZIP after displaying a localized inclusion/exclusion list.
+The user controls sharing; no data is sent. See the
+[support-bundle report](reviews/2026-10-21-support-bundle.md) for validation,
+conservative decisions and remaining Windows/Linux physical checks. Other
+launch blockers remain open. Schema migrations are unchanged.
+
 ## Optional tray implementation — 2026-10-22
 
 Blocker #4 implementation is present for Windows and Linux, with default-OFF
