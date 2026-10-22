@@ -1,6 +1,6 @@
 # Legal Masr — Feature list and testing guide
 
-Review date: 2026-10-21 (deletion update). Version: pre-beta 0.1.0.
+Review date: 2026-10-21 (deletion and export update). Version: pre-beta 0.1.0.
 
 Legal Masr is an offline desktop app for individual Egyptian lawyers. It manages clients, cases, powers of attorney, hearings, tasks, documents, and finances inside a password-protected local workspace.
 
@@ -209,6 +209,21 @@ This is fee and cash tracking, not a complete accounting system.
 
 Fresh-installation restore is implemented and tested locally. **Physical Windows↔macOS portability still requires device testing.**
 
+## Unencrypted data exports — 2026-10-21
+
+| Feature                | What it does                                                                                                                              | Test instructions                                                                                                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Complete domain export | Separate Backups/Settings card writes all legal records, archived records, CSV relationships, documents and a manifest outside the vault. | Cancel the warning and picker; then confirm into a disposable folder. Verify BOM Arabic CSVs, integer money, ISO dates, archived flags, hashes/counts and document bytes.            |
+| Case export            | Case detail exports the selected active/archived case, direct records, linked clients/current or fallback POAs and scoped documents.      | Share a client/POA with another case; export one case and verify the other case's records, tasks, expenses and documents are absent. Shared client/POA documents are included whole. |
+| Safe publication       | Stages in a `.partial` sibling and renames without overwriting.                                                                           | Repeat in the same minute/parent and verify refusal. With disposable fixtures, remove/damage a managed file or inject an IO failure and verify no final-name folder appears.         |
+| Reveal and errors      | Success shows folder name and native Show in folder; cancellation is harmless, failure remains retryable.                                 | Verify file manager behavior on Windows/Linux; move the output and test reveal error. Confirm warning strings in Arabic/English and responsive native picker.                        |
+
+The [versioned format](export-format.md) defines exact columns, scope, formula
+guards, manifest and plaintext staging limits. These exports cannot restore the
+app. Automated evidence and unexecuted device checks are in the
+[export report](reviews/2026-10-21-exports.md); the manual instructions here do not
+claim target-device execution.
+
 ## Guided permanent deletion — 2026-10-21
 
 | Feature                | Behavior                                                                                                                                                                                  | Disposable-data checks                                                                                                                                                                                     |
@@ -260,7 +275,6 @@ These were removed on 2026-10-13 and are not planned. Migration `0004` drops the
 
 These should not be counted as available:
 
-- Complete installation/case exports, case-folder export, and stable CSV/document-manifest exports.
 - Emergency-snapshot browsing/export/deletion UI and a redacted support bundle.
 - Minimize-to-tray behavior.
 - Multi-user accounts, collaboration, cloud synchronization, and online access.
@@ -296,4 +310,5 @@ application remains pre-beta.
 - [Project plan](plan.md)
 - [Functional modules](plan/04-functional-modules.md)
 - [Backup specification](plan/07-backup-format.md)
+- [Export format](export-format.md)
 - [Canonical offline integration review](reviews/2026-10-10-integration.md)

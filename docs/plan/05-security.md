@@ -246,3 +246,16 @@ Failures disclose counts, never paths. This is logical deletion and filesystem
 unlink, not forensic erasure. External backups, SSD remnants and safe diagnostic
 logs remain outside the deletion guarantee. Windows/Linux physical sharing-lock,
 permission and power-loss checks remain unverified; macOS is out of launch scope.
+
+## Export status — 2026-10-21
+
+Explicitly confirmed exports disclose plaintext outside the vault through an
+async native folder picker. Export IO is serialized with other vault operations;
+session checks abort stale work and invalidate reveal tokens. Fixed projections
+exclude security material and native-only local tables. Source basenames and
+regular files are checked; copies must match recorded sizes/SHA-256. CSV text uses
+a reversible spreadsheet-formula guard. Complete output is staged then published
+without replacement; crashes can leave clearly incomplete plaintext staging.
+These are not encrypted backups. Details and unverified platform/ACL/durability
+limits are in [the format](../export-format.md) and
+[report](../reviews/2026-10-21-exports.md).

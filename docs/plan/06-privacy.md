@@ -35,13 +35,13 @@ the privacy notice and marketing must not claim blanket legal compliance.
 
 ## Data-management status
 
-There is no per-client export command; the encrypted backup is the only way
-to take records out of the application.
+There is no per-client export command. Complete-installation and case exports
+are available as unencrypted CSV/document folders; encrypted backups remain the
+separate recovery workflow.
 
 The following privacy/data-management requirements remain unimplemented and
 are release blockers:
 
-- complete-installation, case, and documented CSV/manifest exports;
 - a manually generated redacted support bundle containing only approved system,
   version, safe settings, schema version, and error-code information.
 
@@ -75,3 +75,22 @@ makes whole-vault cleanup restartable and blocks first-run setup until cleanup
 finishes. No promise of forensic/secure erasure is made. Automated evidence and
 remaining Windows/Linux device checks are in the
 [deletion report](../reviews/2026-10-21-permanent-deletion.md).
+
+## Export status — 2026-10-21
+
+Complete-installation export is available in the separate unencrypted-export card
+on Backups and Settings → Backups; case detail also exports active/archived cases.
+Both require an explicit confidentiality warning before an asynchronous native
+folder picker. The chosen folder must be outside the vault. The renderer receives
+only a folder name and session-bound reveal token, never an arbitrary path.
+
+Exports include archived records and verified managed document copies, with a
+stable CSV/manifest contract. Case scope includes linked clients and their current
+or archived fallback POAs, but no other cases or client-only/office tasks/expenses.
+Shared client/POA documents are disclosed whole, as the warning explains. Export
+folders and crash-left `.partial` folders contain plaintext and remain the user's
+responsibility; vault deletion does not remove outside exports. Full scope,
+columns, formula guards and failure semantics are documented in
+[the export format](../export-format.md). Automated results and outstanding device
+checks are in [the export report](../reviews/2026-10-21-exports.md). The redacted
+support bundle remains unimplemented.

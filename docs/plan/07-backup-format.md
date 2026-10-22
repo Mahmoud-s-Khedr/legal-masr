@@ -106,3 +106,11 @@ attachment preservation and journal interruptions. Physical Windows/macOS file
 sharing, directory durability and cross-platform restoration remain validation
 gates until actually exercised. This implementation does not certify release
 readiness. See [09-testing.md](09-testing.md) and the integration review report.
+
+## Separate data exports — 2026-10-21
+
+Backups/Settings also offer a visually separate **unencrypted data export** card.
+Case detail has a case export action. These create CSV/document folders with an
+explicit confidentiality warning, not `.lmsbackup` archives. They contain no
+security envelope or database and cannot enter the restore workflow. See
+[the export format](../export-format.md) for scope and verification rules.
