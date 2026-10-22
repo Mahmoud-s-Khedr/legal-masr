@@ -477,11 +477,29 @@ fn general_settings_update_without_backup_configuration() {
             date_format: "yyyy-MM-dd".into(),
             week_starts_on: 0,
             lock_timeout_minutes: 10,
+            keep_running_in_tray: true,
         },
     )
     .expect("general settings must not require a backup destination");
+    assert!(updated.keep_running_in_tray);
+    assert!(
+        settings_service::get(handle, &state)
+            .unwrap()
+            .keep_running_in_tray
+    );
     assert_eq!(updated.theme, "light");
     assert_eq!(updated.date_format, "yyyy-MM-dd");
+    app_service::lock(&state).unwrap();
+    assert!(matches!(
+        settings_service::get(handle, &state),
+        Err(Error::Locked)
+    ));
+    app_service::unlock(handle, &state, "a secure local password").unwrap();
+    assert!(
+        settings_service::get(handle, &state)
+            .unwrap()
+            .keep_running_in_tray
+    );
 
     let _ = std::fs::remove_dir_all(db::app_dir(handle).unwrap());
 }

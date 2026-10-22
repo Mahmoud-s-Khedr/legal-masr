@@ -61,6 +61,7 @@ export type Settings = {
   weekStartsOn: number;
   usageCountersEnabled: boolean;
   lockTimeoutMinutes: number;
+  keepRunningInTray: boolean;
 };
 export type SettingsUpdateInput = {
   language: Settings['language'];
@@ -68,6 +69,7 @@ export type SettingsUpdateInput = {
   dateFormat: Settings['dateFormat'];
   weekStartsOn: number;
   lockTimeoutMinutes: number;
+  keepRunningInTray: boolean;
 };
 /** A backup chosen in the native picker. The path stays in Rust; only the token is held here. */
 export type BackupSelection = { token: string; fileName: string };

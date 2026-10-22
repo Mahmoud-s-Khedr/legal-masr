@@ -90,3 +90,28 @@ visible focus, Escape behavior, and focus containment/return.
 Visual comparison against the approved Stitch screens still requires fresh
 seeded captures at the two specified desktop viewports; it is not inferred
 from source code or old baseline images.
+
+## Tray lifecycle status — 2026-10-22
+
+`tray.rs` owns native menus, visibility and the shared close/Quit/ExitRequested
+path. Shutdown takes the existing `AppState::operation()` admission gate used
+with `vault_operation.rs` setup/restore/deletion journals, refuses busy work and
+closes further admission before exiting. It introduces no second coordinator.
+Settings use the existing repository/service/command/typed bridge chain;
+migration `0006` extends the singleton settings row. The runtime keeps only the
+tray preference and menu language after lock. Startup uses OFF/Arabic until the
+first unlock loads encrypted settings. Window-state persistence excludes
+visibility so a previous tray Quit cannot strand the next launch hidden.
+
+The Tauri `tray-icon` feature is enabled only for Windows/Linux. Linux uses
+existing transitive `gio` 0.18 and `libloading` 0.7 packages directly to query the
+local session bus for a registered StatusNotifier host and preflight the
+indicator library. No package versions or remote services are introduced.
+These are narrow native uses: gtk-rs GIO and libloading use MIT-compatible
+licenses and were already in the lockfile; added binary impact is not measured.
+The two-second native host monitor restores visibility and disables tray use
+on host loss; a restart is required after enabling/re-enabling desktop support.
+The UI polls only the native boolean capability every five seconds. This adds
+local IPC, no network access. Native `vault-locked` events share renderer cache
+clearing and IPC epoch invalidation; the main capability adds only event
+listen/unlisten permissions. Device behavior remains unverified.

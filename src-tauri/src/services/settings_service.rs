@@ -11,7 +11,9 @@ pub fn get<R: Runtime>(app: &AppHandle<R>, state: &AppState) -> Result<SettingsD
     let master = state.unlocked()?;
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
-    settings_repository::get_settings(&conn)
+    let settings = settings_repository::get_settings(&conn)?;
+    crate::tray::apply_settings(app, &settings);
+    Ok(settings)
 }
 
 /// Mirrors the database CHECK constraints so an out-of-range value is a clear
@@ -36,7 +38,9 @@ pub fn update<R: Runtime>(
     let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
     settings_repository::update_settings(&conn, input)?;
-    settings_repository::get_settings(&conn)
+    let settings = settings_repository::get_settings(&conn)?;
+    crate::tray::apply_settings(app, &settings);
+    Ok(settings)
 }
 
 pub fn get_profile<R: Runtime>(
@@ -175,6 +179,7 @@ mod tests {
             date_format: "dd/MM/yyyy".into(),
             week_starts_on: 6,
             lock_timeout_minutes: 30,
+            keep_running_in_tray: false,
         }
     }
 

@@ -224,6 +224,7 @@ describe('application gate', () => {
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
       lockTimeoutMinutes: 15,
+      keepRunningInTray: false,
       usageCountersEnabled: false,
     });
     render(<App />);
@@ -257,6 +258,7 @@ describe('application gate', () => {
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
       lockTimeoutMinutes: 15,
+      keepRunningInTray: false,
       usageCountersEnabled: false,
     });
     vi.mocked(bridge.clientList).mockResolvedValue([
@@ -302,6 +304,7 @@ describe('application gate', () => {
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
       lockTimeoutMinutes: 15,
+      keepRunningInTray: false,
       usageCountersEnabled: false,
     });
     vi.mocked(bridge.clientList).mockResolvedValue([
@@ -347,6 +350,7 @@ describe('application gate', () => {
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
       lockTimeoutMinutes: 15,
+      keepRunningInTray: false,
       usageCountersEnabled: false,
     });
 
@@ -377,6 +381,7 @@ describe('application gate', () => {
       dateFormat: 'dd/MM/yyyy',
       weekStartsOn: 6,
       lockTimeoutMinutes: 15,
+      keepRunningInTray: false,
       usageCountersEnabled: false,
     });
     render(<App />);
@@ -392,6 +397,7 @@ describe('application gate', () => {
       dateFormat: 'dd/MM/yyyy' as const,
       weekStartsOn: 6,
       lockTimeoutMinutes: 15,
+      keepRunningInTray: false,
       usageCountersEnabled: false,
     };
     vi.mocked(bridge.status).mockResolvedValue({
@@ -454,6 +460,7 @@ it('keeps the unlocked gate and records when the native lock fails', async () =>
     dateFormat: 'yyyy-MM-dd',
     weekStartsOn: 6,
     lockTimeoutMinutes: 15,
+    keepRunningInTray: false,
     usageCountersEnabled: false,
   });
   vi.mocked(bridge.lock).mockRejectedValueOnce({

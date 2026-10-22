@@ -32,6 +32,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
         5,
         include_str!("../../migrations/0005_pending_file_deletions.sql"),
     ),
+    (
+        6,
+        include_str!("../../migrations/0006_keep_running_in_tray.sql"),
+    ),
 ];
 
 pub fn app_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
@@ -538,6 +542,29 @@ mod tests {
             .unwrap();
         assert!(matches!(migrate(&conn), Err(Error::VaultNewerSchema)));
         assert_eq!(schema_version(&conn), 999);
+    }
+
+    #[test]
+    fn tray_migration_upgrades_existing_settings_without_enabling_it() {
+        let db = Connection::open_in_memory().unwrap();
+        for (version, sql) in MIGRATIONS.iter().filter(|(version, _)| *version < 6) {
+            db.execute_batch(sql).unwrap();
+            db.execute(
+                "INSERT INTO schema_migrations VALUES (?1, 'now')",
+                [version],
+            )
+            .unwrap();
+        }
+        db.execute(
+            "UPDATE app_settings SET language = 'en', theme = 'dark'",
+            [],
+        )
+        .unwrap();
+        migrate(&db).unwrap();
+        let settings = crate::repositories::settings_repository::get_settings(&db).unwrap();
+        assert_eq!(settings.language, "en");
+        assert_eq!(settings.theme, "dark");
+        assert!(!settings.keep_running_in_tray);
     }
 
     #[test]

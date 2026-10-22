@@ -37,6 +37,7 @@ const settingsInput: SettingsUpdateInput = {
   dateFormat: 'dd/MM/yyyy',
   weekStartsOn: 6,
   lockTimeoutMinutes: 15,
+  keepRunningInTray: false,
 };
 const profile: LawyerProfile = {
   fullName: 'أحمد علي',
@@ -299,6 +300,7 @@ const contracts = [
     [{ enabled: true }],
     () => bridge.setUsageCounters(true),
   ],
+  ['trayAvailable', 'settings_tray_available', [], () => bridge.trayAvailable()],
   ['profile', 'profile_get', [], () => bridge.profile()],
   ['updateProfile', 'profile_update', [{ profile }], () => bridge.updateProfile(profile)],
   [

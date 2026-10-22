@@ -3,6 +3,9 @@ import { logCommandFailure } from './devDiagnostics';
 import { captureInvoke, captureModeEnabled } from '../dev/captureBridge';
 
 let sessionEpoch = 0;
+export const invalidateSession = () => {
+  sessionEpoch += 1;
+};
 const boundaries = new Set([
   'app_initialize',
   'app_unlock',

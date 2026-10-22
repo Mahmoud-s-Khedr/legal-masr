@@ -200,6 +200,7 @@ const settings = (): Settings => ({
   weekStartsOn: 6,
   usageCountersEnabled: false,
   lockTimeoutMinutes: 15,
+  keepRunningInTray: false,
 });
 const profile: LawyerProfile = {
   fullName: 'مكتب العرض القانوني',
@@ -239,6 +240,7 @@ export async function captureInvoke<T>(command: string): Promise<T> {
       vaultState: 'UNLOCKED',
     } satisfies AppStatus,
     settings_get: settings(),
+    settings_tray_available: false,
     profile_get: profile,
     client_list: [clientSummary],
     client_get: client,

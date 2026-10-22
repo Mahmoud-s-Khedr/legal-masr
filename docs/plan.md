@@ -99,3 +99,12 @@ transactional file-cleanup outbox. The [deletion report](reviews/2026-10-21-perm
 records decisions, automated validation and unverified device risks. Exports,
 support bundles and other release blockers remain open. The current public
 launch targets Windows and Linux; macOS is outside this launch scope.
+
+## Optional tray implementation — 2026-10-22
+
+Blocker #4 implementation is present for Windows and Linux, with default-OFF
+settings, immediate lock on hide, single-instance reveal, guarded Quit and Linux
+host fallback. Migration `0006` adds the persisted preference. Automated results
+and conservative decisions are recorded in [the tray report](reviews/2026-10-21-tray.md).
+Physical Windows 10/11, GNOME with/without AppIndicator and KDE acceptance remain
+open; this does not certify public-launch readiness.

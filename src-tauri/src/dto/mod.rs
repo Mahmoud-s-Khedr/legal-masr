@@ -64,6 +64,7 @@ pub struct SettingsDto {
     pub week_starts_on: u8,
     pub usage_counters_enabled: bool,
     pub lock_timeout_minutes: u32,
+    pub keep_running_in_tray: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -74,6 +75,7 @@ pub struct SettingsUpdateInput {
     pub date_format: String,
     pub week_starts_on: u8,
     pub lock_timeout_minutes: u32,
+    pub keep_running_in_tray: bool,
 }
 
 #[derive(Serialize)]

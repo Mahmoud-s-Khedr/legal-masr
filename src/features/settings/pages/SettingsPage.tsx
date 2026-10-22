@@ -18,6 +18,7 @@ import { DeveloperContacts } from '../../../components/layout/DeveloperContacts'
 import { Icon } from '../../../components/layout/Icon';
 import { Button } from '../../../components/ui/button';
 import { PageHeader } from '../../../components/layout/PageHeader';
+import { Switch } from '../../../components/ui/switch';
 import { Input } from '../../../components/ui/input';
 import {
   Select,
@@ -38,6 +39,7 @@ import {
   useSettings,
   useUpdateProfile,
   useUpdateSettings,
+  useTrayAvailable,
 } from '../api/settingsApi';
 import { PASSWORD_MIN_LENGTH } from '../../onboarding/schemas/onboarding.schema';
 import { SettingsFormValues, settingsSchema } from '../schemas/settings.schema';
@@ -97,6 +99,7 @@ const toFormValues = (settings: Settings): SettingsFormValues => ({
   dateFormat: settings.dateFormat,
   weekStartsOn: settings.weekStartsOn,
   lockTimeoutMinutes: settings.lockTimeoutMinutes,
+  keepRunningInTray: settings.keepRunningInTray,
 });
 
 /**
@@ -109,6 +112,7 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: profile } = useProfile();
   const updateSettings = useUpdateSettings();
+  const { data: trayAvailable = false } = useTrayAvailable();
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
   const [saved, setSaved] = useState(false);
@@ -424,6 +428,22 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
                       />
                     </Field>
                   </div>
+                  <Field
+                    label={t('settings.tray.label')}
+                    hint={t(trayAvailable ? 'settings.tray.hint' : 'settings.tray.unavailable')}
+                  >
+                    <Controller
+                      control={control}
+                      name="keepRunningInTray"
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!trayAvailable || updateSettings.isPending}
+                        />
+                      )}
+                    />
+                  </Field>
                   {Object.keys(errors).length > 0 && (
                     <Alert variant="destructive">
                       <AlertDescription>{t('settings.display.invalid')}</AlertDescription>

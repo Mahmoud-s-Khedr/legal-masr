@@ -26,4 +26,5 @@ export const settingsWithLanguage = (
   dateFormat: settings.dateFormat,
   weekStartsOn: settings.weekStartsOn,
   lockTimeoutMinutes: settings.lockTimeoutMinutes,
+  keepRunningInTray: settings.keepRunningInTray,
 });

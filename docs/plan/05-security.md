@@ -255,3 +255,28 @@ permissions. The fixed old-writer fixture, malicious-entry regression coverage,
 local audit outcome and remaining transitive warnings are documented in
 [the advisory review](../reviews/2026-10-21-zip-advisories.md). No audit ignores
 or network behavior are added to the application.
+
+## Tray security status — 2026-10-22
+
+Closing to the tray locks immediately, regardless of the configured inactivity
+timeout. This is the conservative choice: hidden WebViews may throttle timers.
+Native tray locking calls the same `app_service::lock` as `app_lock`, clearing
+the master key, selection tokens and prepared deletion/restore state, advancing
+the native session generation and notifying the renderer to discard caches,
+credentials/recovery state and late IPC results. A lock or hide failure keeps or
+restores the visible window and reports localized static text. Tray labels and
+tooltip contain only product/action names. Linux capability failures log only
+`TRAY_UNAVAILABLE`, with no paths or underlying library/bus error text.
+
+Close, tray Quit and native exit requests refuse while the shared operation gate
+is busy. Quit bypasses the tray preference and permanently closes operation
+admission before normal Tauri exit. No operation is forcibly cancelled to quit.
+Locked startup never decrypts settings in the background: OFF/Arabic are used
+until first unlock, then the preference/menu language remain in memory across
+locks. This adds no plaintext preference file. Physical Windows/Linux checks
+remain pending in [the testing guide](../feature-list-and-testing.md).
+
+Tray Lock now also takes the operation gate: it refuses busy work with the same
+message and can be retried, preventing a concurrent unlock from reopening the
+session after a tray lock. Successful locking still calls the existing lock
+service.

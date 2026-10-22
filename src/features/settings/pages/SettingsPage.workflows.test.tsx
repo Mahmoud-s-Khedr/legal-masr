@@ -7,6 +7,7 @@ vi.mock('../../../bridge/commands', () => ({
   bridge: {
     status: vi.fn(),
     settings: vi.fn(),
+    trayAvailable: vi.fn(),
     profile: vi.fn(),
     updateProfile: vi.fn(),
     updateSettings: vi.fn(),
@@ -35,6 +36,7 @@ const settings = {
   dateFormat: 'dd/MM/yyyy' as const,
   weekStartsOn: 6,
   lockTimeoutMinutes: 15,
+  keepRunningInTray: false,
   usageCountersEnabled: false,
 };
 
@@ -62,6 +64,7 @@ function renderSettings(route: string) {
 describe('SettingsPage workflows', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
+    vi.mocked(bridge.trayAvailable).mockResolvedValue(true);
     await i18n.changeLanguage('ar');
     vi.mocked(bridge.status).mockResolvedValue({
       initialized: true,
@@ -130,6 +133,7 @@ describe('SettingsPage workflows', () => {
           dateFormat: 'dd/MM/yyyy',
           weekStartsOn: 6,
           lockTimeoutMinutes: 15,
+          keepRunningInTray: false,
         }),
       );
     });
@@ -160,6 +164,61 @@ describe('SettingsPage workflows', () => {
     });
   });
 
+  describe('tray preference', () => {
+    it('starts off, persists enabling, and loads the saved value after remount', async () => {
+      vi.mocked(bridge.updateSettings).mockImplementation(async (input) => ({
+        ...settings,
+        ...input,
+      }));
+      const view = renderSettings('/settings?tab=general');
+      const toggle = await screen.findByRole('switch', { name: t('settings.tray.label') });
+      await waitFor(() => expect(toggle).not.toHaveAttribute('aria-disabled', 'true'));
+      expect(toggle).not.toBeChecked();
+      fireEvent.click(toggle);
+      fireEvent.click(screen.getByRole('button', { name: t('settings.save') }));
+      expect(await screen.findByText(t('settings.saved'))).toBeVisible();
+      expect(bridge.updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ keepRunningInTray: true }),
+      );
+      view.unmount();
+      vi.mocked(bridge.settings).mockResolvedValue({ ...settings, keepRunningInTray: true });
+      renderSettings('/settings?tab=general');
+      expect(await screen.findByRole('switch', { name: t('settings.tray.label') })).toBeChecked();
+    });
+
+    it.each(['unavailable', 'failed'] as const)(
+      'disables the toggle when capability is %s',
+      async (capability) => {
+        if (capability === 'failed')
+          vi.mocked(bridge.trayAvailable).mockRejectedValue(new Error('unavailable'));
+        else vi.mocked(bridge.trayAvailable).mockResolvedValue(false);
+        renderSettings('/settings?tab=general');
+        const toggle = await screen.findByRole('switch', { name: t('settings.tray.label') });
+        expect(toggle).toHaveAttribute('aria-disabled', 'true');
+        expect(screen.getByText(t('settings.tray.unavailable'))).toBeVisible();
+        fireEvent.click(toggle);
+        expect(toggle).not.toBeChecked();
+        expect(bridge.updateSettings).not.toHaveBeenCalled();
+      },
+    );
+
+    it('keeps the saved value off after a failed save and permits retry', async () => {
+      vi.mocked(bridge.updateSettings)
+        .mockRejectedValueOnce(new Error('busy'))
+        .mockImplementation(async (input) => ({ ...settings, ...input }));
+      renderSettings('/settings?tab=general');
+      const toggle = await screen.findByRole('switch', { name: t('settings.tray.label') });
+      await waitFor(() => expect(toggle).not.toHaveAttribute('aria-disabled', 'true'));
+      fireEvent.click(toggle);
+      fireEvent.click(screen.getByRole('button', { name: t('settings.save') }));
+      expect(await screen.findByText(t('settings.saveError'))).toBeVisible();
+      await waitFor(() => expect(toggle).not.toBeChecked());
+      fireEvent.click(toggle);
+      fireEvent.click(screen.getByRole('button', { name: t('settings.save') }));
+      expect(await screen.findByText(t('settings.saved'))).toBeVisible();
+    });
+  });
+
   describe('security', () => {
     it('saves the automatic lock timeout', async () => {
       vi.mocked(bridge.updateSettings).mockResolvedValue({ ...settings, lockTimeoutMinutes: 15 });
@@ -169,7 +228,7 @@ describe('SettingsPage workflows', () => {
 
       await waitFor(() =>
         expect(bridge.updateSettings).toHaveBeenCalledWith(
-          expect.objectContaining({ lockTimeoutMinutes: 15 }),
+          expect.objectContaining({ lockTimeoutMinutes: 15, keepRunningInTray: false }),
         ),
       );
     });
@@ -371,6 +430,7 @@ describe('SettingsPage workflows', () => {
             dateFormat: 'yyyy-MM-dd',
             weekStartsOn: 0,
             lockTimeoutMinutes: 15,
+            keepRunningInTray: false,
           }),
         );
       });

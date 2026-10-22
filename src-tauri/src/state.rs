@@ -3,7 +3,7 @@ use std::{
     collections::HashMap,
     path::PathBuf,
     sync::{
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Mutex, MutexGuard,
     },
 };
@@ -17,6 +17,7 @@ pub struct AppState {
     restore: Mutex<RestoreState>,
     generation: AtomicU64,
     operations: Mutex<()>,
+    shutting_down: AtomicBool,
     attachment_operations: Mutex<()>,
     security_operations: Mutex<()>,
 }
@@ -45,7 +46,22 @@ impl AppState {
     /// All IPC vault access shares this gate; dialogs never hold it. Try-lock keeps
     /// the event loop responsive while a worker authenticates or stages an archive.
     pub fn operation(&self) -> Result<MutexGuard<'_, ()>, Error> {
-        self.operations.try_lock().map_err(|_| Error::OperationBusy)
+        let guard = self
+            .operations
+            .try_lock()
+            .map_err(|_| Error::OperationBusy)?;
+        if self.is_shutting_down() {
+            return Err(Error::OperationBusy);
+        }
+        Ok(guard)
+    }
+    /// Called only while holding the operation gate. No later command may start
+    /// while the event loop finishes a clean shutdown.
+    pub fn begin_shutdown(&self) {
+        self.shutting_down.store(true, Ordering::SeqCst);
+    }
+    pub fn is_shutting_down(&self) -> bool {
+        self.shutting_down.load(Ordering::SeqCst)
     }
     pub fn store_prepared_restore(
         &self,
@@ -255,6 +271,19 @@ mod tests {
         state.advance_generation();
         assert!(state.check_generation(generation).is_err());
     }
+    #[test]
+    fn shutdown_permanently_closes_operation_admission() {
+        let state = AppState::default();
+        let guard = state.operation().unwrap();
+        state.begin_shutdown();
+        drop(guard);
+        assert!(state.is_shutting_down());
+        assert!(matches!(
+            state.operation(),
+            Err(crate::errors::Error::OperationBusy)
+        ));
+    }
+
     #[test]
     fn overlapping_vault_operations_are_refused_without_blocking() {
         let state = AppState::default();

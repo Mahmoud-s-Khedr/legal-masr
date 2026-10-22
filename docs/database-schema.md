@@ -6,7 +6,8 @@ and extended by
 [`0002_case_judicial_year.sql`](../src-tauri/migrations/0002_case_judicial_year.sql),
 [`0003_case_or_client_links.sql`](../src-tauri/migrations/0003_case_or_client_links.sql) and
 [`0004_remove_reminders_and_autostart.sql`](../src-tauri/migrations/0004_remove_reminders_and_autostart.sql) and
-[`0005_pending_file_deletions.sql`](../src-tauri/migrations/0005_pending_file_deletions.sql).
+[`0005_pending_file_deletions.sql`](../src-tauri/migrations/0005_pending_file_deletions.sql) and
+[`0006_keep_running_in_tray.sql`](../src-tauri/migrations/0006_keep_running_in_tray.sql).
 It is a reference for the application model; the migration remains the
 authoritative executable definition.
 
@@ -33,14 +34,18 @@ authoritative executable definition.
 
 ## Lawyer settings
 
-| Table            | Purpose                                                                                                             |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `lawyer_profile` | Singleton profile created at setup: required full name, optional bar number, phone, and office address.             |
-| `app_settings`   | Required singleton settings: language, theme, date format, week start, lock timeout, and aggregate-counter consent. |
+| Table            | Purpose                                                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lawyer_profile` | Singleton profile created at setup: required full name, optional bar number, phone, and office address.                                     |
+| `app_settings`   | Required singleton settings: language, theme, date format, week start, lock timeout, optional tray behavior, and aggregate-counter consent. |
 
 The migration creates the `app_settings` row with canonical defaults. Its
 constrained values include Arabic/English language, the three supported themes,
-and a valid range for the lock timeout.
+and a valid range for the lock timeout. Migration `0006` adds
+`keep_running_in_tray`, an integer boolean constrained to 0/1, NOT NULL and
+defaulting to 0 for both new and upgraded vaults. There is no key/value settings
+store. The preference remains inside the encrypted singleton row; no plaintext
+preference file is added.
 
 ## Core legal records
 

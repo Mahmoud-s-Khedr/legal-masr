@@ -179,6 +179,7 @@ pub fn unlock<R: Runtime>(
     )?);
     let connection = db::open_db(&db_path, &master)?;
     db::migrate(&connection)?;
+    crate::tray::apply_settings(app, &settings_repository::get_settings(&connection)?);
     // Keeps search current for vaults indexed by an earlier version. A failure leaves the
     // previous index in place and must not keep the lawyer out.
     let _ = crate::services::search_service::rebuild_with(&connection);

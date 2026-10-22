@@ -7,6 +7,7 @@ vi.mock('../../../bridge/commands', () => ({
   bridge: {
     status: vi.fn(),
     settings: vi.fn(),
+    trayAvailable: vi.fn(),
     profile: vi.fn(),
   },
 }));
@@ -21,6 +22,7 @@ const settings = {
   dateFormat: 'dd/MM/yyyy' as const,
   weekStartsOn: 6,
   lockTimeoutMinutes: 15,
+  keepRunningInTray: false,
   usageCountersEnabled: false,
 };
 
@@ -41,6 +43,7 @@ function renderSettingsPage(route = '/settings') {
 describe('SettingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(bridge.trayAvailable).mockResolvedValue(true);
     vi.mocked(bridge.status).mockResolvedValue({
       initialized: true,
       unlocked: true,

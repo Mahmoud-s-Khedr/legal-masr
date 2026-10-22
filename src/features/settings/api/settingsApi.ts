@@ -64,3 +64,11 @@ export const useChangePassword = () =>
       newPassword: string;
     }) => bridge.changePassword(currentPassword, newPassword),
   });
+
+// Capability comes from native host detection, never renderer platform guesses.
+export const useTrayAvailable = () =>
+  useQuery({
+    queryKey: ['tray-available'],
+    queryFn: bridge.trayAvailable,
+    refetchInterval: 5_000,
+  });

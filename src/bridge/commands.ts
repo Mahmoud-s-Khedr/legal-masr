@@ -94,6 +94,7 @@ export const bridge = {
   openDeveloperContact: (contact: DeveloperContact) =>
     invoke<void>('settings_open_developer_contact', { contact }),
   settings: () => invoke<Settings>('settings_get'),
+  trayAvailable: () => invoke<boolean>('settings_tray_available'),
   updateSettings: (settings: SettingsUpdateInput) =>
     invoke<Settings>('settings_update', { input: settings }),
   setUsageCounters: (enabled: boolean) =>

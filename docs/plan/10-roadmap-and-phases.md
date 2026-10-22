@@ -26,7 +26,8 @@ Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
    physical-device exercises remain open.
 3. Documented case/full-installation exports, permanent deletion, and redacted
    support bundle.
-4. Tray behavior.
+4. Tray behavior: implementation complete; physical Windows/GNOME/KDE acceptance pending
+   (see [the tray report](../reviews/2026-10-21-tray.md)).
 5. Native Windows and Linux runner, package, install/update, and device checks.
 6. Egyptian privacy legal review before public claims or release.
 
