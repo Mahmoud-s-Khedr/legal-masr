@@ -66,8 +66,8 @@ export const bridge = {
   createExport: (caseId: string | undefined, stamp: string) =>
     invoke<ExportResult>('export_create', { caseId: caseId ?? null, stamp }),
   revealExport: (token: string) => invoke<void>('export_reveal', { token }),
-  deletionPreview: (target: DeletionTarget, language: 'ar' | 'en') =>
-    invoke<DeletionPreview>('deletion_preview', { target, language }),
+  deletionPreview: (target: DeletionTarget) =>
+    invoke<DeletionPreview>('deletion_preview', { target }),
   deletionCommit: (input: DeletionInput) => invoke<DeletionResult>('deletion_commit', { input }),
   deletionRetryCleanup: () => invoke<DeletionResult>('deletion_retry_cleanup'),
   status: () => invoke<AppStatus>('app_get_status'),

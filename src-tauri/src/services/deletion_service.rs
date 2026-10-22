@@ -3,7 +3,6 @@ use crate::{
     db,
     dto::{DeletionInput, DeletionPreview, DeletionResult, DeletionTarget},
     errors::Error,
-    security,
     services::{app_service, backup_service, search_service},
     state::AppState,
     vault_operation,
@@ -12,14 +11,12 @@ use rusqlite::{Connection, OptionalExtension};
 use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, fs, path::Path};
 use tauri::{AppHandle, Runtime};
-use zeroize::Zeroizing;
 
 pub struct PreparedDeletion {
     token: String,
     target: DeletionTarget,
     fingerprint: Vec<u8>,
     generation: u64,
-    word: String,
 }
 
 // Dependency order matters: payments RESTRICT removal of case-client links;
@@ -242,13 +239,7 @@ pub fn preview<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
     target: DeletionTarget,
-    language: &str,
 ) -> Result<DeletionPreview, Error> {
-    let word = match language {
-        "ar" => "حذف",
-        "en" => "DELETE",
-        _ => return Err(Error::Validation),
-    };
     let master = state.unlocked()?;
     let (_, path) = db::paths(app)?;
     let conn = db::open_db(&path, &master)?;
@@ -259,14 +250,12 @@ pub fn preview<R: Runtime>(
         target,
         fingerprint: plan.fingerprint,
         generation: state.generation(),
-        word: word.into(),
     });
     Ok(DeletionPreview {
         token,
         counts: plan.counts,
         managed_files: plan.managed_files,
         vault_files: plan.vault_files,
-        confirmation_word: word.into(),
     })
 }
 
@@ -282,9 +271,6 @@ fn verify(
         || prepared.fingerprint != fingerprint
     {
         return Err(Error::DeletionPreviewExpired);
-    }
-    if input.confirmation.trim() != prepared.word {
-        return Err(Error::DeletionConfirmation);
     }
     Ok(())
 }
@@ -388,7 +374,7 @@ pub fn commit<R: Runtime>(
     let generation = state.generation();
     let master = state.unlocked()?;
     let root = db::app_dir(app)?;
-    let (security_path, db_path) = db::paths(app)?;
+    let (_, db_path) = db::paths(app)?;
     let conn = db::open_db(&db_path, &master)?;
     let plan = plan(&conn, &root, &input.target)?;
     {
@@ -401,13 +387,6 @@ pub fn commit<R: Runtime>(
         )?;
     }
     let all = input.target == DeletionTarget::All;
-    if all {
-        let file = security::read_security(&security_path)?;
-        let authenticated = Zeroizing::new(security::master_from_password(&file, &input.password)?);
-        if *authenticated != *master {
-            return Err(Error::InvalidPassword);
-        }
-    }
     if input.backup_first {
         if all {
             let destination = backup_destination.ok_or(Error::Validation)?;
@@ -553,8 +532,6 @@ mod tests {
         DeletionInput {
             target,
             token: "capability".into(),
-            confirmation: "حذف".into(),
-            password: String::new(),
             backup_first: false,
         }
     }
@@ -564,7 +541,6 @@ mod tests {
             target: input.target.clone(),
             fingerprint: plan.fingerprint.clone(),
             generation: 4,
-            word: "حذف".into(),
         }
     }
     fn check_fk(conn: &Connection) {
@@ -748,7 +724,7 @@ mod tests {
         }
     }
     #[test]
-    fn all_three_targets_verify_text_token_target_and_session_and_reject_stale_same_count_edits() {
+    fn all_three_targets_verify_token_target_and_session_and_reject_stale_same_count_edits() {
         for target in [
             DeletionTarget::Client { id: id(1) },
             DeletionTarget::Case { id: id(10) },
@@ -758,12 +734,7 @@ mod tests {
             let plan = plan(&conn, root.path(), &target).unwrap();
             let mut input = input(target);
             let prepared = prepared(&input, &plan);
-            input.confirmation = "wrong".into();
-            assert!(matches!(
-                verify(&prepared, &input, 4, &plan.fingerprint),
-                Err(Error::DeletionConfirmation)
-            ));
-            input.confirmation = "حذف".into();
+            verify(&prepared, &input, 4, &plan.fingerprint).unwrap();
             input.token = "fabricated".into();
             assert!(matches!(
                 verify(&prepared, &input, 4, &plan.fingerprint),

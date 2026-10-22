@@ -178,7 +178,6 @@ pub(crate) fn redact_line(line: &str) -> Option<String> {
 const SAFE_ERROR_CODES: &[&str] = &[
     "DELETION_NOT_ARCHIVED",
     "DELETION_SHARED_INTEGRITY",
-    "DELETION_CONFIRMATION",
     "DELETION_PREVIEW_EXPIRED",
     "OPERATION_BUSY",
     "INVALID_PASSWORD",

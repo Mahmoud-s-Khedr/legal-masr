@@ -112,3 +112,70 @@ DraftForm test emits a non-failing i18next setup warning.
   vaults; no large-vault performance measurement was run.
 - Export/support-bundle parts of blocker #3 and the other public-release blockers
   remain open. Automated implementation validation does not certify launch readiness.
+
+## Simplified confirmation — 2026-10-22
+
+Owner-requested follow-up; this section supersedes the original confirmation and
+backup-default decisions above. Archived client, archived case and whole-workspace
+deletion now open one existing alert dialog, silently load the native preview,
+and show a compact bilingual count/scope summary with Cancel and destructive
+Delete. One click on Delete commits once. No confirmation word or reset password
+is collected or accepted in the DTO. The preview no longer needs a language
+argument because all presentation stays in React.
+
+The optional backup checkbox is reset-only and unchecked on every opening.
+Selecting it retains the existing outside-vault picker and backup-before-delete
+failure/cancellation behavior. Client/case deletion creates no automatic backup;
+existing backups retain their previous records. Document counts describe document
+records from the native preview, not a promise that every physical file exists.
+The longer retention/secure-erasure explanation remains on Settings → Privacy.
+
+**Trade-off:** anyone with the unlocked app can now reset the whole workspace
+with one confirmation. Password re-authentication no longer protects this action.
+Token/target binding, row fingerprints and stale-preview refusal, session
+generations, operation admission, archived/shared-record refusal, the file-deletion
+outbox and reset-marker/restart recovery are retained. Other password/authentication
+inputs still use zeroization; only the now-unused deletion password path and
+confirmation error/locale strings were removed. No migration or dependency change.
+
+Files: deletion Rust service/command/DTO and integration tests; error-code mappings;
+typed bridge and contract tests; shared deletion component/API and React tests;
+Arabic/English catalogs; security/privacy plan status and feature/testing guide.
+A repository search of native desktop scenarios found no deletion-word or reset-
+password entry steps, so no matching native e2e scenario required an edit. Native
+desktop, office/control and visual/container suites were not run, as instructed.
+
+Validation of this follow-up (separate from the historical results above). The
+19 deletion React tests cover one-click commit and Cancel for all targets,
+bilingual count summaries, preview loading/refusal/expiry, duplicate-click and
+busy-operation refusal, reset-only backup defaults/selection/cancellation/failure,
+cache refresh/clearing and cleanup retry. Retained native tests cover token,
+row-fingerprint and session checks, archive/shared-integrity refusal, transaction
+rollback, file cleanup retry and restart recovery, plus reset with/without backup
+and restoration of the saved pre-reset copy.
+
+| Check                                                       | Result                                      |
+| ----------------------------------------------------------- | ------------------------------------------- |
+| Rust tests, locked, all features, temporary `XDG_DATA_HOME` | Passed: 232 tests                           |
+| `pnpm test`                                                 | Passed: 666 frontend + 91 Node script tests |
+| `pnpm lint`                                                 | Passed                                      |
+| `pnpm typecheck`                                            | Passed                                      |
+| `pnpm format:check`                                         | Passed                                      |
+| `cargo fmt --manifest-path src-tauri/Cargo.toml -- --check` | Passed                                      |
+| Clippy, all targets/features, warnings denied               | Passed                                      |
+| `git diff --check`                                          | Passed                                      |
+
+The shell deletion wrapper was rejected before execution by the command runner;
+Python `TemporaryDirectory` instead sets a fresh temporary `XDG_DATA_HOME` for
+the exact locked/all-features cargo test invocation and cleans up that directory.
+No real vault data was accessed. Initial focused React checks caught two test
+assumptions (the checkbox's hidden input and the app's Latin-digit formatting);
+those assertions were corrected without changing product behavior. The full
+frontend run passes; DraftForm still emits its existing non-failing i18next
+initialization warning.
+
+Unresolved risks: the reduced protection against accidental/malicious reset in an
+unlocked session is intentional. Physical Windows/Linux file-lock, picker,
+permission and restart/power-loss acceptance remains unverified. Failed cleanup
+can leave files pending until retry, and deletion cannot erase outside backups or
+storage remnants. This change does not certify public-launch readiness.

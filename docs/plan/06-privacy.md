@@ -45,12 +45,14 @@ implemented as described below; target-device acceptance remains open.
 No deletion workflow may promise forensic erasure from SSDs or third-party
 backup media.
 
-## Data-management status — 2026-10-21
+## Data-management status — 2026-10-22
 
 Guided permanent deletion is implemented for archived clients, archived cases,
-and the whole vault. The dialog shows per-table record counts and managed-file
-counts; a native, session-bound preview token and the localized word (`حذف` or
-`DELETE`) are required by Rust. Any domain change requires another preview.
+and the whole vault. A single confirmation dialog silently loads the native
+preview, then shows a short scope summary with client/case/document counts as
+applicable. Delete commits immediately without typing a word or password. Rust
+still requires a native, session-bound preview token and unchanged row fingerprint;
+any domain change requires another preview.
 
 Client deletion refuses shared cases/POAs and requires its exclusive cases and
 POAs to be archived too. Case deletion refuses cases with multiple clients.
@@ -59,11 +61,14 @@ partial deletion. The removed scope includes hearings, tasks, payments, fee
 agreements, expenses and their attachments; direct office records are preserved.
 Client deletion additionally removes exclusive POAs, lawyers and attachments.
 
-Optional backup runs through the existing backup service before deletion.
-Client/case backups stay in the vault and retain their previous records. Whole
-vault deletion requires password re-authentication, and its optional backup must
-be saved outside the vault. Existing vault-local backups and emergency snapshots
-are removed; outside copies and safe diagnostic logs are retained.
+The optional “save a backup first” checkbox appears only for whole-vault reset
+and starts unchecked each time. When selected, the existing backup service must
+successfully save a copy outside the vault before deletion. Cancellation or backup
+failure stops deletion. There is no password re-authentication: anyone with the
+unlocked app can reset the workspace with one confirmation. Existing vault-local
+backups and emergency snapshots are removed; outside copies and safe diagnostic
+logs are retained. Client/case deletion creates no automatic backup; existing
+backups still retain their previous records.
 
 Rows and search updates commit in one transaction. Migration `0005` adds an
 encrypted native-only file-removal outbox; post-commit failures are counted and

@@ -853,7 +853,6 @@
     "EXPENSE_HAS_ATTACHMENTS": "Remove the expense’s attachments before deleting it.",
     "DELETION_NOT_ARCHIVED": "Archive the record and all its sole-client cases and POAs first.",
     "DELETION_SHARED_INTEGRITY": "Deletion is blocked to protect retained records: a case, POA, document or hearing is shared.",
-    "DELETION_CONFIRMATION": "The deletion confirmation text does not match.",
     "DELETION_PREVIEW_EXPIRED": "Data or the session changed. Review the deletion impact again."
   },
   "finances": {
@@ -1091,53 +1090,26 @@
       "all": "Delete everything and start over"
     },
     "dangerZone": "Danger zone",
-    "warning": "This cannot be undone in the app. Deletion does not guarantee forensic or secure erasure from SSDs, disks or backup media. Copies you saved elsewhere are not deleted.",
     "policy": {
-      "client": "Archive this client and all their sole-client cases and POAs first. Shared cases or POAs block deletion. Their cases, POAs, hearings, tasks, accounts and managed documents will be removed; other clients and office records are kept.",
-      "case": "Archive this case first. Shared cases cannot be deleted. This removes its hearings, tasks, payments, fee agreement, expenses and managed documents. Clients and POAs are kept.",
-      "all": "Removes the vault, all records, managed files, vault-local backups and restore snapshots, then returns to the welcome screen. Password re-authentication is required. Safe diagnostic logs and copies outside the vault are kept."
+      "all": "Removes the whole workspace, including local backups and restore snapshots. Safe diagnostic logs and copies outside the workspace remain. Deletion does not guarantee secure erasure from storage or backup media."
     },
     "working": "Working…",
     "error": "Deletion could not be completed. Review the preview and try again.",
-    "impact": "Review everything that will be removed:",
-    "managedFiles": "Managed files present",
-    "vaultFiles": "All vault files (including backups and snapshots)",
     "backupFirst": "Create an encrypted backup first",
     "backupOutside": "You will choose a location outside the vault. Cancellation or backup failure stops deletion.",
-    "backupLocal": "The backup remains in the vault’s backup folder. Backup failure stops deletion. Existing backups keep their earlier copies of these records.",
-    "confirmation": "Deletion confirmation",
-    "typeWord": "Type {{word}} to confirm permanent deletion.",
-    "password": "Current password",
-    "confirmDelete": "Delete permanently",
+    "confirmDelete": "Delete",
     "reviewAgain": "Review impact again",
     "retryFiles": "Retry file removal",
     "done": "Continue",
     "fileFailure": "Records have been deleted. {{count}} managed files and {{entries}} vault entries could not be removed. Retry now or continue; pending removals remain tracked. For a whole-vault reset, welcome remains blocked until cleanup succeeds.",
-    "records": {
-      "clients": "Clients",
-      "cases": "Cases",
-      "powers_of_attorney": "Powers of attorney",
-      "hearings": "Hearings",
-      "tasks": "Tasks",
-      "payments": "Payments",
-      "expenses": "Expenses",
-      "attachments": "Document records",
-      "case_fee_agreements": "Fee agreements",
-      "case_clients": "Case/client links",
-      "case_opponents": "Opponents",
-      "power_of_attorney_clients": "POA/client links",
-      "power_of_attorney_lawyers": "POA lawyers",
-      "lawyer_profile": "Lawyer profile",
-      "app_settings": "Preferences",
-      "app_metadata": "Installation identity",
-      "spike_records": "Local fixture records",
-      "usage_counters": "Local counters",
-      "backup_history": "Backup history",
-      "pending_file_deletions": "Pending file removals",
-      "search_index": "Search entries"
-    },
     "pendingHint": "Retry files left pending by an earlier deletion. No additional records are deleted.",
-    "cleanupComplete": "No pending file removals remain."
+    "cleanupComplete": "No pending file removals remain.",
+    "confirmTitle": "Are you sure?",
+    "summary": {
+      "client": "This permanently deletes this client, {{cases}} cases and {{documents}} documents, including related records. This cannot be undone.",
+      "case": "This permanently deletes this case, its related records and {{documents}} documents. This cannot be undone.",
+      "all": "This permanently destroys the entire workspace: {{clients}} clients, {{cases}} cases, {{documents}} documents, all other records, local backups and restore snapshots. This cannot be undone."
+    }
   },
   "tray": {
     "show": "Show LegalMaster",
