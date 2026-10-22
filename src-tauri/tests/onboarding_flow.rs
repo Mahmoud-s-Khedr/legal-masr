@@ -969,7 +969,7 @@ fn restore_tokens_are_one_use_and_cancel_or_lock_removes_preparation() {
 }
 
 #[test]
-fn guided_deletion_services_reauthenticate_backup_and_return_reset_to_first_run() {
+fn guided_deletion_services_backup_and_return_reset_to_first_run() {
     use legalmaster_lib::{
         dto::{DeletionInput, DeletionTarget},
         services::deletion_service,
@@ -1006,29 +1006,16 @@ fn guided_deletion_services_reauthenticate_backup_and_return_reset_to_first_run(
             "case" => DeletionTarget::Case { id: case.into() },
             _ => DeletionTarget::All,
         };
-        let preview = deletion_service::preview(handle, &state, target.clone(), "ar").unwrap();
+        let preview = deletion_service::preview(handle, &state, target.clone()).unwrap();
         assert_eq!(preview.counts["cases"], 1);
-        let mut input = DeletionInput {
+        let input = DeletionInput {
             target: target.clone(),
             token: preview.token,
-            confirmation: "wrong".into(),
-            password: ORIGINAL_PASSWORD.into(),
             backup_first: true,
         };
-        assert!(matches!(
-            deletion_service::commit(handle, &state, &input, None),
-            Err(Error::DeletionConfirmation)
-        ));
-        input.confirmation = "حذف".into();
         let external = tempfile::tempdir().unwrap();
         let destination = external.path().join("before-delete.lmsbackup");
         if kind == "all" {
-            input.password = "wrong password".into();
-            assert!(matches!(
-                deletion_service::commit(handle, &state, &input, Some(&destination)),
-                Err(Error::InvalidPassword)
-            ));
-            input.password = ORIGINAL_PASSWORD.into();
             let inside = db::app_dir(handle).unwrap().join("bad.lmsbackup");
             assert!(matches!(
                 deletion_service::commit(handle, &state, &input, Some(&inside)),
@@ -1138,13 +1125,10 @@ fn deletion_preview_cannot_survive_lock_unlock_or_a_different_target() {
         },
     )
     .unwrap();
-    let preview = deletion_service::preview(handle, &state, DeletionTarget::All, "en").unwrap();
-    assert_eq!(preview.confirmation_word, "DELETE");
+    let preview = deletion_service::preview(handle, &state, DeletionTarget::All).unwrap();
     let input = DeletionInput {
         target: DeletionTarget::All,
         token: preview.token,
-        confirmation: "DELETE".into(),
-        password: ORIGINAL_PASSWORD.into(),
         backup_first: false,
     };
     app_service::lock(&state).unwrap();
@@ -1181,15 +1165,13 @@ fn whole_vault_deletion_without_backup_starts_over_with_no_archiving_requirement
         },
     )
     .unwrap();
-    let preview = deletion_service::preview(handle, &state, DeletionTarget::All, "en").unwrap();
+    let preview = deletion_service::preview(handle, &state, DeletionTarget::All).unwrap();
     let result = deletion_service::commit(
         handle,
         &state,
         &DeletionInput {
             target: DeletionTarget::All,
             token: preview.token,
-            confirmation: "DELETE".into(),
-            password: ORIGINAL_PASSWORD.into(),
             backup_first: false,
         },
         None,

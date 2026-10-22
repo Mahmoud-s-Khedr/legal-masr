@@ -229,15 +229,17 @@ backup work are asynchronous; cancellation and lock clear transient restoration
 state. See [07-backup-format.md](07-backup-format.md) and the
 [integration review](../reviews/2026-10-10-integration.md).
 
-## Permanent deletion status — 2026-10-21
+## Permanent deletion status — 2026-10-22
 
 Deletion commands use the existing operation gate and session generations,
 serializing with backup/restore and refusing stale previews. Preview tokens are
 native-owned, single-use for successful deletion, scoped to a target and a hash
-of the domain rows. Backend checks the localized confirmation text. Whole-vault
-reset authenticates the current password against the security envelope and
-unlocked master key. Credentials use zeroizing Rust command input and direct IPC,
-not React Query mutation storage. Lock clears pending preview state.
+of the domain rows. One localized “Are you sure?” dialog shows a short scope/count
+summary; Delete commits without a typed word or password re-authentication.
+Anyone with the unlocked app can now reset the whole workspace with one
+confirmation. The optional reset-only backup checkbox starts unchecked.
+Lock clears pending preview state. Other authentication flows retain their
+zeroizing native inputs; deletion no longer accepts credentials.
 
 Whole-vault reset uses a fixed native deletion marker alongside setup/restore
 recovery. Its files are removed after the row transaction and SQLCipher close;

@@ -12,14 +12,13 @@ use tauri::{AppHandle, Manager};
 pub async fn deletion_preview(
     app: AppHandle,
     target: DeletionTarget,
-    language: String,
 ) -> Result<DeletionPreview, Error> {
     let generation = app.state::<AppState>().generation();
     threads::on_worker(move || {
         let state = app.state::<AppState>();
         let _operation = state.operation()?;
         state.check_generation(generation)?;
-        deletion_service::preview(&app, &state, target, &language)
+        deletion_service::preview(&app, &state, target)
     })
     .await
 }
