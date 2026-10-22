@@ -119,3 +119,11 @@ transaction, then removes the closed database, envelopes, managed files,
 vault-local backups and snapshots through native journal recovery. Derived
 search rows refresh in the same partial-deletion transaction; there is no FTS5
 index in this schema.
+
+## Export projection status — 2026-10-21
+
+Exports read fixed, documented domain projections in one transaction; they do not
+change the schema or export the deletion outbox or other local/derived tables.
+Archived flags derive from the existing archive timestamps. Case exports use
+`client_current_poa` and trim relationship/hearing references to their disclosed
+scope. See [the format](../export-format.md); schema remains migration `0005`.

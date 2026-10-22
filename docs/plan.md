@@ -99,3 +99,12 @@ transactional file-cleanup outbox. The [deletion report](reviews/2026-10-21-perm
 records decisions, automated validation and unverified device risks. Exports,
 support bundles and other release blockers remain open. The current public
 launch targets Windows and Linux; macOS is outside this launch scope.
+
+## Documented exports — 2026-10-21
+
+Public-beta blocker #3 part 2 is implemented: complete domain-data and single-case
+exports produce BOM UTF-8 CSVs, verified managed documents and a SHA-256/count
+manifest in a user-chosen folder. These exports are unencrypted disclosures, not
+backups. See the [versioned export format](export-format.md) and
+[implementation/validation report](reviews/2026-10-21-exports.md). No schema change
+was needed. Physical Windows/Linux acceptance and other launch blockers remain open.

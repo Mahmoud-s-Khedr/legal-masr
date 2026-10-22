@@ -1,3 +1,4 @@
+import { ExportAction } from '@/features/exports/components/ExportAction';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -168,6 +169,11 @@ export function BackupSettingsPanel() {
             <AlertDescription>{errorMessage(error, t('app.defaultError'))}</AlertDescription>
           </Alert>
         ))}
+      <Card className="panel backup-action">
+        <h3>{t('exports.title')}</h3>
+        <p className="muted">{t('exports.description')}</p>
+        <ExportAction disabled={busy} />
+      </Card>
       <FormDialog
         open={restoreOpen || validateOpen}
         onOpenChange={(open) => {

@@ -391,7 +391,7 @@ fn declared_zip_entry_count(bytes: &[u8]) -> Result<usize, Error> {
     Ok(total_entries as usize)
 }
 
-fn safe_attachment_name(name: &str) -> bool {
+pub(crate) fn safe_attachment_name(name: &str) -> bool {
     !name.is_empty()
         && name != "."
         && name != ".."
