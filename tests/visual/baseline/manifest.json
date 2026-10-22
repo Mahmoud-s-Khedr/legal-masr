@@ -336,7 +336,7 @@
       "file": "case-detail-ar-1366x768.png",
       "width": 1366,
       "height": 898,
-      "sha256": "38e646c3d44ced0926f1259bfbbc68bcac69cf7aca4c056b8643543418e29ee9"
+      "sha256": "a317d1719ba0373da6eb5ad482fde61856f8d5c8a91b9be7096feccc8e5d67cc"
     },
     {
       "route": "/cases/demo-case-14",
@@ -345,7 +345,7 @@
       "file": "case-detail-ar-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "1e972fb668c2f5bbbb6fdafb002a163eb8e134eb2db8c5eda1170c014167c1a5"
+      "sha256": "5cfac9a92db6b5a86097bc867d9556b560153c56407659fe03d43f025c0e480a"
     },
     {
       "route": "/cases/demo-case-14",
@@ -354,7 +354,7 @@
       "file": "case-detail-en-1366x768.png",
       "width": 1366,
       "height": 898,
-      "sha256": "a531d7bc2b78b827506e2b7bb1a2521aca99c86ca131bb50e9c62b5508ff8bc9"
+      "sha256": "ef3ba3b446bdde03a9ac95ed26ce962710db770dda16464bfe4a53201e59989d"
     },
     {
       "route": "/cases/demo-case-14",
@@ -363,7 +363,7 @@
       "file": "case-detail-en-1440x900.png",
       "width": 1440,
       "height": 900,
-      "sha256": "e2181696d70beb44c537a4c414f2d420b14d0fef9bdfc832eb1e7e84e7364af7"
+      "sha256": "1a59c401c4b1666a09e651de0a1fb201df6fdc2fc4fb212330b9979505f582ba"
     },
     {
       "route": "/cases/new",
@@ -551,8 +551,8 @@
       "viewport": "1366x768",
       "file": "backups-ar-1366x768.png",
       "width": 1366,
-      "height": 818,
-      "sha256": "698eef260269d6de840afa1d2ab831f1831944425619c567b7dc77a1d8bbdb6f"
+      "height": 977,
+      "sha256": "8d6b7693e1f9e21d3c6332b2f519d4a67be015438661ac0469221423526afb22"
     },
     {
       "route": "/backups",
@@ -560,8 +560,8 @@
       "viewport": "1440x900",
       "file": "backups-ar-1440x900.png",
       "width": 1440,
-      "height": 900,
-      "sha256": "c84abb0c7ffbd53a4b88d27a982a61766a3920f809ac1653370dc8354feb8978"
+      "height": 977,
+      "sha256": "0d9aaa2d0609cfc5da22d9ad17fb1ca8a282a894c24feca981b521a32ddec3f2"
     },
     {
       "route": "/backups",
@@ -569,8 +569,8 @@
       "viewport": "1366x768",
       "file": "backups-en-1366x768.png",
       "width": 1366,
-      "height": 818,
-      "sha256": "a3c9ae21c41654b8bfdd7455b9491c736df6d910879998f9c8ad40557d22405d"
+      "height": 977,
+      "sha256": "1eb7e51ad9dda347a6ca15184fc2d2834edaf9f22b3f37e76a499c646a9a2014"
     },
     {
       "route": "/backups",
@@ -578,8 +578,8 @@
       "viewport": "1440x900",
       "file": "backups-en-1440x900.png",
       "width": 1440,
-      "height": 900,
-      "sha256": "4a7629e135b8c00eda6d09be92bd287d0c1b541ab5d1a5dde793489d516c5313"
+      "height": 977,
+      "sha256": "ba2b89948a6f448bd1db255176840264fdd172564a166d3a44f9c6ec6179662c"
     },
     {
       "route": "/settings",
