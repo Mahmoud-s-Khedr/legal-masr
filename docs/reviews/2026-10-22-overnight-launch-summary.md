@@ -29,8 +29,8 @@ validation, commits, PRs, CI and merges. Nothing was tagged or published.
 | #16          | Redacted, manually saved support bundle (allow-list log reconstruction; nothing is sent)                                                                                    |
 | #17          | Optional keep-running-in-tray (off by default; locks before hiding; Linux fallback when no tray host)                                                                       |
 | #18          | Owner request: deletion is now a single "Are you sure?" dialog (no typed word, no password)                                                                                 |
-| #19          | Linux end-to-end launch verification, new launch/tray scenarios, AppImage and harness fixes _(merge pending CI at time of writing)_                                         |
-| release prep | Version 0.2.0, CHANGELOG, release notes, launch checklist, release-workflow heredoc fix, this summary _(PR pending)_                                                        |
+| #19          | Linux end-to-end launch verification, new launch/tray scenarios, AppImage and harness fixes                                                                                 |
+| release prep | Version 0.2.0, CHANGELOG, release notes, launch checklist, release-workflow heredoc fix, this summary (PR #20)                                                              |
 
 ## Test results (Linux, Fedora x86-64, final run)
 
