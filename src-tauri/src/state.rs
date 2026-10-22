@@ -15,6 +15,7 @@ pub struct AppState {
     pub master_key: Mutex<Option<Zeroizing<[u8; 32]>>>,
     selected_document_sources: Mutex<HashMap<String, PathBuf>>,
     restore: Mutex<RestoreState>,
+    last_export: Mutex<Option<(u64, String, PathBuf)>>,
     generation: AtomicU64,
     operations: Mutex<()>,
     shutting_down: AtomicBool,
@@ -42,6 +43,9 @@ impl AppState {
     }
     pub fn advance_generation(&self) {
         self.generation.fetch_add(1, Ordering::SeqCst);
+        if let Ok(mut export) = self.last_export.lock() {
+            export.take();
+        }
     }
     /// All IPC vault access shares this gate; dialogs never hold it. Try-lock keeps
     /// the event loop responsive while a worker authenticates or stages an archive.
@@ -62,6 +66,25 @@ impl AppState {
     }
     pub fn is_shutting_down(&self) -> bool {
         self.shutting_down.load(Ordering::SeqCst)
+    }
+    pub fn store_export(&self, generation: u64, path: PathBuf) -> Result<String, Error> {
+        let mut export = self.last_export.lock().map_err(|_| Error::Operation)?;
+        self.check_generation(generation)?;
+        self.unlocked()?;
+        let token = uuid::Uuid::new_v4().to_string();
+        *export = Some((generation, token.clone(), path));
+        Ok(token)
+    }
+    pub fn export_path(&self, token: &str) -> Result<PathBuf, Error> {
+        let export = self.last_export.lock().map_err(|_| Error::Operation)?;
+        self.unlocked()?;
+        match export.as_ref() {
+            Some((generation, stored, path)) if stored == token => {
+                self.check_generation(*generation)?;
+                Ok(path.clone())
+            }
+            _ => Err(Error::Validation),
+        }
     }
     pub fn store_prepared_restore(
         &self,

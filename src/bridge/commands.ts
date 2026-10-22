@@ -1,5 +1,6 @@
 import { invoke } from './invoke';
 import type {
+  ExportResult,
   DeletionInput,
   DeletionPreview,
   DeletionResult,
@@ -62,6 +63,9 @@ import type {
 export type DeveloperContact = 'email' | 'phone' | 'whatsapp' | 'telegram' | 'linkedin';
 
 export const bridge = {
+  createExport: (caseId: string | undefined, stamp: string) =>
+    invoke<ExportResult>('export_create', { caseId: caseId ?? null, stamp }),
+  revealExport: (token: string) => invoke<void>('export_reveal', { token }),
   deletionPreview: (target: DeletionTarget, language: 'ar' | 'en') =>
     invoke<DeletionPreview>('deletion_preview', { target, language }),
   deletionCommit: (input: DeletionInput) => invoke<DeletionResult>('deletion_commit', { input }),

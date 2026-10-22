@@ -59,3 +59,12 @@ validation and remaining risks. This closes the implementation scope for deletio
 exports and redacted support bundles remain blocker #3 work. Public launch is
 scoped to Windows and Linux; macOS is excluded from this launch. Physical target
 platform acceptance and the other public-release blockers remain open.
+
+## Blocker #3, part 2 status — 2026-10-21
+
+Documented complete-installation and case CSV/document/manifest exports are
+implemented with plaintext warnings, asynchronous native folder selection,
+serialized snapshot reads, verified document copies and no-overwrite publication.
+See [the format](../export-format.md) and
+[validation report](../reviews/2026-10-21-exports.md). The redacted support bundle
+remains blocker #3 part 3; physical Windows/Linux acceptance remains open.

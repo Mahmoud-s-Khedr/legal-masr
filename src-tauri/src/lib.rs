@@ -56,6 +56,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::exports::export_create,
+            commands::exports::export_reveal,
             commands::deletion::deletion_preview,
             commands::deletion::deletion_commit,
             commands::deletion::deletion_retry_cleanup,

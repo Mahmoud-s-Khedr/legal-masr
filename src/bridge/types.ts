@@ -581,3 +581,8 @@ export type DeletionResult = {
   resetComplete: boolean;
   backupCreated: boolean;
 };
+
+export interface ExportResult {
+  token: string;
+  folderName: string;
+}
