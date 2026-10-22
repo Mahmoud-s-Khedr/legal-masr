@@ -99,3 +99,12 @@ transactional file-cleanup outbox. The [deletion report](reviews/2026-10-21-perm
 records decisions, automated validation and unverified device risks. Exports,
 support bundles and other release blockers remain open. The current public
 launch targets Windows and Linux; macOS is outside this launch scope.
+
+## Support bundle implementation — 2026-10-21
+
+Public-beta blocker #3 part 3 is implemented: Settings → About can manually save
+a redacted diagnostics ZIP after displaying a localized inclusion/exclusion list.
+The user controls sharing; no data is sent. See the
+[support-bundle report](reviews/2026-10-21-support-bundle.md) for validation,
+conservative decisions and remaining Windows/Linux physical checks. Complete
+exports and the other launch blockers remain open. Schema migrations are unchanged.

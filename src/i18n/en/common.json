@@ -459,7 +459,28 @@
       "linkedin": "LinkedIn",
       "openError": "Could not open this contact option. Try again or use the contact details shown."
     },
-    "minutes": "minutes"
+    "minutes": "minutes",
+    "supportBundle": {
+      "title": "Redacted support bundle",
+      "create": "Create support bundle",
+      "intro": "Review exactly what will be saved in a single ZIP file:",
+      "includes": {
+        "system": "Application version, OS family and numeric version (Linux kernel version), and architecture.",
+        "settings": "Interface language and theme only; unknown values are omitted.",
+        "schema": "Database schema / migration version number.",
+        "codes": "The last 200 recognized stable error codes with UTC timestamps from the included logs.",
+        "logs": "Up to 14 local log files, up to 1 MiB each, after allow-list redaction. Unknown lines and fields are dropped; the latest events may still be waiting to be written.",
+        "readme": "README.txt explaining the contents and exclusions in Arabic and English."
+      },
+      "excludes": "Never includes the database, documents, backups, keys, passwords, recovery keys, file paths, usernames, names, office details, emails, phone numbers, national IDs or legal record content.",
+      "localOnly": "Saved locally only. The app never sends this bundle; you choose how to share it.",
+      "freshFile": "Choose a new .zip filename outside the vault. Existing files are never replaced.",
+      "chooseDestination": "Choose where to save",
+      "saving": "Saving…",
+      "success": "Support bundle saved. You decide whether and how to share it.",
+      "error": "Could not save the support bundle. Choose a new filename in a writable folder outside the vault and try again.",
+      "pickerFilter": "Support bundle ZIP"
+    }
   },
   "clients": {
     "kicker": "Records",

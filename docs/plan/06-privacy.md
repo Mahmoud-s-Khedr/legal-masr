@@ -41,9 +41,10 @@ to take records out of the application.
 The following privacy/data-management requirements remain unimplemented and
 are release blockers:
 
-- complete-installation, case, and documented CSV/manifest exports;
-- a manually generated redacted support bundle containing only approved system,
-  version, safe settings, schema version, and error-code information.
+- complete-installation, case, and documented CSV/manifest exports.
+
+Support bundles are implemented as described below; target-device acceptance
+remains open.
 
 No deletion workflow may promise forensic erasure from SSDs or third-party
 backup media.
@@ -75,3 +76,22 @@ makes whole-vault cleanup restartable and blocks first-run setup until cleanup
 finishes. No promise of forensic/secure erasure is made. Automated evidence and
 remaining Windows/Linux device checks are in the
 [deletion report](../reviews/2026-10-21-permanent-deletion.md).
+
+## Support bundle status — 2026-10-21
+
+Settings → About offers a manual redacted ZIP beside the support contacts. A
+localized dialog lists the exact contents and exclusions before the native save
+picker opens. Nothing is sent or attached to a contact action automatically.
+
+The only settings are allow-listed language and theme values (unknown values are
+null). System metadata contains the compiled app version, OS family, numeric OS
+version (Linux kernel or Windows major/minor/build; null when unavailable),
+architecture and actual schema/migration number. Up to 14 fixed-name local log
+files are read with a 1 MiB cap each. Only recognized startup/error structures
+survive; recent-codes.log holds up to 200 recognized codes with UTC timestamps.
+Raw diagnostic text, original filenames, unknown lines and unexpected fields are
+dropped. README.txt explains contents and exclusions in Arabic and English.
+Database files, records, documents, backups, credentials, names, office details,
+contacts, national IDs, usernames and local paths are excluded. The user chooses
+a fresh ZIP filename outside the vault; existing files are never overwritten.
+See the [report](../reviews/2026-10-21-support-bundle.md) for validation and limits.

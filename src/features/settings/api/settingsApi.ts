@@ -64,3 +64,6 @@ export const useChangePassword = () =>
       newPassword: string;
     }) => bridge.changePassword(currentPassword, newPassword),
   });
+
+export const useSaveSupportBundle = () =>
+  useMutation({ mutationFn: (filterLabel: string) => bridge.saveSupportBundle(filterLabel) });

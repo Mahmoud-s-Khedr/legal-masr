@@ -2,24 +2,24 @@
 
 Scope: Windows 10/11 x64 and Linux x64 packages (deb, rpm, AppImage). macOS is deferred. Status reflects this repository and the owner-provided in-flight PR context as of 2026-10-21; “Done” means implemented or verified in the repository, not public-launch approval unless stated.
 
-| Launch item                                                                                   | Owner        | Status                                                              |
-| --------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------- |
-| Windows Authenticode signing; obtain a certificate and configure a protected signing flow     | Owner        | Not started — certificate required                                  |
-| Physical Windows install, upgrade, backup, restore, and recovery tests                        | Owner        | Pending physical validation                                         |
-| Physical Linux deb/rpm/AppImage tests on Ubuntu and Fedora with GNOME and KDE                 | Code + Owner | Pending physical validation                                         |
-| Egyptian privacy legal review                                                                 | Owner        | Pending                                                             |
-| Publish privacy notice                                                                        | Owner        | Pending legal review and publication                                |
-| Publish terms                                                                                 | Owner        | Pending                                                             |
-| Install, backup, and recovery user guides                                                     | Code         | Pending                                                             |
-| Prepare release notes for the candidate                                                       | Code         | Pending                                                             |
-| Define a support process                                                                      | Owner        | Pending                                                             |
-| Generate and independently verify release `SHA256SUMS.txt`                                    | Code         | Implemented in release pipeline; candidate artifact pending         |
-| Approve seeded screenshot comparison; resolve visual blockers                                 | Code         | Blocked — comparison/sign-off not complete                          |
-| Data-flow fixes (PR #10)                                                                      | Code         | In review                                                           |
-| ZIP 9.0.5 security upgrade (RUSTSEC-2026-0367/0368/0369; PR #11)                              | Code         | In review                                                           |
-| Windows native desktop CI fix (PR #12; Windows and Linux desktop CI green on run 39662259379) | Code         | In review                                                           |
-| Permanent deletion                                                                            | Code         | In review — branch `feat/permanent-deletion`, no PR number supplied |
-| Complete exports                                                                              | Code         | Not started                                                         |
-| Redacted support bundle                                                                       | Code         | Not started                                                         |
-| Tray behavior                                                                                 | Code         | Not started                                                         |
-| Release candidate                                                                             | Code         | Not started                                                         |
+| Launch item                                                                                   | Owner        | Status                                                                                                         |
+| --------------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
+| Windows Authenticode signing; obtain a certificate and configure a protected signing flow     | Owner        | Not started — certificate required                                                                             |
+| Physical Windows install, upgrade, backup, restore, and recovery tests                        | Owner        | Pending physical validation                                                                                    |
+| Physical Linux deb/rpm/AppImage tests on Ubuntu and Fedora with GNOME and KDE                 | Code + Owner | Pending physical validation                                                                                    |
+| Egyptian privacy legal review                                                                 | Owner        | Pending                                                                                                        |
+| Publish privacy notice                                                                        | Owner        | Pending legal review and publication                                                                           |
+| Publish terms                                                                                 | Owner        | Pending                                                                                                        |
+| Install, backup, and recovery user guides                                                     | Code         | Pending                                                                                                        |
+| Prepare release notes for the candidate                                                       | Code         | Pending                                                                                                        |
+| Define a support process                                                                      | Owner        | Pending                                                                                                        |
+| Generate and independently verify release `SHA256SUMS.txt`                                    | Code         | Implemented in release pipeline; candidate artifact pending                                                    |
+| Approve seeded screenshot comparison; resolve visual blockers                                 | Code         | Blocked — comparison/sign-off not complete                                                                     |
+| Data-flow fixes (PR #10)                                                                      | Code         | In review                                                                                                      |
+| ZIP 9.0.5 security upgrade (RUSTSEC-2026-0367/0368/0369; PR #11)                              | Code         | In review                                                                                                      |
+| Windows native desktop CI fix (PR #12; Windows and Linux desktop CI green on run 39662259379) | Code         | In review                                                                                                      |
+| Permanent deletion                                                                            | Code         | In review — branch `feat/permanent-deletion`, no PR number supplied                                            |
+| Complete exports                                                                              | Code         | Not started                                                                                                    |
+| Redacted support bundle                                                                       | Code         | Implemented; automated evidence in [report](reviews/2026-10-21-support-bundle.md); physical acceptance pending |
+| Tray behavior                                                                                 | Code         | Not started                                                                                                    |
+| Release candidate                                                                             | Code         | Not started                                                                                                    |

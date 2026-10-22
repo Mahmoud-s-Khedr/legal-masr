@@ -30,6 +30,7 @@ import {
 import { Textarea } from '../../../components/ui/textarea';
 import { BackupSettingsPanel } from '../../backups/pages/BackupsPage';
 import type { Settings } from '../../../bridge/types';
+import { SupportBundleSection } from '../components/SupportBundleSection';
 import { RecoveryKeySection } from '../components/RecoveryKeySection';
 import { developerDiagnostic } from '../../../bridge/devDiagnostics';
 import {
@@ -677,6 +678,7 @@ function SettingsWorkspace({ settings }: { settings: Settings }) {
                 </div>
                 <DeveloperContacts />
               </section>
+              <SupportBundleSection />
             </div>
           )}
         </div>

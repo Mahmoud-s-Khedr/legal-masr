@@ -107,7 +107,9 @@ still do not expose attachment upload.
   see [07-backup-format.md](07-backup-format.md).
 - There is no per-client export. Documented full-installation, case, and stable
   CSV/manifest exports are not implemented.
-- The redacted support-bundle workflow is not implemented.
+- Settings → About implements manual redacted support ZIPs with a localized
+  content preview and native save picker; no automatic sending. See
+  [Privacy](06-privacy.md#support-bundle-status--2026-10-21).
 - Case-folder export, minimize-to-tray behavior, and physical target-platform
   validation remain incomplete.
 
@@ -124,4 +126,4 @@ The conservative shared-record and archive rules, exact removed/retained scope,
 backup behavior and restart/retry semantics are documented in
 [Privacy](06-privacy.md#data-management-status--2026-10-21). These workflows are
 implemented; physical Windows/Linux acceptance is still required. macOS is not
-in the current public-launch scope. Export and support work remain open.
+in the current public-launch scope. Export work and physical support-bundle acceptance remain open.

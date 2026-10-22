@@ -224,6 +224,12 @@ const contracts = [
     [{ stamp: '2026-10-10-12-00-00' }],
     () => bridge.createBackup('2026-10-10-12-00-00'),
   ],
+  [
+    'saveSupportBundle',
+    'support_bundle_save',
+    [{ filterLabel: 'Support bundle ZIP' }],
+    () => bridge.saveSupportBundle('Support bundle ZIP'),
+  ],
   ['saveBackupCopy', 'backup_save_copy', [], () => bridge.saveBackupCopy()],
   ['revealBackup', 'backup_reveal', [], () => bridge.revealBackup()],
   [

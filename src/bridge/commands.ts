@@ -93,6 +93,7 @@ export const bridge = {
   revealBackup: () => invoke<void>('backup_reveal'),
   openDeveloperContact: (contact: DeveloperContact) =>
     invoke<void>('settings_open_developer_contact', { contact }),
+  saveSupportBundle: (filterLabel: string) => invoke<void>('support_bundle_save', { filterLabel }),
   settings: () => invoke<Settings>('settings_get'),
   updateSettings: (settings: SettingsUpdateInput) =>
     invoke<Settings>('settings_update', { input: settings }),
