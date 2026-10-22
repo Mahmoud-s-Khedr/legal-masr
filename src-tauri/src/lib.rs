@@ -70,6 +70,7 @@ pub fn run() {
             commands::backup::backup_cancel_restore,
             commands::backup::backup_save_copy,
             commands::backup::backup_reveal,
+            commands::support_bundle::support_bundle_save,
             commands::settings::settings_get,
             commands::settings::settings_open_developer_contact,
             commands::settings::settings_update,
