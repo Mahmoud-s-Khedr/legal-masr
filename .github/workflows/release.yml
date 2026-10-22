@@ -239,27 +239,7 @@ jobs:
       - name: Name artifacts and generate SHA-256 checksums
         run: node scripts/release-assets.mjs stage --input release-raw --output release-assets
       - name: Write release notes
-        run: |
-          cat > release-notes.md <<EOF
-          ## Legal Masr ${RELEASE_TAG}
-
-          Downloads included in this draft prerelease:
-
-          - Windows x86-64: `Legal-Masr_${RELEASE_TAG#v}_windows_x64-setup.exe`
-          - Windows x86-64 portable: `Legal-Masr_${RELEASE_TAG#v}_windows_x64-portable.zip`
-          - Linux x86-64 Debian: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.deb`
-          - Linux x86-64 RPM: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.rpm`
-          - Linux x86-64 AppImage: `Legal-Masr_${RELEASE_TAG#v}_linux_x64.AppImage`
-
-          The Windows installer is currently unsigned. Windows may show a publisher or SmartScreen warning.
-          The portable archive contains the unsigned Windows executable; it does not make the application's local data directory portable.
-
-          Linux packages are currently unsigned. Install the Debian and RPM packages with your normal package manager, or mark the AppImage executable before launching it.
-
-          SHA-256 checksums are in `SHA256SUMS.txt`; checksums are integrity aids, not code signatures.
-
-          Windows 10 and Windows 11 are the currently documented Windows targets. Back up your data before updating beta releases.
-          EOF
+        run: cp "docs/release-notes/${RELEASE_TAG}.md" release-notes.md
       - name: Create or update draft prerelease
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then

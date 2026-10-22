@@ -309,7 +309,7 @@ mod tests {
             "٢٩٠٠١٠١١٢٣٤٥٦٧",
         ];
         let mut log = SAFE.to_string();
-        log.push_str("2026-10-21T12:34:56Z  INFO legalmaster_lib::logging: application starting version=\"0.1.0\" os=\"linux\"\n");
+        log.push_str(&format!("2026-10-21T12:34:56Z  INFO legalmaster_lib::logging: application starting version=\"{}\" os=\"linux\"\n", env!("CARGO_PKG_VERSION")));
         for secret in sensitive {
             log.push_str(&format!("{secret}\n{SAFE}{SAFE}"));
             log.push_str(&format!("2026-10-21T12:34:56Z ERROR legalmaster_lib::logging: command failed error_code=\"{secret}\"\n"));

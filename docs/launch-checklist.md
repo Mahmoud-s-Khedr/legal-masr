@@ -1,25 +1,38 @@
-# Windows and Linux public launch checklist
+# Windows and Linux public beta launch checklist
 
-Scope: Windows 10/11 x64 and Linux x64 packages (deb, rpm, AppImage). macOS is deferred. Status reflects this repository and the owner-provided in-flight PR context as of 2026-10-21; “Done” means implemented or verified in the repository, not public-launch approval unless stated.
+Scope: Windows 10/11 x64 and Linux x64 packages (deb, rpm, AppImage). macOS is deferred. “Implemented” records repository work; it does not mean physical platform acceptance or owner approval.
 
-| Launch item                                                                                   | Owner        | Status                                                                                                         |
-| --------------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| Windows Authenticode signing; obtain a certificate and configure a protected signing flow     | Owner        | Not started — certificate required                                                                             |
-| Physical Windows install, upgrade, backup, restore, and recovery tests                        | Owner        | Pending physical validation                                                                                    |
-| Physical Linux deb/rpm/AppImage tests on Ubuntu and Fedora with GNOME and KDE                 | Code + Owner | Pending physical validation                                                                                    |
-| Egyptian privacy legal review                                                                 | Owner        | Pending                                                                                                        |
-| Publish privacy notice                                                                        | Owner        | Pending legal review and publication                                                                           |
-| Publish terms                                                                                 | Owner        | Pending                                                                                                        |
-| Install, backup, and recovery user guides                                                     | Code         | Pending                                                                                                        |
-| Prepare release notes for the candidate                                                       | Code         | Pending                                                                                                        |
-| Define a support process                                                                      | Owner        | Pending                                                                                                        |
-| Generate and independently verify release `SHA256SUMS.txt`                                    | Code         | Implemented in release pipeline; candidate artifact pending                                                    |
-| Approve seeded screenshot comparison; resolve visual blockers                                 | Code         | Blocked — comparison/sign-off not complete                                                                     |
-| Data-flow fixes (PR #10)                                                                      | Code         | In review                                                                                                      |
-| ZIP 9.0.5 security upgrade (RUSTSEC-2026-0367/0368/0369; PR #11)                              | Code         | In review                                                                                                      |
-| Windows native desktop CI fix (PR #12; Windows and Linux desktop CI green on run 39662259379) | Code         | In review                                                                                                      |
-| Permanent deletion                                                                            | Code         | In review — branch `feat/permanent-deletion`, no PR number supplied                                            |
-| Complete exports                                                                              | Code         | Not started                                                                                                    |
-| Redacted support bundle                                                                       | Code         | Implemented; automated evidence in [report](reviews/2026-10-21-support-bundle.md); physical acceptance pending |
-| Tray behavior                                                                                 | Code         | Not started                                                                                                    |
-| Release candidate                                                                             | Code         | Not started                                                                                                    |
+## Repository and CI work completed
+
+| Item                                           | Status and evidence                                                                                                                                                                        |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Permanent deletion                             | Implemented with one final confirmation; see [deletion review](reviews/2026-10-21-permanent-deletion.md).                                                                                  |
+| Unencrypted case and full-installation exports | Implemented with warnings and documented format; see [export review](reviews/2026-10-21-exports.md).                                                                                       |
+| Redacted support bundle                        | Implemented as a user-saved local bundle; see [support-bundle review](reviews/2026-10-21-support-bundle.md).                                                                               |
+| Optional system tray                           | Implemented with default-off preference and lock-on-hide; see [tray review](reviews/2026-10-21-tray.md).                                                                                   |
+| Data-flow fixes                                | Implemented and reviewed; see [data-flow review](reviews/2026-10-21-review-of-data-flow-fixes.md).                                                                                         |
+| ZIP security upgrade                           | ZIP upgraded to 9.0.5 with restore compatibility and hostile-entry coverage; see [ZIP review](reviews/2026-10-21-zip-advisories.md).                                                       |
+| Windows desktop CI harness fixes               | Harness readiness, fixed checkpoints, and redacted failure categories implemented; Windows WebView2 success remains unverified. See [CI review](reviews/2026-10-21-windows-desktop-ci.md). |
+| Release candidate files                        | Version `0.2.0`, bilingual changelog and draft-release notes prepared; no tag or release created.                                                                                          |
+| Release workflow                               | Workflow builds Windows/Linux artifacts and creates or updates a draft prerelease only. See [release workflow](../.github/workflows/release.yml).                                          |
+
+## Owner-only gates, in required order
+
+1. **Approve visual baselines** by reviewing the captures and running `node scripts/verify-visual-manifest.mjs tests/visual/baseline --approved`. Baselines remain candidates until explicitly approved.
+2. **Physical Windows 10/11 checks:** installation, update/removal, unlock, documents, backup, restore and recovery. The parallel Linux e2e report also confirms these physical Windows checks remain open.
+3. **Physical Linux desktop checks:** Debian/RPM/AppImage installation, update and removal; verify tray behavior and core journeys on GNOME with and without AppIndicator, and KDE. Automated checks pass, but these physical checks remain open per the [Linux launch e2e report](reviews/2026-10-21-linux-launch-e2e.md).
+4. **Make the Authenticode signing decision** and obtain/configure a real certificate if signing is chosen. Current Windows artifacts are unsigned and may trigger SmartScreen or publisher warnings; see [signing policy](SIGNING_POLICY.md).
+5. **Complete Egyptian privacy/legal review**, then publish the privacy notice and terms.
+6. **Tag `v0.2.0`** to run the release workflow and produce a draft prerelease. Review artifact names, notes and checksums before any publication decision.
+
+## Linux end-to-end verdict
+
+Verdict: **Linux launch-ready: NO**. The parallel run reports that every automated check passes, but real GNOME tray checks (with and without AppIndicator), KDE tray checks, package install/update/removal checks, and physical Windows checks remain. See the [Linux launch e2e report](reviews/2026-10-21-linux-launch-e2e.md) (expected after merge).
+
+## Other launch work still open
+
+- Install, backup, recovery and export user guides; define a support process.
+- Confirm independent checksum review on the actual draft artifacts.
+- Physical platform validation and the visual approval above remain release blockers.
+
+No release tag, GitHub release, or publication has been created by this preparation.

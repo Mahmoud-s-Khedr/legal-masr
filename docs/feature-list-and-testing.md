@@ -1,6 +1,6 @@
 # Legal Masr — Feature list and testing guide
 
-Review date: 2026-10-21 (deletion and export update). Version: pre-beta 0.1.0.
+Review date: 2026-10-22 (public-beta candidate). Version: 0.2.0.
 
 Legal Masr is an offline desktop app for individual Egyptian lawyers. It manages clients, cases, powers of attorney, hearings, tasks, documents, and finances inside a password-protected local workspace.
 
