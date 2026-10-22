@@ -65,5 +65,13 @@ export const useChangePassword = () =>
     }) => bridge.changePassword(currentPassword, newPassword),
   });
 
+// Capability comes from native host detection, never renderer platform guesses.
+export const useTrayAvailable = () =>
+  useQuery({
+    queryKey: ['tray-available'],
+    queryFn: bridge.trayAvailable,
+    refetchInterval: 5_000,
+  });
+
 export const useSaveSupportBundle = () =>
   useMutation({ mutationFn: (filterLabel: string) => bridge.saveSupportBundle(filterLabel) });

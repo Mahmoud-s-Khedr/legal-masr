@@ -12,6 +12,7 @@ pub mod repositories;
 pub mod security;
 pub mod services;
 pub mod state;
+pub mod tray;
 pub mod vault_operation;
 
 use state::AppState;
@@ -27,24 +28,31 @@ pub fn run() {
     let builder = tauri::Builder::default();
     #[cfg(not(feature = "desktop-e2e"))]
     let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _, _| {
-        if let Some(window) = app.get_webview_window("main") {
-            let _ = window.unminimize();
-            let _ = window.show();
-            let _ = window.set_focus();
-        }
+        tray::show(app);
     }));
     let builder = builder
         .manage(AppState::default())
+        .manage(tray::TrayState::default())
         .plugin(navigation::guard())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init());
     #[cfg(not(feature = "desktop-e2e"))]
-    let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
+    let builder = builder.plugin(
+        tauri_plugin_window_state::Builder::default()
+            // A tray Quit may happen while hidden. Never restore that hidden
+            // state on the next launch, where tray support may be unavailable.
+            .with_state_flags(
+                tauri_plugin_window_state::StateFlags::all()
+                    & !tauri_plugin_window_state::StateFlags::VISIBLE,
+            )
+            .build(),
+    );
     builder
         .setup(|app| {
             let data_dir = db::app_dir(app.handle())?;
             let guard = logging::init(&data_dir);
             app.manage(guard);
+            tray::setup(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -72,6 +80,7 @@ pub fn run() {
             commands::backup::backup_reveal,
             commands::support_bundle::support_bundle_save,
             commands::settings::settings_get,
+            commands::settings::settings_tray_available,
             commands::settings::settings_open_developer_contact,
             commands::settings::settings_update,
             commands::settings::profile_get,
@@ -131,6 +140,22 @@ pub fn run() {
             commands::finances::finance_case_summary,
             commands::finances::finance_client_summary
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running Legal Masr");
+        .on_window_event(|window, event| {
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    tray::request_close(window.app_handle(), false);
+                }
+            }
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building Legal Masr")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                if !app.state::<AppState>().is_shutting_down() {
+                    api.prevent_exit();
+                    tray::request_close(app, true);
+                }
+            }
+        });
 }

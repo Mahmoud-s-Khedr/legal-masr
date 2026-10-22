@@ -42,3 +42,12 @@ zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
 [dev-dependencies]
 tempfile = "3"
 tauri = { version = "2", features = ["test"] }
+
+[target.'cfg(any(target_os = "windows", target_os = "linux"))'.dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+
+# Already transitive GTK dependencies; local session-bus host detection and a
+# library preflight prevent hiding on Linux desktops without a working tray.
+[target.'cfg(target_os = "linux")'.dependencies]
+gio = "0.18"
+libloading = "0.7"

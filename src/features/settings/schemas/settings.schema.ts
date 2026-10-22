@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const settingsSchema = z.object({
+  keepRunningInTray: z.boolean(),
   language: z.enum(['ar', 'en']),
   theme: z.enum(['system', 'light', 'dark']),
   dateFormat: z.enum(['dd/MM/yyyy', 'yyyy-MM-dd']),

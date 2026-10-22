@@ -15,6 +15,7 @@ import { AppRoutes, NAV_ITEMS } from './router';
 
 beforeEach(() => {
   prepareWorkflowMocks();
+  vi.mocked(bridge.trayAvailable).mockResolvedValue(true);
   vi.mocked(bridge.profile).mockResolvedValue({
     fullName: 'Fictional lawyer',
     barNumber: null,
@@ -44,6 +45,7 @@ function ready(language: 'ar' | 'en') {
     weekStartsOn: 6,
     usageCountersEnabled: false,
     lockTimeoutMinutes: 0,
+    keepRunningInTray: false,
   });
 }
 

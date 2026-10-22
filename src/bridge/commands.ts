@@ -99,6 +99,7 @@ export const bridge = {
     invoke<void>('settings_open_developer_contact', { contact }),
   saveSupportBundle: (filterLabel: string) => invoke<void>('support_bundle_save', { filterLabel }),
   settings: () => invoke<Settings>('settings_get'),
+  trayAvailable: () => invoke<boolean>('settings_tray_available'),
   updateSettings: (settings: SettingsUpdateInput) =>
     invoke<Settings>('settings_update', { input: settings }),
   setUsageCounters: (enabled: boolean) =>

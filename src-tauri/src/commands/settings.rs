@@ -57,3 +57,8 @@ pub fn settings_open_developer_contact(
     let _operation = state.operation()?;
     settings_service::open_developer_contact(&app, &state, &contact)
 }
+
+#[tauri::command]
+pub fn settings_tray_available(app: AppHandle) -> bool {
+    crate::tray::available(&app)
+}

@@ -50,6 +50,43 @@ Managed document copies are **not individually encrypted on disk**, although the
 | Failed-save draft retention     | Keeps entered values when saving fails.                                                                       | Trigger a duplicate identifier or another validation error. Confirm the form remains populated so you can correct and retry.                         |
 | Duplicate-submission protection | Prevents repeated clicks from creating duplicate records.                                                     | Double-click Save during a pending operation. Confirm only one record is created.                                                                    |
 
+## Optional system tray — implementation 2026-10-22
+
+Settings → Display provides **Keep running in the tray when the window is
+closed**, default OFF. It is stored in encrypted settings (migration `0006`).
+When ON and tray support is available, Close locks immediately and hides the
+window. Show and a second launch reveal/focus it; Lock now uses the existing
+vault lock service; Quit exits regardless of the toggle. Busy operations refuse
+Close/Quit/Lock now and show a localized message; retry after completion. Tray tooltip
+and menu contain no client/case data. Left-click reveal applies where the
+platform supports tray clicks; Linux uses its menu.
+
+At locked startup, settings cannot be decrypted: close-to-quit and Arabic tray
+labels apply until first unlock loads the preference. The setting stays in memory
+across later locks. Missing tray support disables the toggle with an explanation
+and preserves normal close-to-quit. On Linux this includes no registered
+StatusNotifier host, missing indicator libraries or creation failure; logs use
+only `TRAY_UNAVAILABLE`. Host loss restores the visible locked window within the
+native monitor interval (two seconds plus a bounded property query). Restart the
+app after enabling or restoring desktop tray support. Saved window state never
+restores hidden visibility after a tray Quit.
+
+Automated coverage includes all close-decision combinations, busy/shutdown
+admission, native lock events/token clearing, migration/default/boolean
+constraints, persisted settings, React save/failure/unavailable behavior and
+renderer cache/late-IPC clearing. See [the report](reviews/2026-10-21-tray.md)
+for actual validation outcomes. The following device checks are **required and
+not performed in this change**. Use disposable fictional vaults only.
+
+| Platform                             | Required manual checks                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows 10 x64                       | Install; initial toggle OFF closes/exits; enable/save/restart/unlock and close to tray; icon, menu and tooltip in Arabic/English; left click and Show restore/unminimize/focus; unlock required; Lock now clears open records and drafts; second launch reveals the hidden instance; Quit exits while visible and hidden; relaunch is visible.                                                                                                  |
+| Windows 11 x64                       | Repeat Windows 10 checks, including the notification-area overflow panel, scaling and keyboard menu access.                                                                                                                                                                                                                                                                                                                                     |
+| GNOME with AppIndicator extension    | Verify indicator dependencies installed, host detected and toggle enabled; repeat close/lock/show/single-instance/Quit in Arabic/English. Use the tray menu if left-click events are unavailable. Disable the extension while hidden: window must return locked, toggle disabled; restart after re-enabling.                                                                                                                                    |
+| GNOME without AppIndicator extension | Even with libappindicator/ayatana installed, toggle is disabled with explanation, Close exits with the stored preference ON, next launch is visible, and logs contain only the stable failure code. Repeat with indicator libraries absent and the session bus unavailable.                                                                                                                                                                     |
+| KDE Plasma                           | Verify StatusNotifier icon/menu, Arabic/English labels, focus/unminimize, immediate lock, second-instance reveal and hidden/visible Quit. Remove/disable the tray host while hidden and verify locked-window fallback.                                                                                                                                                                                                                          |
+| Every supported target               | While backup, restore commit and permanent deletion hold the operation gate, try Close and tray Quit: operation continues, visible localized refusal, no hidden stranded window or process exit; retry after completion. Try failed lock/hide/menu creation in a disposable test build; verify visible recovery and normal-close fallback. Repeat with native pickers, multiple monitors, logout/restart and restricted filesystem permissions. |
+
 ## Today dashboard and search
 
 | Feature                        | What it does                                                                            | How to test it                                                                                                                                           |
@@ -287,7 +324,6 @@ These were removed on 2026-10-13 and are not planned. Migration `0004` drops the
 These should not be counted as available:
 
 - Emergency-snapshot browsing/export/deletion UI.
-- Minimize-to-tray behavior.
 - Multi-user accounts, collaboration, cloud synchronization, and online access.
 - Physical Windows/Linux acceptance for installers, native dialogs, printing, and cross-platform restore.
 

@@ -3,5 +3,10 @@
   "identifier": "main-capability",
   "description": "Core application window with only required native integrations.",
   "windows": ["main"],
-  "permissions": ["core:window:default", "window-state:default"]
+  "permissions": [
+    "core:window:default",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "window-state:default"
+  ]
 }

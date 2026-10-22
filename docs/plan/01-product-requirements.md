@@ -231,3 +231,14 @@ The release is successful when:
 - No case data is transmitted to LegalMaster.
 - At least several beta lawyers continue using it weekly after the initial trial.
 - Law firms begin asking about shared access, permissions and centralized deployment.
+
+## Tray implementation status — 2026-10-22
+
+Optional close-to-tray is implemented for Windows and Linux, default OFF in
+Settings → Display. When enabled and a tray is available, closing locks the
+vault immediately and hides the window. Show, Lock now and Quit have Arabic
+and English menu labels; single-instance activation shows and focuses the
+hidden window. Busy vault operations refuse closing/quitting with a localized
+message. Linux without a StatusNotifier host or indicator library keeps normal
+close-to-quit and disables the setting. Physical platform acceptance is pending;
+see [the tray report](../reviews/2026-10-21-tray.md).

@@ -460,6 +460,11 @@
       "openError": "Could not open this contact option. Try again or use the contact details shown."
     },
     "minutes": "minutes",
+    "tray": {
+      "label": "Keep running in the tray when the window is closed",
+      "hint": "Closing the window locks the vault immediately. Use the tray menu to show the window or quit.",
+      "unavailable": "System tray support is unavailable on this desktop. Closing the window quits the app. On Linux, enable AppIndicator/StatusNotifier support and restart the app."
+    },
     "supportBundle": {
       "title": "Redacted support bundle",
       "create": "Create support bundle",
@@ -1133,6 +1138,15 @@
     },
     "pendingHint": "Retry files left pending by an earlier deletion. No additional records are deleted.",
     "cleanupComplete": "No pending file removals remain."
+  },
+  "tray": {
+    "show": "Show LegalMaster",
+    "lock": "Lock now",
+    "quit": "Quit",
+    "busy": "An operation is running. Wait until it finishes, then try again.",
+    "lockFailed": "The vault could not be locked. The window will stay visible. Please try locking again.",
+    "hideFailed": "The window could not be hidden. The vault is locked.",
+    "tooltip": "LegalMaster"
   },
   "exports": {
     "title": "Unencrypted data export",

@@ -29,6 +29,21 @@ describe('IPC session boundaries', () => {
       await refused;
     },
   );
+  it('rejects data delivered after a native tray lock boundary', async () => {
+    let finish!: (value: unknown) => void;
+    native.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const { invoke, invalidateSession } = await import('./invoke');
+    const pending = invoke('client_get');
+    const refused = expect(pending).rejects.toMatchObject({ code: 'APP_LOCKED' });
+    invalidateSession();
+    finish({ name: 'fictional' });
+    await refused;
+  });
   it('returns current-session data and preserves native errors', async () => {
     const { invoke } = await import('./invoke');
     native.mockResolvedValueOnce({ id: 'synthetic' });

@@ -1,5 +1,5 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../bridge/errors';
@@ -14,6 +14,7 @@ import { useSettings, useUpdateSettings } from '../features/settings/api/setting
 import { settingsWithLanguage, takeLanguageChoice } from '../lib/languageChoice';
 import { demoSeedEnabled, seedDemoDataOnce } from '../dev/seedDemoData';
 import { captureModeEnabled } from '../dev/captureBridge';
+import { useNativeVaultLock } from '../lib/nativeVaultEvents';
 import { queryKeys } from '../lib/queryKeys';
 import { Providers } from './providers';
 
@@ -82,6 +83,11 @@ function AppContent() {
   const lockVault = useLockVault();
   const [manualGate, setManualGate] = useState<Gate | null>(null);
   const [recoveryKey, setRecoveryKey] = useState('');
+  const nativeLocked = useCallback(() => {
+    setManualGate(null);
+    setRecoveryKey('');
+  }, []);
+  useNativeVaultLock(nativeLocked);
 
   const computedGate: Gate =
     isLoading || !status
