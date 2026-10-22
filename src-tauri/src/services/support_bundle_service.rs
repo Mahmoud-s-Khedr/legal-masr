@@ -272,6 +272,7 @@ mod tests {
             week_starts_on: 6,
             usage_counters_enabled: false,
             lock_timeout_minutes: 30,
+            keep_running_in_tray: false,
         }
     }
     fn contents(bytes: Vec<u8>) -> std::collections::BTreeMap<String, String> {
