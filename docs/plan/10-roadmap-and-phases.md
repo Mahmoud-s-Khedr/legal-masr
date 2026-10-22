@@ -59,11 +59,19 @@ exports remain blocker #3 work; support implementation is recorded below. Public
 scoped to Windows and Linux; macOS is excluded from this launch. Physical target
 platform acceptance and the other public-release blockers remain open.
 
+## Blocker #3, part 2 status — 2026-10-21
+
+Documented complete-installation and case CSV/document/manifest exports are
+implemented with plaintext warnings, asynchronous native folder selection,
+serialized snapshot reads, verified document copies and no-overwrite publication.
+See [the format](../export-format.md) and
+[validation report](../reviews/2026-10-21-exports.md). Physical Windows/Linux acceptance remains open.
+
 ## Blocker #3, part 3 status — 2026-10-21
 
 Manual redacted support bundles are implemented in Settings → About with a
 localized content/exclusion list, native save picker, safe settings/system/schema
 metadata, allow-listed logs, timestamped stable codes and a bilingual README.
 There is no automatic sending. The [report](../reviews/2026-10-21-support-bundle.md)
-records verification and outstanding Windows/Linux device acceptance. Complete
-exports and the other release blockers remain open; this does not certify launch.
+records verification and outstanding Windows/Linux device acceptance. Other release
+blockers remain open; this does not certify launch.

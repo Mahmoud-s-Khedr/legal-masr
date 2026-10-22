@@ -1133,5 +1133,20 @@
     },
     "pendingHint": "Retry files left pending by an earlier deletion. No additional records are deleted.",
     "cleanupComplete": "No pending file removals remain."
+  },
+  "exports": {
+    "title": "Unencrypted data export",
+    "description": "Export CSV records and document copies for use outside Legal Masr. This is not an encrypted backup and cannot restore the app.",
+    "allAction": "Export all records",
+    "caseAction": "Export this case",
+    "warningTitle": "Confidential data — unencrypted export",
+    "allWarning": "This export is NOT encrypted. It contains confidential client data, including archived records, and copies of managed documents. Anyone with access to the folder can read it. It is not a backup and cannot be restored in Legal Masr. Choose a protected folder outside the workspace and share it carefully.",
+    "caseWarning": "This export is NOT encrypted. It contains this case, its linked clients and current or fallback POAs, their documents and case-related records, including archived records. Shared client/POA documents may contain other confidential information. Anyone with access to the folder can read it. It is not a backup and cannot be restored in Legal Masr. Choose a protected folder outside the workspace and share it carefully.",
+    "confirm": "Choose folder and export",
+    "creating": "Exporting…",
+    "success": "Export created:",
+    "reveal": "Show in folder",
+    "failed": "Export could not be completed. Check folder permissions, available space and managed documents; choose another folder or minute if the export name already exists, then retry.",
+    "revealFailed": "Could not show the export folder. It may have been moved or removed."
   }
 }

@@ -105,13 +105,12 @@ still do not expose attachment upload.
   including fresh/incomplete installations, foreign vaults and recovery with a
   staged new password. Physical cross-platform restoration remains unverified;
   see [07-backup-format.md](07-backup-format.md).
-- There is no per-client export. Documented full-installation, case, and stable
-  CSV/manifest exports are not implemented.
+- There is no per-client export. Complete-installation and case CSV/document
+  exports are implemented; see [the format](../export-format.md).
 - Settings → About implements manual redacted support ZIPs with a localized
   content preview and native save picker; no automatic sending. See
   [Privacy](06-privacy.md#support-bundle-status--2026-10-21).
-- Case-folder export, minimize-to-tray behavior, and physical target-platform
-  validation remain incomplete.
+- Minimize-to-tray behavior and physical target-platform validation remain incomplete.
 
 ## Permanent deletion status — 2026-10-21
 
@@ -126,4 +125,14 @@ The conservative shared-record and archive rules, exact removed/retained scope,
 backup behavior and restart/retry semantics are documented in
 [Privacy](06-privacy.md#data-management-status--2026-10-21). These workflows are
 implemented; physical Windows/Linux acceptance is still required. macOS is not
-in the current public-launch scope. Export work and physical support-bundle acceptance remain open.
+in the current public-launch scope. Physical export and support-bundle acceptance remain open.
+
+## Export status — 2026-10-21
+
+Backups/Settings have a visually separate unencrypted-export card; case detail has
+an export action even when archived. Both use the existing confirmation dialog,
+async native picker/worker, operation gate and opaque reveal capability patterns.
+Success shows the new folder name and Show in folder. Failures remain retryable;
+picker cancellation is harmless. CSVs, documents, scope and manifest are defined
+in [export-format.md](../export-format.md). See the
+[export report](../reviews/2026-10-21-exports.md) for validation and device risks.

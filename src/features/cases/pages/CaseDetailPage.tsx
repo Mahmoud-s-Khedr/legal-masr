@@ -1,3 +1,4 @@
+import { ExportAction } from '@/features/exports/components/ExportAction';
 import { PermanentDeleteAction } from '@/features/deletion/components/PermanentDeleteAction';
 import { QuerySection } from '@/components/layout/QuerySection';
 import { DraftForm } from '@/components/forms/DraftForm';
@@ -197,6 +198,7 @@ export function CaseDetailPage() {
                 {t('records.edit')}
               </Button>
             )}
+            <ExportAction key={id} caseId={id} />
             {caseDto.archivedAt && <PermanentDeleteAction target={{ kind: 'case', id }} />}
             {caseDto.archivedAt ? (
               <Button

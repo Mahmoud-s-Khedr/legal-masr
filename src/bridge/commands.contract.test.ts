@@ -163,6 +163,18 @@ const expense: ExpenseInput = {
 
 const contracts = [
   [
+    'createExport',
+    'export_create',
+    [{ caseId: null, stamp: '2026-10-21-1234' }],
+    () => bridge.createExport(undefined, '2026-10-21-1234'),
+  ],
+  [
+    'revealExport',
+    'export_reveal',
+    [{ token: 'native-export-token' }],
+    () => bridge.revealExport('native-export-token'),
+  ],
+  [
     'deletionPreview',
     'deletion_preview',
     [{ target: { kind: 'client', id: 'client-1' }, language: 'ar' }],
@@ -606,6 +618,15 @@ describe('canonical Tauri bridge payload contracts', () => {
 
   it('covers every bridge method', () => {
     expect(contracts.map((contract) => contract[0]).sort()).toEqual(Object.keys(bridge).sort());
+  });
+
+  it('case export sends only its case ID and timestamp to the native picker command', async () => {
+    invokeMock.mockResolvedValueOnce(undefined);
+    await bridge.createExport('case-1', '2026-10-21-1234');
+    expect(invokeMock).toHaveBeenCalledWith('export_create', {
+      caseId: 'case-1',
+      stamp: '2026-10-21-1234',
+    });
   });
 
   it.each(contracts)(

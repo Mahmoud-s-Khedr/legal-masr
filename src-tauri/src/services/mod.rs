@@ -5,6 +5,7 @@ pub mod client_service;
 pub mod dashboard_service;
 pub mod deletion_service;
 pub mod document_service;
+pub mod export_service;
 pub mod finance_service;
 pub mod hearing_service;
 pub mod power_of_attorney_service;

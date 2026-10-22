@@ -5,6 +5,7 @@ pub mod clients;
 pub mod dashboard;
 pub mod deletion;
 pub mod documents;
+pub mod exports;
 pub mod finances;
 pub mod hearings;
 pub mod powers_of_attorney;
