@@ -1,5 +1,5 @@
 {
-  "status": "approved",
+  "status": "candidate",
   "fixture": "fictional-capture-bridge-v2",
   "fixtureTime": "2026-10-03T09:00:00Z",
   "environment": "Ubuntu 24.04 / Playwright 1.63.0 Chromium / Africa/Cairo / light",
@@ -546,40 +546,40 @@
       "sha256": "cf0b516facdf10bda7586cf1ff59fe6483c54d8bbb0322f6aadf1352b9807b87"
     },
     {
-      "route": "/backups",
+      "route": "/settings?tab=backups",
       "language": "ar",
       "viewport": "1366x768",
       "file": "backups-ar-1366x768.png",
       "width": 1366,
-      "height": 977,
-      "sha256": "8d6b7693e1f9e21d3c6332b2f519d4a67be015438661ac0469221423526afb22"
+      "height": 1259,
+      "sha256": "6f3161ccab9eb80a2a1d4c250d16d1351bc92fc25505a57f44870ceb155d4a2a"
     },
     {
-      "route": "/backups",
+      "route": "/settings?tab=backups",
       "language": "ar",
       "viewport": "1440x900",
       "file": "backups-ar-1440x900.png",
       "width": 1440,
-      "height": 977,
-      "sha256": "0d9aaa2d0609cfc5da22d9ad17fb1ca8a282a894c24feca981b521a32ddec3f2"
+      "height": 1188,
+      "sha256": "8716822e12f113213979ed4627a740b8c280d6fabc0fe33f4bfe91677ae95327"
     },
     {
-      "route": "/backups",
+      "route": "/settings?tab=backups",
       "language": "en",
       "viewport": "1366x768",
       "file": "backups-en-1366x768.png",
       "width": 1366,
-      "height": 977,
-      "sha256": "1eb7e51ad9dda347a6ca15184fc2d2834edaf9f22b3f37e76a499c646a9a2014"
+      "height": 1259,
+      "sha256": "e8aa471f84b53086010c601ae300a33caf65734c5ecbcad8eeb37e983876a59c"
     },
     {
-      "route": "/backups",
+      "route": "/settings?tab=backups",
       "language": "en",
       "viewport": "1440x900",
       "file": "backups-en-1440x900.png",
       "width": 1440,
-      "height": 977,
-      "sha256": "ba2b89948a6f448bd1db255176840264fdd172564a166d3a44f9c6ec6179662c"
+      "height": 1235,
+      "sha256": "bb0b3dcaf404c0f75aae6aee532fa0d6c92431f70cf2692a77d18268b811650f"
     },
     {
       "route": "/settings",
