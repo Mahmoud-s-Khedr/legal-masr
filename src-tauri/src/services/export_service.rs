@@ -67,6 +67,10 @@ selected_poas AS (SELECT id FROM powers_of_attorney WHERE ?1 IS NULL OR id IN (S
 selected_expenses AS (SELECT id FROM expenses WHERE ?1 IS NULL OR case_id = ?1)";
 
 pub fn pick_folder<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Error> {
+    #[cfg(feature = "desktop-e2e")]
+    if let Some(path) = crate::desktop_e2e::selection("export-folder")? {
+        return Ok(path);
+    }
     app.dialog()
         .file()
         .blocking_pick_folder()

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFile as execFileCallback } from 'node:child_process';
 import { access, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { homedir, tmpdir } from 'node:os';
-import { basename, join, resolve } from 'node:path';
+import { homedir } from 'node:os';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
@@ -59,15 +59,17 @@ async function readVersion() {
   return packageJson.version;
 }
 
-export async function normalizeAppImage(appImagePath) {
+export async function normalizeAppImage(appImagePath, { run = execFile } = {}) {
   const requestedPath = resolve(appImagePath);
   await access(requestedPath);
   const input = (await readdir(requestedPath).catch(() => null))
     ? await findOnlyAppImage(requestedPath)
     : requestedPath;
-  const workDirectory = await mkdtemp(join(tmpdir(), 'legalmaster-appimage-'));
+  // Keep extraction/repacking on the destination filesystem so publication is
+  // an atomic rename even when /tmp is a separate tmpfs (as on Fedora).
+  const workDirectory = await mkdtemp(join(dirname(input), '.legalmaster-appimage-'));
   try {
-    await execFile(input, ['--appimage-extract'], { cwd: workDirectory });
+    await run(input, ['--appimage-extract'], { cwd: workDirectory });
     const appDir = join(workDirectory, 'squashfs-root');
     const libraryDirectory = join(appDir, 'usr', 'lib');
     for (const library of hostGraphicsLibraries) await rm(join(libraryDirectory, library));
@@ -77,7 +79,7 @@ export async function normalizeAppImage(appImagePath) {
     await writeFile(gtkHookPath, preferWaylandBackend(gtkHook));
 
     const plugin = await findAppImagePlugin();
-    await execFile(plugin, ['--appdir', appDir], {
+    await run(plugin, ['--appdir', appDir], {
       cwd: workDirectory,
       env: {
         ...process.env,

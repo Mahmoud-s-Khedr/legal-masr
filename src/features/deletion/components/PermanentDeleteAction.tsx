@@ -186,7 +186,7 @@ export function PermanentDeleteAction({ target }: { target: DeletionTarget }) {
               </>
             ) : (
               <Button type="button" variant="outline" disabled={busy} onClick={close}>
-                {t('forms.cancel')}
+                {t('common.cancel')}
               </Button>
             )}
           </AlertDialogFooter>

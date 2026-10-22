@@ -86,7 +86,14 @@ async function scenario(name, exercise) {
   const driver = windows
     ? undefined
     : spawn('tauri-driver', [], {
-        env: { ...process.env, LEGALMASTER_E2E_ROOT: root, LEGALMASTER_E2E_NONCE: nonce },
+        env: {
+          ...process.env,
+          LEGALMASTER_E2E_ROOT: root,
+          LEGALMASTER_E2E_NONCE: nonce,
+          XDG_DATA_HOME: join(root, 'xdg-data'),
+          XDG_CONFIG_HOME: join(root, 'xdg-config'),
+          XDG_CACHE_HOME: join(root, 'xdg-cache'),
+        },
         stdio: 'ignore',
       });
   let driverError = false;

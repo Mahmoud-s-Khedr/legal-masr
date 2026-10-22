@@ -33,7 +33,11 @@ pub fn root() -> Result<PathBuf, Error> {
 pub fn selection(kind: &str) -> Result<Option<PathBuf>, Error> {
     let root = root()?;
     let choice = fs::read_to_string(root.join("dialog-selection"))?;
-    match (kind, choice.as_str()) {
+    selected_path(&root, kind, &choice)
+}
+
+fn selected_path(root: &Path, kind: &str, choice: &str) -> Result<Option<PathBuf>, Error> {
+    match (kind, choice) {
         (_, "native") => Ok(None),
         (_, "cancel") => Err(Error::Cancelled),
         ("attachment", "attachment") => {
@@ -61,10 +65,22 @@ pub fn selection(kind: &str) -> Result<Option<PathBuf>, Error> {
         ("save-backup", "save") => {
             let folder = root.join("exported");
             fs::create_dir_all(&folder)?;
-            if folder.canonicalize()?.parent() != Some(root.as_path()) {
+            if folder.canonicalize()?.parent() != Some(root) {
                 return Err(Error::Operation);
             }
             Ok(Some(folder.join("copy.lmsbackup")))
+        }
+        ("export-folder", "export") | ("support-bundle", "support") => {
+            let folder = root.join("exported");
+            fs::create_dir_all(&folder)?;
+            if folder.canonicalize()?.parent() != Some(root) {
+                return Err(Error::Operation);
+            }
+            Ok(Some(if kind == "support-bundle" {
+                folder.join("support.zip")
+            } else {
+                folder
+            }))
         }
         ("backup", "backup") => {
             let mut backups = fs::read_dir(root.join("vault/Backups"))?
@@ -86,6 +102,37 @@ pub fn selection(kind: &str) -> Result<Option<PathBuf>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn export_and_support_choices_are_fixed_and_cancellation_is_harmless() {
+        let root = tempfile::tempdir().unwrap();
+        assert!(selected_path(root.path(), "export-folder", "cancel").is_err());
+        assert!(!root.path().join("exported").exists());
+        assert_eq!(
+            selected_path(root.path(), "export-folder", "export").unwrap(),
+            Some(root.path().join("exported"))
+        );
+        assert_eq!(
+            selected_path(root.path(), "support-bundle", "support").unwrap(),
+            Some(root.path().join("exported/support.zip"))
+        );
+        assert!(selected_path(root.path(), "support-bundle", "export").is_err());
+        assert!(selected_path(root.path(), "export-folder", "/arbitrary/path").is_err());
+        assert_eq!(
+            selected_path(root.path(), "export-folder", "native").unwrap(),
+            None
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn export_choice_refuses_a_symlink_outside_the_runner_root() {
+        let root = tempfile::tempdir().unwrap();
+        let other = tempfile::tempdir().unwrap();
+        std::os::unix::fs::symlink(other.path(), root.path().join("exported")).unwrap();
+        assert!(selected_path(root.path(), "export-folder", "export").is_err());
+        assert!(selected_path(root.path(), "support-bundle", "support").is_err());
+    }
+
     #[test]
     fn isolation_requires_a_marked_direct_temporary_child() {
         let dir = tempfile::Builder::new()
