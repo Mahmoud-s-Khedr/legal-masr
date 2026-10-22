@@ -2,7 +2,7 @@
 
 import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { basename, dirname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -57,24 +57,15 @@ async function stage(input, output) {
   const debs = files.filter((path) => path.toLowerCase().endsWith('.deb'));
   const rpms = files.filter((path) => path.toLowerCase().endsWith('.rpm'));
   const appImages = files.filter((path) => path.endsWith('.AppImage'));
-  const dmgs = files.filter((path) => path.toLowerCase().endsWith('.dmg'));
-  const intel = dmgs.find((path) => /x86_64-apple-darwin|macos-x64|intel/i.test(path));
-  const arm = dmgs.find((path) =>
-    /aarch64-apple-darwin|macos-arm64|arm64|apple-silicon/i.test(path),
-  );
   if (
     installers.length !== 1 ||
     portableArchives.length !== 1 ||
     debs.length !== 1 ||
     rpms.length !== 1 ||
-    appImages.length !== 1 ||
-    dmgs.length !== 2 ||
-    !intel ||
-    !arm ||
-    intel === arm
+    appImages.length !== 1
   ) {
     throw new Error(
-      `Expected one Windows installer, portable archive, Debian package, RPM package, AppImage, and distinct Intel/ARM DMGs; found ${installers.length} .exe, ${portableArchives.length} .zip, ${debs.length} .deb, ${rpms.length} .rpm, ${appImages.length} .AppImage, and ${dmgs.length} .dmg (${dmgs.map((path) => basename(path)).join(', ')}).`,
+      `Expected one Windows installer, portable archive, Debian package, RPM package, and AppImage; found ${installers.length} .exe, ${portableArchives.length} .zip, ${debs.length} .deb, ${rpms.length} .rpm, ${appImages.length} .AppImage.`,
     );
   }
 
@@ -86,8 +77,6 @@ async function stage(input, output) {
     [debs[0], `Legal-Masr_${version}_linux_x64.deb`],
     [rpms[0], `Legal-Masr_${version}_linux_x64.rpm`],
     [appImages[0], `Legal-Masr_${version}_linux_x64.AppImage`],
-    [intel, `Legal-Masr_${version}_macos_x64.dmg`],
-    [arm, `Legal-Masr_${version}_macos_arm64.dmg`],
   ];
   for (const [source, name] of artifacts) await cp(source, join(output, name));
   for (const [, name] of artifacts) {

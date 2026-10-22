@@ -102,7 +102,8 @@ An Egyptian lawyer who:
 
 - Works alone or with informal administrative assistance.
 - Uses a Windows laptop or desktop.
-- May also use a MacBook.
+- Linux x64 is also a supported public-launch platform.
+- macOS is deferred beyond the first public release.
 - Currently organizes work using notebooks, paper files, Microsoft Word, Excel, phone calendars or folders.
 - Needs to know the next hearing and required preparation.
 - Is not necessarily technically experienced.

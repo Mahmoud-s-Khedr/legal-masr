@@ -425,8 +425,10 @@ fn validate_archive(plaintext: &[u8], version: u8) -> Result<(), Error> {
     let mut attachment_count = 0usize;
     for index in 0..archive.len() {
         let entry = archive.by_index(index).map_err(|_| Error::BackupInvalid)?;
-        let name = entry.name().to_owned();
-        if !archive_entries.insert(name.clone()) || entry.is_dir() {
+        let name = entry.name().map_err(|_| Error::BackupInvalid)?.into_owned();
+        // Only file contents belong in this format. Never materialize archive
+        // symlinks (including for metadata/database entries) or directories.
+        if !archive_entries.insert(name.clone()) || !entry.is_file() {
             return Err(Error::BackupInvalid);
         }
         if name == "database.sqlite" {
@@ -649,6 +651,8 @@ pub fn prepare(
                 return Err(Error::BackupInvalid);
             }
             let target = documents_staging.join(relative);
+            // Copy bytes into our own fresh staging files. Do not use ZIP
+            // extraction APIs or apply archive Unix permissions/SUID/SGID bits.
             let mut output = fs::File::create(target)?;
             std::io::copy(&mut entry, &mut output)?;
             output.sync_all()?;
@@ -1219,6 +1223,262 @@ mod tests {
             security,
             backup,
             attachment,
+        }
+    }
+
+    #[test]
+    fn old_zip_2_4_2_fixture_and_new_backups_validate_and_restore() {
+        let source = source_with_backup();
+        let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src/backup/fixtures/format-v2-zip-2.4.2.lmsbackup");
+        assert_eq!(
+            checksum(&fs::read(&fixture).unwrap()),
+            "ace32b833ecb943ee811402cd012ef60d8937b02f7cc8c4482b4eab3d646e0fa"
+        );
+        for backup in [
+            fixture.to_string_lossy().into_owned(),
+            source.backup.clone(),
+        ] {
+            validate(&backup, None, Some(Credential::Password(PASSWORD))).unwrap();
+            let destination = tempfile::tempdir().unwrap();
+            let active = destination.path().join("legalmaster.sqlite");
+            let attachments = destination.path().join("attachments");
+            assert!(matches!(
+                prepare(
+                    destination.path(),
+                    &backup,
+                    None,
+                    Some(Credential::Password("wrong fixture password")),
+                    None,
+                ),
+                Err(Error::InvalidPassword)
+            ));
+            assert!(tree_snapshot(destination.path()).is_empty());
+            let prepared = prepare(
+                destination.path(),
+                &backup,
+                None,
+                Some(Credential::Password(PASSWORD)),
+                None,
+            )
+            .unwrap();
+            assert_eq!(prepared.document_count, 1);
+            assert_eq!(prepared.password_source, "backupPassword");
+            commit(&active, &attachments, prepared).unwrap();
+            let master = unlock_with_password(destination.path(), PASSWORD).unwrap();
+            assert_eq!(client_numbers(&active, &master), ["CL-SOURCE"]);
+            assert_eq!(
+                fs::read(attachments.join("scan.bin")).unwrap(),
+                source.attachment
+            );
+            assert!(!vault_operation::pending(destination.path()));
+        }
+    }
+
+    /// Rebuild an authenticated archive with matching checksums, changing one
+    /// entry. Raw attributes model hostile headers: unix_permissions() masks
+    /// privileged bits in the new writer, so it cannot construct these cases.
+    fn rewrite_backup_entry(
+        source: &Source,
+        path: &Path,
+        original_name: &str,
+        replacement_name: &str,
+        replacement_bytes: Option<&[u8]>,
+        unix_mode: Option<u32>,
+    ) {
+        let opened = open(&source.backup, Some(&source.master), None).unwrap();
+        let mut original = ZipArchive::new(Cursor::new(opened.plaintext.as_slice())).unwrap();
+        let mut entries = Vec::new();
+        for index in 0..original.len() {
+            let mut entry = original.by_index(index).unwrap();
+            let mut name = entry.name().unwrap().into_owned();
+            let mut bytes = Vec::new();
+            entry.read_to_end(&mut bytes).unwrap();
+            let mut options = SimpleFileOptions::default();
+            if name == original_name {
+                name = replacement_name.to_owned();
+                if let Some(replacement) = replacement_bytes {
+                    bytes = replacement.to_vec();
+                }
+                if let Some(mode) = unix_mode {
+                    options = options.external_attributes(mode << 16);
+                }
+            }
+            entries.push((name, bytes, options));
+        }
+        let checksums: BTreeMap<_, _> = entries
+            .iter()
+            .filter(|(name, _, _)| name != "manifest.json" && name != "checksums.json")
+            .map(|(name, bytes, _)| (name.clone(), checksum(bytes)))
+            .collect();
+        let mut archive = ZipWriter::new(Cursor::new(Vec::new()));
+        for (name, bytes, options) in entries {
+            archive.start_file(&name, options).unwrap();
+            if name == "checksums.json" {
+                archive
+                    .write_all(&serde_json::to_vec(&checksums).unwrap())
+                    .unwrap();
+            } else {
+                archive.write_all(&bytes).unwrap();
+            }
+        }
+        let plaintext = archive.finish().unwrap().into_inner();
+        v2_envelope_with_zip(path, &source.master, &source.security, &plaintext);
+    }
+
+    #[test]
+    fn symlink_entries_are_refused_without_following_targets_or_changing_permissions() {
+        let source = source_with_backup();
+        let destination = tempfile::tempdir().unwrap();
+        let workspace = destination.path().join("workspace");
+        fs::create_dir(&workspace).unwrap();
+        let sentinel = destination.path().join("outside.bin");
+        fs::write(&sentinel, b"unchanged outside staging").unwrap();
+        let permissions = fs::metadata(&sentinel).unwrap().permissions();
+        for (entry_name, target) in [
+            ("attachments/scan.bin", "inside.bin".to_owned()),
+            ("attachments/scan.bin", "../../outside.bin".to_owned()),
+            (
+                "attachments/scan.bin",
+                sentinel.to_string_lossy().into_owned(),
+            ),
+            ("database.sqlite", "../outside.bin".to_owned()),
+            ("manifest.json", "../outside.bin".to_owned()),
+            ("checksums.json", "../outside.bin".to_owned()),
+        ] {
+            let path = destination.path().join("symlink.lmsbackup");
+            rewrite_backup_entry(
+                &source,
+                &path,
+                entry_name,
+                entry_name,
+                // Preserve valid database/metadata bytes to isolate rejection
+                // of their entry type from checksum/JSON/database failures.
+                (entry_name == "attachments/scan.bin").then_some(target.as_bytes()),
+                Some(0o127777),
+            );
+            let opened = open(&path.to_string_lossy(), Some(&source.master), None).unwrap();
+            let mut zip = ZipArchive::new(Cursor::new(opened.plaintext.as_slice())).unwrap();
+            assert!(zip.by_name(entry_name).unwrap().is_symlink());
+            let before = tree_snapshot(destination.path());
+            assert!(matches!(
+                validate(&path.to_string_lossy(), Some(&source.master), None),
+                Err(Error::BackupInvalid)
+            ));
+            assert!(matches!(
+                prepare(
+                    &workspace,
+                    &path.to_string_lossy(),
+                    Some(&source.master),
+                    None,
+                    None
+                ),
+                Err(Error::BackupInvalid)
+            ));
+            assert_eq!(tree_snapshot(destination.path()), before);
+            assert_eq!(fs::metadata(&sentinel).unwrap().permissions(), permissions);
+        }
+    }
+
+    #[test]
+    fn absolute_and_parent_component_entry_names_are_refused_before_staging() {
+        let source = source_with_backup();
+        let destination = tempfile::tempdir().unwrap();
+        for name in [
+            "/attachments/scan.bin",
+            "../scan.bin",
+            "attachments/../scan.bin",
+            "attachments/nested/../scan.bin",
+            "attachments/..\\scan.bin",
+            "C:/scan.bin",
+            "C:\\scan.bin",
+            "\\\\server\\share\\scan.bin",
+            "attachments/C:scan.bin",
+        ] {
+            let path = source._dir.path().join("bad-name.lmsbackup");
+            rewrite_backup_entry(&source, &path, "attachments/scan.bin", name, None, None);
+            assert!(
+                matches!(
+                    validate(&path.to_string_lossy(), Some(&source.master), None),
+                    Err(Error::BackupInvalid)
+                ),
+                "{name}"
+            );
+            assert!(
+                matches!(
+                    prepare(
+                        destination.path(),
+                        &path.to_string_lossy(),
+                        Some(&source.master),
+                        None,
+                        None
+                    ),
+                    Err(Error::BackupInvalid)
+                ),
+                "{name}"
+            );
+            assert!(tree_snapshot(destination.path()).is_empty());
+        }
+    }
+
+    #[test]
+    fn restore_copies_regular_file_bytes_and_ignores_archive_permissions() {
+        let source = source_with_backup();
+        for mode in [0o107777, 0o100400] {
+            let path = source._dir.path().join("permissions.lmsbackup");
+            rewrite_backup_entry(
+                &source,
+                &path,
+                "attachments/scan.bin",
+                "attachments/scan.bin",
+                None,
+                Some(mode),
+            );
+            let opened = open(&path.to_string_lossy(), Some(&source.master), None).unwrap();
+            let mut zip = ZipArchive::new(Cursor::new(opened.plaintext.as_slice())).unwrap();
+            // zip 9 sanitizes unix_mode() itself. Inspect the central header to
+            // prove the hostile bits really are present in the input archive.
+            let attributes_offset = zip
+                .by_name("attachments/scan.bin")
+                .unwrap()
+                .central_header_start() as usize
+                + 38;
+            let attributes = u32::from_le_bytes(
+                opened.plaintext[attributes_offset..attributes_offset + 4]
+                    .try_into()
+                    .unwrap(),
+            );
+            assert_eq!((attributes >> 16) & 0o7777, mode & 0o7777);
+            validate(&path.to_string_lossy(), Some(&source.master), None).unwrap();
+            let destination = tempfile::tempdir().unwrap();
+            let active = destination.path().join("legalmaster.sqlite");
+            let attachments = destination.path().join("attachments");
+            let prepared = prepare(
+                destination.path(),
+                &path.to_string_lossy(),
+                Some(&source.master),
+                None,
+                None,
+            )
+            .unwrap();
+            commit(&active, &attachments, prepared).unwrap();
+            let restored = attachments.join("scan.bin");
+            assert!(fs::symlink_metadata(&restored)
+                .unwrap()
+                .file_type()
+                .is_file());
+            assert_eq!(fs::read(&restored).unwrap(), source.attachment);
+            assert_eq!(client_numbers(&active, &source.master), ["CL-SOURCE"]);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let control = attachments.join("control");
+                fs::write(&control, b"default permissions").unwrap();
+                let actual = fs::metadata(restored).unwrap().permissions().mode() & 0o7777;
+                let default = fs::metadata(control).unwrap().permissions().mode() & 0o7777;
+                assert_eq!(actual, default);
+                assert_eq!(actual & 0o7111, 0);
+            }
         }
     }
 
@@ -2082,6 +2342,15 @@ mod tests {
             archive.write_all(content).unwrap();
         }
         let plaintext = archive.finish().unwrap().into_inner();
+        v2_envelope_with_zip(path, master, security_file, &plaintext);
+    }
+
+    fn v2_envelope_with_zip(
+        path: &Path,
+        master: &[u8; 32],
+        security_file: &SecurityFile,
+        plaintext: &[u8],
+    ) {
         let nonce = security::random_32();
         let nonce_text = STANDARD.encode(&nonce[..NONCE_BYTES]);
         let key = Zeroizing::new(security::backup_key(master));
@@ -2091,7 +2360,7 @@ mod tests {
             .encrypt(
                 XNonce::from_slice(&nonce[..NONCE_BYTES]),
                 Payload {
-                    msg: plaintext.as_ref(),
+                    msg: plaintext,
                     aad: &aad,
                 },
             )

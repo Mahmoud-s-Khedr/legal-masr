@@ -2,7 +2,7 @@
 
 **Product:** LegalMaster Solo
 **Target:** individual Egyptian lawyers
-**Platforms:** Windows and macOS
+**Platforms:** Windows 10/11 x64 and Linux x64 (deb, rpm, AppImage); macOS deferred
 **Model:** offline-first desktop application
 **Stack:** Tauri 2, React, TypeScript, Rust, SQLCipher/SQLite
 
@@ -35,8 +35,8 @@ is available.
 
 The product is not yet public-beta ready. Cross-device restore, documented
 complete exports, permanent deletion, a redacted
-support bundle, visual capture comparison, and physical Windows/macOS
-validation remain release risks. The authoritative correction decision record
+support bundle, visual capture comparison, and physical Windows and Linux validation
+remain release risks. The authoritative correction decision record
 is [finalized-domain-correction-plan.md](finalized-domain-correction-plan.md);
 its evidence and risks are recorded in
 [finalized-domain-phase-7-report.md](finalized-domain-phase-7-report.md).
@@ -53,7 +53,7 @@ This work does not certify phase acceptance or public-beta readiness.
 
 A later [beta-readiness pass](reviews/2026-10-08-beta-pass.md) fixed the reproducible editing, layout, theme and
 error-message defects and added migration `0002`. The recommendation is unchanged: do not give testers real client
-data until backups are portable and restore-safe (B01/B02) and the app has been run on Windows and macOS.
+data until backups are portable and restore-safe (B01/B02) and the app has been run on Windows and Linux.
 
 ## Canonical offline integration — 2026-10-10
 
@@ -68,8 +68,17 @@ The operation/session coordinator, archived-owner checks and dependent search
 refresh are implemented. The final contract is in
 [plan/07-backup-format.md](plan/07-backup-format.md). Integration evidence and remaining
 platform risks are recorded in [the integration review](reviews/2026-10-10-integration.md).
-Physical Windows/macOS journeys and the remaining roadmap release blockers are
+Physical Windows/Linux journeys and the remaining roadmap release blockers are
 still open; this development merge does not certify public-beta readiness.
+
+## Public launch scope — 2026-10-21
+
+The first public release targets Windows 10/11 x64 and Linux x64 (deb, rpm,
+AppImage). macOS is deferred; source support is retained while macOS packaging
+and release jobs are excluded. Windows Authenticode signing, physical Windows
+and Linux validation, privacy/legal review, approved screenshot comparison,
+exports, permanent deletion, support bundle, tray behavior, and launch materials
+remain open. See the [launch checklist](launch-checklist.md).
 
 ## Current product scope — 2026-10-14
 
@@ -79,7 +88,7 @@ hearing-roll printing and individual client export have been removed. Automatic
 backup schedules, retention policies, a configurable primary backup destination
 and backup-history UI are out of scope. Immutable migrations `0001`–`0004`
 define the current schema. Restore preparation and preview are implemented;
-physical Windows/macOS acceptance and the remaining export/deletion/support
+physical Windows/Linux acceptance and the remaining export/deletion/support
 work remain open. Local aggregate-counter consent remains backend-only.
 
 ## Permanent deletion implementation — 2026-10-21

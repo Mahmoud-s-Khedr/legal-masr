@@ -259,3 +259,12 @@ without replacement; crashes can leave clearly incomplete plaintext staging.
 These are not encrypted backups. Details and unverified platform/ACL/durability
 limits are in [the format](../export-format.md) and
 [report](../reviews/2026-10-21-exports.md).
+
+## ZIP advisory status — 2026-10-21
+
+The direct ZIP dependency is upgraded to 9.0.5 for RUSTSEC-2026-0367/0368/0369.
+The format-v2 reader refuses symlinks and copies bytes without applying archive
+permissions. The fixed old-writer fixture, malicious-entry regression coverage,
+local audit outcome and remaining transitive warnings are documented in
+[the advisory review](../reviews/2026-10-21-zip-advisories.md). No audit ignores
+or network behavior are added to the application.

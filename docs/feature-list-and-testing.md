@@ -207,7 +207,14 @@ This is fee and cash tracking, not a complete accounting system.
 | Interrupted-restore recovery            | Uses journaled replacement and retains the previous workspace in emergency snapshots. | Exercise automated interruption tests with disposable fixtures. Verify replay completes safely or leaves the vault locked with an interruption error.         |
 | Shared backup tools                     | Makes the same backup/restore controls available in Backups and Settings.             | Create/validate/restore from both entry points and verify consistent behavior.                                                                                |
 
-Fresh-installation restore is implemented and tested locally. **Physical Windows↔macOS portability still requires device testing.**
+Fresh-installation restore is implemented and tested locally. **Physical Windows↔Linux portability still requires device testing.**
+
+The [2026-10-21 ZIP advisory review](reviews/2026-10-21-zip-advisories.md) records
+the zip 9.0.5 upgrade, fixed zip-2.4.2 format-v2 restore fixture, new-writer
+roundtrip and hostile-archive checks. Symlink entries and absolute/parent paths
+are refused before staging; regular-file permissions from the archive are
+ignored. These are automated backend checks; physical Windows↔Linux restore
+acceptance remains pending for the public-launch scope (macOS is outside it).
 
 ## Unencrypted data exports — 2026-10-21
 
@@ -278,7 +285,7 @@ These should not be counted as available:
 - Emergency-snapshot browsing/export/deletion UI and a redacted support bundle.
 - Minimize-to-tray behavior.
 - Multi-user accounts, collaboration, cloud synchronization, and online access.
-- Physical Windows/macOS acceptance for installers, native dialogs, printing, and cross-platform restore.
+- Physical Windows/Linux acceptance for installers, native dialogs, printing, and cross-platform restore.
 
 ## Review validation
 
@@ -301,7 +308,7 @@ checks. Physical-device acceptance remains separate.
 
 Tests emitted non-failing mock/setup warnings. Native Linux desktop journeys ran
 against disposable fixtures. No manual target-device walkthrough or physical
-Windows/macOS validation was performed during this review. The manual steps
+Windows/Linux validation was performed during this review. The manual steps
 above are test instructions, not a claim that every step was executed. The
 application remains pre-beta.
 
@@ -312,3 +319,16 @@ application remains pre-beta.
 - [Backup specification](plan/07-backup-format.md)
 - [Export format](export-format.md)
 - [Canonical offline integration review](reviews/2026-10-10-integration.md)
+
+## Desktop CI harness update — 2026-10-21
+
+Windows CDP click readiness now waits for stable visible, enabled and unobscured
+targets before dispatch, with no action replay. Text reads wait for element
+creation. Fixed fine-grained checkpoints and exact allowlisted harness/app error
+categories retain no raw exceptions, DOM, selectors or field values. Cancel and
+corrupt restore preservation journeys wait for dialog removal; corrupt restore
+also checks the localized damaged-file alert and its dismissal before navigation.
+Script regressions exercise delayed recovery rendering, asynchronous cancellation
+and adapter success/refusal paths. Windows and Linux native CI acceptance must
+still be rerun; unit checks do not certify launch readiness. Details and actual
+validation are in [Implementation run 2](reviews/2026-10-21-windows-desktop-ci.md#implementation-run-2).

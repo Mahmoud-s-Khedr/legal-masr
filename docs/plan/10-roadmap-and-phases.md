@@ -20,14 +20,14 @@ Part of the LegalMaster Solo plan — see [../plan.md](../plan.md).
 1. Seeded running-app screenshot comparison at 1440×900 and 1366×768 against
    the approved Stitch screens, followed by correction of meaningful defects.
 2. Portable cross-device restore using the original password, plus repeated
-   restore exercises on Windows and macOS. Format v2 backups restore into an
+   restore exercises on Windows and Linux. Format v2 backups restore into an
    empty or incomplete installation with the original password or recovery key
-   (implemented and tested on Linux, 2026-10-09); the Windows↔macOS and repeated
+   (implemented and tested on Linux, 2026-10-09); Windows↔Linux and repeated
    physical-device exercises remain open.
 3. Documented case/full-installation exports, permanent deletion, and redacted
    support bundle.
 4. Tray behavior.
-5. Native Windows and macOS runner, package, install/update, and device checks.
+5. Native Windows and Linux runner, package, install/update, and device checks.
 6. Egyptian privacy legal review before public claims or release.
 
 Restore preparation and preview are implemented. Notifications, reminders,
@@ -39,7 +39,7 @@ autostart and hearing-roll printing were removed on 2026-10-13. See the
 After those blockers are closed, hardening covers performance, accessibility,
 Arabic copy, installer testing, migration fixtures, dependency/security review,
 privacy review, failure-state review, and backup disaster exercises. A public
-release also requires signed Windows/macOS delivery, a reviewed privacy notice,
+release also requires Authenticode-signed Windows delivery, a reviewed privacy notice,
 terms, recovery/backup/install guides, release notes, support process, export
 format documentation, and download integrity information.
 

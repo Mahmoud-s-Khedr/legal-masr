@@ -29,10 +29,9 @@
 | Same-vault restore iteration 2      | pending |                                                                              |           |
 | Same-vault restore iteration 3      | pending |                                                                              |           |
 | Uninstall/reinstall                 | pending |                                                                              |           |
-| Windows→macOS portable restore      | pending | Original-password and recovery-key restoration with record/file verification |           |
-| macOS→Windows portable restore      | pending | Original-password and recovery-key restoration with record/file verification |           |
+| Windows↔Linux portable restore      | pending | Original-password and recovery-key restoration with record/file verification |           |
 
-UI replacement checks (run on each of Windows and macOS with fictional data):
+UI replacement checks (run on Windows and Linux Ubuntu/Fedora GNOME/KDE with fictional data):
 
 | Check                                                                   | Result  | Notes |
 | ----------------------------------------------------------------------- | ------- | ----- |
