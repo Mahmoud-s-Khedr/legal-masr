@@ -154,11 +154,23 @@ jobs:
         with:
           workspaces: src-tauri -> target
           key: ${{ matrix.id == 'linux-x64' && 'ubuntu-24.04' || runner.os }}-${{ matrix.target }}-${{ matrix.id }}-${{ hashFiles('src-tauri/Cargo.lock') }}
-      - name: Build Tauri bundle
-        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0.6.2
-        with:
-          tauriScript: pnpm tauri
-          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundle }}
+      - name: Build Tauri bundle with download retries
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if pnpm tauri build --target "${{ matrix.target }}" --bundles "${{ matrix.bundle }}"; then
+              if [[ "${{ matrix.id }}" != linux-x64 ]] || compgen -G "${XDG_CACHE_HOME:-$HOME/.cache}/tauri/linuxdeploy-plugin-appimage*.AppImage" > /dev/null; then
+                exit 0
+              fi
+              echo "The AppImage plugin download fell back to the built-in version; retrying."
+            fi
+            if [[ "$attempt" == 5 ]]; then
+              echo "Tauri packaging failed after $attempt attempts." >&2
+              exit 1
+            fi
+            echo "Retrying Tauri packaging after attempt $attempt..."
+            sleep $((attempt * 15))
+          done
       - name: Verify production harness boundary
         shell: bash
         run: node scripts/verify-release-boundary.mjs "src-tauri/target/${{ matrix.target }}/release/legalmaster-solo${{ runner.os == 'Windows' && '.exe' || '' }}"
