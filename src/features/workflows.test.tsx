@@ -349,6 +349,8 @@ describe('dashboard and agenda', () => {
     expect(await screen.findByText('لا توجد جلسات قادمة.')).toBeVisible();
   });
   it('filters the agenda by selected date', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 5, 12));
     renderWorkflow(<AgendaPage />, '/calendar?date=2026-10-03');
     expect(await screen.findByRole('button', { name: 'تسجيل القرار' })).toBeVisible();
     expect(
