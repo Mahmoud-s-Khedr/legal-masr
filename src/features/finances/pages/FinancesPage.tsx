@@ -252,7 +252,17 @@ export function FinancesPage() {
                     (client) => client.id === (payment?.payerClientId ?? expense?.clientId),
                   )?.fullName;
                   return (
-                    <tr key={record.id} className="transaction-row">
+                    <tr
+                      key={record.id}
+                      className="transaction-row clickable-row"
+                      onClick={() =>
+                        setEntry(
+                          payment
+                            ? { type: 'payment', value: payment, mode: 'inspect' }
+                            : { type: 'expense', value: expense!, mode: 'inspect' },
+                        )
+                      }
+                    >
                       <td>
                         <Button
                           variant="ghost"

@@ -114,7 +114,19 @@ export function RecordTable({ children, className, ...props }: ComponentProps<'t
           {table.getRowModel().rows.map((row) => (
             <TableRow
               key={row.original.element.key ?? row.id}
-              onClick={row.original.element.props.onClick}
+              onClick={
+                row.original.element.props.onClick
+                  ? (event) => {
+                      if (
+                        (event.target as HTMLElement).closest(
+                          'a, button, input, select, textarea, [role="button"]',
+                        )
+                      )
+                        return;
+                      row.original.element.props.onClick?.(event);
+                    }
+                  : undefined
+              }
               className={row.original.element.props.className}
             >
               {row.getVisibleCells().map((cell) => (

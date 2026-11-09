@@ -126,7 +126,11 @@ export function CaseListPage() {
             </thead>
             <tbody>
               {cases.map((caseSummary) => (
-                <tr key={caseSummary.id}>
+                <tr
+                  key={caseSummary.id}
+                  className="clickable-row"
+                  onClick={() => navigate(`/cases/${caseSummary.id}`)}
+                >
                   <th scope="row">
                     <Link to={`/cases/${caseSummary.id}`}>
                       <bdi>{caseSummary.internalNumber}</bdi>

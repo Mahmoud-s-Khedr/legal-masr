@@ -82,7 +82,11 @@ export function ClientListPage() {
             </thead>
             <tbody>
               {clients.map((client) => (
-                <tr key={client.id}>
+                <tr
+                  key={client.id}
+                  className="clickable-row"
+                  onClick={() => navigate(`/clients/${client.id}`)}
+                >
                   <th scope="row">
                     <Link to={`/clients/${client.id}`} dir="auto">
                       <bdi>{client.fullName}</bdi>
