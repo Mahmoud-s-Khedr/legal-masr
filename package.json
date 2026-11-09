@@ -1,7 +1,7 @@
 {
   "name": "legalmaster-solo",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.2.3",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "pnpm": {
@@ -60,7 +60,7 @@
     "react-i18next": "^17.0.11",
     "react-router-dom": "^7.18.2",
     "tailwind-merge": "^3.7.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
