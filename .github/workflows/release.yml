@@ -227,6 +227,7 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22.21.1
+          package-manager-cache: false
       - name: Confirm exact tagged commit and version
         run: |
           git tag --points-at HEAD | grep --fixed-strings --line-regexp "$RELEASE_TAG"
