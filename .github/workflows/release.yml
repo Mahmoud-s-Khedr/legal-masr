@@ -154,12 +154,13 @@ jobs:
         with:
           workspaces: src-tauri -> target
           key: ${{ matrix.id == 'linux-x64' && 'ubuntu-24.04' || runner.os }}-${{ matrix.target }}-${{ matrix.id }}-${{ hashFiles('src-tauri/Cargo.lock') }}
-      - name: Build Tauri bundle with download retries
+      - name: Build Linux Tauri bundle with download retries
+        if: matrix.id == 'linux-x64'
         shell: bash
         run: |
           for attempt in 1 2 3 4 5; do
             if pnpm tauri build --target "${{ matrix.target }}" --bundles "${{ matrix.bundle }}"; then
-              if [[ "${{ matrix.id }}" != linux-x64 ]] || compgen -G "${XDG_CACHE_HOME:-$HOME/.cache}/tauri/linuxdeploy-plugin-appimage*.AppImage" > /dev/null; then
+              if compgen -G "${XDG_CACHE_HOME:-$HOME/.cache}/tauri/linuxdeploy-plugin-appimage*.AppImage" > /dev/null; then
                 exit 0
               fi
               echo "The AppImage plugin download fell back to the built-in version; retrying."
@@ -171,6 +172,17 @@ jobs:
             echo "Retrying Tauri packaging after attempt $attempt..."
             sleep $((attempt * 15))
           done
+      - name: Build Windows Tauri bundle with download retries
+        if: matrix.id == 'windows-x64'
+        shell: pwsh
+        run: |
+          for ($attempt = 1; $attempt -le 5; $attempt++) {
+            & pnpm tauri build --target "${{ matrix.target }}" --bundles "${{ matrix.bundle }}"
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($attempt -eq 5) { throw "Tauri packaging failed after $attempt attempts." }
+            Write-Host "Retrying Tauri packaging after attempt $attempt..."
+            Start-Sleep -Seconds ($attempt * 15)
+          }
       - name: Verify production harness boundary
         shell: bash
         run: node scripts/verify-release-boundary.mjs "src-tauri/target/${{ matrix.target }}/release/legalmaster-solo${{ runner.os == 'Windows' && '.exe' || '' }}"
