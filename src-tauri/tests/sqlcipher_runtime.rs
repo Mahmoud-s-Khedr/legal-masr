@@ -61,6 +61,10 @@ fn encrypted_wal_backup_reopens_and_rejects_the_wrong_key() {
             .query_row("SELECT value FROM records", [], |row| row.get(0))
             .unwrap();
         assert_eq!(value, "synthetic legal record");
+        let count: u64 = reopened
+            .query_row("SELECT COUNT(*) FROM records", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 1);
         drop(reopened);
         let bytes = std::fs::read(path).unwrap();
         assert!(!bytes

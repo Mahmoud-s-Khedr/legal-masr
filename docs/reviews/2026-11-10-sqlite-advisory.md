@@ -16,7 +16,9 @@ issue; retrying CI or weakening its audit gate does not fix it.
 
 - Upgrade rusqlite 0.32.1 → 0.41.1 and libsqlite3-sys 0.30.1 → 0.39.1.
 - Preserve bundled SQLCipher with vendored OpenSSL, backup, custom functions and
-  statement caching. Disable the new default wasm backend for this desktop app.
+  statement caching. Explicitly enable `fallible_uint` to retain the checked
+  unsigned integer conversions used by deletion counts; these are now optional.
+  Disable the new default wasm backend for this desktop app.
 - Address the upstream SQLCipher pin as well: libsqlite3-sys 0.39.1 still pins
   SQLCipher 4.19.0 / SQLite 3.53.4, which the advisory explicitly identifies as
   affected. A private source-API forwarding crate selects the unmodified registry
@@ -25,6 +27,8 @@ issue; retrying CI or weakening its audit gate does not fix it.
 - Add linked-engine regression tests for fixed SQLite/SQLCipher versions and
   encrypted WAL writes, online backup/reopen, wrong-key rejection and ciphertext
   at rest. Existing lifecycle and old-backup-fixture tests remain in place.
+- Collect the column-name iterator introduced by rusqlite 0.41 before joining
+  CSV export headers, preserving the existing header order and contents.
 
 Only the database wrapper, required cache dependencies and source selection
 change in the lockfile. No audit ignore, schema migration, application network

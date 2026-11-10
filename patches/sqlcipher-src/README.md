@@ -13,7 +13,8 @@ forwarding crate and the actual registry package/checksum appear in
 `src-tauri/Cargo.lock`; the old native sources are never compiled.
 
 The application retains bundled SQLCipher, vendored OpenSSL, statement caching,
-backup and custom SQL functions. Rusqlite's defaults are disabled because its
+backup, custom SQL functions and checked unsigned integer conversions.
+Rusqlite's defaults are disabled because its
 new default wasm backend is unnecessary for the desktop application.
 
 `src-tauri/tests/sqlcipher_runtime.rs` checks the actual linked engine versions,

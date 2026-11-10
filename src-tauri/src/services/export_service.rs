@@ -154,7 +154,7 @@ fn write_csv(
         table.columns, table.name, table.filter
     );
     let mut statement = conn.prepare(&sql)?;
-    let headers = statement.column_names().join(",");
+    let headers = statement.column_names().collect::<Vec<_>>().join(",");
     let columns = statement.column_count();
     let mut rows = statement.query([case_id])?;
     let mut writer = BufWriter::new(new_file(&root.join(format!("{}.csv", table.name)))?);
