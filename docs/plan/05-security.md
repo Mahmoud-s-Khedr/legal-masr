@@ -271,6 +271,14 @@ local audit outcome and remaining transitive warnings are documented in
 [the advisory review](../reviews/2026-10-21-zip-advisories.md). No audit ignores
 or network behavior are added to the application.
 
+## SQLite advisory status — 2026-11-10
+
+The database dependencies select rusqlite 0.41.1 and libsqlite3-sys 0.39.1.
+A temporary source-API compatibility patch selects SQLCipher 4.20.0 with SQLite
+3.54.1 because upstream still pins affected SQLCipher sources. Linked-engine
+tests guard the actual native library versions in addition to `cargo audit`.
+See [the remediation review](../reviews/2026-11-10-sqlite-advisory.md).
+
 ## Support bundle implementation — 2026-10-21
 
 The manually generated Settings → About ZIP implements section 12.4. The Rust

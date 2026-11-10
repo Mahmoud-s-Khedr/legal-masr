@@ -1,0 +1,10 @@
+[package]
+name = "sqlcipher-src"
+version = "419.0.6"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Compatibility shim selecting patched SQLCipher sources for libsqlite3-sys"
+
+[dependencies]
+patched-sqlcipher-src = { package = "sqlcipher-src", version = "=420.0.0" }
